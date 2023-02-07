@@ -1,0 +1,12 @@
+{
+	"admin/services/chatgptd": {
+		"title": "Chatgptd tunnel for openai.com access",
+		"action": {
+			"type": "view",
+			"path": "chatgptd"
+		},
+		"depends": {
+			"acl": [ "luci-app-chatgptd" ]
+		}
+	}
+}

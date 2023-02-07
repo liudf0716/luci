@@ -1,0 +1,14 @@
+{
+	"luci-app-chatgptd": {
+		"description": "Grant access to LuCI app chatgptd",
+		"read": {
+			"ubus": {
+				"service": [ "list" ]
+			},
+			"uci": ["chatgptd"]
+		},
+		"write": {
+			"uci": ["chatgptd"]
+		}
+	}
+}
