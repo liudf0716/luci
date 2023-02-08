@@ -1,6 +1,6 @@
 {
 	"admin/services/chatgptd": {
-		"title": "Chatgptd tunnel for openai.com access",
+		"title": "Chatgptd",
 		"action": {
 			"type": "view",
 			"path": "chatgptd"

@@ -27,9 +27,9 @@ function renderStatus(isRunning) {
 	var spanTemp = '<em><span style="color:%s"><strong>%s %s</strong></span></em>';
 
 	if (isRunning) {
-		renderHTML += String.format(spanTemp, 'green', _("chatgptd插件"), _("RUNNING"));
+		renderHTML += String.format(spanTemp, 'green', _("chatgptd插件"), _("运行中..."));
 	} else {
-		renderHTML += String.format(spanTemp, 'red', _("chatgptd插件"), _("NOT RUNNING"));
+		renderHTML += String.format(spanTemp, 'red', _("chatgptd插件"), _("停止运行..."));
 	}
 
 	return renderHTML;
@@ -60,42 +60,48 @@ return view.extend({
 			);
 		}
 
-		s = m.section(form.NamedSection, 'common', 'chatgptd');
-		s.dynamic = true;
-
-		// add tab
-		s.tab('service', _('chatgpt服务'));
-		s.tab('register', _('注册chatgpt账号助手'));
-
-		// add bool option of enable to service tab
-		o = s.taboption('service', form.Flag, 'enabled', _('启用chatgpt服务'));
-		o.anonymous = true;
-		o.optional = true;
-
-		// add help information to register tab
-		o = s.taboption('register', form.Value, 'virtual_sms', _('虚拟手机号注册'));
-		o.rawhtml = true;
-		o.value = '<a href="https://sms-activate.org/cn" target="_blank">支付宝充值0.5美元，选择印度手机号收验证码激活</a>';
-		
-		o = s.taboption('register', form.Value, 'register_chatgpt', _('注册登录'));
-		o.rawhtml = true;
-		o.value = '<a href="https://openai.com" target="_blank">注册登录chatgpt账号</a>';
-
-		o = s.taboption('register', form.Value, 'visit_chatgpt', _('访问chatgpt服务'));
-		o.rawhtml = true;
-		o.value = '<a href="https://chat.openai.com" target="_blank">访问chatgpt服务</a>';
-
-		// Donate addresss;
-		s = m.section(form.TypedSection, "chatgptd", _("支持我们"), _("如果你喜欢这个服务，请给我买杯咖啡."));
+		// add enabled option
+		s = m.section(form.TypedSection, "chatgptd", _("配置"), _("是否启用chatgptd插件."));
 		s.anonymous = true;
-		// add contact information to s section
-		o = s.option(form.Value, "donate", _("联系方式"));
-		o.rawhtml = true;
-		o.value = '<a href="https://jq.qq.com/?_wv=1027&k=MAAHFqR1" target="_blank">点击加入QQ群讨论</a>';
-		// add picture to s section
-		o = s.option(form.Value, "donate", _("支付宝"));
-		o.rawhtml = true;
-		o.value = '<img src="/luci-static/resources/view/chatgptd/alipay.png" width="200" height="200" />';
+
+		o = s.option(form.Flag, 'enabled', _('启用'), _('启用或者禁用chatgptd插件.'));
+		o.rmempty = false;
+
+
+		// add form NamedSection to show some information to user
+		// this section is not in chatgptd conf, so we need to add it manually
+		s = m.section(form.TypedSection, "chatgptd", _("使用说明"));
+		s = m.section(form.NamedSection, '_information');
+		s.anonymous = true;
+		s.render = function (section_id) {
+			return E('div', { class: 'cbi-map' },
+				E('fieldset', { class: 'cbi-section'}, [
+					E('a', { href: "https://sms-activate.org/cn", target: "_blank" }, [
+						_('1. 点击本链接支付宝充值0.5美元，选择印度手机号收验证码激活'),
+					]),
+					E('br'),
+					E('a', { href: "https://openai.com", target: "_blank" }, [
+						_('2. 点击本注册登录chatgpt账号'),
+					]),
+					E('br'),
+					E('a', { href: "https://chat.openai.com", target: "_blank" }, [
+						_('3. 点击本链接访问chatgpt服务'),
+					]),
+					E('br'),
+					E('a', { href: "https://jq.qq.com/?_wv=1027&k=MAAHFqR1", target: "_blank" }, [
+						_('4. 点击加入QQ群讨论如何使用'),
+					]),
+					E('br'),
+					E('p', { style: "color:red" }, [
+						_('5. 鼓励我们继续开发，一元两元都是爱'),
+					]),
+					E('br'),
+					E('img', { src: "/luci-static/resources/view/alipay.png", width: "200", height: "200" }, [
+						_('5. 鼓励我们继续开发'),
+					]),
+				])
+			);
+		}
 	
 		return m.render();
 	}
