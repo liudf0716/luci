@@ -10,7 +10,34 @@ var callServiceList = rpc.declare({
 	method: 'list',
 	params: ['name'],
 	expect: { '': {} }
-});
+});	
+
+function getServiceStatus() {
+	return L.resolveDefault(callServiceList('kcptun'), {}).then(function (res) {
+		var isRunning = false;
+		try {
+			var instance1 = res['kcptun']['instances'];
+			// if instance1 is not null, then kcptun is running
+			if (instance1 != null) {
+				isRunning = true;
+			}
+		} catch (e) { }
+		return isRunning;
+	});
+}
+
+function renderStatus(isRunning) {
+	var renderHTML = "";
+	var spanTemp = '<em><span style="color:%s"><strong>%s %s</strong></span></em>';
+
+	if (isRunning) {
+		renderHTML += String.format(spanTemp, 'green', _("kcptun client"), _("running..."));
+	} else {
+		renderHTML += String.format(spanTemp, 'red', _("kcptun client"), _("not running..."));
+	}
+
+	return renderHTML;
+}
 
 return view.extend({
 	render: function() {
@@ -18,6 +45,25 @@ return view.extend({
 
 		m = new form.Map('kcptun', _('kcptun'));
 		m.description = _("kcptun is a Stable & Secure Tunnel Based On KCP with N:M Multiplexing.");
+
+		// add kcptun-client status section and option 
+		s = m.section(form.NamedSection, '_status');
+		s.anonymous = true;
+		s.render = function (section_id) {
+			L.Poll.add(function () {
+				return L.resolveDefault(getServiceStatus()).then(function(res) {
+					var view = document.getElementById("service_status");
+					view.innerHTML = renderStatus(res);
+				});
+			});
+
+			return E('div', { class: 'cbi-map' },
+				E('fieldset', { class: 'cbi-section'}, [
+					E('p', { id: 'service_status' },
+						_('Collecting data ...'))
+				])
+			);
+		}
 
 		s = m.section(form.TypedSection, "client", _("Client"), _("Client Settings"));
 		s.anonymous = true;

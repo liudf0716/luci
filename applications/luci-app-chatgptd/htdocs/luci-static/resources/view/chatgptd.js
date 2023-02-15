@@ -35,6 +35,11 @@ function renderStatus(isRunning) {
 	return renderHTML;
 }
 
+function clearChatgptCookie() {
+	window.localStorage.removeItem(Object.keys(window.localStorage).find(i=>i.startsWith('@@auth0spajs')));
+	alert('清除成功');
+}
+
 return view.extend({
 	render: function() {
 		var m, s, o;
@@ -78,6 +83,14 @@ return view.extend({
 				E('fieldset', { class: 'cbi-section'}, [
 					E('a', { href: "https://sms-activate.org/cn", target: "_blank" }, [
 						_('1. 点击本链接支付宝充值0.5美元，选择印度手机号收验证码激活'),
+					]),
+					E('br'),
+					// add button to call a js function clearChatgptCookie
+					E('button', {
+						'class': 'cbi-button cbi-button-apply',
+						'click': clearChatgptCookie
+					}, [
+						_('注意：如果以前访问过chatgpt网站并被拒绝服务，请点击本按钮清空chatgpt缓存cookie')
 					]),
 					E('br'),
 					E('a', { href: "https://openai.com", target: "_blank" }, [

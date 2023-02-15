@@ -1,5 +1,5 @@
 {
-	"luci-app-kcptun-client": {
+	"luci-app-kcptun": {
 		"description": "Grant access to LuCI app kcptun client",
 		"read": {
 			"ubus": {

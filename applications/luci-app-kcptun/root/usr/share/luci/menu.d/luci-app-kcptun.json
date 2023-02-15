@@ -1,6 +1,6 @@
 {
 	"admin/services/kcptun": {
-		"title": "kcptun-client",
+		"title": "kcptun client",
 		"action": {
 			"type": "view",
 			"path": "kcptun"
