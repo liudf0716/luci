@@ -81,7 +81,7 @@ return view.extend({
 		o.rmempty = false;
 		// server_port
 		o = s.option(form.Value, 'server_port', _('Server port'), _('Server port-range to connect'));
-		o.datatype = 'string';
+		o.datatype = 'portrange';
 		o.rmempty = false;
 		// key
 		o = s.option(form.Value, 'key', _('Key'), _('Pre-shared secret between client and server'));
