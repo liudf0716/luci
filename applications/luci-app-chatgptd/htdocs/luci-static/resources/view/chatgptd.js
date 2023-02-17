@@ -75,17 +75,22 @@ return view.extend({
 
 		// add form NamedSection to show some information to user
 		// this section is not in chatgptd conf, so we need to add it manually
-		s = m.section(form.TypedSection, "chatgptd", _("使用说明"));
+		s = m.section(form.TypedSection, "chatgptd", _("使用说明"), _("按照以下步骤使用chatgptd插件."));
 		s = m.section(form.NamedSection, '_information');
 		s.anonymous = true;
 		s.render = function (section_id) {
-			return E('div', { class: 'cbi-map' },
+			// the div is centered
+			return E('div', { class: 'cbi-map', style: "text-align:center"},
+				// add fieldset to show some information to user
+				// and the fieldset is centered
 				E('fieldset', { class: 'cbi-section'}, [
-					E('a', { href: "https://sms-activate.org/cn", target: "_blank" }, [
+					// the content is centered
+					E('a', { href: "https://sms-activate.org/cn", target: "_blank"}, [
 						_('1. 点击本链接支付宝充值0.5美元，选择印度手机号收验证码激活'),
 					]),
 					E('br'),
 					// add button to call a js function clearChatgptCookie
+					// the button style color is red
 					E('button', {
 						'class': 'cbi-button cbi-button-apply',
 						'click': clearChatgptCookie
