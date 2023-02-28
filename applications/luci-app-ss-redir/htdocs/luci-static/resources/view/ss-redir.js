@@ -85,7 +85,7 @@ return view.extend({
             _("The password of shadowsocks server"));
         o.password = true;
         o.rmempty = false;
-        o = s.taboption('server', form.ListValue, "method", _("Encryption Method"),
+        o = s.taboption('server', form.ListValue, "encrypt", _("Encryption Method"),
             _("The encryption method of shadowsocks server"));
         o.value("aes-128-cfb", _("aes-128-cfb"));
         o.value("aes-192-cfb", _("aes-192-cfb"));
