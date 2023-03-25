@@ -16,11 +16,7 @@ function getServiceStatus() {
 	return L.resolveDefault(callServiceList('ss-redir'), {}).then(function (res) {
 		var isRunning = false;
 		try {
-			var instance1 = res['ss-redir']['instances'];
-			// if instance1 is not null, then ss-redir is running
-			if (instance1 != null) {
-				isRunning = true;
-			}
+			isRunning = res['ss-redir']['instances']['instance1']['running'];
 		} catch (e) { }
 		return isRunning;
 	});
