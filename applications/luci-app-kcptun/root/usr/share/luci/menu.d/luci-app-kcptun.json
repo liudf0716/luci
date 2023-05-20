@@ -1,0 +1,12 @@
+{
+	"admin/services/kcptun": {
+		"title": "kcptun client",
+		"action": {
+			"type": "view",
+			"path": "kcptun"
+		},
+		"depends": {
+			"acl": [ "luci-app-kcptun" ]
+		}
+	}
+}
