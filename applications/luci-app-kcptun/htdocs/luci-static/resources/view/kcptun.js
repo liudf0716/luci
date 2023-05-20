@@ -69,7 +69,7 @@ return view.extend({
 		s.anonymous = true;
 		// add client settings
 		// disabled
-		o = s.option(form.Flag, 'disabled', _('Disabled'), _('Disable this kcptun client instance'));
+		o = s.option(form.Flag, 'enabled', _('Enable'), _('Enable this kcptun client instance'));
 		o.rmempty = false;
 		// local_port
 		o = s.option(form.Value, 'local_port', _('Local port'), _('Local port to listen'));

@@ -69,7 +69,7 @@ return view.extend({
 		s.anonymous = true;
 		// add client settings
 		// disabled
-		o = s.option(form.Flag, 'disabled', _('Disabled'), _('Disable apfree-wifidog service'));
+		o = s.option(form.Flag, 'enabled', _('Enable'), _('Enable apfree-wifidog service'));
 		o.rmempty = false;
 		// gateway_interface
 		o = s.option(form.Value, 'gateway_interface', _('Gateway Interface'), _('The interface that the gateway will listen on'));

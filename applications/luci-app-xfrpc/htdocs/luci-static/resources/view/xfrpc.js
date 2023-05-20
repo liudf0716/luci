@@ -87,9 +87,8 @@ return view.extend({
 		s.anonymous = true;
 		s.dynamic = true;
 
-		o = s.option(form.Flag, 'disabled', _('Disabled xfrpc service'));
-		o.datatype = 'bool';
-		o.optional = true;
+		o = s.option(form.Flag, 'enabled', 'Enable', _('Enable xfrpc service'));
+		o.optional = false;
 
 		o = s.option(form.ListValue, 'loglevel', _('Log level'), 
 			'%s <br /> %s'.format(_('LogLevel specifies the minimum log level. Valid values are "Debug", "Info", \
