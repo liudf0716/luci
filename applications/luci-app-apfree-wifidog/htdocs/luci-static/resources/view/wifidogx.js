@@ -74,6 +74,10 @@ return view.extend({
 		// gateway_interface
 		o = s.option(form.Value, 'gateway_interface', _('Gateway Interface'), _('The interface that the gateway will listen on'));
 		o.rmempty = false;
+		// gateway_id
+		o = s.option(form.Value, 'gateway_id', _('Gateway ID'), _('The ID of the gateway'));
+		o.rmempty = false;
+		o.datatype = 'string';
 		// auth_server_hostname
 		o = s.option(form.Value, 'auth_server_hostname', _('Auth Server Hostname'), _('The hostname of the authentication server'));
 		o.rmempty = false;
@@ -83,19 +87,15 @@ return view.extend({
 		o.rmempty = false;
 		o.datatype = 'port';
 		// auth_server_path
-		o = s.option(form.Value, 'auth_server_path', _('Auth Server Path'), _('The path of the authentication server'));
+		o = s.option(form.Value, 'auth_server_path', _('Auth Server Uri Path'), _('The Uri path of the authentication server'));
 		o.rmempty = false;
 		o.datatype = 'string';
 		// check_interval
 		o = s.option(form.Value, 'check_interval', _('Check Interval'), _('The interval to check the status of the gateway'));
 		o.rmempty = false;
 		o.datatype = 'uinteger';
-		// client_timeout
-		o = s.option(form.Value, 'client_timeout', _('Client Timeout'), _('The timeout of the client'));
-		o.rmempty = false;
-		o.datatype = 'uinteger';
 		// wired_passed
-		o = s.option(form.Flag, 'wired_passed', _('Wired Passed'), _('Wired client will be passed'));
+		o = s.option(form.Flag, 'wired_passed', _('Wired Passed'), _('Wired client will be passed without authentication'));
 		o.rmempty = false;
 
 		return m.render();
