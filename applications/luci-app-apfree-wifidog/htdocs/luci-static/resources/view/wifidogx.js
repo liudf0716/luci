@@ -16,11 +16,7 @@ function getServiceStatus() {
 	return L.resolveDefault(callServiceList('wifidogx'), {}).then(function (res) {
 		var isRunning = false;
 		try {
-			var instance1 = res['wifidogx']['instances'];
-			// if instance1 is not null, then kcptun is running
-			if (instance1 != null) {
-				isRunning = true;
-			}
+			running = res['wifidogx']['instances']['instance1']['running'];
 		} catch (e) { }
 		return isRunning;
 	});
@@ -91,7 +87,7 @@ return view.extend({
 		o.rmempty = false;
 		o.datatype = 'string';
 		// check_interval
-		o = s.option(form.Value, 'check_interval', _('Check Interval'), _('The interval to check the status of the gateway'));
+		o = s.option(form.Value, 'check_interval', _('Check Interval(s)'), _('The interval to check the status of the gateway'));
 		o.rmempty = false;
 		o.datatype = 'uinteger';
 		// wired_passed
