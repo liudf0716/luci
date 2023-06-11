@@ -16,7 +16,7 @@ function getServiceStatus() {
 	return L.resolveDefault(callServiceList('alist'), {}).then(function (res) {
 		var isRunning = false;
 		try {
-			running = res['alist']['instances']['instance1']['running'];
+			running = res['alist']['instances']['alist']['running'];
 		} catch (e) { }
 		return isRunning;
 	});
@@ -71,7 +71,7 @@ return view.extend({
 		o.rmempty = false;
 		o.datatype = 'port';
         // tmp_dir
-        o = s.option(form.Value, 'tmp_dir', _('Tmp Dir'), _('The tmp dir of alist server'));
+        o = s.option(form.Value, 'temp_dir', _('Tmp Dir'), _('The tmp dir of alist server'));
         o.rmempty = false;
         o.datatype = 'string';
 		
