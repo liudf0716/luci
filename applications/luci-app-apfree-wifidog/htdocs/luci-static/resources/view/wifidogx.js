@@ -16,7 +16,7 @@ function getServiceStatus() {
 	return L.resolveDefault(callServiceList('wifidogx'), {}).then(function (res) {
 		var isRunning = false;
 		try {
-			running = res['wifidogx']['instances']['instance1']['running'];
+			isRunning = res['wifidogx']['instances']['instance1']['running'];
 		} catch (e) { }
 		return isRunning;
 	});
