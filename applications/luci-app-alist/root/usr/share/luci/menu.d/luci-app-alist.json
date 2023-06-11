@@ -1,0 +1,12 @@
+{
+	"admin/services/alist": {
+		"title": "alist",
+		"action": {
+			"type": "view",
+			"path": "alist"
+		},
+		"depends": {
+			"acl": [ "luci-app-alist" ]
+		}
+	}
+}
