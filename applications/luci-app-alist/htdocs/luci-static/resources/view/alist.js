@@ -16,7 +16,7 @@ function getServiceStatus() {
 	return L.resolveDefault(callServiceList('alist'), {}).then(function (res) {
 		var isRunning = false;
 		try {
-			running = res['alist']['instances']['alist']['running'];
+			isRunning = res['alist']['instances']['alist']['running'];
 		} catch (e) { }
 		return isRunning;
 	});
