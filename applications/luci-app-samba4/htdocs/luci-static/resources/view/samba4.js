@@ -3,7 +3,14 @@
 'require fs';
 'require uci';
 'require form';
+'require rpc'
 'require tools.widgets as widgets';
+
+var callMountPoints = rpc.declare({
+	object: 'luci',
+	method: 'getMountPoints',
+	expect: { result: [] }
+});
 
 return view.extend({
 	load: function() {
@@ -14,6 +21,7 @@ return view.extend({
 			L.resolveDefault(fs.stat('/usr/sbin/samba'), {}),
 			L.resolveDefault(fs.stat('/usr/sbin/winbindd'), {}),
 			L.resolveDefault(fs.exec('/usr/sbin/smbd', ['-V']), null),
+			L.resolveDefault(callMountPoints()),
 		]);
 	},
 	render: function(stats) {
@@ -52,30 +60,7 @@ return view.extend({
 		o.placeholder = 'WORKGROUP';
 
 		o = s.taboption('general', form.Value, 'description', _('Description'));
-		o.placeholder = 'Samba4 on OpenWrt';
-
-		s.taboption('general', form.Flag, 'enable_extra_tuning', _('Enable extra Tuning'),
-			_('Enable some community driven tuning parameters, that may improve write speeds and better operation via WiFi.\
-			Not recommend if multiple clients write to the same files, at the same time!'));
-
-		s.taboption('general', form.Flag, 'disable_async_io', _('Force synchronous  I/O'),
-			_('On lower-end devices may increase speeds, by forceing synchronous I/O instead of the default asynchronous.'));
-
-		s.taboption('general', form.Flag, 'macos', _('Enable macOS compatible shares'),
-			_('Enables Apple\'s AAPL extension globally and adds macOS compatibility options to all shares.'));
-
-		s.taboption('general', form.Flag, 'allow_legacy_protocols', _('Allow legacy (insecure) protocols/authentication.'),
-			_('Allow legacy smb(v1)/Lanman connections, needed for older devices without smb(v2.1/3) support.'));
-
-		if (stats[2].type === 'file') {
-			s.taboption('general', form.Flag, 'disable_netbios', _('Disable Netbios'))
-		}
-		if (stats[3].type === 'file') {
-			s.taboption('general', form.Flag, 'disable_ad_dc', _('Disable Active Directory Domain Controller'))
-		}
-		if (stats[4].type === 'file') {
-			s.taboption('general', form.Flag, 'disable_winbind', _('Disable Winbind'))
-		}
+		o.placeholder = 'Samba4 on ChatGPT-Wrt';
 
 		o = s.taboption('template', form.TextValue, '_tmpl',
 			null,
@@ -96,10 +81,26 @@ return view.extend({
 		s.addremove = true;
 
 		s.option(form.Value, 'name', _('Name'));
-		o = s.option(form.Value, 'path', _('Path'));
+		o = s.option(form.ListValue, 'path', _('Path'));
 		if (stats[0] && stats[1]) {
 			o.titleref = L.url('admin', 'system', 'mounts');
 		}
+
+		o.rmempty = false;
+		o.value('', _('Select a path...'));
+		if (stats[6]) {
+			for (var i = 0; i < stats[6].length; i++) {
+				var umount = true;
+
+				if (/^\/(overlay|rom|tmp(?:\/.+)?|dev(?:\/.+)?|)$/.test(stats[6][i].mount))
+					umount = false;
+
+				if (umount) {
+					o.value(stats[6][i].mount, stats[6][i].mount + ' (' + stats[6][i].device + ',' + '%1024.2mB / %1024.2mB'.format(stats[6][i].free, stats[6][i].size) + ' )');
+				}
+			}
+		}
+		
 
 		o = s.option(form.Flag, 'browseable', _('Browse-able'));
 		o.enabled = 'yes';
