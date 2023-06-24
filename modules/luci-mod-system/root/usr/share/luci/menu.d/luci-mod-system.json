@@ -74,30 +74,6 @@
 	},
 
 
-	"admin/system/startup": {
-		"title": "Startup",
-		"order": 45,
-		"action": {
-			"type": "view",
-			"path": "system/startup"
-		},
-		"depends": {
-			"acl": [ "luci-mod-system-init" ]
-		}
-	},
-
-	"admin/system/crontab": {
-		"title": "Scheduled Tasks",
-		"order": 46,
-		"action": {
-			"type": "view",
-			"path": "system/crontab"
-		},
-		"depends": {
-			"acl": [ "luci-mod-system-cron" ]
-		}
-	},
-
 	"admin/system/mounts": {
 		"title": "Mount Points",
 		"order": 50,
@@ -108,19 +84,6 @@
 		"depends": {
 			"acl": [ "luci-mod-system-mounts" ],
 			"fs": { "/sbin/block": "executable" }
-		}
-	},
-
-	"admin/system/leds": {
-		"title": "LED Configuration",
-		"order": 60,
-		"action": {
-			"type": "view",
-			"path": "system/leds"
-		},
-		"depends": {
-			"acl": [ "luci-mod-system-config" ],
-			"fs": { "/sys/class/leds": "directory" }
 		}
 	},
 
