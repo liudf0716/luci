@@ -1,6 +1,6 @@
 {
 	"admin/services/chatgptd": {
-		"title": "Chatgptd",
+		"title": "chatgptd",
 		"action": {
 			"type": "view",
 			"path": "chatgptd"
