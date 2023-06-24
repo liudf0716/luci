@@ -396,6 +396,19 @@ return view.extend({
 		o.inputtitle = _('Generate archive');
 		o.onclick = this.handleBackup;
 
+		o = s.option(form.SectionValue, 'actions', form.NamedSection, 'actions', 'actions', _('Flash new firmware image'),
+			has_sysupgrade
+				? _('Upload a sysupgrade-compatible image here to replace the running firmware.')
+				: _('Sorry, there is no sysupgrade support present; a new firmware image must be flashed manually. Please refer to the wiki for device specific install instructions.'));
+
+		ss = o.subsection;
+
+		if (has_sysupgrade) {
+			o = ss.option(form.Button, 'sysupgrade', _('Image'));
+			o.inputstyle = 'action important';
+			o.inputtitle = _('Flash image...');
+			o.onclick = L.bind(this.handleSysupgrade, this, storage_size, has_rootfs_data);
+		}
 
 		o = s.option(form.SectionValue, 'actions', form.NamedSection, 'actions', 'actions', _('Restore'), _('To restore configuration files, you can upload a previously generated backup archive here. To reset the firmware to its initial state, click "Perform reset" (only possible with squashfs images).'));
 		ss = o.subsection;
@@ -433,21 +446,6 @@ return view.extend({
 			o.inputstyle = 'action important';
 			o.inputtitle = _('Save mtdblock');
 			o.onclick = L.bind(this.handleBlock, this, hostname);
-		}
-
-
-		o = s.option(form.SectionValue, 'actions', form.NamedSection, 'actions', 'actions', _('Flash new firmware image'),
-			has_sysupgrade
-				? _('Upload a sysupgrade-compatible image here to replace the running firmware.')
-				: _('Sorry, there is no sysupgrade support present; a new firmware image must be flashed manually. Please refer to the wiki for device specific install instructions.'));
-
-		ss = o.subsection;
-
-		if (has_sysupgrade) {
-			o = ss.option(form.Button, 'sysupgrade', _('Image'));
-			o.inputstyle = 'action important';
-			o.inputtitle = _('Flash image...');
-			o.onclick = L.bind(this.handleSysupgrade, this, storage_size, has_rootfs_data);
 		}
 
 
