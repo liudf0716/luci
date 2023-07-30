@@ -127,9 +127,10 @@ return view.extend({
 			'%s <br /> %s'.format(_('ProxyType specifies the type of this proxy. Valid values include "tcp", "http", "https".'),
 			_('By default, this value is "tcp".')));
 		o.value('tcp');
-		o.value('socks5');
 		o.value('http');
 		o.value('https');
+		o.value('socks5');
+		o.value('mstsc');
 		o.modalonly = true;
 
 		o = s.taboption('general', form.Value, 'local_ip', _('Local IP'),  
@@ -145,6 +146,7 @@ return view.extend({
 		o.depends.apply(o, [{type: 'tcp'}]);
 		o.depends.apply(o, [{type: 'http'}]);
 		o.depends.apply(o, [{type: 'https'}]);
+		o.depends.apply(o, [{type: 'mstsc'}]);
 		o.modalonly = true;
 		o.datatype = 'port';
 
@@ -153,6 +155,7 @@ return view.extend({
 			_('If remote_port is 0, frps will assign a random port for you'));
 		o.depends.apply(o, [{type: 'tcp'}]); 
 		o.depends.apply(o, [{type: 'socks5'}]);
+		o.depends.apply(o, [{type: 'mstsc'}]);
 		o.optional = true;
 		o.modalonly = true;
 		o.datatype = 'port';
