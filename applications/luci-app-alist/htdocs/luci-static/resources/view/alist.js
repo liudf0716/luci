@@ -3,6 +3,8 @@
 'require ui';
 'require form';
 'require rpc';
+'require uci'
+'require fs';
 'require tools.widgets as widgets';
 
 var callServiceList = rpc.declare({
@@ -36,7 +38,13 @@ function renderStatus(isRunning) {
 }
 
 return view.extend({
-	render: function() {
+	load: function() {
+		return Promise.all([
+			L.resolveDefault(fs.exec('/usr/bin/alist', ['version']), null),
+		]);
+	},
+
+	render: function(stats) {
 		var m, s, o;
 
 		m = new form.Map('alist', _('Alist'));
@@ -66,15 +74,35 @@ return view.extend({
 		// disabled
 		o = s.option(form.Flag, 'enabled', _('Enable'), _('Enable alist service'));
 		o.rmempty = false;
-		// auth_server_port
-		o = s.option(form.Value, 'port', _('Port'), _('The port of alist server'));
-		o.rmempty = false;
-		o.datatype = 'port';
-        // tmp_dir
-        o = s.option(form.Value, 'temp_dir', _('Tmp Dir'), _('The tmp dir of alist server'));
-        o.rmempty = false;
-        o.datatype = 'string';
 		
+		o = s.option(form.DummyValue, 'alist_info', _('Alist Information'), _('Alist Information'));
+
+		o.render = L.bind(function(view, section_id) {
+			var table = E('table', { 'class': 'table' }, [
+				E('tr', { 'class': 'tr table-titles' }, [
+					E('th', { 'class': 'th' }, _('Information')),
+					E('th', { 'class': 'th' }, _('Value')),
+				])
+			]);
+			// get alist listen port
+			var port = uci.get('alist', section_id, 'port');
+			// get router ip
+			var ip = window.location.hostname;
+			if (port == null || port == '') {
+				port = '5244';
+			}
+			var url = "http://" + ip + ":" + port;
+
+			var rows = [];
+			rows.push([ _('Version'), '3.18.0' ]);
+			rows.push([ _('Default User'), 'admin' ]);
+			rows.push([ _('Default Password'), 'chatgptwrt' ]);
+			rows.push([ _('Visit Url'), url ]);
+
+			cbi_update_table(table, rows, E('em', _('Unable to obtain alist information')));
+
+			return E([], [ E('h3', _('Alist Information')), table ]);
+		}, o, this);
 
 		return m.render();
 	}
