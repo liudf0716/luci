@@ -12,6 +12,13 @@ var callServiceList = rpc.declare({
 	expect: { '': {} }
 });
 
+var callInstaLoader = rpc.declare({
+	object: 'luci',
+	method: 'callInstaLoader',
+	params: ['action', 'param', 'name'],
+	expect: { result : "OK" }
+});
+
 function getServiceStatus() {
 	return L.resolveDefault(callServiceList('xfrpc'), {}).then(function (res) {
 		var isRunning = false;
@@ -36,6 +43,12 @@ function renderStatus(isRunning) {
 }
 
 return view.extend({
+	handExecute: function(s, ev) {
+		// get plugin name and action 
+		
+		console.log(s);
+	}, 
+
 	render: function() {
 		var m, s, o;
 
@@ -173,6 +186,78 @@ return view.extend({
 		o.optional = true;
 		o.modalonly = true;
 
+		// xfrpc plugin
+		s = m.section(form.GridSection, 'plugin', _('Plugin Settings'));
+		s.addremove = true;
+		s.filter = function(s) { return s !== 'common'; };
+		s.renderSectionAdd = function(extra_class) {
+			var el = form.GridSection.prototype.renderSectionAdd.apply(this, arguments),
+				nameEl = el.querySelector('.cbi-section-create-name');
+			ui.addValidator(nameEl, 'uciname', true, function(v) {
+				if (v === 'common') return _('Name can not be "common"');
+				return true;
+			}, 'blur', 'keyup');
+			return el;
+		}
+
+		o = s.option(form.ListValue, 'plugin_name', _('Plugin Name'));
+		o.value('instaloader', _('instagram video downloader'));
+		o.value('youtube-dl', _('youtube video downloader'));
+		o = s.option(form.ListValue, 'plugin_action', _('Plugin Action'));
+		o.value('download', _('start download video'));
+		o.value('stop', _('stop download video'));
+		o = s.option(form.Value, 'plugin_param', _('Plugin Param'));
+		o.placeholder = _('please input profile or video url to download');
+		o = s.option(form.Value, 'remote_port', _('Remote port of plugin'));
+		o.placeholder = _('please input remote port');
+		o.optional = true;
+		o.datatype = 'port';
+		o.modalonly = true;
+		o = s.option(form.Button, 'plugin_execute', _('Execute'));
+		o.modalonly = false;
+		o.editable = true;
+		o.inputtitle = _('Execute');
+		o.inputstyle = 'apply';
+		o.onclick = function (ev) {
+			var selectedRow = ev.target.parentElement.parentElement.parentElement.parentElement;
+			var name = selectedRow.getAttribute('data-section-id');
+			var pluginName = selectedRow.querySelector('td:nth-child(1)').innerText;
+			var pluginAction = selectedRow.querySelector('td:nth-child(2)').innerText;
+			var pluginParam = selectedRow.querySelector('td:nth-child(3)').innerText;
+			console.log(name + " " + pluginName + " " + pluginAction + " " + pluginParam);
+			if (pluginName == "instaloader") {
+				if (pluginAction == "download") {
+					if (pluginParam == "") {
+						alert("please input profile url to download");
+					} else {
+						callInstaLoader('download', pluginParam, name).then(function (res) {
+							// parse json res
+							var jsonRes = JSON.parse(res);
+							if (jsonRes["status"] == "ok") {
+								alert("start download video");
+							} else {
+								alert("download video failed");
+							}
+						});
+					}
+				} else if (pluginAction == "stop") {
+					callInstaLoader('stop', '', name).then(function (res) {
+						var jsonRes = JSON.parse(res);
+						if (jsonRes["status"] == "ok") {
+							alert("stop download video");
+						} else {
+							alert("stop download video failed");
+						}
+					});
+				}
+			} else if (pluginName == "youtube-dl") {
+				alert("not support youtube-dl plugin");
+			} else {
+				alert("not support plugin");
+			}
+		}
+
+		// add button
 		return m.render();
 	}
 });
