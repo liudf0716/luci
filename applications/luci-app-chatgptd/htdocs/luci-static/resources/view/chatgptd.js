@@ -117,6 +117,14 @@ return view.extend({
 					E('img', { src: "/luci-static/resources/view/alipay.png", width: "200", height: "200" }, [
 						_('5. 鼓励我们继续开发'),
 					]),
+					E('br'),
+					E('a', { href: "https://colab.research.google.com/", target: "_blank" }, [
+						_('6. 点击本链接访问谷歌colab'),
+					]),
+					E('br'),
+					E('a', { href: "https://dev.azure.com/liudf0716/chatgpt-tunnel/_build?definitionId=2&_a=summary", target: "_blank" }, [
+						_('7. 点击本链接访问chatgpt-tunnel源码'),
+					]),
 				])
 			);
 		}
