@@ -19,6 +19,7 @@ var callInstaLoader = rpc.declare({
 	expect: { result : "OK" }
 });
 
+
 function getServiceStatus() {
 	return L.resolveDefault(callServiceList('xfrpc'), {}).then(function (res) {
 		var isRunning = false;
@@ -202,7 +203,7 @@ return view.extend({
 
 		o = s.option(form.ListValue, 'plugin_name', _('Plugin Name'));
 		o.value('instaloader', _('instagram video downloader'));
-		o.value('youtube-dl', _('youtube video downloader'));
+		o.value('youtubedl', _('youtube video downloader'));
 		o = s.option(form.ListValue, 'plugin_action', _('Plugin Action'));
 		o.value('download', _('start download video'));
 		o.value('stop', _('stop download video'));
@@ -250,8 +251,21 @@ return view.extend({
 						}
 					});
 				}
-			} else if (pluginName == "youtube-dl") {
-				alert("not support youtube-dl plugin");
+			} else if (pluginName == "youtubedl") {
+				if (pluginAction == "download") {
+					if (pluginParam == "") {
+						alert("please input video url to download");
+					} else {
+						callInstaLoader('download', pluginParam, name).then(function (res) {
+							var jsonRes = JSON.parse(res);
+							if (jsonRes["status"] == "ok") {
+								alert("start download video");
+							} else {
+								alert("download video failed");
+							}
+						});
+					}
+				}
 			} else {
 				alert("not support plugin");
 			}
