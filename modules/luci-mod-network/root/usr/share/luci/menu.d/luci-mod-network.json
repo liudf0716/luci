@@ -58,20 +58,6 @@
 		}
 	},
 
-	"admin/network/dhcp": {
-		"title": "DHCP and DNS",
-		"order": 40,
-		"action": {
-			"type": "view",
-			"path": "network/dhcp"
-		},
-		"depends": {
-			"acl": [ "luci-mod-network-dhcp" ],
-			"fs": { "/usr/sbin/dnsmasq": "executable" },
-			"uci": { "dhcp": true }
-		}
-	},
-
 	"admin/network/diagnostics": {
 		"title": "Diagnostics",
 		"order": 50,
