@@ -39,10 +39,22 @@
 		"order": 10,
 		"action": {
 			"type": "view",
-			"path": "network/interfaces"
+			"path": "network/interfaces_x"
 		},
 		"depends": {
 			"acl": [ "luci-mod-network-config" ]
+		}
+	},
+
+	"admin/network/dhcp": {
+		"title": "DHCP",
+		"order": 20,
+		"action": {
+			"type": "view",
+			"path": "network/dhcp_x"
+		},
+		"depends": {
+			"acl": [ "luci-mod-network-dhcp" ]
 		}
 	},
 
