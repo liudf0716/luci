@@ -67,27 +67,33 @@ return view.extend({
 		// disabled
 		o = s.option(form.Flag, 'enabled', _('Enable'), _('Enable apfree-wifidog service'));
 		o.rmempty = false;
-		// gateway_interface
-		o = s.option(form.Value, 'gateway_interface', _('Gateway Interface'), _('The interface that the gateway will listen on'));
-		o.rmempty = false;
 		// gateway_id
 		o = s.option(form.Value, 'gateway_id', _('Gateway ID'), _('The ID of the gateway'));
 		o.rmempty = false;
 		o.datatype = 'string';
 		// channel_path
-		o = s.option(form.Value, 'channel_path', _('Channel'), _('The channel of the gateway'));
+		o = s.option(form.Value, 'channel_path', _('Channel Path'),
+			 _('The channel path of the gateway'));
 		o.datatype = 'string';
 		// auth_server_hostname
-		o = s.option(form.Value, 'auth_server_hostname', _('Auth Server Hostname'), _('The hostname of the authentication server'));
+		o = s.option(form.Value, 'auth_server_hostname', _('Auth Server Hostname'), 
+			_('The hostname of the authentication server'));
 		o.rmempty = false;
 		o.datatype = 'host';
 		// auth_server_port
-		o = s.option(form.Value, 'auth_server_port', _('Auth Server Port'), _('The port of the authentication server'));
+		o = s.option(form.Value, 'auth_server_port', _('Auth Server Port'), 
+			_('The port of the authentication server'));
 		o.rmempty = false;
 		o.datatype = 'port';
 		// auth_server_path
-		o = s.option(form.Value, 'auth_server_path', _('Auth Server Uri Path'), _('The Uri path of the authentication server'));
+		o = s.option(form.Value, 'auth_server_path', _('Auth Server URI Path'), 
+			_('The URI path of the authentication server'));
 		o.rmempty = false;
+		o.datatype = 'string';
+		// trusted domains
+		o = s.option(form.Value, 'trusted_domains', _('Trusted Domains'), 
+			_('The trusted domains of the gateway, for example: "www.baidu.com,www.qq.com,...".'));
+		o.rmempty = true;
 		o.datatype = 'string';
 
 		return m.render();
