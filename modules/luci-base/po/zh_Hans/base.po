@@ -10084,3 +10084,6 @@ msgstr "是"
 #: modules/luci-compat/luasrc/view/cbi/delegator.htm:20
 msgid "« Back"
 msgstr "« 后退"
+
+msgid "Network bypass interface configuration."
+msgstr "旁路网关接口配置。"

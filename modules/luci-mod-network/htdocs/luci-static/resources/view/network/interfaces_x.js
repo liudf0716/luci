@@ -12,9 +12,9 @@ return view.extend({
         var m, s, o;
 
         m = new form.Map('network', _('Interfaces'));
-        m.description = _('Network interface configuration');
+        m.description = _('Network bypass interface configuration.');
 
-        s = m.section(form.NamedSection, 'lan', 'interface', _('LAN configuration'));
+        s = m.section(form.NamedSection, 'lan', 'interface', _('General Settings'));
         
         o = s.option(form.Value, 'ipaddr', _('IPv4 address'));
         o.datatype = 'ip4addr("nomask")';
@@ -22,7 +22,10 @@ return view.extend({
 
         o = s.option(form.Value, 'netmask', _('IPv4 netmask'));
         o.datatype = 'ip4addr';
-        o.rmempty = false;
+		o.rmempty = false;
+		o.value("255.255.255.0");
+		o.value("255.255.0.0");
+		o.value("255.0.0.0");
 
         o = s.option(form.Value, 'gateway', _('IPv4 gateway'));
         o.datatype = 'ip4addr("nomask")';
