@@ -3204,6 +3204,9 @@ msgstr "网关地址无效"
 msgid "General Settings"
 msgstr "常规设置"
 
+msgid "DHCP Server General Settings"
+msgstr "DHCP 服务器常规设置"
+
 #: modules/luci-mod-network/htdocs/luci-static/resources/view/network/interfaces.js:632
 #: modules/luci-mod-network/htdocs/luci-static/resources/view/network/interfaces.js:1561
 #: modules/luci-mod-network/htdocs/luci-static/resources/view/network/wireless.js:924
