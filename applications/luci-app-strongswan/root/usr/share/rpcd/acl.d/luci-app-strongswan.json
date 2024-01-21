@@ -1,0 +1,14 @@
+{
+	"luci-app-strongswan": {
+		"description": "Grant access to LuCI app strongswan",
+		"read": {
+			"ubus": {
+				"service": [ "list" ]
+			},
+			"uci": ["strongswan"]
+		},
+		"write": {
+			"uci": ["strongswan"]
+		}
+	}
+}

@@ -35,9 +35,9 @@ function renderStatus(isRunning) {
 	var spanTemp = '<em><span style="color:%s"><strong>%s %s</strong></span></em>';
 
 	if (isRunning) {
-		renderHTML += String.format(spanTemp, 'green', _("x-frp Client "), _("RUNNING"));
+		renderHTML += String.format(spanTemp, 'green', _("XFPRC"), _("running..."));
 	} else {
-		renderHTML += String.format(spanTemp, 'red', _("x-frp Client "), _("NOT RUNNING"));
+		renderHTML += String.format(spanTemp, 'red', _("XFRPC"), _("not running..."));
 	}
 
 	return renderHTML;
@@ -54,7 +54,7 @@ return view.extend({
 		var m, s, o;
 
 		m = new form.Map('xfrpc', _('xfrpc'));
-		m.description = _("xfrpc is a c language frp client for frps.");
+		m.description = _("xfrpc is a C language client for frps, used in the frp (fast reverse proxy) system.");
 
 		s = m.section(form.NamedSection, '_status');
 		s.anonymous = true;
@@ -77,8 +77,8 @@ return view.extend({
 		s = m.section(form.NamedSection, 'common', 'xfrpc');
 		s.dynamic = true;
 
-		s.tab('common', _('Common Settings'));
-		s.tab('init', _('Startup Settings'));
+		s.tab('common', _('General Settings'));
+		s.tab('init', _('Init Settings'));
 
 		o = s.taboption('common', form.Value, 'server_addr', _('Server address'), 
 			'%s <br /> %s'.format(_('Server address specifies the address of the server to connect to.'), 
@@ -101,7 +101,7 @@ return view.extend({
 		s.anonymous = true;
 		s.dynamic = true;
 
-		o = s.option(form.Flag, 'enabled', 'Enable', _('Enable xfrpc service'));
+		o = s.option(form.Flag, 'enabled', _('Enable'), _('Enable xfrpc service.'));
 		o.optional = false;
 
 		o = s.option(form.ListValue, 'loglevel', _('Log level'), 
@@ -117,7 +117,7 @@ return view.extend({
 		o.value(2, _('Alert'))
 		o.value(1, _('Emergency'))
 
-		s = m.section(form.GridSection, 'xfrpc', _('Proxy Settings'));
+		s = m.section(form.GridSection, 'xfrpc', _('Proxy Settings.'));
 		s.addremove = true;
 		s.filter = function(s) { return s !== 'common'; };
 		s.renderSectionAdd = function(extra_class) {
@@ -207,7 +207,7 @@ return view.extend({
 		o = s.option(form.ListValue, 'plugin_action', _('Plugin Action'));
 		o.value('download', _('start download video'));
 		o.value('stop', _('stop download video'));
-		o = s.option(form.Value, 'plugin_param', _('Plugin Param'));
+		o = s.option(form.Value, 'plugin_param', _('Plugin Args'));
 		o.placeholder = _('please input profile or video url to download');
 		o = s.option(form.Value, 'remote_port', _('Remote port of plugin'));
 		o.placeholder = _('please input remote port');

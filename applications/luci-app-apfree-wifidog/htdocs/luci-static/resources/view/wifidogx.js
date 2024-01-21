@@ -40,7 +40,7 @@ return view.extend({
 		var m, s, o;
 
 		m = new form.Map('wifidogx', _('ApFree-WiFiDog'));
-		m.description = _("apfree-wifiodg is a Stable & Secure captive portal solution.");
+		m.description = _("apfree-wifidog offers a stable and secure captive portal solution.");
 
 		// add kcptun-client status section and option 
 		s = m.section(form.NamedSection, '_status');
@@ -61,33 +61,33 @@ return view.extend({
 			);
 		}
 
-		s = m.section(form.TypedSection, "wifidogx", _("ApFree-WiFiDog"), _("ApFree-WiFiDog Settings"));
+		s = m.section(form.TypedSection, "wifidogx", _("General Setup"));
 		s.anonymous = true;
 		// add client settings
 		// disabled
-		o = s.option(form.Flag, 'enabled', _('Enable'), _('Enable apfree-wifidog service'));
+		o = s.option(form.Flag, 'enabled', _('Enable'), _('Enable apfree-wifidog service.'));
 		o.rmempty = false;
 		// gateway_id
-		o = s.option(form.Value, 'gateway_id', _('Gateway ID'), _('The ID of the gateway'));
+		o = s.option(form.Value, 'gateway_id', _('Gateway ID'), _('The ID of the gateway.'));
 		o.rmempty = false;
 		o.datatype = 'string';
 		// channel_path
 		o = s.option(form.Value, 'channel_path', _('Channel Path'),
-			 _('The channel path of the gateway'));
+			 _('The channel path of the gateway.'));
 		o.datatype = 'string';
 		// auth_server_hostname
 		o = s.option(form.Value, 'auth_server_hostname', _('Auth Server Hostname'), 
-			_('The hostname of the authentication server'));
+			_('The domain or IP address of the authentication server.'));
 		o.rmempty = false;
 		o.datatype = 'host';
 		// auth_server_port
 		o = s.option(form.Value, 'auth_server_port', _('Auth Server Port'), 
-			_('The port of the authentication server'));
+			_('The port of the authentication server.'));
 		o.rmempty = false;
 		o.datatype = 'port';
 		// auth_server_path
-		o = s.option(form.Value, 'auth_server_path', _('Auth Server URI Path'), 
-			_('The URI path of the authentication server'));
+		o = s.option(form.Value, 'auth_server_path', _('Auth Server URI path'), 
+			_('The URI path of the authentication server.'));
 		o.rmempty = false;
 		o.datatype = 'string';
 		// trusted domains

@@ -1,0 +1,12 @@
+{
+	"admin/services/strongswan": {
+		"title": "strongswan",
+		"action": {
+			"type": "view",
+			"path": "strongswan"
+		},
+		"depends": {
+			"acl": [ "luci-app-strongswan" ]
+		}
+	}
+}
