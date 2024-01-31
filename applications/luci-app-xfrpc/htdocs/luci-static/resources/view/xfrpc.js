@@ -95,8 +95,7 @@ return view.extend({
 			sent to the server. The server must have a matching token for authorization to succeed.'), 
 			_('By default, this value is "".')));
 
-		o = s.taboption('init', form.SectionValue, 'init', form.TypedSection, 
-			'xfrp', _('Startup Settings'));
+		o = s.taboption('init', form.SectionValue, 'init', form.TypedSection, 'xfrp');
 		s = o.subsection;
 		s.anonymous = true;
 		s.dynamic = true;
