@@ -95,7 +95,12 @@ return view.extend({
 			_('The trusted domains of the gateway, for example: "www.baidu.com,www.qq.com,...".'));
 		o.rmempty = true;
 		o.datatype = 'string';
-
+		// trusted macs
+		o = s.option(form.Value, 'trusted_macs', _('Trusted MACs'), 
+			_('The trusted MAC addresses of the gateway, for example: "00:11:22:33:44:55,00:11:22:33:44:56,...".'));
+		o.rmempty = true;
+		o.datatype = 'string';
+		
 		return m.render();
 	}
 });

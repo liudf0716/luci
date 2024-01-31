@@ -10138,6 +10138,12 @@ msgstr "域名白名单"
 msgid "The trusted domains of the gateway, for example: \"www.baidu.com,www.qq.com,...\"."
 msgstr "域名白名单（多域名用逗号分隔），例如：\"www.baidu.com,www.qq.com,...\""
 
+msgid "Trusted MACs"
+msgstr "MAC 地址白名单"
+
+msgid "The trusted MAC addresses of the gateway, for example: \"00:11:22:33:44:55,66:77:88:99:00:11,...\"."
+msgstr "MAC 地址白名单（多 MAC 地址用逗号分隔），例如：\"00:11:22:33:44:55,66:77:88:99:00:11,...\""
+
 msgid "running..."
 msgstr "运行中"
 
