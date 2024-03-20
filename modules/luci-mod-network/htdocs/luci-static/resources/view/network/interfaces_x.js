@@ -16,11 +16,18 @@ return view.extend({
 
         s = m.section(form.NamedSection, 'lan', 'interface', _('General Settings'));
         
+        o = s.option(form.ListValue, 'proto', _('Protocol'));
+        o.value('static', 'Static address');
+        o.value('dhcp', 'DHCP client');
+
+
         o = s.option(form.Value, 'ipaddr', _('IPv4 address'));
+        o.depends.apply(o, ['proto', 'static']);
         o.datatype = 'ip4addr("nomask")';
         o.rmempty = false;
 
         o = s.option(form.Value, 'netmask', _('IPv4 netmask'));
+        o.depends.apply(o, ['proto', 'static']);
         o.datatype = 'ip4addr';
 		o.rmempty = false;
 		o.value("255.255.255.0");
@@ -28,10 +35,12 @@ return view.extend({
 		o.value("255.0.0.0");
 
         o = s.option(form.Value, 'gateway', _('IPv4 gateway'));
+        o.depends.apply(o, ['proto', 'static']);
         o.datatype = 'ip4addr("nomask")';
         o.rmempty = false;
 
         o = s.option(form.Value, 'broadcast', _('IPv4 broadcast'));
+        o.depends.apply(o, ['proto', 'static']);
         o.datatype = 'ip4addr("nomask")';
         o.rmempty = false;
 
