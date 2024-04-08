@@ -3,7 +3,8 @@
 		"description": "Grant access to LuCI app whispercpp",
 		"read": {
 			"ubus": {
-				"file": [ "exec", "read", "stat" ]
+				"file": [ "exec", "read", "stat" ],
+				"luci": [ "isFfmpegOrWhispercppRunning" ]
 			},
 			"file": {
 				"/usr/share/whispercpp/model/ggml-tiny.en-q5_0.bin": ["read"],
@@ -24,7 +25,8 @@
 				"/tmp/output.wav.srt": ["write"]
 			},
 			"ubus": {
-				"file": [ "exec", "remove", "write" ]
+				"file": [ "exec", "remove", "write" ],
+				"whispercpp": [ "whispercpp", "ffmpeg" ]
 			}
 		}
 	}

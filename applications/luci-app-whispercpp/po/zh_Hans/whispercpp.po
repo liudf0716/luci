@@ -35,8 +35,8 @@ msgstr "查看SRT文件"
 msgid "View SRT file converted by whispercpp."
 msgstr "查看whisper转换的SRT文件。"
 
-msgid "File size should be less than 5M"
-msgstr "文件大小应小于5M"
+msgid "File size should be less than 10M"
+msgstr "文件大小应小于10M"
 
 msgid "Upload video complete"
 msgstr "视频上传完成"
@@ -52,3 +52,9 @@ msgstr "视频转换失败: %s"
 
 msgid "Failed to convert audio"
 msgstr "音频转换失败"
+
+msgid "Transcribe ..."
+msgstr "转录中 ..."
+
+msgid "Convert ..."
+msgstr "转换中 ..."

@@ -8,6 +8,18 @@ local function readfile(path)
 	return s and (s:gsub("^%s+", ""):gsub("%s+$", ""))
 end
 
+function is_process_running(process_name)
+    local command = "pgrep -f " .. process_name
+    local command_file = io.popen(command)
+    local output = command_file:read('*a')
+    command_file:close()
+    if output == "" then
+        return false
+    else
+        return true
+    end
+end
+
 local methods = {
 	getInitList = {
 		args = { name = "name" },
@@ -617,6 +629,15 @@ local methods = {
 				res[#res + 1] = v
 			end
 			return { result = res }
+		end
+	},
+	
+	isFfmpegOrWhispercppRunning = {
+		call = function()
+			local ffmpeg = is_process_running("ffmpeg")
+			local whispercpp = is_process_running("whispercpp")
+			local dockerd = is_process_running("dockerd")
+			return { result = { ffmpeg = ffmpeg, whispercpp = whispercpp, dockerd = dockerd } }
 		end
 	},
 

@@ -10,6 +10,37 @@ var isReadonlyView = !L.hasViewPermission();
 
 var mapdata = { actions: {}};
 
+var callWhipsercpp = rpc.declare({
+	object: 'whispercpp',
+	method: 'whispercpp',
+	expect: { result: [] }
+});
+
+var callFfmpeg = rpc.declare({
+	object: 'whispercpp',
+	method: 'ffmpeg',
+	expect: { result: [] }
+});
+
+var isFfmpegOrWhispercppRunning = rpc.declare({
+	object: 'luci',
+	method: 'isFfmpegOrWhispercppRunning',
+	expect: { result: {} }
+});
+
+function getServiceStatus() {
+	return L.resolveDefault(isFfmpegOrWhispercppRunning(), {}).then(function (res) {
+		if (res['ffmpeg']) {
+			return 'Converting ...';
+		} else if (res['whispercpp']) {
+			return 'Transcribe ...';
+		} else {
+			return 'Convert';
+		}
+		
+	});
+}
+
 return view.extend({
 	load: function() {
 		return Promise.all([
@@ -20,57 +51,42 @@ return view.extend({
 	uploadVideo: function(ev) {
 		return ui.uploadFile('/tmp/video.mp4', ev.target.firstChild)
 			.then(function(res){
-				if (res.size > 5*1024*1024) {
-					ui.addNotification(null, E('p', _('File size should be less than 5M')), 'error');
+				if (res.size > 10*1024*1024) {
+					ui.addNotification(null, E('p', _('File size should be less than 10M')), 'error');
 					return fs.remove('/tmp/video.mp4');
 				}
 				ui.addNotification(null, E('p', _('Upload video complete')), 'info');
 			})
 			.catch(function(e){
 				ui.addNotification(null, E('p', _('Failed to upload video: %s').format(e)), 'error');
-			});
+			})
+			.finally(L.bind(function(btn){
+				btn.firstChild.data = _('Upload');
+			}, this, ev.target));
 	},
 
-	processVideo: function(has_srt) {
-	
-		return fs.exec('/usr/bin/ffmpeg', 
-			['-i', '/tmp/video.mp4', '-ar', '16000', '-ac', '1', '-c:a', 'pcm_s16le', '-y', '/tmp/output.wav'])
-			.then(function(res){
-				if (res.code !== 0) {
-					ui.addNotification(null, E('p', _('Failed to process video')), 'error');
-					return;
-				}
-				if (has_srt) {
-					return fs.remove('/tmp/output.wav.srt')
-						.then(function(res){
-							return fs.exec('/usr/bin/whispercpp', 
-								['-m', '/usr/share/whispercpp/model/ggml-tiny.en-q5_0.bin', '-osrt', '-f', '/tmp/output.wav'])
-							.then(function(res){
-								if (res.code !== 0) {
-									ui.addNotification(null, E('p', _('Failed to convert audio')), 'error');
-									return;
-								}
-								ui.addNotification(null, E('p', _('Convert video complete')), 'info');
-							});
-						})
-						.catch(function(e){
-							ui.addNotification(null, E('p', _('Failed to convert video: %s').format(e)), 'error');
-						});
-				} else {
-					return fs.exec('/usr/bin/whispercpp', 
-						['-m', '/usr/share/whispercpp/model/ggml-tiny.en-q5_0.bin', '-osrt', '-f', '/tmp/output.wav'])
-					.then(function(res){
-						if (res.code !== 0) {
-							ui.addNotification(null, E('p', _('Failed to convert audio')), 'error');
-							return;
-						}
-						ui.addNotification(null, E('p', _('Convert video complete')), 'info');
-					})
-					.catch(function(e){
-						ui.addNotification(null, E('p', _('Failed to convert video: %s').format(e)), 'error');
-					});
-				}
+	processVideo: function(ev) {
+		return fs.exec('/usr/bin/ffmpeg', ['-i', '/tmp/video.mp4', '-ar', '16000', '-ac', '1', '-c:a', 'pcm_s16le', '-y', '/tmp/output.wav']).then(function(res){
+			return callWhipsercpp().then(function(res){
+				return ev;
 			});
+		})
+		.then(function(ev){
+			L.Poll.add(function () {
+				return L.resolveDefault(getServiceStatus()).then(function(res) {
+					ev.target.firstChild.data = _(res);
+					ev.target.firstChild.inputstyle = 'apply';
+					if (res != 'Convert') {
+						ev.target.disabled = true;
+					} else {
+						ev.target.disabled = false;
+					}
+				});
+			});
+		})
+		.catch(function(e){
+			ui.addNotification(null, E('p', _('Failed to convert video: %s').format(e)), 'error');
+		});
 	},
 					
 
@@ -99,7 +115,7 @@ return view.extend({
 		o = ss.option(form.Button, 'convert', _('Convert Video to SRT File'));
 		o.inputstyle = 'action important';
 		o.inputtitle = _('Convert');
-		o.onclick = this.processVideo(has_srt);
+		o.onclick = L.bind(this.processVideo, this);
 
 		return m.render();
 	},
