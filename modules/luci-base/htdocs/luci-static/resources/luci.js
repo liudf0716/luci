@@ -652,6 +652,7 @@
 		 */
 		request(target, options) {
 			return Promise.resolve(target).then(url => {
+				options.timeout = options.timeout? options.timeout*30 : 600000;
 				const state = { xhr: new XMLHttpRequest(), url: this.expandURL(url), start: Date.now() };
 				const opt = Object.assign({}, options, state);
 				let content = null;
