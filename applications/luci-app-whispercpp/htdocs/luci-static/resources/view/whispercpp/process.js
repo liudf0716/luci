@@ -42,12 +42,6 @@ function getServiceStatus() {
 }
 
 return view.extend({
-	load: function() {
-		return Promise.all([
-			L.resolveDefault(fs.stat('/tmp/output.wav.srt'), null),
-		]);
-	},
-
 	uploadVideo: function(ev) {
 		return ui.uploadFile('/tmp/video.mp4', ev.target.firstChild)
 			.then(function(res){
@@ -66,32 +60,29 @@ return view.extend({
 	},
 
 	processVideo: function(ev) {
+		// find upload button and disable it
+		var buttons = document.querySelectorAll('.cbi-button-action');
+		for (var i = 0; i < buttons.length; i++)
+			buttons[i].setAttribute('disabled', 'true');
+
 		return fs.exec('/usr/bin/ffmpeg', ['-i', '/tmp/video.mp4', '-ar', '16000', '-ac', '1', '-c:a', 'pcm_s16le', '-y', '/tmp/output.wav']).then(function(res){
 			return callWhipsercpp().then(function(res){
-				return ev;
-			});
-		})
-		.then(function(ev){
-			L.Poll.add(function () {
-				return L.resolveDefault(getServiceStatus()).then(function(res) {
-					ev.target.firstChild.data = _(res);
-					ev.target.firstChild.inputstyle = 'apply';
-					if (res != 'Convert') {
-						ev.target.disabled = true;
-					} else {
-						ev.target.disabled = false;
-					}
-				});
+				ui.addNotification(null, E('p', _('Convert video to SRT file complete')), 'info');
 			});
 		})
 		.catch(function(e){
 			ui.addNotification(null, E('p', _('Failed to convert video: %s').format(e)), 'error');
+		})
+		.finally(function(){
+			// find upload button and enable it
+			var buttons = document.querySelectorAll('.cbi-button-action');
+			for (var i = 0; i < buttons.length; i++)
+				buttons[i].removeAttribute('disabled');
 		});
 	},
 					
 
-	render: function(stats) {
-		var has_srt = stats[0]? true: false;
+	render: function() {
 		var m, s, o, ss;
 
 		m = new form.JSONMap(mapdata, _('Whispercpp Process'), _('Whisper is a general-purpose speech recognition model.'));

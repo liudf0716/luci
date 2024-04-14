@@ -13,7 +13,7 @@ convertAudioToSubtitle() {
         kill -9 $whispercpp_pid
     fi
     input=$1
-    /usr/bin/whispercpp -m /usr/share/whispercpp/model/ggml-tiny.en-q5_0.bin -osrt -f "$input" &> /dev/null &
+    /usr/bin/whispercpp -m /usr/share/whispercpp/model/ggml-tiny.en-q5_0.bin -osrt -f "$input" 
 }
 
 handleRequest() {
