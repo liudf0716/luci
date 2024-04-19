@@ -5,7 +5,8 @@
 			"file": {
 				"/usr/sbin/swanmon version": [ "exec" ],
 				"/usr/sbin/swanmon stats": [ "exec" ],
-				"/usr/sbin/swanmon list-sas": [ "exec" ]
+				"/usr/sbin/swanmon list-sas": [ "exec" ],
+				"/var/swanctl/swanctl.conf": [ "read" ]
 			},
 			"uci": [ "ipsec" ]
 		},
