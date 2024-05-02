@@ -4,3 +4,6 @@
 [submodule "applications/luci-app-apfree-wifidog"]
 	path = applications/luci-app-apfree-wifidog
 	url = https://github.com/liudf0716/luci-app-apfree-wifidog.git
+[submodule "applications/luci-app-wrtbwmon"]
+	path = applications/luci-app-wrtbwmon
+	url = https://github.com/liudf0716/luci-app-wrtbwmon.git
