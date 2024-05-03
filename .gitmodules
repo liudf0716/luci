@@ -7,3 +7,6 @@
 [submodule "applications/luci-app-wrtbwmon"]
 	path = applications/luci-app-wrtbwmon
 	url = https://github.com/liudf0716/luci-app-wrtbwmon.git
+[submodule "applications/luci-app-xfrpc"]
+	path = applications/luci-app-xfrpc
+	url = https://github.com/liudf0716/luci-app-xfrpc.git
