@@ -88,3 +88,9 @@ msgstr "Trezirea gazdei a eșuat:"
 #: applications/luci-app-wol/htdocs/luci-static/resources/view/wol.js:44
 msgid "WoL program"
 msgstr "Program WoL"
+
+#~ msgid "Broadcast on all interfaces"
+#~ msgstr "Broadcast pe toate interfetele"
+
+#~ msgid "Starting WoL utility:"
+#~ msgstr "Pornire utilitar WoL:"

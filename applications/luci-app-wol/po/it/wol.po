@@ -86,3 +86,9 @@ msgstr "Il risveglio dell'host è fallito:"
 #: applications/luci-app-wol/htdocs/luci-static/resources/view/wol.js:44
 msgid "WoL program"
 msgstr "Programma WoL"
+
+#~ msgid "Broadcast on all interfaces"
+#~ msgstr "Broadcast su tutte le interfacce"
+
+#~ msgid "Starting WoL utility:"
+#~ msgstr "Avvia l'utility WoL:"
