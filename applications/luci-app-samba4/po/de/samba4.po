@@ -148,7 +148,7 @@ msgstr "Netzwerk-freigaben"
 
 #: applications/luci-app-samba4/htdocs/luci-static/resources/view/samba4.js:62
 msgid ""
-"On lower-end devices may increase speeds, by forceing synchronous I/O "
+"On lower-end devices may increase speeds, by forcing synchronous I/O "
 "instead of the default asynchronous."
 msgstr ""
 "Das Erzwingen von sychronous I/O (statt asynchronous I/O Default) kann auf "
@@ -198,3 +198,24 @@ msgstr "VFS-Objekte"
 #: applications/luci-app-samba4/htdocs/luci-static/resources/view/samba4.js:51
 msgid "Workgroup"
 msgstr "Arbeitsgruppe"
+
+#~ msgid ""
+#~ "Allow system users to reach their home directories via network shares"
+#~ msgstr ""
+#~ "Systembenutzer dürfen ihre Heimatverzeichnis über Netzwerkfreigaben "
+#~ "erreichen."
+
+#~ msgid "Hostname"
+#~ msgstr "Hostname"
+
+#~ msgid "Share home-directories"
+#~ msgstr "Heimatverzeichnisse freigeben"
+
+#~ msgid "Browseable"
+#~ msgstr "Suchbar"
+
+#~ msgid "Mask for new directories"
+#~ msgstr "Maske für neue Verzeichnisse"
+
+#~ msgid "Mask for new files"
+#~ msgstr "Maske für neue Dateien"

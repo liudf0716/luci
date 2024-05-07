@@ -6,8 +6,8 @@ msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2009-06-10 03:40+0200\n"
-"PO-Revision-Date: 2021-01-15 12:32+0000\n"
-"Last-Translator: akibou <jinwenxin1997@icloud.com>\n"
+"PO-Revision-Date: 2024-01-05 04:02+0000\n"
+"Last-Translator: Yuan Law <traverslombard@outlook.com>\n"
 "Language-Team: Chinese (Traditional) <https://hosted.weblate.org/projects/"
 "openwrt/luciapplicationssamba4/zh_Hant/>\n"
 "Language: zh_Hant\n"
@@ -15,7 +15,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: Weblate 4.5-dev\n"
+"X-Generator: Weblate 5.4-dev\n"
 
 #: applications/luci-app-samba4/htdocs/luci-static/resources/view/samba4.js:120
 msgid "Allow guests"
@@ -141,7 +141,7 @@ msgstr "網路分享"
 
 #: applications/luci-app-samba4/htdocs/luci-static/resources/view/samba4.js:62
 msgid ""
-"On lower-end devices may increase speeds, by forceing synchronous I/O "
+"On lower-end devices may increase speeds, by forcing synchronous I/O "
 "instead of the default asynchronous."
 msgstr "在低端裝置上，可以透過強制使用同步 I / O 而不是預設的異步來提高速度。"
 
@@ -184,3 +184,25 @@ msgstr "VFS 物件"
 #: applications/luci-app-samba4/htdocs/luci-static/resources/view/samba4.js:51
 msgid "Workgroup"
 msgstr "工作群組"
+
+#~ msgid ""
+#~ "Allow system users to reach their home directories via network shares"
+#~ msgstr "允許系統使用者通過網路共享訪問他們的家目錄"
+
+#~ msgid "Hostname"
+#~ msgstr "主機名"
+
+#~ msgid "Share home-directories"
+#~ msgstr "共享家目錄"
+
+#~ msgid "Browseable"
+#~ msgstr "可瀏覽"
+
+#~ msgid "Mask for new directories"
+#~ msgstr "新目錄權限掩碼"
+
+#~ msgid "Mask for new files"
+#~ msgstr "新檔案權限掩碼"
+
+#~ msgid "Physical Path"
+#~ msgstr "物理路徑"

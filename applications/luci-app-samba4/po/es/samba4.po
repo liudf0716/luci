@@ -3,8 +3,8 @@ msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2009-06-10 03:41+0200\n"
-"PO-Revision-Date: 2020-08-07 03:34+0000\n"
-"Last-Translator: Álvaro Fernández Rojas <noltari@gmail.com>\n"
+"PO-Revision-Date: 2024-03-06 09:48+0000\n"
+"Last-Translator: Franco Castillo <castillofrancodamian@gmail.com>\n"
 "Language-Team: Spanish <https://hosted.weblate.org/projects/openwrt/"
 "luciapplicationssamba4/es/>\n"
 "Language: es\n"
@@ -12,7 +12,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 4.2-dev\n"
+"X-Generator: Weblate 5.5-dev\n"
 
 #: applications/luci-app-samba4/htdocs/luci-static/resources/view/samba4.js:120
 msgid "Allow guests"
@@ -111,7 +111,7 @@ msgstr "Forzar E/S sincrónica"
 
 #: applications/luci-app-samba4/htdocs/luci-static/resources/view/samba4.js:31
 msgid "General Settings"
-msgstr "Configuración general"
+msgstr "Ajustes generales"
 
 #: applications/luci-app-samba4/root/usr/share/rpcd/acl.d/luci-app-samba4.json:3
 msgid "Grant access to LuCI app samba4"
@@ -144,7 +144,7 @@ msgstr "Recursos compartidos de red"
 
 #: applications/luci-app-samba4/htdocs/luci-static/resources/view/samba4.js:62
 msgid ""
-"On lower-end devices may increase speeds, by forceing synchronous I/O "
+"On lower-end devices may increase speeds, by forcing synchronous I/O "
 "instead of the default asynchronous."
 msgstr ""
 "En dispositivos de gama baja, puede aumentar la velocidad al forzar E/ S "
@@ -193,3 +193,30 @@ msgstr "Objetos vfs"
 #: applications/luci-app-samba4/htdocs/luci-static/resources/view/samba4.js:51
 msgid "Workgroup"
 msgstr "Grupo de trabajo"
+
+#~ msgid ""
+#~ "Allow system users to reach their home directories via network shares"
+#~ msgstr ""
+#~ "Permitir a los usuarios acceder a sus carpetas personales a través de "
+#~ "Samba4"
+
+#~ msgid "Hostname"
+#~ msgstr "Nombre de host"
+
+#~ msgid "Share home-directories"
+#~ msgstr "Compartir carpetas personales"
+
+#~ msgid "Mask for new directories"
+#~ msgstr "Máscara para directorios nuevos"
+
+#~ msgid "Mask for new files"
+#~ msgstr "Máscara para archivos nuevos"
+
+#~ msgid "Shared Directory"
+#~ msgstr "Directorio compatido"
+
+#~ msgid "Physical Path"
+#~ msgstr "Ruta Física"
+
+#~ msgid "optional"
+#~ msgstr "opcional"
