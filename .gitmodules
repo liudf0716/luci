@@ -10,3 +10,6 @@
 [submodule "applications/luci-app-xfrpc"]
 	path = applications/luci-app-xfrpc
 	url = https://github.com/liudf0716/luci-app-xfrpc.git
+[submodule "applications/luci-app-whispercpp"]
+	path = applications/luci-app-whispercpp
+	url = https://github.com/liudf0716/luci-app-whispercpp.git
