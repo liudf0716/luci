@@ -13,3 +13,6 @@
 [submodule "applications/luci-app-whispercpp"]
 	path = applications/luci-app-whispercpp
 	url = https://github.com/liudf0716/luci-app-whispercpp.git
+[submodule "applications/luci-app-ss-redir"]
+	path = applications/luci-app-ss-redir
+	url = https://github.com/liudf0716/luci-app-ss-redir.git
