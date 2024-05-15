@@ -315,3 +315,21 @@ msgstr "配置文件"
 
 msgid "View the current strongSwan configuration file."
 msgstr "查看当前 strongSwan 配置文件。"
+
+msgid "Zone"
+msgstr "区域"
+
+msgid "Firewall zone that has to match the defined firewall zone"
+msgstr "必须与定义的防火墙区域匹配的防火墙区域"
+
+msgid "Listening Interfaces"
+msgstr "监听接口"
+
+msgid "Interfaces that accept VPN traffic"
+msgstr "接受 VPN 流量的接口"
+
+msgid "Debug Level"
+msgstr "调试级别"
+
+msgid "Trace level: 0 is least verbose, 4 is most"
+msgstr "跟踪级别：0 是最不详细的，4 是最详细的"
