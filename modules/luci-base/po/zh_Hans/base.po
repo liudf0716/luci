@@ -10087,3 +10087,9 @@ msgstr "« 后退"
 
 msgid "Network bypass interface configuration."
 msgstr "旁路网关接口配置"
+
+msgid "if you have any problem, please click to view the project on GitHub : "
+msgstr "如果您有任何问题，请点击查看 GitHub 上的项目并提交issue："
+
+msgid "if you have any problem, please click to view the luci ui project on GitHub : "
+msgstr "如果您有任何问题，请点击查看 GitHub 上的 luci ui 项目并提交issue："
