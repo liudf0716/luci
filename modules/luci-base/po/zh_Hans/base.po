@@ -12932,6 +12932,43 @@ msgstr "« 后退"
 #~ "rt_tables 中声明的符号别名。特殊别名 local(255)、main(254) 和 "
 #~ "default(253) 也有效"
 
+#~ msgid "Ignore {etc_hosts}"
+#~ msgstr "忽略 {etc_hosts}"
+
+#~ msgid "Defines a specific MTU for this route"
+#~ msgstr "为此路由定义一个特定的 MTU"
+
+#~ msgid "Specifies the destination subnet to match (CIDR notation)"
+#~ msgstr "指定要匹配的目标子网（CIDR 符号）"
+
+#~ msgid "Specifies the incoming logical interface name"
+#~ msgstr "输入传入逻辑接口名称"
+
+#~ msgid "Specifies the ordering of the IP rules"
+#~ msgstr "指定 IP 规则的顺序"
+
+#~ msgid "Specifies the outgoing logical interface name"
+#~ msgstr "指定传出逻辑接口名"
+
+#~ msgid "Specifies the route metric to use"
+#~ msgstr "指定要使用的路由度量"
+
+#~ msgid "Specifies the source subnet to match (CIDR notation)"
+#~ msgstr "指定要匹配的源子网（CIDR符号）"
+
+#~ msgid ""
+#~ "The rule target is a jump to another rule specified by its priority value"
+#~ msgstr "规则目标是跳转到由其优先级值指定的另一条规则"
+
+#~ msgid ""
+#~ "The rule target is a table lookup ID: a numeric table index ranging from "
+#~ "0 to 65535 or symbol alias declared in /etc/iproute2/rt_tables. Special "
+#~ "aliases local (255), main (254) and default (253) are also valid"
+#~ msgstr ""
+#~ "规则目标是一个表查找 ID：从 0 到 65535 的数字表索引或在 /etc/iproute2/"
+#~ "rt_tables 中声明的符号别名。特殊别名 local(255)、main(254) 和 "
+#~ "default(253) 也有效"
+
 #~ msgid "Required. Underlying interface."
 #~ msgstr "必需。底层接口。"
 
@@ -14451,3 +14488,13 @@ msgstr "« 后退"
 
 #~ msgid "IPv6 WAN Status"
 #~ msgstr "IPv6 WAN 状态"
+
+msgid "Network bypass interface configuration."
+msgstr "旁路网关接口配置"
+
+msgid "if you have any problem, please click to view the project on GitHub : "
+msgstr "如果您有任何问题，请点击查看 GitHub 上的项目并提交issue："
+
+msgid "if you have any problem, please click to view the luci ui project on GitHub : "
+msgstr "如果您有任何问题，请点击查看 GitHub 上的 luci ui 项目并提交issue："
+
