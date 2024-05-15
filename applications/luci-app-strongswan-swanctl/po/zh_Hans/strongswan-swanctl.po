@@ -265,8 +265,11 @@ msgstr "标有 * 的算法被认为是不安全的"
 msgid "Hash Algorithm"
 msgstr "哈希算法"
 
+msgid "ESP Proposal"
+msgstr "ESP 提议"
+
 msgid "Diffie-Hellman Group"
-msgstr "Diffie-Hellman 群"
+msgstr "Diffie-Hellman 组"
 
 msgid "PRF Algorithm"
 msgstr "PRF 算法"
