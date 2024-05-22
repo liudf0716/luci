@@ -1,18 +1,21 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2023-10-06 08:29+0000\n"
-"Last-Translator: Norbert Szentner <upd6la1j@duck.com>\n"
-"Language-Team: Hungarian <https://hosted.weblate.org/projects/openwrt/"
-"luciapplicationsbanip/hu/>\n"
-"Language: hu\n"
+"Project-Id-Version: PACKAGE VERSION\n"
+"PO-Revision-Date: 2024-04-30 03:55+0000\n"
+"Last-Translator: Džiugas J <dziugas1959@hotmail.com>\n"
+"Language-Team: Lithuanian <https://hosted.weblate.org/projects/openwrt/"
+"luciapplicationsbanip/lt/>\n"
+"Language: lt\n"
+"MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.1-dev\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && ("
+"n%100<10 || n%100>=20) ? 1 : 2);\n"
+"X-Generator: Weblate 5.5.2\n"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/setreport.js:78
 msgid "-- Set Selection --"
-msgstr ""
+msgstr "-- Nustatyti pasirinkimą --"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:328
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:350
@@ -43,11 +46,11 @@ msgstr ""
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:715
 msgid "ASNs"
-msgstr "AS számok"
+msgstr "Autonominės sistemos („ASNs“)"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:181
 msgid "Active Devices"
-msgstr "Aktív eszközök"
+msgstr "Aktyvūs įrenginiai"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:177
 msgid "Active Feeds"
@@ -62,9 +65,8 @@ msgid "Additional trigger delay in seconds during interface reload and boot."
 msgstr ""
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:247
-#, fuzzy
 msgid "Advanced Settings"
-msgstr "Haladó Beállítások"
+msgstr "Pažangūs nustatymai"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:423
 msgid "Allow Protocol/Ports"
@@ -72,7 +74,7 @@ msgstr ""
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:427
 msgid "Allow VLAN Forwards"
-msgstr ""
+msgstr "Leisti „VLAN“ persiuntimus"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:724
 msgid "Allowlist Feed URLs"
@@ -80,7 +82,7 @@ msgstr ""
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:788
 msgid "Allowlist Only"
-msgstr ""
+msgstr "Tik leidžiamas sąrašas"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/allowlist.js:19
 msgid ""
@@ -96,11 +98,11 @@ msgstr ""
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:427
 msgid "Always allow certain VLAN forwards."
-msgstr ""
+msgstr "Visada leisti kai kuriuos „VLAN“ persiuntimus."
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:433
 msgid "Always block certain VLAN forwards."
-msgstr ""
+msgstr "Visada blokuoti kai kuriuos „VLAN“ persiuntimus."
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:758
 msgid "Auto Allow Uplink"
@@ -108,19 +110,19 @@ msgstr ""
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:754
 msgid "Auto Allowlist"
-msgstr ""
+msgstr "Automatiškas leidžiamas sąrašas"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:773
 msgid "Auto Block Subnet"
-msgstr ""
+msgstr "Automatiškai blokuoti potinklį/-ius"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:769
 msgid "Auto Blocklist"
-msgstr ""
+msgstr "Automatiškas blokavimo sąrašas"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:263
 msgid "Auto Detection"
-msgstr "Automatikus észlelés"
+msgstr "Automatinis patikrinimas"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:773
 msgid ""
@@ -142,11 +144,11 @@ msgstr ""
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:389
 msgid "Backup Directory"
-msgstr "Biztonsági mentés könyvtára"
+msgstr "Atsarginės kopijos katalogas/vietovė"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:385
 msgid "Base Directory"
-msgstr ""
+msgstr "Bazinis katalogas"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:385
 msgid "Base working directory while banIP processing."
@@ -154,11 +156,11 @@ msgstr ""
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:494
 msgid "Block Type"
-msgstr ""
+msgstr "Blokavimo tipas"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:433
 msgid "Block VLAN Forwards"
-msgstr ""
+msgstr "Blokuoti „VLAN“ persiuntimus"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:673
 msgid "Blocklist Feed"
@@ -166,7 +168,7 @@ msgstr ""
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:778
 msgid "Blocklist Set Expiry"
-msgstr ""
+msgstr "Nustatyti blokavimo sąrašo galiojimo laiką"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/blocklist.js:19
 msgid ""
@@ -182,12 +184,12 @@ msgstr ""
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:366
 msgid "CPU Cores"
-msgstr ""
+msgstr "Procesoriaus branduoliai"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/setreport.js:39
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/setreport.js:109
 msgid "Cancel"
-msgstr "Mégse"
+msgstr "Atšaukti"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:412
 msgid "Chain Priority"
@@ -199,6 +201,8 @@ msgstr ""
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:563
 msgid "Changes on this tab needs a banIP service restart to take effect."
 msgstr ""
+"Pakeitimai, kuriuos šiame skirtuke atlikote, reikalauja tarnybos paleidimo "
+"iš naujo, kad būtų pritaikyti „banIP“ tarnybai."
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/feeds.js:287
 msgid "Clear Custom Feeds"
@@ -215,7 +219,7 @@ msgstr ""
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:687
 msgid "Countries"
-msgstr "Országok"
+msgstr "Šalys"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/feeds.js:174
 msgid "Custom Feed Editor"
@@ -233,11 +237,11 @@ msgstr ""
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:503
 msgid "Default Block Policy"
-msgstr ""
+msgstr "Numatyta blokavimo politika"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/feeds.js:229
 msgid "Description"
-msgstr "Leírás"
+msgstr "Aprašas/-ymas"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:263
 msgid ""
@@ -247,15 +251,15 @@ msgstr ""
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:760
 msgid "Disable"
-msgstr ""
+msgstr "Išjungti"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:214
 msgid "Domain Lookup"
-msgstr ""
+msgstr "Domeno-Srities paieška"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:333
 msgid "Don't check SSL server certificates during download."
-msgstr ""
+msgstr "Netikrinti „SSL“ serverio sertifikatus, kol siunčiasi."
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/feeds.js:260
 msgid "Download Custom Feeds"
@@ -263,58 +267,59 @@ msgstr ""
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:333
 msgid "Download Insecure"
-msgstr ""
+msgstr "Atsisiuntimas nesaugus"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:306
 msgid "Download Parameters"
-msgstr ""
+msgstr "Atsisiuntimo parametrai"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:321
 msgid "Download Retries"
-msgstr ""
+msgstr "Atsisiuntimo atkartojimai"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:297
 msgid "Download Utility"
-msgstr "Letöltési segédprogram"
+msgstr "Atsisiuntimo įrankis"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:494
 msgid ""
 "Drop packets silently or actively reject the traffic on WAN-Input and WAN-"
 "Forward chains."
 msgstr ""
+"Išmesti paketus tyliai arba aktyviai neleisti srautą ant grandinių – „WAN-"
+"įvestis“ ir „WAN-persiuntimas“."
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:645
 msgid "E-Mail Notification"
-msgstr "E-mail értesítés"
+msgstr "El. pašto pranešimas"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:660
 msgid "E-Mail Profile"
-msgstr "E-Mail profil"
+msgstr "El. pašto profilis"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:648
 msgid "E-Mail Receiver Address"
-msgstr ""
+msgstr "El. pašto gavėjo adresas"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:652
 msgid "E-Mail Sender Address"
-msgstr "E-Mail küldő cím"
+msgstr "El. pašto siuntėjo adresas"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:251
 msgid "E-Mail Settings"
-msgstr ""
+msgstr "El. pašto nustatymai"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:656
-#, fuzzy
 msgid "E-Mail Topic"
-msgstr "E-Mail téma"
+msgstr "El. pašto tema"
 
 #: applications/luci-app-banip/root/usr/share/luci/menu.d/luci-app-banip.json:36
 msgid "Edit Allowlist"
-msgstr ""
+msgstr "Redaguoti leidžiamąjį sąrašą"
 
 #: applications/luci-app-banip/root/usr/share/luci/menu.d/luci-app-banip.json:44
 msgid "Edit Blocklist"
-msgstr ""
+msgstr "Redaguoti blokavimo sąrašą"
 
 #: applications/luci-app-banip/root/usr/share/luci/menu.d/luci-app-banip.json:52
 msgid "Edit Custom Feeds"
@@ -322,17 +327,17 @@ msgstr ""
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:173
 msgid "Element Count"
-msgstr ""
+msgstr "Elementų kiekis"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/setreport.js:161
 msgid "Elements"
-msgstr ""
+msgstr "Elementai"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/feeds.js:195
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/feeds.js:233
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:628
 msgid "Empty field not allowed"
-msgstr ""
+msgstr "Tuščia įvestis yra neleidžiama"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:618
 msgid "Enable Remote Logging"
@@ -340,7 +345,7 @@ msgstr ""
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:257
 msgid "Enable the banIP service."
-msgstr ""
+msgstr "Įjungti „banIP“ tarnybą."
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:618
 msgid "Enable the cgi interface to receive remote logging events."
@@ -352,15 +357,15 @@ msgstr ""
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:257
 msgid "Enabled"
-msgstr "Engedélyezve"
+msgstr "Įjungta/-as"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:266
 msgid "Enables IPv4 support."
-msgstr ""
+msgstr "Įgalina IPv4 palaikymą."
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:271
 msgid "Enables IPv6 support."
-msgstr ""
+msgstr "Įgalina IPv6 palaikymą."
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:778
 msgid "Expiry time for auto added blocklist Set members."
@@ -392,31 +397,31 @@ msgstr ""
 
 #: applications/luci-app-banip/root/usr/share/luci/menu.d/luci-app-banip.json:68
 msgid "Firewall Log"
-msgstr ""
+msgstr "Užkardos žurnalas"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/feeds.js:238
 msgid "Flag"
-msgstr ""
+msgstr "Vėliava"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/feeds.js:244
 msgid "Flag not supported"
-msgstr ""
+msgstr "Vėliava nepalaikoma"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:246
 msgid "General Settings"
-msgstr "Általános Beállítások"
+msgstr "Bendri nustatymai"
 
 #: applications/luci-app-banip/root/usr/share/rpcd/acl.d/luci-app-banip.json:3
 msgid "Grant access to LuCI app banIP"
-msgstr ""
+msgstr "Duoti prieigą prie „LuCI-app-banIP“"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:345
 msgid "High Priority"
-msgstr ""
+msgstr "Aukšto prioriteto"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:344
 msgid "Highest Priority"
-msgstr ""
+msgstr "Aukščiausio prioriteto"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:439
 msgid "ICMP-Threshold"
@@ -428,31 +433,31 @@ msgstr ""
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:762
 msgid "IP"
-msgstr ""
+msgstr "IP"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/setreport.js:11
 msgid "IP Search"
-msgstr ""
+msgstr "IP paieška"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/setreport.js:245
 msgid "IP Search..."
-msgstr ""
+msgstr "IP paieška..."
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:283
 msgid "IPv4 Network Interfaces"
-msgstr ""
+msgstr "IPv4 tinklo sąsajos ir sietuvai"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:266
 msgid "IPv4 Support"
-msgstr "IPv4 támogatás"
+msgstr "IPv4 palaikymas"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:290
 msgid "IPv6 Network Interfaces"
-msgstr ""
+msgstr "IPv6 tinklo sąsajos ir sietuvai"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:271
 msgid "IPv6 Support"
-msgstr "IPv6 támogatás"
+msgstr "IPv6 palaikymas"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:355
 msgid ""
@@ -462,16 +467,16 @@ msgstr ""
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:163
 msgid "Information"
-msgstr "Információ"
+msgstr "Informacija"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/feeds.js:198
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:631
 msgid "Invalid characters"
-msgstr ""
+msgstr "Negalimi simboliai"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/feeds.js:119
 msgid "Invalid input values, unable to save modifications."
-msgstr ""
+msgstr "Negalimos įvesties reikšmės, nepavyko išsaugoti pakeitimų."
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:710
 msgid "LACNIC - serving the Latin American and Caribbean region"
@@ -479,24 +484,24 @@ msgstr ""
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/setreport.js:164
 msgid "LAN-Forward (packets)"
-msgstr ""
+msgstr "„LAN-Persiuntimas“ (paketai)"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:506
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:547
 msgid "LAN-Forward Chain"
-msgstr ""
+msgstr "„LAN-Persiuntimo grandinė“"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:201
 msgid "Last Run"
-msgstr "Utolsó futás"
+msgstr "Paskutinį kartą vykdytą"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:348
 msgid "Least Priority"
-msgstr "Legkisebb prioritás"
+msgstr "Mažiausias prioritetas"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:347
 msgid "Less Priority"
-msgstr "Kisebb prioritás"
+msgstr "Mažiau prioriteto"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:547
 msgid "Limit certain feeds to the LAN-Forward chain."
@@ -544,15 +549,15 @@ msgstr ""
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:609
 msgid "Log Count"
-msgstr ""
+msgstr "Žurnalo kiekis"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:589
 msgid "Log LAN-Forward"
-msgstr ""
+msgstr "Žurnalas/-inti – „LAN-Persiuntimas“"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:596
 msgid "Log Limit"
-msgstr ""
+msgstr "Žurnalo limitas"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:580
 msgid "Log Prerouting"
@@ -560,7 +565,7 @@ msgstr ""
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:250
 msgid "Log Settings"
-msgstr ""
+msgstr "Žurnalo nustatymai"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:614
 msgid "Log Terms"
@@ -568,11 +573,11 @@ msgstr ""
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:586
 msgid "Log WAN-Forward"
-msgstr ""
+msgstr "Žurnalas/-inti – „WAN-Persiuntimas“"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:583
 msgid "Log WAN-Input"
-msgstr ""
+msgstr "Žurnalas/-inti – „WAN-Įvestis“"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:580
 msgid "Log suspicious Prerouting packets."
@@ -592,23 +597,23 @@ msgstr ""
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:592
 msgid "Logfile Location"
-msgstr ""
+msgstr "Žurnalo failo vietovė"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:355
 msgid "Max Open Files"
-msgstr ""
+msgstr "Maksimalus atidarytų failų kiekis"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:189
 msgid "NFT Information"
-msgstr ""
+msgstr "„NFT“ informacija"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:565
 msgid "NFT Log Level"
-msgstr ""
+msgstr "„NFT“ žurnalo lygis"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:276
 msgid "Network Devices"
-msgstr ""
+msgstr "Tinklo įrenginiai"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:343
 msgid "Nice Level"
@@ -617,32 +622,38 @@ msgstr ""
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/setreport.js:53
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/setreport.js:122
 msgid "No Search results!"
-msgstr ""
+msgstr "Nėra paieškos rezultatų!"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:346
 msgid "Normal Priority"
-msgstr "Közepes prioritás (alapértelmezett)"
+msgstr "Normalus prioritetas"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:321
 msgid ""
 "Number of download attempts in case of an error (not supported by uclient-"
 "fetch)."
 msgstr ""
+"Atsisiuntimų bandymų skaičius atsiradus klaidai (nepalaikomas „uclient-"
+"fetch“)."
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:609
 msgid ""
 "Number of failed login attempts of the same IP in the log before blocking."
 msgstr ""
+"Nepavykusių prisijungimų skaičius to pačio IP, kuris randamas žurnale prieš "
+"blokavimą."
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:306
 msgid ""
 "Override the pre-configured download options for the selected download "
 "utility."
 msgstr ""
+"Perrašyti jau sukonfigūruotus atsisiuntimo parinktis, pasirinktam "
+"atsisiuntimo įrankiui."
 
 #: applications/luci-app-banip/root/usr/share/luci/menu.d/luci-app-banip.json:28
 msgid "Overview"
-msgstr "Áttekintés"
+msgstr "Apžiūra"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:596
 msgid ""
@@ -652,21 +663,22 @@ msgstr ""
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/setreport.js:165
 msgid "Port/Protocol Limit"
-msgstr ""
+msgstr "Prievado/Protokolo limitas"
 
 #: applications/luci-app-banip/root/usr/share/luci/menu.d/luci-app-banip.json:76
 msgid "Processing Log"
-msgstr ""
+msgstr "Apdorojamas žurnalas"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:660
 msgid "Profile used by 'msmtp' for banIP notification E-Mails."
 msgstr ""
+"Profilis kurį naudoja „msmtp“, skirta „banIP“ pranešimams per el. paštą."
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/feeds.js:209
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/feeds.js:222
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:745
 msgid "Protocol/URL format not supported"
-msgstr ""
+msgstr "Protokolo/„URL – Saito“ formatas yra nepalaikomas"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:711
 msgid "RIPE - serving Europe, Middle East and Central Asia"
@@ -674,7 +686,7 @@ msgstr ""
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:645
 msgid "Receive E-Mail notifications with every banIP run."
-msgstr ""
+msgstr "Gauti el. pašto pranešimus su kiekvienu „banIP“ paleidimu."
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:648
 msgid ""
@@ -684,7 +696,7 @@ msgstr ""
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/setreport.js:252
 msgid "Refresh"
-msgstr "Frissítés"
+msgstr ""
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:706
 msgid "Regional Internet Registry"
@@ -692,7 +704,7 @@ msgstr ""
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:228
 msgid "Reload"
-msgstr "Újratöltés"
+msgstr ""
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:311
 msgid "Reload Trigger Interface"
@@ -700,7 +712,7 @@ msgstr ""
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:623
 msgid "Remote Token"
-msgstr ""
+msgstr "Nuotolinis žetonas"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:393
 msgid "Report Directory"
@@ -721,23 +733,23 @@ msgstr ""
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/setreport.js:26
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/setreport.js:96
 msgid "Result"
-msgstr "Eredmény"
+msgstr "Rezultatas"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/feeds.js:214
 msgid "Rulev4"
-msgstr ""
+msgstr "„Rulev4“"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/feeds.js:227
 msgid "Rulev6"
-msgstr ""
+msgstr "„Rulev6“"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:197
 msgid "Run Flags"
-msgstr ""
+msgstr "Vykdymo vėliavos"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:193
 msgid "Run Information"
-msgstr ""
+msgstr "Vykdymo informacija"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:452
 msgid "SYN-Threshold"
@@ -753,7 +765,7 @@ msgstr ""
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/setreport.js:60
 msgid "Search"
-msgstr ""
+msgstr "Paieška"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/setreport.js:12
 msgid "Search the banIP-related Sets for a specific IP."
@@ -765,7 +777,7 @@ msgstr ""
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:276
 msgid "Select the WAN network device(s)."
-msgstr ""
+msgstr "Pasirinkite „WAN“ tinklo įrenginį/-ius."
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:283
 msgid "Select the logical WAN IPv4 network interface(s)."
@@ -782,7 +794,7 @@ msgstr ""
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/setreport.js:88
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/setreport.js:160
 msgid "Set"
-msgstr ""
+msgstr "Nustatyti"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:485
 msgid "Set Policy"
@@ -798,11 +810,11 @@ msgstr ""
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/setreport.js:84
 msgid "Set Survey"
-msgstr ""
+msgstr "Nustatyti apklausą"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/setreport.js:238
 msgid "Set Survey..."
-msgstr ""
+msgstr "Nustatyti apklausą..."
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/setreport.js:259
 msgid "Set details"
@@ -820,11 +832,11 @@ msgstr ""
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:565
 msgid "Set the syslog level for NFT logging."
-msgstr ""
+msgstr "Nustatyti „syslog“ lygį „NFT“ žurnalinimui."
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:244
 msgid "Settings"
-msgstr "Beállítások"
+msgstr "Nustatymai"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:375
 msgid "Split external Set loading after every n members to save RAM."
@@ -832,23 +844,23 @@ msgstr ""
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:165
 msgid "Status"
-msgstr ""
+msgstr "Būklė/Būsena"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:221
 msgid "Stop"
-msgstr ""
+msgstr "Stop"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:761
 msgid "Subnet"
-msgstr ""
+msgstr "Potinklis (numatytas/-a)"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/setreport.js:129
 msgid "Survey"
-msgstr ""
+msgstr "Apklausa"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:205
 msgid "System Information"
-msgstr ""
+msgstr "Sistemos informacija"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:248
 msgid "Table/Chain Settings"
@@ -922,7 +934,7 @@ msgstr ""
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:316
 msgid "Trigger Delay"
-msgstr "Aktiváló késleltetése"
+msgstr ""
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:465
 msgid "UDP-Threshold"
@@ -934,11 +946,11 @@ msgstr ""
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/feeds.js:203
 msgid "URLv4"
-msgstr ""
+msgstr "„URLv4“"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/feeds.js:216
 msgid "URLv6"
-msgstr ""
+msgstr "„URLv6“"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:697
 msgid "Unable to parse the countries file!"
@@ -977,29 +989,29 @@ msgstr ""
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:260
 msgid "Verbose Debug Logging"
-msgstr "Részletes hibakeresési naplózás"
+msgstr ""
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:169
 msgid "Version"
-msgstr ""
+msgstr "Versija"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/setreport.js:163
 msgid "WAN-Forward (packets)"
-msgstr ""
+msgstr "„WAN-Persiuntimas“ (paketai)"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:505
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:537
 msgid "WAN-Forward Chain"
-msgstr ""
+msgstr "„WAN-Persiuntimo“ grandinė"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/setreport.js:162
 msgid "WAN-Input (packets)"
-msgstr ""
+msgstr "„WAN-Įvestis“ (paketai)"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:504
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:527
 msgid "WAN-Input Chain"
-msgstr ""
+msgstr "„WAN-Įvesties“ grandinė"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/feeds.js:174
 msgid ""
@@ -1013,7 +1025,7 @@ msgstr ""
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:567
 msgid "alert"
-msgstr ""
+msgstr "įspėjimas"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/setreport.js:225
 msgid "auto-added IPs to allowlist"
@@ -1025,7 +1037,7 @@ msgstr ""
 
 #: applications/luci-app-banip/root/usr/share/luci/menu.d/luci-app-banip.json:3
 msgid "banIP"
-msgstr "banIP"
+msgstr "„banIP“"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/setreport.js:212
 msgid "blocked icmp-flood packets"
@@ -1049,605 +1061,77 @@ msgstr ""
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:568
 msgid "crit"
-msgstr ""
+msgstr "kritinė"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:573
 msgid "debug"
-msgstr ""
+msgstr "derinimas/trukdžių šalinimas"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:495
 msgid "drop"
-msgstr ""
+msgstr "mesti"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:566
 msgid "emerg"
-msgstr ""
+msgstr "kritinė būklė/avarinis"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:569
 msgid "err"
-msgstr ""
+msgstr "klaida"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:572
 msgid "info"
-msgstr ""
+msgstr "informacija"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:528
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:538
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:548
 msgid "local allowlist"
-msgstr ""
+msgstr "vietinis leidžiamasis sąrašas"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:529
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:539
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:549
 msgid "local blocklist"
-msgstr ""
+msgstr "vietinis blokavimo sąrašas"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:486
 msgid "memory"
-msgstr ""
+msgstr "atmintis"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:571
 msgid "notice"
-msgstr ""
+msgstr "pranešimas"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:487
 msgid "performance"
-msgstr ""
+msgstr "našumas"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:496
 msgid "reject"
-msgstr ""
+msgstr "atmesti"
 
 #: applications/luci-app-banip/htdocs/luci-static/resources/view/banip/overview.js:570
 msgid "warn"
-msgstr ""
+msgstr "įspėti"
 
 #~ msgid "Apply & Restart"
-#~ msgstr "Újraindítás"
+#~ msgstr "Paleisti iš naujo"
 
-#~ msgid "Network Interfaces"
-#~ msgstr "Hálózati csatolók"
+#~ msgid "No banIP related firewall logs yet!"
+#~ msgstr "Nėra „banIP“ susijusių užkardos žurnalų (kol kas)!"
 
-#~ msgid "Active Subnets"
-#~ msgstr "Aktív alhálózatok"
+#~ msgid "Chain/Set Settings"
+#~ msgstr "Grandinė/Nustatyti nustatymus"
 
-#~ msgid "Active Interfaces"
-#~ msgstr "Aktív csatolók"
+#~ msgid "NFT Chain Priority"
+#~ msgstr "„NFT“ grandinės prioritetas"
 
-#~ msgid ""
-#~ "Blacklist changes have been saved. Refresh your banIP lists that changes "
-#~ "take effect."
-#~ msgstr ""
-#~ "Feketelista beállítások elmentve. Frissítse a banIP listákat a "
-#~ "változtatások érvényre juttatásához."
+#~ msgid "NFT Set Policy"
+#~ msgstr "Nustatyti „NTF“ politiką"
 
-#, fuzzy
-#~ msgid "Unable to save changes: %s"
-#~ msgstr "Nem sikerült a/az %s változtatás mentése"
+#~ msgid "auto-added to allowlist today"
+#~ msgstr "šiandien automatiškai pridėtas prie leidžiamojo sąrašo"
 
-#~ msgid "1 hour"
-#~ msgstr "1 óra"
-
-#~ msgid "12 hours"
-#~ msgstr "12 óra"
-
-#~ msgid "24 hours"
-#~ msgstr "24 óra"
-
-#~ msgid "30 minutes"
-#~ msgstr "30 perc"
-
-#~ msgid "6 hours"
-#~ msgstr "6 óra"
-
-#~ msgid "Active Sources"
-#~ msgstr "Aktív források"
-
-#~ msgid "Additional Settings"
-#~ msgstr "További beállítások"
-
-#~ msgid "Additional trigger delay in seconds before banIP processing begins."
-#~ msgstr ""
-#~ "További aktiválókésleltetés másodpercben, mielőtt a banIP feldolgozása "
-#~ "elkezdődik."
-
-#~ msgid "Advanced Chain Settings"
-#~ msgstr "Haladó láncbeállítások"
-
-#~ msgid "Advanced E-Mail Settings"
-#~ msgstr "Haladó e-mail beállítások"
-
-#~ msgid "Auto Blacklist"
-#~ msgstr "Automatikus feketelista"
-
-#~ msgid "Auto Whitelist"
-#~ msgstr "Automatikus fehérlista"
-
-#~ msgid "Blacklist Timeout"
-#~ msgstr "Feketelista lejárata"
-
-#, fuzzy
-#~ msgid "Blocklist Sources"
-#~ msgstr "Feketelista források"
-
-#~ msgid "Count ACC"
-#~ msgstr "ACC-k számlálása"
-
-#~ msgid "Count CIDR"
-#~ msgstr "CIDR-k számlálása"
-
-#~ msgid "Count IP"
-#~ msgstr "IP-k számlálása"
-
-#~ msgid "Count MAC"
-#~ msgstr "MAC-ek számlálása"
-
-#~ msgid "Count SUM"
-#~ msgstr "SUM-ok számlálása"
-
-#~ msgid "Download Queue"
-#~ msgstr "Letöltési sor"
-
-#~ msgid "E-Mail Actions"
-#~ msgstr "E-mail műveletek"
-
-#~ msgid "Edit Blacklist"
-#~ msgstr "Feketelista szerkesztése"
-
-#~ msgid "Edit Whitelist"
-#~ msgstr "Fehérlista szerkesztése"
-
-#~ msgid "Enables IPv4 support in banIP."
-#~ msgstr "IPv4 támogatás bekapcsolása a banIP-ben."
-
-#~ msgid "Enables IPv6 support in banIP."
-#~ msgstr "IPv6 támogatás bekapcsolása a banIP-ben."
-
-#~ msgid "Entry Details"
-#~ msgstr "Bejegyzés részletei"
-
-#, fuzzy
-#~ msgid "Existing job(s)"
-#~ msgstr "Létező munkamenet(ek)"
-
-#~ msgid "IPSet Information"
-#~ msgstr "IPSet információk"
-
-#~ msgid "Line number to remove"
-#~ msgstr "Eltávolítandó sor száma"
-
-#~ msgid "Local Sources"
-#~ msgstr "Helyi források"
-
-#~ msgid "Log View"
-#~ msgstr "Log nézet"
-
-#~ msgid "Name"
-#~ msgstr "Név"
-
-#~ msgid "No Query results!"
-#~ msgstr "Nincs a keresésnek megfelelő elem!"
-
-#~ msgid "Number of CIDR entries"
-#~ msgstr "CIDR bejegyzések száma"
-
-#~ msgid "Number of IP entries"
-#~ msgstr "IP bejegyzések száma"
-
-#~ msgid "Number of MAC entries"
-#~ msgstr "MAC bejegyzések száma"
-
-#~ msgid "Number of all IPSets"
-#~ msgstr "IPSet-ek száma"
-
-#~ msgid "Number of all entries"
-#~ msgstr "Bejegyzések száma"
-
-#~ msgid "Query"
-#~ msgstr "Lekérdezés"
-
-#, fuzzy
-#~ msgid "Refresh Timer"
-#~ msgstr "Időzítő frissítése"
-
-#~ msgid "Refresh Timer..."
-#~ msgstr "Időzítő frissítése..."
-
-#~ msgid "Remove an existing job"
-#~ msgstr "Létező munkamenet eltávolítása"
-
-#~ msgid "Save"
-#~ msgstr "Mentés"
-
-#, fuzzy
-#~ msgid "Status / Version"
-#~ msgstr "Státusz / Verzió"
-
-#~ msgid "Suspend"
-#~ msgstr "Felfüggesztés"
-
-#~ msgid "The syslog output, pre-filtered for banIP related messages only."
-#~ msgstr ""
-#~ "A rendszernapló kimenete, előre szűrve csak a banIP-hez kapcsolódó "
-#~ "üzenetekhez."
-
-#~ msgid "Whitelist..."
-#~ msgstr "Fehérlista..."
-
-#~ msgid "ASN Overview"
-#~ msgstr "ASN áttekintő"
-
-#~ msgid "ASN Prefixes"
-#~ msgstr "ASN előtagok"
-
-#~ msgid "ASN/Country"
-#~ msgstr "ASN/ország"
-
-#~ msgid "Advanced"
-#~ msgstr "Speciális"
-
-#~ msgid "Automatic WAN Interface Detection"
-#~ msgstr "Automatikus WAN csatoló felderítés"
-
-#~ msgid ""
-#~ "Blacklist auto addons are stored temporary in the IPSet and saved "
-#~ "permanently in the local blacklist. Disable this option to prevent the "
-#~ "local save."
-#~ msgstr ""
-#~ "Az automatikus feketelista kiegészítők átmenetileg az IPSetben vannak "
-#~ "tárolva, és a helyi feketelistában vannak tartósan mentve. Tiltsa le ezt "
-#~ "a beállítást a helyi mentés megakadályozásához."
-
-#~ msgid "Check the current available IPSets."
-#~ msgstr "A jelenleg elérhető IPSetek ellenőrzése."
-
-#~ msgid ""
-#~ "Configuration of the banIP package to block ip adresses/subnets via IPSet."
-#~ msgstr ""
-#~ "A banIP csomag beállítása az IP-címek és alhálózatok blokkolásához IPSet "
-#~ "használatával."
-
-#~ msgid "Country Resources"
-#~ msgstr "Ország erőforrásai"
-
-#~ msgid "DNS Chain"
-#~ msgstr "DNS-lánc"
-
-#~ msgid "DST Target IPv4"
-#~ msgstr "DST cél IPv4"
-
-#~ msgid "DST Target IPv6"
-#~ msgstr "DST cél IPv6"
-
-#~ msgid "Download Options"
-#~ msgstr "Letöltési kapcsolók"
-
-#~ msgid "Download Utility, RT Monitor"
-#~ msgstr "Letöltési segédprogram, RT figyelő"
-
-#~ msgid "Edit Configuration"
-#~ msgstr "Beállítás szerkesztése"
-
-#~ msgid "Enable banIP"
-#~ msgstr "banIP engedélyezése"
-
-#~ msgid "Enable verbose debug logging in case of any processing error."
-#~ msgstr ""
-#~ "Részletes hibakeresési naplózás engedélyezése bármilyen feldolgozási hiba "
-#~ "esetén."
-
-#~ msgid "Enter IP/CIDR/ASN/ISO"
-#~ msgstr "IP/CIDR/ASN/ISO megadása"
-
-#~ msgid "Extra Options"
-#~ msgstr "További beállítások"
-
-#~ msgid ""
-#~ "For further information <a href=\"%s\" target=\"_blank\">check the online "
-#~ "documentation</a>"
-#~ msgstr ""
-#~ "További információkért <a href=\"%s\" target=\"_blank\">nézze meg a "
-#~ "kézikönyvet az interneten</a>"
-
-#~ msgid ""
-#~ "For further performance improvements you can raise this value, e.g. '8' "
-#~ "or '16' should be safe."
-#~ msgstr ""
-#~ "További teljesítmény-növelésért megemelheti ezt az értéket, például „8” "
-#~ "vagy „16” biztonságos lesz."
-
-#~ msgid "Geo Location"
-#~ msgstr "Földrajzi helymeghatározás"
-
-#~ msgid "IANA Information"
-#~ msgstr "IANA információk"
-
-#~ msgid "IP/ASN Mapping"
-#~ msgstr "IP/ASN leképezés"
-
-#~ msgid "IPSet Sources"
-#~ msgstr "IPSet források"
-
-#~ msgid "IPSet-Lookup"
-#~ msgstr "IPSet keresés"
-
-#~ msgid "Input file not found, please check your configuration."
-#~ msgstr "A bemeneti fájl nem található, ellenőrizze a beállítást."
-
-#~ msgid "LAN Forward Chain IPv4"
-#~ msgstr "LAN továbbítási lánc IPv4"
-
-#~ msgid "LAN Forward Chain IPv6"
-#~ msgstr "LAN továbbítási lánc IPv6"
-
-#~ msgid "LAN Input Chain IPv4"
-#~ msgstr "LAN bemeneti lánc IPv4"
-
-#~ msgid "LAN Input Chain IPv6"
-#~ msgstr "LAN bemeneti lánc IPv6"
-
-#~ msgid "Load"
-#~ msgstr "Betöltés"
-
-#~ msgid "Loading"
-#~ msgstr "Betöltés"
-
-#~ msgid "Loading ..."
-#~ msgstr "Betöltés…"
-
-#~ msgid "Local Save Blacklist Addons"
-#~ msgstr "Helyi mentés feketelista kiegészítők"
-
-#~ msgid "Local Save Whitelist Addons"
-#~ msgstr "Helyi mentés fehérlista kiegészítők"
-
-#~ msgid "Low Priority Service"
-#~ msgstr "Alacsony prioritású szolgáltatás"
-
-#~ msgid "Manual WAN Interface Selection"
-#~ msgstr "Kézi WAN csatoló kiválasztás"
-
-#~ msgid "Max. Download Queue"
-#~ msgstr "Legnagyobb letöltési sor"
-
-#~ msgid "No response!"
-#~ msgstr "Nincs válasz!"
-
-#~ msgid ""
-#~ "Options for further tweaking in case the defaults are not suitable for "
-#~ "you."
-#~ msgstr ""
-#~ "Beállítások a további finomhangoláshoz abban az esetben, ha az "
-#~ "alapértelmezett értékek nem felelnek meg Önnek."
-
-#~ msgid ""
-#~ "Please add only one IPv4 or IPv6 address per line. IP ranges in CIDR "
-#~ "notation and comments introduced with '#' are allowed."
-#~ msgstr ""
-#~ "Csak egyetlen IPv4 vagy IPv6-címet adjon meg soronként. A CIDR jelölésben "
-#~ "lévő IP-tartományok és a „#” kezdetű megjegyzések engedélyezettek."
-
-#~ msgid "Please edit this file directly in a terminal session."
-#~ msgstr "Szerkessze ezt a fájlt közvetlenül egy terminál munkamenetben."
-
-#~ msgid "RIPE-Lookup"
-#~ msgstr "RIPE keresés"
-
-#~ msgid "Refresh IPSets"
-#~ msgstr "IPSetek frissítése"
-
-#~ msgid "Reload IPSet Sources"
-#~ msgstr "IPSet források újratöltése"
-
-#~ msgid "Runtime Information"
-#~ msgstr "Futtatókörnyezet-információk"
-
-#~ msgid "SRC Target IPv4"
-#~ msgstr "SRC cél IPv4"
-
-#~ msgid "SRC Target IPv6"
-#~ msgstr "SRC cél IPv6"
-
-#~ msgid "SRC/DST"
-#~ msgstr "SRC/DST"
-
-#~ msgid "SSH Daemon"
-#~ msgstr "SSH démon"
-
-#~ msgid "SSH/LuCI RT Monitor"
-#~ msgstr "SSH/LuCI RT figyelő"
-
-#~ msgid ""
-#~ "Select the SSH daemon for logfile parsing, to detect break-in events."
-#~ msgstr ""
-#~ "Válassza ki az SSH démont a naplófájl feldolgozásához a betörési "
-#~ "események felismeréséhez."
-
-#~ msgid "Select the used start type during boot."
-#~ msgstr "A rendszerindítás közben használt indítási típus kiválasztása."
-
-#~ msgid "Select your preferred download utility."
-#~ msgstr "Válassza ki az előnyben részesített letöltési segédprogramot."
-
-#~ msgid "Select your preferred interface(s) manually."
-#~ msgstr "Válassza ki az előnyben részesített csatolókat kézzel."
-
-#~ msgid ""
-#~ "Set the nice level to 'low priority' and banIP background processing will "
-#~ "take less resources from the system."
-#~ msgstr ""
-#~ "Állítsa a nice szintet „alacsony prioritásra”, és a banIP "
-#~ "háttérfeldolgozása kevesebb erőforrást fog elvenni a rendszertől."
-
-#~ msgid "Show only set member with packet counter &gt; 0"
-#~ msgstr ""
-#~ "Csak a 0-nál nagyobb csomagszámlálóval rendelkező beállított tag "
-#~ "megjelenítése"
-
-#~ msgid ""
-#~ "Size of the download queue to handle downloads &amp; IPset processing in "
-#~ "parallel (default '4')."
-#~ msgstr ""
-#~ "A letöltési sor mérete a letöltések és az IPset feldolgozás párhuzamos "
-#~ "kezeléséhez (alapértelmezetten „4”)."
-
-#~ msgid ""
-#~ "Special options for the selected download utility, e.g. '--timeout=20 -O'."
-#~ msgstr ""
-#~ "Különleges kapcsolók a kiválasztott letöltési segédprogramhoz, például „--"
-#~ "timeout=20 -O”."
-
-#~ msgid "Start Type"
-#~ msgstr "Kezdés típusa"
-
-#~ msgid ""
-#~ "Starts a small log/banIP monitor in the background to block SSH/LuCI "
-#~ "brute force attacks in realtime."
-#~ msgstr ""
-#~ "Elindít egy kis naplózó/banIP figyelőt a háttérben az SSH/LuCI nyers erő "
-#~ "támadások valós időben történő blokkolásához."
-
-#~ msgid ""
-#~ "Target directory for banIP backups. Default is '/tmp', please use "
-#~ "preferably a non-volatile disk if available."
-#~ msgstr ""
-#~ "Célkönyvtár a banIP biztonsági mentéseihez. Alapértelmezetten „/tmp”, "
-#~ "használjon inkább tartósan megmaradó lemezt, ha elérhető."
-
-#~ msgid ""
-#~ "The RIPEstat Data API is the public data interface provided by RIPE NCC, "
-#~ "for details look <a href=\"https://stat.ripe.net/docs/data_api\" "
-#~ "target=\"_blank\" rel=\"noopener noreferrer\">here</a>."
-#~ msgstr ""
-#~ "A RIPEstat adat API a RIPE NCC által biztosított nyilvános adatfelület. A "
-#~ "részletekért nézze meg a <a href=\"https://stat.ripe.net/docs/data_api\" "
-#~ "target=\"_blank\" rel=\"noopener noreferrer\">dokumentációt</a>."
-
-#~ msgid "The file size is too large for online editing in LuCI (&ge; 100 KB)."
-#~ msgstr ""
-#~ "A fájlméret túl nagy a LuCI-ban történő internetes szerkesztéshez "
-#~ "(nagyobb mint 100 KB)."
-
-#~ msgid "This change requires a manual service stop/re-start to take effect."
-#~ msgstr ""
-#~ "Ez a változtatás a szolgáltatás kézi leállítását vagy újraindítását "
-#~ "igényli az életbe léptetéshez."
-
-#~ msgid ""
-#~ "This data call gives access to various data sources maintained by IANA."
-#~ msgstr ""
-#~ "Ez az adathívás hozzáférést ad az IANA által kezelt különféle "
-#~ "adatforrásokhoz."
-
-#~ msgid ""
-#~ "This data call lists the Internet resources associated with a country, "
-#~ "including ASNs, IPv4 ranges and IPv4/6 CIDR prefixes."
-#~ msgstr ""
-#~ "Ez az adathívás felsorolja egy országhoz hozzárendelt internetes "
-#~ "erőforrásokat, beleértve az ASN-eket, az IPv4-tartományokat és az IPv4/6 "
-#~ "CIDR előtagokat."
-
-#~ msgid "This data call returns all announced prefixes for a given ASN."
-#~ msgstr ""
-#~ "Ez az adathívás az összes bejelentett előtagot visszaadja egy adott ASN-"
-#~ "nél."
-
-#~ msgid ""
-#~ "This data call returns geolocation information for the given IP space, or "
-#~ "for announced IP prefixes in the case of ASNs."
-#~ msgstr ""
-#~ "Ez az adathívás földrajzi helymeghatározás információkat ad vissza a "
-#~ "megadott IP-térhez vagy a bejelentett IP-előtagokhoz ASN-ek esetén."
-
-#~ msgid ""
-#~ "This data call returns the containing prefix and announcing ASN of a "
-#~ "given IP address."
-#~ msgstr ""
-#~ "Ez az adathívás visszaadja a tartalmazott előtagot és egy adott IP-cím "
-#~ "bejelentett ASN-ét."
-
-#~ msgid ""
-#~ "This data call returns the recursive chain of DNS forward (A/AAAA/CNAME) "
-#~ "and reverse (PTR) records starting form either a hostname or an IP "
-#~ "address."
-#~ msgstr ""
-#~ "Ez az adathívás visszaadja a DNS továbbítás (A/AAAA/CNAME) rekurzív "
-#~ "láncát, valamint a fordított (PTR) rekordokat vagy egy gépnévtől, vagy "
-#~ "egy IP-címtől kezdve."
-
-#~ msgid ""
-#~ "This data call returns whois information from the relevant Regional "
-#~ "Internet Registry and Routing Registry."
-#~ msgstr ""
-#~ "Ez az adathívás whois információkat ad vissza a megfelelő helyi "
-#~ "internetregiszterből és az útválasztási regiszterből."
-
-#~ msgid ""
-#~ "This data call shows general informations about an ASN like its "
-#~ "announcement status and the name of its holder according to the WHOIS "
-#~ "service."
-#~ msgstr ""
-#~ "Ez az adathívás általános információkat jelenít meg egy ASN-ről, mint "
-#~ "például a bejelentett állapota és a tulajdonosának neve a WHOIS "
-#~ "szolgáltatás szerint."
-
-#~ msgid ""
-#~ "This form allows you to modify the content of the banIP blacklist (%s)."
-#~ "<br />"
-#~ msgstr ""
-#~ "Ez az űrlap lehetővé teszi a banIP feketelista tartalmának módosítását "
-#~ "(%s).<br />"
-
-#~ msgid ""
-#~ "This form allows you to modify the content of the banIP whitelist (%s)."
-#~ "<br />"
-#~ msgstr ""
-#~ "Ez az űrlap lehetővé teszi a banIP fehérlista tartalmának módosítását "
-#~ "(%s).<br />"
-
-#~ msgid ""
-#~ "This form allows you to modify the content of the main banIP "
-#~ "configuration file (/etc/config/banip)."
-#~ msgstr ""
-#~ "Ez az űrlap lehetővé teszi a fő banIP beállítófájl tartalmának "
-#~ "módosítását (/etc/config/banip)."
-
-#~ msgid "View Logfile"
-#~ msgstr "Naplófájl megtekintése"
-
-#~ msgid "WAN Forward Chain IPv4"
-#~ msgstr "WAN továbbítási lánc IPv4"
-
-#~ msgid "WAN Forward Chain IPv6"
-#~ msgstr "WAN továbbítási lánc IPv6"
-
-#~ msgid "WAN Input Chain IPv4"
-#~ msgstr "WAN bemeneti lánc IPv4"
-
-#~ msgid "WAN Input Chain IPv6"
-#~ msgstr "WAN bemeneti lánc IPv6"
-
-#~ msgid ""
-#~ "Whitelist auto addons are stored temporary in the IPSet and saved "
-#~ "permanently in the local whitelist. Disable this option to prevent the "
-#~ "local save."
-#~ msgstr ""
-#~ "Az automatikus fehérlista kiegészítők átmenetileg az IPSetben vannak "
-#~ "tárolva, és a helyi fehérlistában vannak tartósan mentve. Tiltsa le ezt a "
-#~ "beállítást a helyi mentés megakadályozásához."
-
-#~ msgid "Whois Information"
-#~ msgstr "Whois információk"
-
-#~ msgid "banIP Status"
-#~ msgstr "banIP állapota"
-
-#~ msgid "banIP Version"
-#~ msgstr "banIP verziója"
-
-#~ msgid "enable IPv4"
-#~ msgstr "IPv4 engedélyezése"
-
-#~ msgid "enable IPv6"
-#~ msgstr "IPv6 engedélyezése"
+#~ msgid "auto-added to blocklist today"
+#~ msgstr "šiandien automatiškai pridėtas prie blokavimo sąrašo"
