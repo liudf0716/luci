@@ -4,6 +4,7 @@
 'require network';
 'require firewall';
 'require fs';
+'require uci';
 
 function getUsers() {
     return fs.lines('/etc/passwd').then(function(lines) {
@@ -630,6 +631,83 @@ var CBIGroupSelect = form.ListValue.extend({
 	},
 });
 
+// how to name a ListValue class which contain domain and mac group
+
+var CBIWifidogxGroupSelect = form.ListValue.extend({
+	__name__: 'CBI.WifidogxGroupSelect',
+
+	// group_type: 1: Domain Group, 2: MAC Group
+	// add a new property to store the group type
+	group_type: '1',
+
+	load: function(section_id) {
+		this.sappList = [];
+		var sections = uci.sections('wifidogx', 'group');
+		
+		for (var i = 0; i < sections.length; i++) {
+			if (sections[i]['g_type'] == this.group_type)
+				this.sappList.push(sections[i]['.name']);
+		}
+		
+		return this.super('load', section_id);
+	},
+
+	setGroupType: function(group_type) {
+		if (group_type == 'mac') {
+			this.group_type = '2';
+		} else if (group_type == 'ip') {
+			this.group_type = '3';
+		}
+	},
+
+	filter: function(section_id, value) {
+		return true;
+	},
+
+	renderWidget: function(section_id, option_index, cfgvalue) {
+		var values = L.toArray((cfgvalue != null) ? cfgvalue : this.default),
+		    choices = {},
+		    checked = {};
+
+		for (var i = 0; i < values.length; i++)
+			checked[values[i]] = true;
+
+		values = [];
+
+		if (!this.multiple && (this.rmempty || this.optional))
+			choices[''] = E('em', _('unspecified'));
+
+		for (var i = 0; i < this.sappList.length; i++) {
+			var name = this.sappList[i];
+
+			if (checked[name])
+				values.push(name);
+
+			choices[name] =  E('span', { 'class': 'ifacebadge' }, name);
+		}
+
+		var widget = new ui.Dropdown(this.multiple ? values : values[0], choices, {
+			id: this.cbid(section_id),
+			sort: true,
+			multiple: this.multiple,
+			optional: this.optional || this.rmempty,
+			disabled: (this.readonly != null) ? this.readonly : this.map.readonly,
+			select_placeholder: E('em', _('unspecified')),
+			display_items: this.display_size || this.size || 3,
+			dropdown_items: this.dropdown_size || this.size || 5,
+			validate: L.bind(this.validate, this, section_id),
+			create: !this.nocreate,
+			create_markup: '' +
+				'<li data-value="{{value}}">' +
+					'<span class="ifacebadge" style="background:repeating-linear-gradient(45deg,rgba(204,204,204,0.5),rgba(204,204,204,0.5) 5px,rgba(255,255,255,0.5) 5px,rgba(255,255,255,0.5) 10px)">' +
+						'{{value}}: <em>('+_('create')+')</em>' +
+					'</span>' +
+				'</li>'
+		});
+
+		return widget.render();
+	}
+});
 
 return L.Class.extend({
 	ZoneSelect: CBIZoneSelect,
@@ -638,4 +716,5 @@ return L.Class.extend({
 	DeviceSelect: CBIDeviceSelect,
 	UserSelect: CBIUserSelect,
 	GroupSelect: CBIGroupSelect,
+	WifidogxGroupSelect: CBIWifidogxGroupSelect,
 });
