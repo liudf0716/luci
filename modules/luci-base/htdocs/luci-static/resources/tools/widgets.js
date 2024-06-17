@@ -658,7 +658,7 @@ var CBIWifidogxGroupSelect = form.ListValue.extend({
 	setGroupType: function(group_type) {
 		if (group_type == 'mac') {
 			this.group_type = '2';
-		} else if (group_type == 'ip') {
+		} else if (group_type == 'wildcard') {
 			this.group_type = '3';
 		}
 	},
