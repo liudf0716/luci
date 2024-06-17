@@ -403,6 +403,14 @@ const ValidatorFactory = baseclass.extend({
 			return this.assert(false, _('valid hostname'));
 		},
 
+		wildcard() {
+			// must start with '.', then remove it and check if it's a valid hostname
+			if (this.value[0] != '.')
+				return this.assert(false, _('valid wildcard hostname'));
+			const hostname = this.value.substr(1);
+			return this.apply('hostname', hostname);
+		},
+
 		network() {
 			return this.assert(this.apply('uciname') || this.apply('hostname') || this.apply('ip4addr') || this.apply('ip6addr'),
 				_('valid UCI identifier, hostname or IP address range'));
