@@ -14498,3 +14498,5 @@ msgstr "如果您有任何问题，请点击查看 GitHub 上的项目并提交i
 msgid "if you have any problem, please click to view the luci ui project on GitHub : "
 msgstr "如果您有任何问题，请点击查看 GitHub 上的 luci ui 项目并提交issue："
 
+msgid "DHCP Server General Settings"
+msgstr "DHCP 服务器常规设置"
