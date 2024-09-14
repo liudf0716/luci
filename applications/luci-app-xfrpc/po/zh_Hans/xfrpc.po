@@ -200,13 +200,112 @@ msgstr "警告"
 
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:30
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:32
-msgid "x-frp Client"
-msgstr "x-frp 客户端"
+msgid "xfprc client"
+msgstr "内网映射客户端"
 
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:42
 msgid "xfrpc"
-msgstr "xfrpc"
+msgstr "内网映射"
 
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:43
 msgid "xfrpc is a c language frp client for frps."
 msgstr "xfrpc 是 frps 的 C 语言 frp 客户端。"
+
+msgid "ProxyType specifies the type of this proxy. Valid values include "tcp", "http", "https".
+msgstr "ProxyType 指定代理类型。有效值包括 \"tcp\", \"http\", \"https\"。"
+
+msgid "By default, this value is "tcp"."
+msgstr "此值默认为 \"tcp\"。"
+
+msgid "LocalIp specifies the IP address or host name to proxy to."
+msgstr "LocalIp 指定要经代理访问的 IP 地址或主机名"
+
+msgid "LocalPort specifies the port to proxy to."
+msgstr "LocalPort 指定要经代理访问的端口"
+
+msgid "If remote_port is 0, frps will assign a random port for you."
+msgstr "如远程端口为 0，frps 将给你分配一个随机的端口"
+
+msgid "Custom Domain"
+msgstr "自定义域名"
+
+msgid "Subdomain"
+msgstr "子域名"
+
+msgid "TCP Proxy"
+msgstr "TCP 代理"
+
+msgid "HTTP Proxy"
+msgstr "HTTP 代理"
+
+msgid "HTTPS Proxy"
+msgstr "HTTPS 代理"
+
+msgid "SOCKS5 Proxy"
+msgstr "SOCKS5 代理"
+
+msgid "Local IP specifies the IP address to proxy to."
+msgstr "Local IP 指定要代理到的 IP 地址"
+
+msgid "Local port specifies the port to proxy to."
+msgstr "Local port 指定要代理到的端口"
+
+msgid "Remote port specifies server-side port to proxy to."
+msgstr "Remote port 指定要代理到的服务器端口"
+
+msgid "Enable Subdomain"
+msgstr "启用子域名"
+
+msgid "Enable subdomain for http or https proxy"
+msgstr "为 http 或 https 代理启用子域名"
+
+msgid "Custom Domains"
+msgstr "自定义域名"
+
+msgid "Custom domains for http or https proxy"
+msgstr "http 或 https 代理的自定义域名"
+
+msgid "Subdomain"
+msgstr "子域名"
+
+msgid "Specifies the subdomain for http or https proxy, only works when server support subdomain."
+msgstr "指定 http 或 https 代理的子域名，仅在服务器支持子域名时有效"
+
+msgid "Remote port specifies server-side port to proxy to."
+msgstr "Remote port 指定要代理到的服务器端口"
+
+msgid "Specifies the name of remote xfrpc plugin."
+msgstr "指定远程 xfrpc 插件的名称"
+
+msgid "Specifies the action sending to remote xfrpc plugin."
+msgstr "指定发送到远程 xfrpc 插件的操作"
+
+msgid "Specifies the args sending to remote xfrpc plugin."
+msgstr "指定发送到远程 xfrpc 插件的参数"
+
+msgid "Remote port of plugin specifies the remote port of remote xfrpc plugin."
+msgstr "插件的远程端口指定远程 xfrpc 插件的远程端口"
+
+msgid "Plugin Settings"
+msgstr "插件设置"
+
+msgid "Plugin Name"
+msgstr "插件名称"
+
+msgid "Plugin Action"
+msgstr "插件操作"
+
+msgid "Plugin Param"
+msgstr "插件参数"
+
+msgid "Remote Port"
+msgstr "远程端口"
+
+msgid "Execute"
+msgstr "执行"
+
+msgid "Execute the plugin action"
+msgstr "执行插件操作"
+
+msgid "Enable xfrpc service."
+msgstr "启用 xfrpc 服务"
