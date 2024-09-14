@@ -71,6 +71,22 @@ case "$1" in
 			${order_by:+-o "$order_by"}
 	;;
 
+	ip4stats)
+		exec /bin/ubus call qosify show_ip4_stats
+	;;
+
+	ip6stats)
+		exec /bin/ubus call qosify show_ip6_stats
+	;;
+
+	chastats)
+		exec /bin/ubus call qosify show_all_stats
+	;;
+
+	l7proto)
+		exec /bin/ubus call qosify show_l7_proto
+	;;
+
 	periods)
 		for date in $(/usr/sbin/nlbw -c list); do
 			case "$date" in
