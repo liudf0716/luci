@@ -16,15 +16,15 @@ msgstr ""
 
 #: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw/display.js:563
 msgid "%d IPv4-only hosts"
-msgstr "„%d“ Tik-IPv4 skleidėjų/vedėjų"
+msgstr "„%d“ Tik-IPv4 skleidėjų/p.k – vedėjų"
 
 #: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw/display.js:570
 msgid "%d IPv6-only hosts"
-msgstr "„%d“ Tik-IPv6 skleidėjų/vedėjų"
+msgstr "„%d“ Tik-IPv6 skleidėjų/p.k – vedėjų"
 
 #: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw/display.js:577
 msgid "%d dual-stack hosts"
-msgstr "„%d“ dvisluoksniai skleidėjai/vedėjai"
+msgstr "„%d“ dvisluoksniai skleidėjai/p.k – vedėjai"
 
 #: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw/display.js:114
 msgid "%s and %s"
@@ -80,8 +80,6 @@ msgstr ""
 #: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw/config.js:163
 msgid "60s - commit minutely, useful for non-flash storage"
 msgstr ""
-"60-imt sekundžių – nusiųsti/patvirtinti kas minute, naudinga ne "
-"išliekamosios atminties saugojimui"
 
 #: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw/display.js:852
 msgid "<big id=\"conn-total\">0</big> connections"
@@ -89,12 +87,13 @@ msgstr "<big id=\"conn-total\">0</big> prisijungimų"
 
 #: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw/display.js:849
 msgid "<big id=\"host-total\">0</big> hosts"
-msgstr "<big id=\"host-total\">0</big> skleidėjų/vedėjų"
+msgstr "<big id=\"host-total\">0</big> skleidėjų/p.k – vedėjų"
 
 #: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw/display.js:942
 msgid "<big id=\"ipv6-hosts\">0%</big> IPv6 support rate among hosts"
 msgstr ""
-"<big id=\"ipv6-hosts\">0%</big> IPv6 palaikymo lygis tarp skleidėjų/vedėjų"
+"<big id=\"ipv6-hosts\">0%</big> IPv6 palaikymo lygis tarp skleidėjų/p.k – "
+"vedėjų"
 
 #: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw/display.js:944
 msgid "<big id=\"ipv6-rx\">0B</big> total IPv6 download"
@@ -106,7 +105,7 @@ msgstr "<big id=\"ipv6-share\">0%</big> iš bendro srauto yra IPv6"
 
 #: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw/display.js:945
 msgid "<big id=\"ipv6-tx\">0B</big> total IPv6 upload"
-msgstr "<big id=\"ipv6-tx\">0B</big> iš viso nusiųsta/įkelta per IPv6"
+msgstr "<big id=\"ipv6-tx\">0B</big> iš viso nusiųsta per IPv6"
 
 #: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw/display.js:899
 msgid "<big id=\"layer7-most-conn\">0</big> cause the most connections"
@@ -156,7 +155,7 @@ msgstr "Atkūrimas/Sukurti atsarginę kopiją"
 
 #: applications/luci-app-nlbwmon/root/usr/share/luci/menu.d/luci-app-nlbwmon.json:3
 msgid "Bandwidth Monitor"
-msgstr "Duomenų siuntimo ir perdavimo srauto pralaidumo prižiūryklė/-ėtojas"
+msgstr "Duomenų siuntimo srauto pralaidumo prižiūryklė/-ėtojas"
 
 #: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw/config.js:76
 msgid ""
@@ -185,7 +184,7 @@ msgstr "Renkama/-i informacija (duomenys)..."
 
 #: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw/config.js:158
 msgid "Commit interval"
-msgstr "Nusiuntimo/Patvirtinimo intervalas"
+msgstr ""
 
 #: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw/config.js:151
 msgid "Compress database"
@@ -206,7 +205,7 @@ msgstr "Prisijungimai"
 
 #: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw/display.js:843
 msgid "Connections / Host"
-msgstr "Prisijungimai┃Skleidėjas/Vedėjas"
+msgstr "Prisijungimai / Skleidėjas/P.k – vedėjas"
 
 #: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw/config.js:170
 msgid "Database directory"
@@ -230,9 +229,6 @@ msgid ""
 "towards the end of month, e.g. \"-5\" to specify the 27th of July or the "
 "24th of February."
 msgstr ""
-"Mėnesio diena, nuo kurios pradedamas apskaitos periodas. Naudokite neigiamas "
-"reikšmes, jei norite skaičiuoti iki mėnesio pabaigos, pvz.: „-5-i“, jei "
-"norite nurodyti – liepos 27-ą d. arba vasario 24-ą d."
 
 #: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw/backup.js:24
 msgid "Dismiss"
@@ -240,7 +236,7 @@ msgstr "Nepaisyti"
 
 #: applications/luci-app-nlbwmon/root/usr/share/luci/menu.d/luci-app-nlbwmon.json:16
 msgid "Display"
-msgstr "Rodyti"
+msgstr ""
 
 #: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw/display.js:629
 msgid "Down. (Bytes)"
@@ -277,15 +273,15 @@ msgstr "Atsisiųsti duomenų bazės atsarginę kopiją"
 
 #: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw/display.js:936
 msgid "Dualstack enabled hosts"
-msgstr "„Dualstack“ įjungti/Įgalinti skleidėjai/vedėjai"
+msgstr ""
 
 #: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw/config.js:83
 msgid "Due date"
-msgstr "Terminas"
+msgstr ""
 
 #: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw/display.js:1005
 msgid "Dump (JSON)"
-msgstr "Iškloti („JSON“)"
+msgstr ""
 
 #: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw/display.js:975
 #: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw/display.js:983
@@ -297,7 +293,7 @@ msgstr "Eksportuoti"
 
 #: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw/display.js:804
 msgid "Failed to commit database: %s"
-msgstr "Nepavyko nusiųsti/patvirtinti duomenų bazės: „%s“"
+msgstr ""
 
 #: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw/backup.js:45
 msgid "Failed to download backup archive: %s"
@@ -323,7 +319,7 @@ msgstr "Įtvirtintas intervalas"
 #: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw/display.js:923
 #: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw/display.js:970
 msgid "Force reload…"
-msgstr "Priverstinai perleisti…"
+msgstr ""
 
 #: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw/config.js:59
 msgid "General Settings"
@@ -352,7 +348,7 @@ msgstr "Grupuota pagal protokolą („CSV“)"
 #: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw/display.js:859
 #: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw/display.js:952
 msgid "Host"
-msgstr "Skleidėjas/Vedėjas"
+msgstr "Skleidėjas/P.k – vedėjas"
 
 #: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw/display.js:620
 msgid "Hostname: <big id=\"bubble-hostname\">example.org</big>"
@@ -382,16 +378,12 @@ msgid ""
 "Interval at which the temporary in-memory database is committed to the "
 "persistent database directory."
 msgstr ""
-"Intervalas, per kurį laikinoji atmintyje, esanti duomenų bazė yra įtraukiama "
-"į nuolatinį duomenų bazės katalogą/vietovę."
 
 #: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw/config.js:166
 msgid ""
 "Interval at which traffic counters of still established connections are "
 "refreshed from netlink information."
 msgstr ""
-"Intervalas, per kurį vis dar užmegztų ryšių srauto skaitikliai, yra "
-"atnaujinami iš tinklo nuorodos informacijos."
 
 #: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw/config.js:112
 msgid "Length of accounting interval in days."
@@ -412,58 +404,51 @@ msgstr "„MAC“"
 
 #: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw/display.js:76
 msgid "Malformed data received"
-msgstr "Gauti netaisyklingai/blogai suformuoti duomenys"
+msgstr ""
 
 #: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw/config.js:144
 msgid "Maximum entries"
-msgstr "Maksimalus įrašų skaičius"
+msgstr ""
 
 #: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw/config.js:156
 msgid ""
 "Maximum number of accounting periods to keep, use zero to keep databases "
 "forever."
 msgstr ""
-"Maksimalus apskaitos periodų skaičius, saugant, naudokite – „nulį“, kad "
-"duomenų bazės būtų saugomos amžinai."
 
 #: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw/display.js:831
 msgid "Netlink Bandwidth Monitor"
-msgstr ""
-"„Netlink“ duomenų siuntimo ir perdavimo srauto pralaidumo prižiūryklė/-ėtojas"
+msgstr "„Netlink“ duomenų siuntimo srauto pralaidumo prižiūryklė/-ėtojas"
 
 #: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw/backup.js:51
 msgid "Netlink Bandwidth Monitor - Backup / Restore"
 msgstr ""
-"„Netlink“ duomenų siuntimo ir perdavimo srauto pralaidumo prižiūryklė/-"
-"ėtojas – Atsarginė kopija / Atkurti"
+"„Netlink“ duomenų siuntimo srauto pralaidumo prižiūryklė/-ėtojas – Atsarginė "
+"kopija / Atkurti"
 
 #: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw/config.js:52
 msgid "Netlink Bandwidth Monitor - Configuration"
 msgstr ""
-"„Netlink“ duomenų siuntimo ir perdavimo srauto pralaidumo prižiūryklė/-"
-"ėtojas – Konfigūracija"
+"„Netlink“ duomenų siuntimo srauto pralaidumo prižiūryklė/-ėtojas – "
+"Konfigūracija"
 
 #: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw/display.js:362
 #: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw/display.js:416
 #: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw/display.js:542
 msgid "No data recorded yet."
-msgstr "Nėra įrašytų duomenų, kol kas."
+msgstr ""
 
 #: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw/config.js:124
 msgid "Only conntrack streams from or to any of these networks are counted."
 msgstr ""
-"Skaičiuojami tik – „conntrack“ srautai, iš bet kurio iš šių tinklų arba į "
-"bet kurį iš jų."
 
 #: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw/config.js:133
 msgid "Only conntrack streams from or to any of these subnets are counted."
 msgstr ""
-"Skaičiuojami tik – „conntrack“ srautai, iš bet kurio iš šių potinklių arba į "
-"bet kurį iš jų."
 
 #: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw/config.js:147
 msgid "Preallocate database"
-msgstr "Iš anksto paskir(sty)ti duomenų bazę"
+msgstr ""
 
 #: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw/display.js:339
 msgid "Protocol"
@@ -471,7 +456,7 @@ msgstr "Protokolas"
 
 #: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw/config.js:61
 msgid "Protocol Mapping"
-msgstr "Protokolo atvaizdavimas"
+msgstr ""
 
 #: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw/config.js:61
 msgid ""
@@ -479,14 +464,10 @@ msgid ""
 "line. The first value specifies the IP protocol, the second value the port "
 "number and the third column is the name of the mapped protocol."
 msgstr ""
-"Protokolų atvaizdavimai, skirti atskirti duomenų srauto tipus, kiekvienam "
-"skleidėjui/vedėjui, po vieną atvaizdavimą, kiekvienoje eilutėje. Pirmoji "
-"reikšmė nurodo – IP protokolą, antroji reikšmė – prievado numerį, ir trečiam "
-"stulpelį – pateikiamas atvaizduoto protokolo pavadinimas."
 
 #: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw/config.js:165
 msgid "Refresh interval"
-msgstr "Atnaujinti intervalą"
+msgstr ""
 
 #: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw/config.js:106
 msgid "Require a valid date in the form \"YYYY-MM-DD\""
@@ -494,15 +475,15 @@ msgstr "Reikalauti tinkamos datos, kurios formatas – „MMMM-MM-DD“"
 
 #: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw/backup.js:57
 msgid "Restore"
-msgstr "Atkurti/Atstatyti (-ymas)"
+msgstr "Atkurti"
 
 #: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw/backup.js:52
 msgid "Restore Database Backup"
-msgstr "Atkurti/Atstatyti duomenų bazės atsarginę kopiją"
+msgstr "Atkurti duomenų bazės atsarginę kopiją"
 
 #: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw/backup.js:20
 msgid "Restore complete"
-msgstr "Atkūrimas/Atstatymas atliktas"
+msgstr "Atkūrimas atliktas"
 
 #: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw/display.js:285
 msgid "Select accounting period:"
@@ -519,8 +500,6 @@ msgstr "Pradžios data"
 #: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw/config.js:97
 msgid "Start date of the first accounting period, e.g. begin of ISP contract."
 msgstr ""
-"Pirmojo ataskaitinio periodo pradžios data, pvz.: interneto teikėjo "
-"sutarties pradžia."
 
 #: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw/config.js:155
 msgid "Stored periods"
@@ -531,27 +510,20 @@ msgid ""
 "The Netlink Bandwidth Monitor (nlbwmon) is a lightweight, efficient traffic "
 "accounting program keeping track of bandwidth usage per host and protocol."
 msgstr ""
-"Tinklo nuorodos duomenų siuntimo ir perdavimo srauto pralaidumas („Netlink "
-"Bandwidth Monitor“) – („nlbwmon“) yra lengva, efektyvi srauto apskaitos "
-"programa, kuri seka duomenų siuntimo, ir perdavimo srauto pralaidumo "
-"naudojimą, ant kiekvieno skleidėjo/vedėjo ir protokolo."
 
 #: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw/backup.js:21
 msgid "The following database files have been restored:"
-msgstr "Nurodyti duomenų bazių failai buvo atkurti:"
+msgstr ""
 
 #: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw/config.js:145
 msgid ""
 "The maximum amount of entries that should be put into the database, setting "
 "the limit to 0 will allow databases to grow indefinitely."
 msgstr ""
-"Maksimalus įrašų kiekis, kurį reikia įdėti/įtraukti į duomenų bazę, "
-"nustačius ribą iki – 0-io, leis duomenų bazėms augti/didėti, neapibrėžtam "
-"laikui."
 
 #: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw/display.js:838
 msgid "Traffic / Host"
-msgstr "Srautas┃Skleidėjas/vedėjas"
+msgstr "Srautas / Skleidėjas/P.k – vedėjas"
 
 #: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw/display.js:835
 msgid "Traffic Distribution"
@@ -559,15 +531,15 @@ msgstr "Srauto paskirstymas"
 
 #: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw/display.js:92
 msgid "Unable to fetch traffic statistic data: %s"
-msgstr "Nepavyko paimti srauto statistikos duomenų: „%s“"
+msgstr ""
 
 #: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw/display.js:631
 msgid "Up. (Bytes)"
-msgstr "Įkelti. (Baitai)"
+msgstr ""
 
 #: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw/display.js:632
 msgid "Up. (Pkts.)"
-msgstr "Įkelti. (Paketai.)"
+msgstr ""
 
 #: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw/display.js:615
 msgctxt "Traffic counter"
@@ -615,9 +587,6 @@ msgid ""
 "mainly useful for memory constrained systems which might not be able to "
 "satisfy memory allocation after longer uptime periods."
 msgstr ""
-"Nesvarbu, ar iš anksto paskir(sty)ti didžiausią galimą duomenų bazės dydį "
-"atmintyje. Tai pagrinde yra naudinga sistemoms, kurių atmintis yra ribota, "
-"kurios nepajėgia patenkinti atminties paskirstymo, po ilgesnio veikimo laiko."
 
 #: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw/display.js:130
 msgid "no traffic"
