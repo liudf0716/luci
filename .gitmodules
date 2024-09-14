@@ -4,3 +4,6 @@
 [submodule "applications/luci-app-kcptun"]
 	path = applications/luci-app-kcptun
 	url = https://github.com/liudf0716/luci-app-kcptun.git
+[submodule "applications/luci-app-ss-redir"]
+	path = applications/luci-app-ss-redir
+	url = https://github.com/liudf0716/luci-app-ss-redir.git
