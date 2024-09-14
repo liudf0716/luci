@@ -1,6 +1,6 @@
 {
 	"admin/services/nlbw": {
-		"title": "Bandwidth Monitor",
+		"title": "Traffic History",
 		"order": 80,
 		"action": {
 			"type": "alias",
@@ -36,6 +36,35 @@
 		"action": {
 			"type": "view",
 			"path": "nlbw/backup"
+		}
+	},
+	"admin/status/chadpi": {
+		"title": "Bandwidth Monitor",
+		"order": 2,
+		"action": {
+			"type": "alias",
+			"path": "admin/status/chadpi/display"
+		},
+		"depends": {
+			"acl": [
+				"luci-app-nlbwmon"
+			]
+		}
+	},
+	"admin/status/chadpi/display": {
+		"title": "Display",
+		"order": 10,
+		"action": {
+			"type": "view",
+			"path": "chadpi/display"
+		}
+	},
+	"admin/status/chadpi/config": {
+		"title": "Configuration",
+		"order": 20,
+		"action": {
+			"type": "view",
+			"path": "chadpi/config"
 		}
 	}
 }
