@@ -8,12 +8,17 @@
 				"/usr/libexec/nlbwmon-action backup": [ "exec" ],
 				"/usr/libexec/nlbwmon-action download *": [ "exec" ],
 				"/usr/libexec/nlbwmon-action periods": [ "exec" ],
+				"/usr/libexec/nlbwmon-action ip4stats": [ "exec" ],
+				"/usr/libexec/nlbwmon-action ip6stats": [ "exec" ],
+				"/usr/libexec/nlbwmon-action chastats": [ "exec" ],
+				"/usr/libexec/nlbwmon-action l7proto": [ "exec" ],
 				"/usr/share/nlbwmon/protocols": [ "read" ]
 			},
 			"ubus": {
 				"file": [ "read" ],
 				"luci-rpc": [ "getHostHints" ],
-				"network.rrdns": [ "lookup" ]
+				"network.rrdns": [ "lookup" ],
+				"qosify": [ "show_ip4_stats", "show_ip6_stats", "show_all_stats", "show_l7_proto" ]
 			},
 			"uci": [ "nlbwmon" ]
 		},
