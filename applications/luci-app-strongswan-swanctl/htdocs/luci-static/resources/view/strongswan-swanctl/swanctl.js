@@ -4,6 +4,7 @@
 'require uci';
 'require tools.widgets as widgets';
 'require strongswan_algorithms';
+'require fs';
 
 function validateTimeFormat(section_id, value) {
 	if (value && !value.match(/^\d+[smhd]$/)) {
@@ -48,7 +49,7 @@ return view.extend({
 			_('Interfaces that accept VPN traffic'));
 		o.datatype = 'interface';
 		o.placeholder = _('Select an interface or leave empty for all interfaces');
-		o.default = 'wan';
+		o.default = 'lan';
 		o.multiple = true;
 		o.rmempty = false;
 
@@ -403,6 +404,19 @@ return view.extend({
 		o.optional = true;
 		o.depends('is_esp', '0');
 		addAlgorithms(o, strongswan_algorithms.getPrfAlgorithms());
+		
+		// Configuration File
+		s = m.section(form.TypedSection, 'swanctl', 
+			_('Configuration File'),
+			_('View the current strongSwan configuration file.'));
+		s.anonymous = true;
+		
+		o = s.option(form.TextValue, 'editlist');
+		o.rows = 30;
+		o.readonly = true;
+		o.load = function(section_id) {
+			return L.resolveDefault(fs.read('/var/swanctl/swanctl.conf'), 'no result swanctl.conf file');
+		}
 
 		return m.render();
 	}

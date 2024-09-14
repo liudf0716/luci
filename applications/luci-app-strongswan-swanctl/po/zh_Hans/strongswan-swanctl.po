@@ -1,0 +1,338 @@
+msgid "VPN"
+msgstr "虚拟专有网络"
+
+msgid "strongSwan IPsec"
+msgstr "IPsec VPN"
+
+msgid "strongSwan Status"
+msgstr "strongSwan 状态"
+
+msgid "Querying strongSwan failed"
+msgstr "查询 strongSwan 失败"
+
+msgid "Connecting failed"
+msgstr "连接失败"
+
+msgid "Connection refused"
+msgstr "连接被拒绝"
+
+msgid "strongSwan Configuration"
+msgstr "strongSwan 配置"
+
+msgid "Configure strongSwan for secure VPN connections."
+msgstr "配置 strongSwan 以建立安全的 VPN 连接"
+
+msgid "Remote Configuration"
+msgstr "对端配置"
+
+msgid "Define Remote IKE Configurations."
+msgstr "定义远端 IKE 配置。"
+
+msgid "Tunnel Configuration"
+msgstr "隧道配置"
+
+msgid "Define Connection Children to be used as Tunnels in Remote Configurations."
+msgstr "定义要在远端配置中用作隧道的连接子项。"
+
+msgid "Encryption Proposals"
+msgstr "加密提议"
+
+msgid "Configure Cipher Suites to define IKE (Phase 1) or ESP (Phase 2) Proposals."
+msgstr "配置密码套件以定义 IKE（第 1 阶段）或 ESP（第 2 阶段）提议。"
+
+msgid "Gateway (Remote Endpoint)"
+msgstr "网关（远端点）"
+
+msgid "Crypto Proposal"
+msgstr "加密提议"
+
+msgid "Tunnel"
+msgstr "隧道"
+
+msgid "General"
+msgstr "常规"
+
+msgid "Advanced"
+msgstr "高级"
+
+msgid "Configuration is enabled or not"
+msgstr "配置是否启用"
+
+msgid "IP address or FQDN name of the tunnel remote endpoint"
+msgstr "隧道远端点的 IP 地址或 FQDN 名称"
+
+msgid "Local Gateway"
+msgstr "本地网关"
+
+msgid "IP address or FQDN of the tunnel local endpoint"
+msgstr "隧道本地端点的 IP 地址或 FQDN 名称"
+
+msgid "Local Source IP"
+msgstr "本地源 IP"
+
+msgid "Virtual IP(s) to request in IKEv2 configuration payloads requests"
+msgstr "在 IKEv2 配置负载请求中请求的虚拟 IP"
+
+msgid "Local address(es) to use in IKE negotiation"
+msgstr "在 IKE 协商中使用的本地地址"
+
+msgid "List of IKE (phase 1) proposals to use for authentication"
+msgstr "用于认证的 IKE（第 1 阶段）提议列表"
+
+msgid "Name of ESP (phase 2) section"
+msgstr "ESP（第 2 阶段）部分的名称"
+
+msgid "Authentication Method"
+msgstr "认证方法"
+
+msgid "IKE authentication (phase 1)"
+msgstr "IKE 认证（第 1 阶段）"
+
+msgid "Local Identifier"
+msgstr "本地标识符"
+
+msgid "Local identifier for IKE (phase 1)"
+msgstr "IKE（第 1 阶段）的本地标识符"
+
+msgid "Remote Identifier"
+msgstr "远端标识符"
+
+msgid "Remote identifier for IKE (phase 1)"
+msgstr "IKE（第 1 阶段）的远端标识符"
+
+msgid "Pre-shared Key"
+msgstr "预共享密钥"
+
+msgid "The pre-shared key for the tunnel"
+msgstr "隧道的预共享密钥"
+
+msgid "Local Key"
+msgstr "本地密钥"
+
+msgid "Private key pathname to use with above certificate"
+msgstr "与上述证书一起使用的私钥路径名"
+
+msgid "Pre-shared Key"
+msgstr "预共享密钥"
+
+msgid "Public Key"
+msgstr "公钥"
+
+msgid "Local certificate"
+msgstr "本地证书"
+
+msgid "CA certificate"
+msgstr "CA 证书"
+
+msgid "CA certificate that need to lie in remote peer's certificate's path of trust"
+msgstr "需要位于远程对等体证书信任路径中的 CA 证书"
+
+msgid "MOBIKE (IKEv2 Mobility and Multihoming Protocol)"
+msgstr "MOBIKE（IKEv2 移动性和多宿主协议）"
+
+msgid "IKE Fragmentation"
+msgstr "IKE 分片"
+
+msgid "Use IKE fragmentation"
+msgstr "使用 IKE 分片"
+
+msgid "Keying Retries"
+msgstr "密钥重试"
+
+msgid "Number of retransmissions attempts during initial negotiation"
+msgstr "初始协商期间的重传尝试次数"
+
+msgid "DPD Delay"
+msgstr "DPD 延迟"
+
+msgid "Inactivity"
+msgstr "超时释放"
+
+msgid "Interval to check liveness of a peer"
+msgstr "在关闭不活动的 CHILD_SA 之前的间隔"
+
+msgid "Rekey Time"
+msgstr "重建时间"
+
+msgid "IKEv2 interval to refresh keying material; also used to compute lifetime"
+msgstr "刷新密钥材料的 IKEv2 间隔；也用于计算IKE_SA生命周期"
+
+msgid "Overtime"
+msgstr "超时设置"
+
+msgid "Limit on time to complete rekeying/reauthentication"
+msgstr "完成CHILD_SA重新协商/IKE_SA重新认证的时间限制"
+
+msgid "Keyexchange"
+msgstr "协商协议"
+
+msgid "Version of IKE for negotiation"
+msgstr "用于协商的 IKE 版本"
+
+msgid "Local Subnet"
+msgstr "本地子网"
+
+msgid "Local network(s)"
+msgstr "本地保护子网"
+
+msgid "Remote Subnet"
+msgstr "远程子网"
+
+msgid "Remote network(s)"
+msgstr "远程保护子网"
+
+msgid "XFRM Interface ID"
+msgstr "XFRM 接口 ID"
+
+msgid "XFRM interface ID set on input and output interfaces"
+msgstr "在输入和输出接口上设置的 XFRM 接口 ID"
+
+msgid "Start Action"
+msgstr "启动操作"
+
+msgid "Action on initial configuration load"
+msgstr "初始配置加载时的操作"
+
+msgid "Close Action"
+msgstr "关闭操作"
+
+msgid "Action when CHILD_SA is closed"
+msgstr "当 CHILD_SA 关闭时的操作"
+
+msgid "Crypto Proposal (Phase 2)"
+msgstr "加密提议（第 2 阶段）"
+
+msgid "List of ESP (phase two) proposals. Only Proposals with checked ESP flag are selectable"
+msgstr "ESP（第 2 阶段）提议列表。只有选中 ESP 标志的提议才可选择"
+
+msgid "Up/Down Script Path"
+msgstr "Up/Down 脚本路径"
+
+msgid "Path to script to run on CHILD_SA up/down events"
+msgstr "在 CHILD_SA 生成/释放 事件上运行的脚本路径"
+
+msgid "Lifetime"
+msgstr "生命周期"
+
+msgid "Maximum duration of the CHILD_SA before closing"
+msgstr "关闭之前 CHILD_SA 的最大持续时间"
+
+msgid "DPD Action"
+msgstr "DPD 操作"
+
+msgid "Action when DPD timeout occurs"
+msgstr "DPD 超时发生时的操作"
+
+msgid "Rekey Time"
+msgstr "重建时间"
+
+msgid "Duration of the CHILD_SA before rekeying"
+msgstr "重新生成 CHILD_SA 之前的持续时间"
+
+msgid "Enable ipcomp compression"
+msgstr "启用 ipcomp 压缩"
+
+msgid "H/W Offload"
+msgstr "硬件卸载"
+
+msgid "Enable Hardware offload"
+msgstr "启用硬件卸载"
+
+msgid "Priority of the CHILD_SA"
+msgstr "CHILD_SA 的优先级"
+
+msgid "Replay Window"
+msgstr "重放窗口"
+
+msgid "Replay Window of the CHILD_SA"
+msgstr "CHILD_SA 的重放窗口"
+
+msgid "Values larger than 32 are supported by the Netlink backend only"
+msgstr "仅 Netlink 后端支持大于 32 的值"
+
+msgid "ESP Proposals"
+msgstr "ESP 提议"
+
+msgid "Whether this is an ESP (phase 2) proposal or not"
+msgstr "这是否是 ESP（第 2 阶段）提议"
+
+msgid "Encryption Algorithm"
+msgstr "加密算法"
+
+msgid "Algorithms marked with * are considered insecure"
+msgstr "标有 * 的算法被认为是不安全的"
+
+msgid "Hash Algorithm"
+msgstr "哈希算法"
+
+msgid "ESP Proposal"
+msgstr "ESP 提议"
+
+msgid "Diffie-Hellman Group"
+msgstr "Diffie-Hellman 组"
+
+msgid "PRF Algorithm"
+msgstr "PRF 算法"
+
+msgid "Stats"
+msgstr "统计"
+
+msgid "Version"
+msgstr "版本"
+
+msgid "Daemon"
+msgstr "守护进程"
+
+msgid "Active IKE_SAs"
+msgstr "活动 IKE_SA"
+
+msgid "Half-Open IKE_SAs"
+msgstr "半开 IKE_SA"
+
+msgid "Security Associations (SAs)"
+msgstr "安全关联（SAs）"
+
+msgid "State"
+msgstr "状态"
+
+msgid "Remote"
+msgstr "远端"
+
+msgid "IKE Version"
+msgstr "IKE 版本"
+
+msgid "Established for"
+msgstr "建立于"
+
+msgid "Reauthentication in"
+msgstr "重新认证于"
+
+msgid "Details"
+msgstr "详细信息"
+
+msgid "Show Details"
+msgstr "显示详细信息"
+
+msgid "Configuration File"
+msgstr "配置文件"
+
+msgid "View the current strongSwan configuration file."
+msgstr "查看当前 strongSwan 配置文件。"
+
+msgid "Zone"
+msgstr "区域"
+
+msgid "Firewall zone that has to match the defined firewall zone"
+msgstr "必须与定义的防火墙区域匹配的防火墙区域"
+
+msgid "Listening Interfaces"
+msgstr "监听接口"
+
+msgid "Interfaces that accept VPN traffic"
+msgstr "接受 VPN 流量的接口"
+
+msgid "Debug Level"
+msgstr "调试级别"
+
+msgid "Trace level: 0 is least verbose, 4 is most"
+msgstr "跟踪级别：0 是最不详细的，4 是最详细的"
