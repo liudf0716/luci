@@ -162,7 +162,7 @@ msgstr ""
 #: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw/display.js:915
 #: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw/display.js:962
 msgid "Collecting data..."
-msgstr "正在收集資料中..."
+msgstr "正在收集資料中…"
 
 #: applications/luci-app-nlbwmon/htdocs/luci-static/resources/view/nlbw/config.js:157
 msgid "Commit interval"
