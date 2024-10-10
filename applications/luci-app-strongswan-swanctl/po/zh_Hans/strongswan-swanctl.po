@@ -336,3 +336,63 @@ msgstr "调试级别"
 
 msgid "Trace level: 0 is least verbose, 4 is most"
 msgstr "跟踪级别：0 是最不详细的，4 是最详细的"
+
+msgid "Install Virtual IP Interface"
+msgstr "安装虚拟 IP 接口"
+
+msgid "Interface to install virtual IP on."
+msgstr "要安装虚拟 IP 的接口"
+
+msgid "Install Route"
+msgstr "安装路由"
+
+msgid "Install routes into a separate routing table for established IPsec tunnels."
+msgstr "为已建立的 IPsec 隧道安装路由到单独的路由表中。"
+
+msgid "Pre-Shared Key"
+msgstr "预共享密钥"
+
+msgid "Public Key"
+msgstr "公钥"
+
+msgid "Local Certificate"
+msgstr "本地证书"
+
+msgid "Certificate pathname to use for authentication"
+msgstr "用于认证的证书路径名"
+
+msgid "CA Certificate"
+msgstr "CA 证书"
+
+msgid "Interval before closing an inactive CHILD_SA"
+msgstr "在关闭不活动的 CHILD_SA 之前的间隔"
+
+msgid "Pool Configuration"
+msgstr "地址池配置"
+
+msgid "Define IP Address Pools for VPN Clients."
+msgstr "为 VPN 客户端定义 IP 地址池。"
+
+msgid "Pool Address"
+msgstr "地址池地址"
+
+msgid "IP address range for the pool."
+msgstr "地址池的 IP 地址范围。"
+
+msgid "Gateway Type"
+msgstr "网关类型"
+
+msgid "Type of the local gateway."
+msgstr "本地安全网关的类型"
+
+msgid "Initiator"
+msgstr "发起端"
+
+msgid "Responder"
+msgstr "响应端"
+
+msgid "Address Pools"
+msgstr "地址池"
+
+msgid "IP address assign to the remote peer from the pool."
+msgstr "从地址池分配给远程对等体的 IP 地址"
