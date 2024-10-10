@@ -40,17 +40,24 @@ return view.extend({
 		s = m.section(form.TypedSection, 'ipsec', _('General Settings'));
 		s.anonymous = true;
 
-		o = s.option(widgets.ZoneSelect, 'zone', _('Zone'),
-			_('Firewall zone that has to match the defined firewall zone'));
-		o.default = 'lan';
-		o.multiple = true;
-
 		o = s.option(widgets.NetworkSelect, 'listen', _('Listening Interfaces'),
 			_('Interfaces that accept VPN traffic'));
 		o.datatype = 'interface';
 		o.placeholder = _('Select an interface or leave empty for all interfaces');
-		o.default = 'lan';
+		o.default = 'wan';
 		o.multiple = true;
+		o.rmempty = false;
+
+		o = s.option(widgets.NetworkSelect, 'vip_interface', _('Install Virtual IP Interface'),
+			_('Interface to install virtual IP on.'));
+		o.datatype = 'interface';
+		o.default = 'xfrm0';
+		o.rmempty = false;
+		o.multiple = false;
+
+		o = s.option(form.Flag, 'rtinstall_enabled', _('Install Route'),
+			_('Install routes into a separate routing table for established IPsec tunnels.'));
+		o.default = '1';
 		o.rmempty = false;
 
 		o = s.option(form.Value, 'debug', _('Debug Level'),
@@ -77,20 +84,43 @@ return view.extend({
 		o.datatype = 'or(hostname,ipaddr)';
 		o.rmempty = false;
 
-		o = s.taboption('general', form.Value, 'local_gateway', _('Local Gateway'),
-			_('IP address or FQDN of the tunnel local endpoint'));
-		o.datatype = 'or(hostname,ipaddr)';
+		o = s.taboption('general', form.Value, 'local_ip', _('Local IP'),
+			_('Local address(es) to use in IKE negotiation'));
+		o.datatype = 'ipaddr';
 		o.modalonly = true;
+		
+		o = s.taboption('general', form.ListValue, 'gateway_type', _('Gateway Type'),
+			_('Type of the local gateway.'));
+		o.value('initiator', _('Initiator'));
+		o.value('responder', _('Responder'));
+		o.default = 'initiator';
+		o.rmempty = false;
 
 		o = s.taboption('general', form.Value, 'local_sourceip', _('Local Source IP'),
 			_('Virtual IP(s) to request in IKEv2 configuration payloads requests'));
 		o.datatype = 'ipaddr';
 		o.modalonly = true;
+		o.depends('gateway_type', 'initiator');
 
-		o = s.taboption('general', form.Value, 'local_ip', _('Local IP'),
-			_('Local address(es) to use in IKE negotiation'));
-		o.datatype = 'ipaddr';
-		o.modalonly = true;
+		o = s.taboption('general', form.MultiValue, 'pools', _('Address Pools'),
+			_('IP address assign to the remote peer from the pool.'));
+		o.depends('gateway_type', 'responder');
+		o.load = function (section_id) {
+			this.keylist = [];
+			this.vallist = [];
+
+			var sections = uci.sections('ipsec', 'pools');
+			if (sections.length == 0) {
+				this.value('', _('Please create a Pool first'));
+			} else {
+				sections.forEach(L.bind(function (section) {
+					this.value(section['.name']);
+				}, this));
+			}
+
+			return this.super('load', [section_id]);
+		};
+		o.rmempty = false;
 
 		o = s.taboption('general', form.MultiValue, 'crypto_proposal', _('Crypto Proposal'),
 			_('List of IKE (phase 1) proposals to use for authentication'));
@@ -236,19 +266,19 @@ return view.extend({
 
 		o = s.taboption('general', form.DynamicList, 'local_subnet', _('Local Subnet'),
 			_('Local network(s)'));
-		o.datatype = 'subnet';
+		o.datatype = 'cidr4';
 		o.placeholder = '192.168.1.1/24';
 		o.rmempty = false;
 
 		o = s.taboption('general', form.DynamicList, 'remote_subnet', _('Remote Subnet'),
 			_('Remote network(s)'));
-		o.datatype = 'subnet';
+		o.datatype = 'cidr4';
 		o.placeholder = '192.168.2.1/24';
 		o.rmempty = false;
 
 		o = s.taboption('general', form.Value, 'local_nat', _('Local NAT'),
 			_('NAT range for tunnels with overlapping IP addresses'));
-		o.datatype = 'subnet';
+		o.datatype = 'cidr4';
 		o.modalonly = true;
 
 		o = s.taboption('general', form.ListValue, 'if_id', ('XFRM Interface ID'),
@@ -405,18 +435,32 @@ return view.extend({
 		o.depends('is_esp', '0');
 		addAlgorithms(o, strongswan_algorithms.getPrfAlgorithms());
 		
+		// Pools Configuration
+		s = m.section(form.GridSection, 'pools', _('Pool Configuration'),
+			_('Define IP Address Pools for VPN Clients.'));
+		s.addremove = true;
+		s.nodescriptions = true;
+
+		o = s.option(form.Value, 'addrs', _('Pool Address'),
+			_('IP address range for the pool.'));
+		o.datatype = 'cidr4';
+		o.placeholder = '10.10.0.0/24';
+
 		// Configuration File
 		s = m.section(form.TypedSection, 'swanctl', 
 			_('Configuration File'),
 			_('View the current strongSwan configuration file.'));
 		s.anonymous = true;
 		
-		o = s.option(form.TextValue, 'editlist');
+		o = s.option(form.TextValue, 'editlist', _('swanctl.conf'),
+			_('Contents of the swanctl.conf file.'));
 		o.rows = 30;
 		o.readonly = true;
 		o.load = function(section_id) {
-			return L.resolveDefault(fs.read('/var/swanctl/swanctl.conf'), 'no result swanctl.conf file');
-		}
+			return L.resolveDefault(fs.read('/var/swanctl/swanctl.conf'), 'no result swanctl.conf file').then(function(content) {
+				return content;
+			});
+		};
 
 		return m.render();
 	}
