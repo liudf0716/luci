@@ -2756,6 +2756,7 @@
 		path(prefix = '', parts) {
 			const url = [ prefix ];
 
+<<<<<<< HEAD
 			for (let i = 0; i < parts.length; i++){				
 				const part = parts[i];
 				if (Array.isArray(part))
@@ -2764,6 +2765,11 @@
 					if (/^(?:[a-zA-Z0-9_.%,;-]+\/)*[a-zA-Z0-9_.%,;-]+$/.test(part) || /^\?[a-zA-Z0-9_.%=&;-]+$/.test(part))
 						url.push(part.startsWith('?') ? part : '/' + part);
 			}
+=======
+			for (let i = 0; i < parts.length; i++)
+				if (/^(?:[a-zA-Z0-9_.%,;-]+\/)*[a-zA-Z0-9_.%,;-]+$/.test(parts[i]) || /^\?[a-zA-Z0-9_.%=&;-]+$/.test(parts[i]))
+					url.push(parts[i].startsWith('?') ? parts[i] : '/' + parts[i]);
+>>>>>>> fa454af1a9 (luci-base: convert JavaScript code to ES6 style)
 
 			if (url.length === 1)
 				url.push('/');
