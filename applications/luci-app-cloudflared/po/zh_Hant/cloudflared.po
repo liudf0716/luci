@@ -85,11 +85,11 @@ msgstr "錯誤"
 
 #: applications/luci-app-cloudflared/htdocs/luci-static/resources/view/cloudflared/config.js:93
 msgid "Fatal"
-msgstr "致命"
+msgstr ""
 
 #: applications/luci-app-cloudflared/htdocs/luci-static/resources/view/cloudflared/log.js:87
 msgid "Filter Level:"
-msgstr "篩選等級："
+msgstr "篩選等級:"
 
 #: applications/luci-app-cloudflared/root/usr/share/rpcd/acl.d/luci-app-cloudflared.json:3
 msgid "Grant access to Cloudflared configuration"
@@ -131,7 +131,7 @@ msgstr "未執行"
 
 #: applications/luci-app-cloudflared/htdocs/luci-static/resources/view/cloudflared/config.js:79
 msgid "Obtain a certificate <a %s>here</a>."
-msgstr "在<a %s>這裡</a>取得憑證。"
+msgstr ""
 
 #: applications/luci-app-cloudflared/htdocs/luci-static/resources/view/cloudflared/tunnels.js:78
 msgid "Opened At"
@@ -179,11 +179,11 @@ msgstr "權杖"
 #: applications/luci-app-cloudflared/htdocs/luci-static/resources/view/cloudflared/tunnels.js:96
 #: applications/luci-app-cloudflared/root/usr/share/luci/menu.d/luci-app-cloudflared.json:22
 msgid "Tunnels"
-msgstr "隧道"
+msgstr ""
 
 #: applications/luci-app-cloudflared/htdocs/luci-static/resources/view/cloudflared/tunnels.js:48
 msgid "Tunnels Information"
-msgstr "隧道資訊"
+msgstr ""
 
 #: applications/luci-app-cloudflared/htdocs/luci-static/resources/view/cloudflared/log.js:33
 msgid "Unable to read the interface info from /var/log/cloudflared.log."

@@ -79,7 +79,7 @@ msgstr "快取大小（MB）"
 
 #: applications/luci-app-transmission/htdocs/luci-static/resources/view/transmission.js:50
 msgid "Config file directory"
-msgstr "設定檔案目錄"
+msgstr "組態檔目錄"
 
 #: applications/luci-app-transmission/htdocs/luci-static/resources/view/transmission.js:53
 msgid "Custom Web UI directory"
@@ -115,7 +115,7 @@ msgstr "已啟用"
 
 #: applications/luci-app-transmission/htdocs/luci-static/resources/view/transmission.js:136
 msgid "Encryption"
-msgstr "加密"
+msgstr "加密(Encryption)"
 
 #: applications/luci-app-transmission/htdocs/luci-static/resources/view/transmission.js:149
 msgid "Error"
@@ -139,11 +139,11 @@ msgstr "全域性 Peer 限制"
 
 #: applications/luci-app-transmission/htdocs/luci-static/resources/view/transmission.js:44
 msgid "Global settings"
-msgstr "全域設定"
+msgstr "全域性設定"
 
 #: applications/luci-app-transmission/root/usr/share/rpcd/acl.d/luci-app-transmission.json:3
 msgid "Grant UCI access for luci-app-transmission"
-msgstr "授予luci-app-transmission存取UCI的權限"
+msgstr "授予 luci-app-transmission 擁有 UCI 存取的權限"
 
 #: applications/luci-app-transmission/htdocs/luci-static/resources/view/transmission.js:289
 msgid "Idle seeding limit"
@@ -243,7 +243,7 @@ msgstr "Peer 接口<abbr title=\"服務類型\">TOS</abbr>"
 
 #: applications/luci-app-transmission/htdocs/luci-static/resources/view/transmission.js:204
 msgid "Port forwarding enabled"
-msgstr "已啟用連接埠轉送"
+msgstr "埠轉發已啟用"
 
 #: applications/luci-app-transmission/htdocs/luci-static/resources/view/transmission.js:105
 msgid "Preallocation"
@@ -303,7 +303,7 @@ msgstr "RPC 密碼"
 
 #: applications/luci-app-transmission/htdocs/luci-static/resources/view/transmission.js:239
 msgid "RPC port"
-msgstr "RPC連接埠"
+msgstr "RPC 埠號"
 
 #: applications/luci-app-transmission/htdocs/luci-static/resources/view/transmission.js:230
 msgid "RPC settings"
@@ -311,7 +311,7 @@ msgstr "RPC 配置"
 
 #: applications/luci-app-transmission/htdocs/luci-static/resources/view/transmission.js:263
 msgid "RPC username"
-msgstr "RPC使用者名稱"
+msgstr "RPC 使用者名稱"
 
 #: applications/luci-app-transmission/htdocs/luci-static/resources/view/transmission.js:256
 msgid "RPC whitelist"
@@ -401,7 +401,7 @@ msgstr ""
 
 #: applications/luci-app-transmission/root/usr/share/luci/menu.d/luci-app-transmission.json:3
 msgid "Transmission"
-msgstr "傳輸"
+msgstr "傳送"
 
 #: applications/luci-app-transmission/htdocs/luci-static/resources/view/transmission.js:42
 msgid ""

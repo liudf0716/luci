@@ -1,8 +1,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"PO-Revision-Date: 2025-01-21 08:31+0000\n"
-"Last-Translator: x86_64-pc-linux-gnu <x86_64-pc-linux-gnu@proton.me>\n"
+"PO-Revision-Date: 2024-11-18 14:09+0000\n"
+"Last-Translator: 少年ウィンド <k236michaeimm@gmail.com>\n"
 "Language-Team: Chinese (Traditional Han script) <https://hosted.weblate.org/"
 "projects/openwrt/luciapplicationsexample/zh_Hant/>\n"
 "Language: zh_Hant\n"
@@ -10,7 +10,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: Weblate 5.10-dev\n"
+"X-Generator: Weblate 5.9-dev\n"
 
 #: applications/luci-app-example/htdocs/luci-static/resources/view/example/form.js:38
 msgid "A boolean option"
@@ -42,7 +42,7 @@ msgstr ""
 
 #: applications/luci-app-example/root/usr/share/luci/menu.d/luci-app-example.json:3
 msgid "Example"
-msgstr "範例"
+msgstr ""
 
 #: applications/luci-app-example/htdocs/luci-static/resources/view/example/form.js:25
 msgid "Example Form"
@@ -74,7 +74,7 @@ msgstr ""
 
 #: applications/luci-app-example/root/usr/share/luci/menu.d/luci-app-example.json:23
 msgid "HTML Page"
-msgstr "HTML 頁面"
+msgstr ""
 
 #: applications/luci-app-example/htdocs/luci-static/resources/view/example/form.js:53
 msgid "Input for a password (storage on disk is not encrypted)"
@@ -86,7 +86,7 @@ msgstr ""
 
 #: applications/luci-app-example/htdocs/luci-static/resources/view/example/rpc.js:59
 msgid "Is this real?"
-msgstr "這是真的嗎？"
+msgstr ""
 
 #: applications/luci-app-example/htdocs/luci-static/resources/view/example/rpc.js:127
 msgid "JSON converted to table via array building and loop"
@@ -102,7 +102,7 @@ msgstr ""
 
 #: applications/luci-app-example/htdocs/luci-static/resources/view/example/rpc.js:59
 msgid "No"
-msgstr "否"
+msgstr ""
 
 #: applications/luci-app-example/htdocs/luci-static/resources/view/example/rpc.js:86
 msgid "Not found"
@@ -111,7 +111,7 @@ msgstr ""
 #: applications/luci-app-example/htdocs/luci-static/resources/view/example/rpc-jsonmap-tablesection.js:73
 #: applications/luci-app-example/htdocs/luci-static/resources/view/example/rpc-jsonmap-typedsection.js:73
 msgid "Option name"
-msgstr "選項名稱"
+msgstr ""
 
 #: applications/luci-app-example/htdocs/luci-static/resources/view/example/rpc-jsonmap-tablesection.js:74
 #: applications/luci-app-example/htdocs/luci-static/resources/view/example/rpc-jsonmap-typedsection.js:74
@@ -124,7 +124,7 @@ msgstr ""
 
 #: applications/luci-app-example/htdocs/luci-static/resources/view/example/form.js:52
 msgid "Password Option"
-msgstr "密碼選項"
+msgstr ""
 
 #: applications/luci-app-example/root/usr/share/luci/menu.d/luci-app-example.json:32
 msgid "RPC Array Example"
@@ -152,7 +152,7 @@ msgstr ""
 #: applications/luci-app-example/htdocs/luci-static/resources/view/example/rpc-jsonmap-typedsection.js:60
 #: applications/luci-app-example/htdocs/luci-static/resources/view/example/rpc.js:112
 msgid "See browser console for raw data"
-msgstr "原始資料請見瀏覽器控制台"
+msgstr ""
 
 #: applications/luci-app-example/htdocs/luci-static/resources/view/example/form.js:42
 msgid "Select Option"
@@ -164,7 +164,7 @@ msgstr ""
 
 #: applications/luci-app-example/htdocs/luci-static/resources/view/example/rpc.js:59
 msgid "Yes"
-msgstr "是"
+msgstr ""
 
 #: applications/luci-app-example/htdocs/luci-static/resources/view/example/form.js:28
 msgid "first section"

@@ -63,7 +63,7 @@ msgstr ""
 #: applications/luci-app-clamav/htdocs/luci-static/resources/view/clamav/clamav-milter.js:151
 #: applications/luci-app-clamav/htdocs/luci-static/resources/view/clamav/clamav-milter.js:157
 msgid "Basic"
-msgstr "基本"
+msgstr ""
 
 #: applications/luci-app-clamav/htdocs/luci-static/resources/view/clamav/clamav-milter.js:64
 #: applications/luci-app-clamav/htdocs/luci-static/resources/view/clamav/clamav-milter.js:72
@@ -101,15 +101,15 @@ msgstr "設定"
 
 #: applications/luci-app-clamav/htdocs/luci-static/resources/view/clamav/freshclam.js:160
 msgid "Connect timeout"
-msgstr "連線逾時"
+msgstr ""
 
 #: applications/luci-app-clamav/htdocs/luci-static/resources/view/clamav/freshclam.js:137
 msgid "Custom database URL"
-msgstr "自訂資料庫 URL"
+msgstr ""
 
 #: applications/luci-app-clamav/htdocs/luci-static/resources/view/clamav/freshclam.js:125
 msgid "DNS database info"
-msgstr "DNS 資料庫資訊"
+msgstr ""
 
 #: applications/luci-app-clamav/htdocs/luci-static/resources/view/clamav/clamav.js:236
 msgid "Database check every N sec"
@@ -122,7 +122,7 @@ msgstr ""
 #: applications/luci-app-clamav/htdocs/luci-static/resources/view/clamav/clamav.js:285
 #: applications/luci-app-clamav/htdocs/luci-static/resources/view/clamav/freshclam.js:119
 msgid "Database directory"
-msgstr "資料庫目錄"
+msgstr ""
 
 #: applications/luci-app-clamav/htdocs/luci-static/resources/view/clamav/freshclam.js:131
 msgid "Database mirror"
@@ -136,7 +136,7 @@ msgstr "資料庫擁有者"
 #: applications/luci-app-clamav/htdocs/luci-static/resources/view/clamav/clamav.js:65
 #: applications/luci-app-clamav/htdocs/luci-static/resources/view/clamav/freshclam.js:60
 msgid "Debug logging"
-msgstr "除錯日誌"
+msgstr ""
 
 #: applications/luci-app-clamav/htdocs/luci-static/resources/view/clamav/clamav-milter.js:63
 #: applications/luci-app-clamav/htdocs/luci-static/resources/view/clamav/clamav-milter.js:71
@@ -168,7 +168,7 @@ msgstr "啟用詳細日誌"
 
 #: applications/luci-app-clamav/htdocs/luci-static/resources/view/clamav/freshclam.js:192
 msgid "Exclude databases"
-msgstr "排除資料庫"
+msgstr ""
 
 #: applications/luci-app-clamav/htdocs/luci-static/resources/view/clamav/clamav.js:271
 msgid "Exit when Out Of Memory"
@@ -176,7 +176,7 @@ msgstr ""
 
 #: applications/luci-app-clamav/htdocs/luci-static/resources/view/clamav/freshclam.js:187
 msgid "Extra databases"
-msgstr "額外資料庫"
+msgstr ""
 
 #: applications/luci-app-clamav/htdocs/luci-static/resources/view/clamav/clamav-milter.js:208
 msgid "Fix stale socket"
@@ -202,7 +202,7 @@ msgstr ""
 
 #: applications/luci-app-clamav/root/usr/share/rpcd/acl.d/luci-app-clamav.json:3
 msgid "Grant UCI access for luci-app-clamav"
-msgstr "授予luci-app-clamav存取UCI的權限"
+msgstr "授予 luci-app-clamav 存取 UCI 的權限"
 
 #: applications/luci-app-clamav/htdocs/luci-static/resources/view/clamav/clamav-milter.js:190
 #: applications/luci-app-clamav/htdocs/luci-static/resources/view/clamav/clamav-milter.js:196
@@ -236,7 +236,7 @@ msgstr "記錄訊息時間戳"
 #: applications/luci-app-clamav/htdocs/luci-static/resources/view/clamav/clamav.js:71
 #: applications/luci-app-clamav/htdocs/luci-static/resources/view/clamav/freshclam.js:66
 msgid "Log to syslog"
-msgstr "記錄至系統日誌"
+msgstr "將日誌寫入syslog"
 
 #: applications/luci-app-clamav/htdocs/luci-static/resources/view/clamav/clamav.js:111
 msgid "Max directory scan depth"
@@ -343,11 +343,11 @@ msgstr ""
 #: applications/luci-app-clamav/htdocs/luci-static/resources/view/clamav/clamav-milter.js:56
 #: applications/luci-app-clamav/htdocs/luci-static/resources/view/clamav/clamav.js:219
 msgid "Read timeout"
-msgstr "讀取逾時"
+msgstr "讀取超時"
 
 #: applications/luci-app-clamav/htdocs/luci-static/resources/view/clamav/freshclam.js:166
 msgid "Receive timeout"
-msgstr "接收逾時"
+msgstr "接收超時"
 
 #: applications/luci-app-clamav/htdocs/luci-static/resources/view/clamav/clamav-milter.js:62
 #: applications/luci-app-clamav/htdocs/luci-static/resources/view/clamav/clamav-milter.js:70
@@ -382,7 +382,7 @@ msgstr "掃描 MS Office 文件和 .msi 安裝包檔案"
 
 #: applications/luci-app-clamav/htdocs/luci-static/resources/view/clamav/clamav.js:183
 msgid "Scan RFC1341 messages split over many emails"
-msgstr "掃描符合 RFC1341 郵件分離規範的電子郵件"
+msgstr "掃描符合 RFC1341 郵件分離規範的郵件"
 
 #: applications/luci-app-clamav/htdocs/luci-static/resources/view/clamav/clamav.js:189
 msgid "Scan archives"
@@ -442,7 +442,7 @@ msgstr ""
 
 #: applications/luci-app-clamav/htdocs/luci-static/resources/view/clamav/freshclam.js:177
 msgid "Test databases"
-msgstr "測試資料庫"
+msgstr ""
 
 #: applications/luci-app-clamav/htdocs/luci-static/resources/view/clamav/clamav.js:105
 msgid "Use official database only"

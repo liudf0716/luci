@@ -6275,7 +6275,11 @@ msgstr "方法未找到"
 #: modules/luci-mod-status/htdocs/luci-static/resources/view/status/routes.js:199
 #: modules/luci-mod-status/htdocs/luci-static/resources/view/status/routes.js:225
 msgid "Metric"
+<<<<<<< HEAD
 msgstr "度量值"
+=======
+msgstr "跃点数"
+>>>>>>> 1cf13bcaf5 (luci-base: fix luci merge conflict)
 
 #: modules/luci-mod-network/htdocs/luci-static/resources/view/network/interfaces.js:1038
 msgid ""

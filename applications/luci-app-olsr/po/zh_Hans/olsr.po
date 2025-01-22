@@ -586,7 +586,7 @@ msgstr "确保 OLSRd 正在运行， “jsoninfo” 插件已加载，端口配�
 
 #: applications/luci-app-olsr/htdocs/luci-static/resources/view/olsr/status-olsr/routes.js:182
 msgid "Metric"
-msgstr "度量值"
+msgstr "跃点数"
 
 #: applications/luci-app-olsr/htdocs/luci-static/resources/view/olsr/frontend/olsrd.js:288
 #: applications/luci-app-olsr/htdocs/luci-static/resources/view/olsr/frontend/olsrd.js:524

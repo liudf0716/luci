@@ -134,7 +134,7 @@ msgstr ""
 #: applications/luci-app-coovachilli/htdocs/luci-static/resources/view/coovachilli/coovachilli.js:59
 #: applications/luci-app-coovachilli/htdocs/luci-static/resources/view/coovachilli/coovachilli.js:60
 msgid "Coova Chilli"
-msgstr "Coova Chilli"
+msgstr ""
 
 #: applications/luci-app-coovachilli/root/usr/share/luci/menu.d/luci-app-coovachilli.json:3
 msgid "CoovaChilli"
@@ -150,7 +150,7 @@ msgstr "DHCP閘道IP"
 
 #: applications/luci-app-coovachilli/htdocs/luci-static/resources/view/coovachilli/coovachilli.js:365
 msgid "DHCP Gateway Port"
-msgstr "DHCP 閘道通訊埠"
+msgstr ""
 
 #: applications/luci-app-coovachilli/htdocs/luci-static/resources/view/coovachilli/coovachilli.js:350
 msgid "DHCP Start"
@@ -228,7 +228,7 @@ msgstr ""
 
 #: applications/luci-app-coovachilli/htdocs/luci-static/resources/view/coovachilli/coovachilli.js:311
 msgid "Domain"
-msgstr "網域"
+msgstr "網域名稱"
 
 #: applications/luci-app-coovachilli/htdocs/luci-static/resources/view/coovachilli/coovachilli.js:152
 msgid "Domain suffixes"
@@ -269,11 +269,11 @@ msgstr ""
 
 #: applications/luci-app-coovachilli/htdocs/luci-static/resources/view/coovachilli/coovachilli.js:65
 msgid "General"
-msgstr "一般"
+msgstr ""
 
 #: applications/luci-app-coovachilli/root/usr/share/rpcd/acl.d/luci-app-coovachilli.json:3
 msgid "Grant UCI access for luci-app-coovachilli"
-msgstr "授予luci-app-coovachilli存取UCI的權限"
+msgstr "授予 luci-app-coovachilli 擁有 UCI 存取的權限"
 
 #: applications/luci-app-coovachilli/htdocs/luci-static/resources/view/coovachilli/coovachilli.js:136
 msgid "Homepage"
@@ -311,11 +311,11 @@ msgstr ""
 
 #: applications/luci-app-coovachilli/htdocs/luci-static/resources/view/coovachilli/coovachilli.js:345
 msgid "Lease time"
-msgstr "租約時間"
+msgstr ""
 
 #: applications/luci-app-coovachilli/htdocs/luci-static/resources/view/coovachilli/coovachilli.js:140
 msgid "Listen"
-msgstr "監聽"
+msgstr ""
 
 #: applications/luci-app-coovachilli/htdocs/luci-static/resources/view/coovachilli/coovachilli.js:213
 msgid "Local users"
@@ -359,15 +359,15 @@ msgstr ""
 
 #: applications/luci-app-coovachilli/htdocs/luci-static/resources/view/coovachilli/coovachilli.js:423
 msgid "NAS ID"
-msgstr "NAS ID"
+msgstr ""
 
 #: applications/luci-app-coovachilli/htdocs/luci-static/resources/view/coovachilli/coovachilli.js:197
 msgid "NAS IP"
-msgstr "NAS IP"
+msgstr ""
 
 #: applications/luci-app-coovachilli/htdocs/luci-static/resources/view/coovachilli/coovachilli.js:201
 msgid "NAS MAC"
-msgstr "NAS MAC"
+msgstr ""
 
 #: applications/luci-app-coovachilli/htdocs/luci-static/resources/view/coovachilli/coovachilli.js:423
 msgid "NAS-Identifier"
@@ -432,7 +432,7 @@ msgstr ""
 
 #: applications/luci-app-coovachilli/htdocs/luci-static/resources/view/coovachilli/coovachilli.js:387
 msgid "Primary server"
-msgstr "主要伺服器"
+msgstr ""
 
 #: applications/luci-app-coovachilli/htdocs/luci-static/resources/view/coovachilli/coovachilli.js:210
 msgid "Program in inetd style to handle all uam requests"
@@ -488,7 +488,7 @@ msgstr ""
 
 #: applications/luci-app-coovachilli/htdocs/luci-static/resources/view/coovachilli/coovachilli.js:193
 msgid "SSID"
-msgstr "SSID"
+msgstr ""
 
 #: applications/luci-app-coovachilli/htdocs/luci-static/resources/view/coovachilli/coovachilli.js:120
 #: applications/luci-app-coovachilli/htdocs/luci-static/resources/view/coovachilli/coovachilli.js:395
@@ -509,7 +509,7 @@ msgstr "伺服器"
 
 #: applications/luci-app-coovachilli/htdocs/luci-static/resources/view/coovachilli/coovachilli.js:62
 msgid "Settings"
-msgstr "設定"
+msgstr ""
 
 #: applications/luci-app-coovachilli/htdocs/luci-static/resources/view/coovachilli/coovachilli.js:334
 msgid "Special options for DHCP"
@@ -593,7 +593,7 @@ msgstr ""
 
 #: applications/luci-app-coovachilli/htdocs/luci-static/resources/view/coovachilli/coovachilli.js:408
 msgid "Timeout"
-msgstr "逾時"
+msgstr ""
 
 #: applications/luci-app-coovachilli/htdocs/luci-static/resources/view/coovachilli/coovachilli.js:66
 msgid "UAM and MAC Authentication"
@@ -642,7 +642,7 @@ msgstr ""
 
 #: applications/luci-app-coovachilli/htdocs/luci-static/resources/view/coovachilli/coovachilli.js:195
 msgid "VLAN"
-msgstr "VLAN"
+msgstr ""
 
 #: applications/luci-app-coovachilli/htdocs/luci-static/resources/view/coovachilli/coovachilli.js:428
 msgid "WISPr Location ID"
@@ -666,7 +666,7 @@ msgstr ""
 
 #: applications/luci-app-coovachilli/htdocs/luci-static/resources/view/coovachilli/coovachilli.js:345
 msgid "in seconds"
-msgstr "以秒為單位"
+msgstr ""
 
 #: applications/luci-app-coovachilli/htdocs/luci-static/resources/view/coovachilli/coovachilli.js:148
 msgid "iport"
@@ -683,7 +683,7 @@ msgstr ""
 
 #: applications/luci-app-coovachilli/htdocs/luci-static/resources/view/coovachilli/coovachilli.js:219
 msgid "port"
-msgstr "連接埠"
+msgstr ""
 
 #: applications/luci-app-coovachilli/htdocs/luci-static/resources/view/coovachilli/coovachilli.js:207
 msgid "www binary"

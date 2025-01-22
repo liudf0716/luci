@@ -46,7 +46,7 @@ msgstr "正在建置韌體…"
 
 #: applications/luci-app-attendedsysupgrade/htdocs/luci-static/resources/view/attendedsysupgrade/overview.js:67
 msgid "Calculating package hash"
-msgstr "計算軟體包的雜湊"
+msgstr ""
 
 #: applications/luci-app-attendedsysupgrade/htdocs/luci-static/resources/view/attendedsysupgrade/overview.js:205
 #: applications/luci-app-attendedsysupgrade/htdocs/luci-static/resources/view/attendedsysupgrade/overview.js:578
@@ -66,7 +66,7 @@ msgstr "關閉"
 
 #: applications/luci-app-attendedsysupgrade/htdocs/luci-static/resources/view/attendedsysupgrade/overview.js:70
 msgid "Completed generating firmware image"
-msgstr "已生成韌體映像"
+msgstr ""
 
 #: applications/luci-app-attendedsysupgrade/root/usr/share/luci/menu.d/luci-app-attendedsysupgrade.json:24
 msgid "Configuration"
@@ -103,7 +103,7 @@ msgstr "正在下載…"
 
 #: applications/luci-app-attendedsysupgrade/htdocs/luci-static/resources/view/attendedsysupgrade/overview.js:290
 msgid "Error building the firmware image"
-msgstr "建置韌體映像時發生錯誤"
+msgstr "產生韌體映像檔時發生錯誤"
 
 #: applications/luci-app-attendedsysupgrade/htdocs/luci-static/resources/view/attendedsysupgrade/overview.js:468
 msgid "Error connecting to upgrade server"
@@ -115,7 +115,7 @@ msgstr "韌體下載發生錯誤。請再試一次"
 
 #: applications/luci-app-attendedsysupgrade/htdocs/luci-static/resources/view/attendedsysupgrade/overview.js:71
 msgid "Failed to generate firmware image"
-msgstr "韌體生成失敗"
+msgstr ""
 
 #: applications/luci-app-attendedsysupgrade/htdocs/luci-static/resources/view/attendedsysupgrade/overview.js:167
 msgid "Filename"
@@ -214,7 +214,7 @@ msgstr "建置佇列位置 %s 中的請求"
 
 #: applications/luci-app-attendedsysupgrade/htdocs/luci-static/resources/view/attendedsysupgrade/overview.js:155
 msgid "SHA256"
-msgstr "SHA256"
+msgstr "SHA-256"
 
 #: applications/luci-app-attendedsysupgrade/htdocs/luci-static/resources/view/attendedsysupgrade/overview.js:687
 msgid "Search for firmware upgrade"
@@ -266,7 +266,7 @@ msgstr "成功建立韌體映像檔"
 
 #: applications/luci-app-attendedsysupgrade/htdocs/luci-static/resources/view/attendedsysupgrade/overview.js:163
 msgid "Target"
-msgstr "目的"
+msgstr "目標"
 
 #: applications/luci-app-attendedsysupgrade/htdocs/luci-static/resources/view/attendedsysupgrade/overview.js:665
 msgid ""

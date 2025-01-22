@@ -7,7 +7,6 @@
 'require rpc';
 'require fs';
 'require form';
-'require network';
 'require tools.widgets as widgets';
 
 return view.extend({
@@ -99,16 +98,6 @@ return view.extend({
 					_this.services[service] = false;
 			});
 		}, this))
-	},
-
-	/*
-	* Figure out what the wan interface on the device is.
-	* Determine if the physical device exist, or if we should use an alias.
-	*/
-	callGetWanInterface: function(m, ev) {
-		return network.getDevice('wan').then(dev => dev.getName())
-			.catch(err => network.getNetwork('wan').then(net => '@' + net.getName()))
-			.catch(err => null);
 	},
 
 	/*
@@ -254,8 +243,7 @@ return view.extend({
 			this.callDDnsGetStatus(),
 			this.callDDnsGetEnv(),
 			this.callGenServiceList(),
-			uci.load('ddns'),
-			this.callGetWanInterface()
+			uci.load('ddns')
 		]);
 	},
 
@@ -264,7 +252,6 @@ return view.extend({
 		var status = data[1] || [];
 		var env = data[2] || [];
 		var logdir = uci.get('ddns', 'global', 'ddns_logdir') || "/var/log/ddns";
-		var wan_interface = data[5];
 
 		var _this = this;
 
@@ -599,7 +586,6 @@ return view.extend({
 			return _this.handleGetServiceData(service).then(L.bind(function (service_data) {
 				s.service_available = true;
 				s.service_supported = true;
-				s.url = null;
 
 				if (service != '-') {
 					if (!service_data)
@@ -608,11 +594,6 @@ return view.extend({
 						service_data = JSON.parse(service_data);
 						if (ipv6 == "1" && !service_data.ipv6)
 							s.service_supported = false;
-						else if (ipv6 == "1") {
-							s.url = service_data.ipv6.url;
-						} else {
-							s.url = service_data.ipv4.url;
-						}
 					}
 				}
 
@@ -691,14 +672,6 @@ return view.extend({
 					o.cfgvalue = function () {
 						return _("Service doesn't support this IP type")
 					};
-				}
-
-				if (Boolean(s.url)) {
-					o = s.taboption('basic', form.DummyValue, '_url', _("Update URL"));
-					o.rawhtml = true;
-					o.default = '<div style="font-family: monospace;">'
-						+ s.url.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
-						+ '</div>';
 				}
 
 				var service_switch = s.taboption('basic', form.Button, '_switch_proto');
@@ -878,7 +851,7 @@ return view.extend({
 					o.modalonly = true;
 					o.depends("ip_source", "interface")
 					o.multiple = false;
-					o.default = wan_interface;
+					o.default = 'wan';
 
 					o = s.taboption('advanced', form.Value, 'ip_script',
 						_("Script"),

@@ -66,7 +66,7 @@ msgstr ""
 
 #: applications/luci-app-sshtunnel/htdocs/luci-static/resources/view/sshtunnel/ssh_tunnels.js:99
 msgid "Dynamic Tunnels"
-msgstr "動態隧道"
+msgstr ""
 
 #: applications/luci-app-sshtunnel/htdocs/luci-static/resources/view/sshtunnel/ssh_tunnels.js:30
 #: applications/luci-app-sshtunnel/htdocs/luci-static/resources/view/sshtunnel/ssh_tunnels.js:68
@@ -101,11 +101,11 @@ msgstr "一般設定"
 
 #: applications/luci-app-sshtunnel/htdocs/luci-static/resources/view/sshtunnel/ssh_keys.js:116
 msgid "Generate"
-msgstr "產生"
+msgstr ""
 
 #: applications/luci-app-sshtunnel/htdocs/luci-static/resources/view/sshtunnel/ssh_keys.js:97
 msgid "Generate a new key"
-msgstr "產生新金鑰"
+msgstr ""
 
 #: applications/luci-app-sshtunnel/root/usr/share/rpcd/acl.d/luci-app-sshtunnel.json:3
 msgid "Grant UCI access for luci-app-sshtunnel"
@@ -114,7 +114,7 @@ msgstr "授予luci-app-sshtunnel存取UCI的權限"
 #: applications/luci-app-sshtunnel/htdocs/luci-static/resources/view/sshtunnel/ssh_hosts.js:39
 #: applications/luci-app-sshtunnel/htdocs/luci-static/resources/view/sshtunnel/ssh_servers.js:37
 msgid "Hostname"
-msgstr "主機名稱"
+msgstr ""
 
 #: applications/luci-app-sshtunnel/htdocs/luci-static/resources/view/sshtunnel/ssh_servers.js:49
 msgid "Identity Key"
@@ -135,21 +135,21 @@ msgstr ""
 
 #: applications/luci-app-sshtunnel/root/usr/share/luci/menu.d/luci-app-sshtunnel.json:38
 msgid "Known Hosts"
-msgstr "已知的主機"
+msgstr ""
 
 #: applications/luci-app-sshtunnel/htdocs/luci-static/resources/view/sshtunnel/ssh_hosts.js:48
 msgid "Known hosts"
-msgstr "已知的主機"
+msgstr ""
 
 #: applications/luci-app-sshtunnel/htdocs/luci-static/resources/view/sshtunnel/ssh_tunnels.js:61
 msgid "Local Tunnels"
-msgstr "本地隧道"
+msgstr ""
 
 #: applications/luci-app-sshtunnel/htdocs/luci-static/resources/view/sshtunnel/ssh_tunnels.js:48
 #: applications/luci-app-sshtunnel/htdocs/luci-static/resources/view/sshtunnel/ssh_tunnels.js:73
 #: applications/luci-app-sshtunnel/htdocs/luci-static/resources/view/sshtunnel/ssh_tunnels.js:111
 msgid "Local address"
-msgstr "本地位址"
+msgstr ""
 
 #: applications/luci-app-sshtunnel/htdocs/luci-static/resources/view/sshtunnel/ssh_tunnels.js:142
 msgid "Local dev"
@@ -163,7 +163,7 @@ msgstr "本地埠號"
 
 #: applications/luci-app-sshtunnel/htdocs/luci-static/resources/view/sshtunnel/ssh_servers.js:63
 msgid "Log level"
-msgstr "日誌等級"
+msgstr "紀錄級別"
 
 #: applications/luci-app-sshtunnel/htdocs/luci-static/resources/view/sshtunnel/ssh_keys.js:88
 #: applications/luci-app-sshtunnel/htdocs/luci-static/resources/view/sshtunnel/ssh_keys.js:101
@@ -174,7 +174,7 @@ msgstr "名稱"
 #: applications/luci-app-sshtunnel/htdocs/luci-static/resources/view/sshtunnel/ssh_servers.js:116
 #: applications/luci-app-sshtunnel/htdocs/luci-static/resources/view/sshtunnel/ssh_servers.js:126
 msgid "No"
-msgstr "否"
+msgstr ""
 
 #: applications/luci-app-sshtunnel/htdocs/luci-static/resources/view/sshtunnel/ssh_servers.js:19
 msgid "No SSH keys found, <a %s>generate a new one</a>"
@@ -195,7 +195,7 @@ msgstr ""
 #: applications/luci-app-sshtunnel/htdocs/luci-static/resources/view/sshtunnel/ssh_hosts.js:40
 #: applications/luci-app-sshtunnel/htdocs/luci-static/resources/view/sshtunnel/ssh_keys.js:89
 msgid "Public Key"
-msgstr "公開金鑰"
+msgstr ""
 
 #: applications/luci-app-sshtunnel/htdocs/luci-static/resources/view/sshtunnel/ssh_servers.js:121
 msgid "Refuse to connect to hosts whose host key has changed."
@@ -203,12 +203,12 @@ msgstr ""
 
 #: applications/luci-app-sshtunnel/htdocs/luci-static/resources/view/sshtunnel/ssh_tunnels.js:23
 msgid "Remote Tunnels"
-msgstr "遠端隧道"
+msgstr ""
 
 #: applications/luci-app-sshtunnel/htdocs/luci-static/resources/view/sshtunnel/ssh_tunnels.js:35
 #: applications/luci-app-sshtunnel/htdocs/luci-static/resources/view/sshtunnel/ssh_tunnels.js:86
 msgid "Remote address"
-msgstr "遠端位址"
+msgstr ""
 
 #: applications/luci-app-sshtunnel/htdocs/luci-static/resources/view/sshtunnel/ssh_tunnels.js:147
 msgid "Remote dev"
@@ -217,7 +217,7 @@ msgstr ""
 #: applications/luci-app-sshtunnel/htdocs/luci-static/resources/view/sshtunnel/ssh_tunnels.js:43
 #: applications/luci-app-sshtunnel/htdocs/luci-static/resources/view/sshtunnel/ssh_tunnels.js:93
 msgid "Remote port"
-msgstr "遠端連接埠"
+msgstr "遠端埠號"
 
 #: applications/luci-app-sshtunnel/htdocs/luci-static/resources/view/sshtunnel/ssh_servers.js:84
 msgid "Retry delay"
@@ -260,7 +260,7 @@ msgstr ""
 #: applications/luci-app-sshtunnel/htdocs/luci-static/resources/view/sshtunnel/ssh_servers.js:29
 #: applications/luci-app-sshtunnel/root/usr/share/luci/menu.d/luci-app-sshtunnel.json:22
 msgid "Servers"
-msgstr "伺服器"
+msgstr ""
 
 #: applications/luci-app-sshtunnel/htdocs/luci-static/resources/view/sshtunnel/ssh_servers.js:120
 msgid "Strict host key checking"
@@ -294,7 +294,7 @@ msgstr ""
 
 #: applications/luci-app-sshtunnel/htdocs/luci-static/resources/view/sshtunnel/ssh_servers.js:75
 msgid "Use compression"
-msgstr "使用壓縮"
+msgstr ""
 
 #: applications/luci-app-sshtunnel/htdocs/luci-static/resources/view/sshtunnel/ssh_servers.js:46
 msgid "User"
@@ -312,4 +312,4 @@ msgstr "VPN類型"
 #: applications/luci-app-sshtunnel/htdocs/luci-static/resources/view/sshtunnel/ssh_servers.js:115
 #: applications/luci-app-sshtunnel/htdocs/luci-static/resources/view/sshtunnel/ssh_servers.js:125
 msgid "Yes"
-msgstr "是"
+msgstr ""

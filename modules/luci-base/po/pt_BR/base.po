@@ -3,7 +3,7 @@ msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2009-06-10 03:41+0200\n"
-"PO-Revision-Date: 2025-01-25 03:39+0000\n"
+"PO-Revision-Date: 2025-01-20 09:46+0000\n"
 "Last-Translator: Janderson Vieira Santos <jandersonvs79@gmail.com>\n"
 "Language-Team: Portuguese (Brazil) <https://hosted.weblate.org/projects/"
 "openwrt/luci/pt_BR/>\n"
@@ -980,11 +980,11 @@ msgstr "Mensagens agregadas do originador"
 
 #: modules/luci-mod-network/htdocs/luci-static/resources/view/network/interfaces.js:1496
 msgid "Aggregation device"
-msgstr "Dispositivo de agregação"
+msgstr ""
 
 #: modules/luci-mod-network/htdocs/luci-static/resources/tools/network.js:585
 msgid "Aggregation ports"
-msgstr "Portas de agregação"
+msgstr ""
 
 #: modules/luci-mod-system/htdocs/luci-static/resources/view/system/system.js:192
 msgid "Alert"
@@ -1002,11 +1002,11 @@ msgstr "Interface adicional de \"%s\""
 
 #: modules/luci-mod-network/htdocs/luci-static/resources/tools/network.js:914
 msgid "All"
-msgstr "Todos"
+msgstr ""
 
 #: modules/luci-mod-network/htdocs/luci-static/resources/tools/network.js:905
 msgid "All ARP Targets"
-msgstr "Todos os Alvos ARP"
+msgstr ""
 
 #: modules/luci-mod-network/htdocs/luci-static/resources/tools/network.js:905
 msgid "All ARP targets must be reachable to consider the link valid"
@@ -1015,7 +1015,7 @@ msgstr ""
 
 #: modules/luci-mod-network/htdocs/luci-static/resources/tools/network.js:668
 msgid "All ports active"
-msgstr "Todas as portas ativas"
+msgstr ""
 
 #: modules/luci-mod-network/htdocs/luci-static/resources/view/network/dhcp.js:771
 msgid "All servers"
@@ -1082,7 +1082,7 @@ msgstr "Permitir a reinicialização do dispositivo"
 
 #: modules/luci-mod-network/htdocs/luci-static/resources/tools/network.js:668
 msgid "Allow receiving on inactive ports"
-msgstr "Permitir recebimento em portas inativas"
+msgstr ""
 
 #: modules/luci-mod-system/htdocs/luci-static/resources/view/system/dropbear.js:38
 msgid "Allow remote hosts to connect to local SSH forwarded ports"
@@ -1554,7 +1554,7 @@ msgstr ""
 
 #: modules/luci-mod-network/htdocs/luci-static/resources/tools/network.js:820
 msgid "Better"
-msgstr "Melhor"
+msgstr ""
 
 #: modules/luci-mod-system/htdocs/luci-static/resources/view/system/system.js:287
 msgid "Bind NTP server"
@@ -1622,7 +1622,7 @@ msgstr "Política do vínculo"
 
 #: modules/luci-mod-network/htdocs/luci-static/resources/tools/network.js:459
 msgid "Bonding/Aggregation device"
-msgstr "Dispositivo de Agregação/Agrupamento"
+msgstr ""
 
 #: modules/luci-mod-network/htdocs/luci-static/resources/view/network/dhcp.js:600
 msgid "Both \"Relay from\" and \"Relay to address\" must be specified."
@@ -2270,7 +2270,7 @@ msgstr ""
 
 #: modules/luci-mod-network/htdocs/luci-static/resources/tools/network.js:736
 msgid "Count"
-msgstr "Contagem"
+msgstr ""
 
 #: modules/luci-mod-network/htdocs/luci-static/resources/view/network/wireless.js:189
 msgid "Country"
@@ -6314,7 +6314,7 @@ msgstr "Tag de Correspondência"
 
 #: modules/luci-mod-network/htdocs/luci-static/resources/view/network/dhcp.js:907
 msgid "Match this Tag"
-msgstr "Corresponder a esta etiqueta"
+msgstr ""
 
 #: modules/luci-mod-network/htdocs/luci-static/resources/view/network/routes.js:164
 msgid "Match traffic IP protocol type"
@@ -9184,8 +9184,6 @@ msgid ""
 "Routes go in routing tables and define the specific path to reach "
 "destinations."
 msgstr ""
-"Rotas vão em tabelas de roteamento e definem o caminho específico para "
-"alcançar destinos."
 
 #: modules/luci-mod-network/htdocs/luci-static/resources/view/network/routes.js:29
 #: modules/luci-mod-network/root/usr/share/luci/menu.d/luci-mod-network.json:50
@@ -9246,8 +9244,6 @@ msgid ""
 "Rules determine which routing table to use, based on conditions like source "
 "address or interface."
 msgstr ""
-"Regras determinam qual tabela de roteamento usar, com base em condições como "
-"endereço de origem ou interface."
 
 #: modules/luci-base/htdocs/luci-static/resources/luci.js:2310
 msgid "Runtime error"

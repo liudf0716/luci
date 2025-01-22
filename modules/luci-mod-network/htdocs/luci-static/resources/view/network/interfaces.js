@@ -540,7 +540,10 @@ return view.extend({
 
 				proto_select = s.taboption('general', form.ListValue, 'proto', _('Protocol'));
 				proto_select.modalonly = true;
+<<<<<<< HEAD
 				proto_select.default = 'none';
+=======
+>>>>>>> 1cf13bcaf5 (luci-base: fix luci merge conflict)
 
 				proto_switch = s.taboption('general', form.Button, '_switch_proto');
 				proto_switch.modalonly  = true;
@@ -609,7 +612,11 @@ return view.extend({
 				for (var i = 0; i < protocols.length; i++) {
 					proto_select.value(protocols[i].getProtocol(), protocols[i].getI18n());
 
+<<<<<<< HEAD
 					if (protocols[i].getProtocol() != protoval)
+=======
+					if (protocols[i].getProtocol() != uci.get('network', s.section, 'proto'))
+>>>>>>> 1cf13bcaf5 (luci-base: fix luci merge conflict)
 						proto_switch.depends('proto', protocols[i].getProtocol());
 				}
 
