@@ -1,14 +1,14 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-11-22 19:27+0000\n"
-"Last-Translator: Yuan Lau <traverslombard@outlook.com>\n"
+"PO-Revision-Date: 2025-01-27 18:47+0000\n"
+"Last-Translator: ZW <roc_fe@users.noreply.hosted.weblate.org>\n"
 "Language-Team: Chinese (Traditional Han script) <https://hosted.weblate.org/"
 "projects/openwrt/luciapplicationsfrpc/zh_Hant/>\n"
 "Language: zh_Hant\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: Weblate 5.9-dev\n"
+"X-Generator: Weblate 5.10-dev\n"
 
 #: applications/luci-app-frpc/htdocs/luci-static/resources/view/frpc.js:214
 msgid "Add new proxy..."
@@ -82,7 +82,7 @@ msgstr ""
 
 #: applications/luci-app-frpc/htdocs/luci-static/resources/view/frpc.js:190
 msgid "Collecting data ..."
-msgstr "資料採集中..."
+msgstr "收集資料中..."
 
 #: applications/luci-app-frpc/htdocs/luci-static/resources/view/frpc.js:198
 msgid "Common Settings"
@@ -98,7 +98,7 @@ msgstr "設定檔包含在臨時設定檔案中"
 
 #: applications/luci-app-frpc/htdocs/luci-static/resources/view/frpc.js:57
 msgid "Custom domains"
-msgstr "自定義網域"
+msgstr "自訂網域"
 
 #: applications/luci-app-frpc/htdocs/luci-static/resources/view/frpc.js:26
 msgid "Disable log color"
@@ -112,7 +112,7 @@ msgstr "當LogWay ==“ console”設置為true時, DisableLogColor禁用日誌�
 
 #: applications/luci-app-frpc/htdocs/luci-static/resources/view/frpc.js:46
 msgid "Encryption"
-msgstr "加密(Encryption)"
+msgstr "加密"
 
 #: applications/luci-app-frpc/htdocs/luci-static/resources/view/frpc.js:15
 msgid "Environment variable"
@@ -128,7 +128,7 @@ msgstr "一般設定"
 
 #: applications/luci-app-frpc/root/usr/share/rpcd/acl.d/luci-app-frpc.json:3
 msgid "Grant access to LuCI app frpc"
-msgstr "授予 luci-app-frpc 擁有存取的權限"
+msgstr "授予存取LuCI app frpc的權限"
 
 #: applications/luci-app-frpc/htdocs/luci-static/resources/view/frpc.js:219
 msgid "HTTP Settings"
@@ -219,7 +219,7 @@ msgstr "日誌檔案"
 
 #: applications/luci-app-frpc/htdocs/luci-static/resources/view/frpc.js:24
 msgid "Log level"
-msgstr "紀錄級別"
+msgstr "日誌等級"
 
 #: applications/luci-app-frpc/htdocs/luci-static/resources/view/frpc.js:25
 msgid "Log max days"
@@ -332,7 +332,7 @@ msgstr "執行中"
 #: applications/luci-app-frpc/htdocs/luci-static/resources/view/frpc.js:53
 #: applications/luci-app-frpc/htdocs/luci-static/resources/view/frpc.js:226
 msgid "Remote port"
-msgstr "遠端埠號"
+msgstr "遠端連接埠"
 
 #: applications/luci-app-frpc/htdocs/luci-static/resources/view/frpc.js:14
 msgid "Respawn when crashed"
@@ -461,7 +461,7 @@ msgstr ""
 
 #: applications/luci-app-frpc/htdocs/luci-static/resources/view/frpc.js:34
 msgid "User"
-msgstr "用戶"
+msgstr "使用者"
 
 #: applications/luci-app-frpc/htdocs/luci-static/resources/view/frpc.js:34
 msgid ""

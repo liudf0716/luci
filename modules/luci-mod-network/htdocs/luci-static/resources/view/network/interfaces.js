@@ -515,12 +515,8 @@ return view.extend({
 		};
 
 		s.addModalOptions = function(s) {
-			var protoval = uci.get('network', s.section, 'proto'),
-			    protoclass = protoval ? network.getProtocol(protoval) : null,
+			var protoval = uci.get('network', s.section, 'proto') || 'none',
 			    o, proto_select, proto_switch, type, stp, igmp, ss, so;
-
-			if (!protoval)
-				return;
 
 			return network.getNetwork(s.section).then(L.bind(function(ifc) {
 				var protocols = network.getProtocols();
@@ -544,6 +540,7 @@ return view.extend({
 
 				proto_select = s.taboption('general', form.ListValue, 'proto', _('Protocol'));
 				proto_select.modalonly = true;
+				proto_select.default = 'none';
 
 				proto_switch = s.taboption('general', form.Button, '_switch_proto');
 				proto_switch.modalonly  = true;
@@ -612,7 +609,7 @@ return view.extend({
 				for (var i = 0; i < protocols.length; i++) {
 					proto_select.value(protocols[i].getProtocol(), protocols[i].getI18n());
 
-					if (protocols[i].getProtocol() != uci.get('network', s.section, 'proto'))
+					if (protocols[i].getProtocol() != protoval)
 						proto_switch.depends('proto', protocols[i].getProtocol());
 				}
 
@@ -661,7 +658,7 @@ return view.extend({
 					ss.taboption('general', form.Flag, 'ignore', _('Ignore interface'), _('Disable <abbr title="Dynamic Host Configuration Protocol">DHCP</abbr> for this interface.'));
 
 					if (protoval == 'static') {
-						so = ss.taboption('general', form.Value, 'start', _('Start'), _('Lowest leased address as offset from the network address.'));
+						so = ss.taboption('general', form.Value, 'start', _('Start', 'DHCP IP range start address'), _('Lowest leased address as offset from the network address.'));
 						so.optional = true;
 						so.datatype = 'or(uinteger,ip4addr("nomask"))';
 						so.default = '100';
@@ -737,9 +734,9 @@ return view.extend({
 
 						/* Assume that serving RAs by default is fine, but disallow it for certain
 						   interface protocols such as DHCP, DHCPv6 or the various PPP flavors.
-						   The intent is to only allow RA serving for interface protocols doing
+						   The intent is only to allow RA serving for interface protocols doing
 						   some kind of static IP config over something resembling a layer 2
-						   ethernet device. */
+						   Ethernet device. */
 						switch (protoval) {
 						case 'dhcp':
 						case 'dhcpv6':
@@ -1572,9 +1569,10 @@ return view.extend({
 		o.datatype = 'cidr6';
 
 		o = s.option(form.ListValue, 'packet_steering', _('Packet Steering'), _('Enable packet steering across CPUs. May help or hinder network speed.'));
-		o.value('', _('Disabled'));
+		o.value('0', _('Disabled'));
 		o.value('1',_('Enabled'));
 		o.value('2',_('Enabled (all CPUs)'));
+		o.default = '1';
 		o.optional = true;
 
 		var steer_flow = uci.get('network', 'globals', 'steering_flows');	

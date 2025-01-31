@@ -3,7 +3,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"PO-Revision-Date: 2024-03-21 13:58+0000\n"
+"PO-Revision-Date: 2025-01-27 09:27+0000\n"
 "Last-Translator: Matthaiks <kitynska@gmail.com>\n"
 "Language-Team: Polish <https://hosted.weblate.org/projects/openwrt/"
 "luciapplicationsstatistics/pl/>\n"
@@ -13,7 +13,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=(n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 "
 "|| n%100>=20) ? 1 : 2);\n"
-"X-Generator: Weblate 5.5-dev\n"
+"X-Generator: Weblate 5.10-dev\n"
 
 #: applications/luci-app-statistics/htdocs/luci-static/resources/view/statistics/plugins/mqtt.js:47
 msgid "0 - At most once"
@@ -466,11 +466,11 @@ msgstr "Monitorowanie filtra klas"
 #: applications/luci-app-statistics/htdocs/luci-static/resources/statistics/rrdtool/definitions/iptables.js:7
 #: applications/luci-app-statistics/root/usr/share/luci/statistics/plugins/iptables.json:2
 msgid "Firewall"
-msgstr "Zapora sieciowa"
+msgstr "Zapora"
 
 #: applications/luci-app-statistics/htdocs/luci-static/resources/statistics/rrdtool/definitions/ip6tables.js:7
 msgid "Firewall (IPv6)"
-msgstr "Zapora sieciowa (IPv6)"
+msgstr "Zapora (IPv6)"
 
 #: applications/luci-app-statistics/htdocs/luci-static/resources/view/statistics/plugins/rrdtool.js:95
 msgid "Flush cache after"
@@ -1105,7 +1105,7 @@ msgstr "Prefiks"
 #: applications/luci-app-statistics/htdocs/luci-static/resources/statistics/rrdtool/definitions/processes.js:7
 #: applications/luci-app-statistics/root/usr/share/luci/statistics/plugins/processes.json:2
 msgid "Processes"
-msgstr "Procesy systemowe"
+msgstr "Procesy"
 
 #: applications/luci-app-statistics/htdocs/luci-static/resources/view/statistics/plugins/processes.js:6
 msgid "Processes Plugin Configuration"
@@ -1552,8 +1552,8 @@ msgid ""
 "The iptables plugin will monitor selected firewall rules and collect "
 "information about processed bytes and packets per rule."
 msgstr ""
-"Wtyczka iptables będzie monitorować wybrane reguły zapory sieciowej i "
-"zbierać informacje o przetworzonych bajtach i pakietach dla każdej reguły."
+"Wtyczka iptables będzie monitorować wybrane reguły zapory i zbierać "
+"informacje o przetworzonych bajtach i pakietach dla każdej reguły."
 
 #: applications/luci-app-statistics/htdocs/luci-static/resources/view/statistics/plugins/irq.js:8
 msgid ""
@@ -1569,8 +1569,8 @@ msgid ""
 "The iwinfo plugin collects statistics about wireless signal strength, noise "
 "and quality."
 msgstr ""
-"Wtyczka iwinfo zbiera statystyki dotyczące siły sygnału bezprzewodowego, "
-"szumów i jakości."
+"Wtyczka iwinfo zbiera statystyki dotyczące poziomu sygnału, szumów i jakości "
+"Wi-Fi."
 
 #: applications/luci-app-statistics/htdocs/luci-static/resources/view/statistics/plugins/load.js:7
 msgid "The load plugin collects statistics about the general system load."
@@ -1868,11 +1868,11 @@ msgstr "Po ustawieniu true, żądamy wartości procentowych"
 #: applications/luci-app-statistics/htdocs/luci-static/resources/statistics/rrdtool/definitions/iwinfo.js:7
 #: applications/luci-app-statistics/root/usr/share/luci/statistics/plugins/iwinfo.json:2
 msgid "Wireless"
-msgstr "Sieć bezprzewodowa"
+msgstr "Wi-Fi"
 
 #: applications/luci-app-statistics/htdocs/luci-static/resources/view/statistics/plugins/iwinfo.js:7
 msgid "Wireless iwinfo Plugin Configuration"
-msgstr "Konfiguracja bezprzewodowego pluginu iwinfo"
+msgstr "Konfiguracja wtyczki iwinfo"
 
 #: applications/luci-app-statistics/htdocs/luci-static/resources/view/statistics/plugins/rrdtool.js:102
 msgid "Writing *.rrd files to %s"

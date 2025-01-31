@@ -1,8 +1,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"PO-Revision-Date: 2024-12-07 16:00+0000\n"
-"Last-Translator: try496 <pinghejk@gmail.com>\n"
+"PO-Revision-Date: 2025-01-22 18:55+0000\n"
+"Last-Translator: ZW <roc_fe@users.noreply.hosted.weblate.org>\n"
 "Language-Team: Chinese (Simplified Han script) <https://hosted.weblate.org/"
 "projects/openwrt/luciapplicationsfirewall/zh_Hans/>\n"
 "Language: zh_Hans\n"
@@ -10,7 +10,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: Weblate 5.9-dev\n"
+"X-Generator: Weblate 5.10-dev\n"
 
 #: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:48
 msgid ""
@@ -499,13 +499,14 @@ msgid ""
 "%{item.val}%{item.hint.name? a.k.a. %{item.hint.name}}.\":%{item.hint.name? "
 "data-tooltip=\"%{item.hint.name}\"}}>%{item.ival}</var>}}"
 msgstr ""
-"来自 %{src}%{src_ip?, IP %{src_ip#%{next?, }<var%{item.inv? data-tooltip=\"匹"
-"配除 %{item.val} 以外的 IP 地址。\"}>%{item.ival}</var>}}%{src_port?, 端口 "
-"%{src_port#%{next?, }<var%{item.inv? data-tooltip=\"匹配除 %{item.val} 以外的"
-"端口。\"}>%{item.ival}</var>}}%{src_mac?, MAC %{src_mac#%{next?, }<var%{item."
-"inv? data-tooltip=\"匹配除 %{item.val}%{item.hint.name? 或称为 %{item.hint."
-"name}} 以外的 MAC 地址。\":%{item.hint.name? data-tooltip=\"%{item.hint."
-"name}\"}}>%{item.ival}</var>}}"
+"来自 %{src}%{src_ip?, IP %{src_ip#%{next?, }<var%{item.inv? data-tooltip="
+"\"匹配除 %{item.val} 以外的 IP 地址。\"}>%{item.ival}</var>}}%{src_port?, "
+"端口 %{src_port#%{next?, }<var%{item.inv? data-tooltip="
+"\"匹配除 %{item.val} 以外的端口。\"}>%{item.ival}</var>}}%{src_mac?, MAC "
+"%{src_mac#%{next?, }<var%{item.inv? data-tooltip="
+"\"匹配除 %{item.val}%{item.hint.name? 或称为 %{item.hint.name}} 以外的 MAC 地"
+"址。\":%{item.hint.name? data-tooltip=\"%{item.hint.name}\""
+"}}>%{item.ival}</var>}}"
 
 #: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:161
 #: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:182
@@ -1438,10 +1439,6 @@ msgstr "ip[/cidr]<br />"
 msgid "ip[/cidr]<br />For use with Match datatypes: <code>*_ip</code>."
 msgstr "ip[/cidr]<br />用于 Match 数据类型: <code>*_ip</code>。"
 
-#: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/ipsets.js:70
-msgid "ipv4"
-msgstr "ipv4"
-
 #: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/ipsets.js:133
 msgid "list"
 msgstr "列表"
@@ -1535,6 +1532,9 @@ msgstr "最多 65536 个条目。"
 #: applications/luci-app-firewall/htdocs/luci-static/resources/tools/firewall.js:339
 msgid "valid firewall mark"
 msgstr "有效的防火墙标记"
+
+#~ msgid "ipv4"
+#~ msgstr "ipv4"
 
 #~ msgid "Software based offloading for routing/NAT"
 #~ msgstr "基于软件的 路由/NAT 分载"
