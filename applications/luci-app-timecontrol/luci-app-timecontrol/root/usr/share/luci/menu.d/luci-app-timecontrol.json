@@ -1,0 +1,10 @@
+{
+	"admin/services/timecontrol": {
+		"title": "timecontrol",
+		"order": 1,
+		"action": {
+			"type": "view",
+			"path": "timecontrol/config"
+		}
+	}
+}
