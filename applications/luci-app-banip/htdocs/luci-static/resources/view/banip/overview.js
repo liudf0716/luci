@@ -408,13 +408,13 @@ return view.extend({
 
 		o = s.taboption('adv_chain', form.ListValue, 'ban_icmplimit', _('ICMP-Threshold'), _('ICMP-Threshold in packets per second to prevent WAN-DoS attacks. To disable this safeguard set it to \'0\'.'));
 		o.value('0');
-		o.value('10');
+		o.value('25');
 		o.value('50');
 		o.value('100');
 		o.value('250');
 		o.value('500');
 		o.value('1000');
-		o.default = '10';
+		o.default = '25';
 		o.placeholder = _('-- default --');
 		o.create = true;
 		o.optional = true;
@@ -615,11 +615,11 @@ return view.extend({
 		o.value('Exit before auth from', _('dropbear failed login'));
 		o.value('luci: failed login', _('LuCI failed login'));
 		o.value('error: maximum authentication attempts exceeded', _('sshd failed login'));
-		o.value('sshd.*Connection closed by.*\[preauth\]', _('sshd closed connection'));
-		o.value('SecurityEvent=\"InvalidAccountID\".*RemoteAddress=', _('asterisk invalid account'));
-		o.value('received a suspicious remote IP \'.*\'', _('nginx suspicious IP'));
-		o.value('TLS Error: could not determine wrapping from \[AF_INET\]', _('openvpn TLS error'));
-		o.value('AdGuardHome.*\[error\].*/control/login: from ip', _('AdGuardHome login error'));
+		o.value('sshd.*Connection closed by.*\\[preauth\\]', _('sshd closed connection'));
+		o.value('SecurityEvent=\\"InvalidAccountID\\".*RemoteAddress=', _('asterisk invalid account'));
+		o.value('received a suspicious remote IP .*', _('nginx suspicious IP'));
+		o.value('TLS Error: could not determine wrapping from \\[AF_INET\\]', _('openvpn TLS error'));
+		o.value('AdGuardHome.*\\[error\\].*/control/login: from ip', _('AdGuardHome login error'));
 		o.optional = true;
 		o.rmempty = true;
 
