@@ -1,0 +1,60 @@
+#: timecontrol package 
+msgid "timecontrol"
+msgstr "上网控制"
+
+msgid "Internet time control for clients (children) by MAC address"
+msgstr "通过MAC地址管理终端（如儿童设备）的上网时间，允许管理员设置特定设备的上网时段、限制访问时间，以确保安全合理的互联网使用"
+
+msgid "Internet Time Control"
+msgstr "上网控制"
+
+msgid "Hostname"
+msgstr "主机名"
+
+msgid "Status"
+msgstr "状态"
+
+msgid "Enabled"
+msgstr "启用"
+
+msgid "Running"
+msgstr "正在运行"
+
+msgid "Not Running"
+msgstr "未运行"
+
+msgid "Client Settings"
+msgstr "终端设置"
+
+msgid "Collecting data..."
+msgstr "正在收集数据..."
+
+msgid "No Internet start time"
+msgstr "断网开始时间"
+
+msgid "No Internet end time"
+msgstr "断网结束时间"
+
+msgid "Internet disabling settings for clients."
+msgstr "终端上网控制设置"
+
+msgid "Mo"
+msgstr "一"
+
+msgid "Tu"
+msgstr "二"
+
+msgid "We"
+msgstr "三"
+
+msgid "Th"
+msgstr "四"
+
+msgid "Fr"
+msgstr "五"
+
+msgid "Sa"
+msgstr "六"
+
+msgid "Su"
+msgstr "日"
