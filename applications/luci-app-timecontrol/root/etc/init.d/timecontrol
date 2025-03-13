@@ -1,27 +1,37 @@
 #!/bin/sh /etc/rc.common
+# Copyright (C) 2018 Dengfeng Liu
 
 START=99
+USE_PROCD=0
 CONFIG=timecontrol
 
 uci_get_by_type() {
 	local index=0
-	[ -n $4 ] && index=$4
+	[ -n "$4" ] && index=$4
 	local ret=$(uci -q get $CONFIG.@$1[$index].$2 2>/dev/null)
 	echo ${ret:=$3}
 }
 
-add_rule(){
+# 清空已有规则
+del_rule() {
+	nft flush chain inet filter timecontrol 2>/dev/null
+}
+
+# 添加nft规则
+add_rule() {
 	local count=$(uci show $CONFIG | grep "@macbind" | sed -n '$p' | cut -d '[' -f 2 | cut -d ']' -f 1)
 	[ -n "$count" ] && [ "$count" -ge 0 ] && {
 		u_get() {
 			local ret=$(uci -q get $CONFIG.@macbind[$1].$2)
 			echo ${ret:=$3}
 		}
+
 		for i in $(seq 0 $count); do
-			local enable=$(u_get $i enable 0)
+			local enabled=$(u_get $i enabled 0)
+			local hostname=$(u_get $i hostname)
 			local macaddr=$(u_get $i macaddr)
-			local timeoff=$(u_get $i timeoff)
 			local timeon=$(u_get $i timeon)
+			local timeoff=$(u_get $i timeoff)
 			local z1=$(u_get $i z1)
 			local z2=$(u_get $i z2)
 			local z3=$(u_get $i z3)
@@ -29,52 +39,91 @@ add_rule(){
 			local z5=$(u_get $i z5)
 			local z6=$(u_get $i z6)
 			local z7=$(u_get $i z7)
-			[ "$z1" == "1" ] && local Z1="Mon,"
-			[ "$z2" == "1" ] && local Z2="Tue,"
-			[ "$z3" == "1" ] && local Z3="Wed,"
-			[ "$z4" == "1" ] && local Z4="Thu,"
-			[ "$z5" == "1" ] && local Z5="Fri,"
-			[ "$z6" == "1" ] && local Z6="Sat,"
-			[ "$z7" == "1" ] && local Z7="Sun"
-			if [ -z $enable ] || [ -z $macaddr ] || [ -z $timeoff ] || [ -z $timeon ]; then
-				continue
-			fi
-			if [ "$enable" == "1" ]; then
-				iptables -t filter -I TIMECONTROL -m mac --mac-source $macaddr -m time --kerneltz --timestart $timeon --timestop $timeoff --weekdays $Z1$Z2$Z3$Z4$Z5$Z6$Z7 -j DROP
-				iptables -t nat -I PREROUTING 1 -m mac --mac-source $macaddr -m time --kerneltz --timestart $timeon --timestop $timeoff --weekdays $Z1$Z2$Z3$Z4$Z5$Z6$Z7 -m comment --comment "TIMECONTROL" -j RETURN
+
+			[ "$enabled" != "1" ] && continue
+			[ -z "$macaddr" ] || [ -z "$timeon" ] || [ -z "$timeoff" ] && continue
+
+			local weekdays=""
+			[ "$z1" = "0" ] || weekdays="Monday"
+			[ "$z2" = "0" ] || weekdays="$weekdays Tuesday"
+			[ "$z3" = "0" ] || weekdays="$weekdays Wednesday"
+			[ "$z4" = "0" ] || weekdays="$weekdays Thursday"
+			[ "$z5" = "0" ] || weekdays="$weekdays Friday"
+			[ "$z6" = "0" ] || weekdays="$weekdays Saturday"
+			[ "$z7" = "0" ] || weekdays="$weekdays Sunday"
+
+			local weekday_expr=""
+			for wd in $weekdays; do
+				if [ "$weekday_expr" = "" ];  then
+					weekday_expr="$wd "
+				else
+					weekday_expr="$weekday_expr,$wd "
+				fi
+			done
+
+			[ -n "$weekday_expr" ] &&  weekday_expr=" meta day { $weekday_expr }"
+
+			# 获取小时部分
+			local start_hour=${timeon%%:*}
+			local start_minute=${timeon#*:}
+			local end_hour=${timeoff%%:*}
+			local end_minute=${timeoff#*:}
+
+			# 处理跨天情况
+			echo "DEBUG: timeon=$timeon, timeoff=$timeoff"
+			if [ "$start_hour" -gt "$end_hour" ] || { [ "$start_hour" -eq "$end_hour" ] && [ "$start_minute" -gt "$end_minute" ]; }; then
+				# 如果跨天，拆成两部分：第一天部分和第二天部分
+				echo "DEBUG: Adding cross-day rules"
+				nft add rule inet filter timecontrol ether saddr $macaddr \
+					meta hour "$timeon"-"23:59" \
+					$([ -n "$weekday_expr" ] && echo " $weekday_expr ") \
+					drop comment "$hostname"
+
+				nft add rule inet filter timecontrol ether saddr $macaddr \
+					meta hour "00:00"-"$timeoff" \
+					$([ -n "$weekday_expr" ] && echo " $weekday_expr ") \
+					drop comment "$hostname"
+			else
+				# 不跨天，直接添加规则
+				echo "DEBUG: Adding non-cross-day rule"
+				nft add rule inet filter timecontrol ether saddr $macaddr \
+					meta hour "$timeon"-"$timeoff" \
+					$([ -n "$weekday_expr" ] && echo "$weekday_expr ") \
+					drop comment "$hostname"
 			fi
 		done
 	}
+
 	echo "/etc/init.d/timecontrol restart" > "/var/etc/timecontrol.include"
 }
 
-del_rule(){
-	nums=$(iptables -t nat -n -L PREROUTING 2>/dev/null | grep -c "TIMECONTROL")
-	if [ -n "$nums" ]; then
-		until [ "$nums" = 0 ]
-		do
-			rules=$(iptables -t nat -n -L PREROUTING --line-num 2>/dev/null | grep "TIMECONTROL" | awk '{print $1}')
-			for rule in $rules
-			do
-				iptables -t nat -D PREROUTING $rule 2>/dev/null
-				break
-			done
-			nums=$(expr $nums - 1)
-		done
-	fi
-}
+start_service() {
+	ENABLED=$(uci_get_by_type basic enabled 0)
+	[ "$ENABLED" != "1" ] && return 0
 
-start(){
-	ENABLED=$(uci_get_by_type basic enable 0)
-	[ "$ENABLED" != "1" ] && exit 0
-	iptables -t filter -N TIMECONTROL
-	iptables -t filter -I FORWARD -j TIMECONTROL
+	nft list table inet filter >/dev/null 2>&1 || nft add table inet filter
+
+	nft flush chain inet filter timecontrol 2>/dev/null
+	nft delete chain inet filter timecontrol 2>/dev/null
+	nft add chain inet filter timecontrol '{ type filter hook forward priority 0; }'
+
 	add_rule
 }
 
-stop(){
-	iptables -t filter -D FORWARD -j TIMECONTROL 2>/dev/null
-	iptables -t filter -F TIMECONTROL 2>/dev/null
-	iptables -t filter -X TIMECONTROL 2>/dev/null
+stop_service() {
 	del_rule
+	nft delete chain inet filter timecontrol 2>/dev/null
+}
+
+reload_service() {
+	stop
+	start
+}
+
+status_service() {
+	nft list chain inet filter timecontrol 2>/dev/null
+}
+
+service_triggers() {
+	procd_add_reload_trigger "timecontrol"
 }
