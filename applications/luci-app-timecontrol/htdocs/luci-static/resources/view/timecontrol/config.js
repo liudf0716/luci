@@ -11,19 +11,19 @@ return view.extend({
 		s = m.section(form.TypedSection, 'basic');
 		s.anonymous = true;
 
-		o = s.option(form.Flag, 'enable', _('Enable'));
+		o = s.option(form.Flag, 'enabled', _('Enable'));
 		o.rmempty = false;
 
 		s = m.section(form.GridSection, 'macbind', _('Client Settings'));
 		s.anonymous = true;
 		s.addremove = true;
 
-		o = s.option(form.Flag, 'enable', _('Enable'));
+		o = s.option(form.Flag, 'enabled', _('Enable'));
 		o.rmempty = false;
 		o.default = o.enabled;
 		o.editable = true;
 		
-		o = s.option(form.Value, 'hostname', 'Hostname');
+		o = s.option(form.Value, 'hostname', _('Hostname'));
 		o.rmempty = true;
 		o.datatype = 'string';
 		o.placeholder = 'hostname';
