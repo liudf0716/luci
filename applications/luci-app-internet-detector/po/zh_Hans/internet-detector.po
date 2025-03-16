@@ -1,0 +1,377 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Project-Id-Version: \n"
+"POT-Creation-Date: \n"
+"PO-Revision-Date: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 2.3\n"
+"Last-Translator: \n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<12 || n%100>14) ? 1 : 2);\n"
+"Language: zh_Hans\n"
+
+#: internet-detector package 
+msgid "internet-detector"
+msgstr "联网检测"
+
+msgid "<abbr title=\"Light Emitting Diode\">LED</abbr> Name"
+msgstr "<abbr title=\"发光二极管\">LED</abbr> 名称"
+
+msgid "<abbr title=\"Light Emitting Diode\">LED</abbr> control"
+msgstr "<abbr title=\"发光二极管\">LED</abbr> 控制"
+
+msgid "<abbr title=\"Light Emitting Diode\">LED</abbr> indicates the Internet status."
+msgstr "<abbr title=\"发光二极管\">LED</abbr> 指示互联网状态。"
+
+msgid "Action when connected"
+msgstr "连接时的操作"
+
+msgid "Action when disconnected"
+msgstr "断开连接时的操作"
+
+msgid "Add instance"
+msgstr "添加实例"
+
+msgid "Alive interval"
+msgstr "活动间隔"
+
+msgid "Alive period"
+msgstr "活动周期"
+
+msgid "An email will be sent when connected or disconnected from the Internet."
+msgstr "当连接或断开互联网时，将发送电子邮件。"
+
+msgid "An error has occurred"
+msgstr "发生错误"
+
+msgid "Big: 248 bytes"
+msgstr "大: 248 字节"
+
+msgid "Blink"
+msgstr "闪烁"
+
+msgid "Check type"
+msgstr "检查类型"
+
+msgid "Checking Internet availability."
+msgstr "检查互联网可用性。"
+
+msgid "Checking the real public IP address."
+msgstr "检查真实公网 IP 地址。"
+
+msgid "Command failed"
+msgstr "命令执行失败"
+
+msgid "Connected"
+msgstr "已连接"
+
+msgid "Connection attempts"
+msgstr "连接尝试次数"
+
+msgid "Connection timeout"
+msgstr "连接超时"
+
+msgid "Contents have been saved."
+msgstr "内容已保存。"
+
+msgid "Dead interval"
+msgstr "失效间隔"
+
+msgid "Dead period"
+msgstr "失效周期"
+
+msgid "Default port value for TCP connections."
+msgstr "TCP 连接的默认端口值。"
+
+msgid "Device"
+msgstr "设备"
+
+msgid "Device will be rebooted when the Internet is disconnected."
+msgstr "当互联网断开时，设备将重启。"
+
+msgid "Disable forced reboot"
+msgstr "禁用强制重启"
+
+msgid "Disabled"
+msgstr "已禁用"
+
+msgid "Disabled: detector is completely off."
+msgstr "已禁用：检测器完全关闭。"
+
+msgid "Disconnected"
+msgstr "已断开连接"
+
+msgid "Dismiss"
+msgstr "关闭"
+
+msgid "DNS query type"
+msgstr "DNS 查询类型"
+
+msgid "DNS provider"
+msgstr "DNS 提供商"
+
+msgid "Edit"
+msgstr "编辑"
+
+msgid "Edit down-script"
+msgstr "编辑断开脚本"
+
+msgid "Edit regular-script"
+msgstr "编辑常规脚本"
+
+msgid "Edit public-ip-script"
+msgstr "编辑公网 IP 脚本"
+
+msgid "Edit up-script"
+msgstr "编辑连接脚本"
+
+msgid "Email notification"
+msgstr "电子邮件通知"
+
+msgid "Email address of the recipient."
+msgstr "收件人的电子邮件地址。"
+
+msgid "Email address of the sender."
+msgstr "发件人的电子邮件地址。"
+
+msgid "Enable"
+msgstr "启用"
+
+msgid "Enable logging"
+msgstr "启用日志记录"
+
+msgid "Enable public-ip-script"
+msgstr "启用公网 IP 脚本"
+
+msgid "Enabled"
+msgstr "已启用"
+
+msgid "Expecting:"
+msgstr "期望："
+
+msgid "Public IP"
+msgstr "公网 IP"
+
+msgid "Public IP address"
+msgstr "公网 IP 地址"
+
+msgid "Failed to get %s init status: %s"
+msgstr "获取 %s 初始化状态失败：%s"
+
+msgid "Forced reboot delay"
+msgstr "强制重启延迟"
+
+msgid "Host alias"
+msgstr "主机别名"
+
+msgid "Host availability check type."
+msgstr "主机可用性检查类型。"
+
+msgid "Host identifier in messages. If not specified, hostname will be used."
+msgstr "消息中的主机标识符。如果未指定，则使用主机名。"
+
+msgid "Hostname/IP address of the SMTP server."
+msgstr "SMTP 服务器的主机名/IP 地址。"
+
+msgid "Hosts"
+msgstr "主机"
+
+msgid "Hosts polling interval when the Internet is down."
+msgstr "互联网不可用时的主机轮询间隔。"
+
+msgid "Hosts polling interval when the Internet is up."
+msgstr "互联网可用时的主机轮询间隔。"
+
+msgid "Hosts to check Internet availability. Hosts are polled (in list order) until at least one of them responds."
+msgstr "用于检查互联网可用性的主机。按照列表顺序轮询主机，直到至少有一个主机响应。"
+
+msgid "Huge: 1492 bytes"
+msgstr "巨大: 1492 字节"
+
+msgid "ICMP-echo request (ping)"
+msgstr "ICMP 回显请求 (ping)"
+
+msgid "ICMP packet data size"
+msgstr "ICMP 数据包大小"
+
+msgid "Interface"
+msgstr "接口"
+
+msgid "Internet"
+msgstr "互联网"
+
+msgid "Internet Detector"
+msgstr "联网检测"
+
+msgid "Internet detector mode"
+msgstr "互联网检测模式"
+
+msgid "Internet status"
+msgstr "互联网状态"
+
+msgid "Interval between IP address requests."
+msgstr "IP 地址请求间隔。"
+
+msgid "Jumbo: 9000 bytes"
+msgstr "超大: 9000 字节"
+
+msgid "LED control"
+msgstr "LED 控制"
+
+msgid "Loading"
+msgstr "加载中"
+
+msgid "Mailsend is not available..."
+msgstr "邮件发送不可用..."
+
+msgid "Main settings"
+msgstr "主要设置"
+
+msgid "Maximum number of attempts to connect to each host."
+msgstr "每个主机的最大连接尝试次数。"
+
+msgid "Network will be restarted when the Internet is disconnected."
+msgstr "当互联网断开时，网络将被重启。"
+
+msgid "Next run"
+msgstr "下次运行"
+
+msgid "Not scheduled"
+msgstr "未计划"
+
+msgid "Off"
+msgstr "关闭"
+
+msgid "On"
+msgstr "打开"
+
+msgid "Password"
+msgstr "密码"
+
+msgid "Save"
+msgstr "保存"
+
+msgid "Sender"
+msgstr "发件人"
+
+msgid "Server response timeout"
+msgstr "服务器响应超时"
+
+msgid "Service"
+msgstr "服务"
+
+msgid "Stopped"
+msgstr "已停止"
+
+msgid "TCP port"
+msgstr "TCP 端口"
+
+msgid "Timeout between stopping and starting a network device."
+msgstr "停止和启动网络设备之间的超时时间。"
+
+msgid "Unable to read the contents"
+msgstr "无法读取内容"
+
+msgid "Unable to save the contents"
+msgstr "无法保存内容"
+
+msgid "User"
+msgstr "用户"
+
+msgid "Waiting for a reboot to complete before performing a forced reboot."
+msgstr "等待重启完成后再执行强制重启。"
+
+msgid "Write messages to the system log."
+msgstr "将消息写入系统日志。"
+
+msgid "Running"
+msgstr "正在运行"
+
+msgid "Restart service"
+msgstr "重启服务"
+
+msgid "Run service at startup"
+msgstr "开机运行"
+
+msgid "Service: detector always runs as a system service."
+msgstr "服务：检测器始终作为系统服务运行。"
+
+msgid "Web UI only: detector works only when the Web UI is open (UI detector)."
+msgstr "仅限 Web：检测器仅在 Web 打开时运行。"
+
+msgid "Web UI only (UI detector)"
+msgstr "Web检测"
+
+msgid "Network device for Internet access. If not specified, the default device is used."
+msgstr "用于互联网访问的网络设备。如果未指定，则使用默认设备。"
+
+msgid "Maximum timeout for waiting for a response from the host."
+msgstr "等待主机响应的最大超时时间。"
+
+msgid "Period of time without Internet access until the device is rebooted."
+msgstr "设备在无互联网访问的情况下重启的时间间隔"
+
+msgid "Reboot device"
+msgstr "重启设备"
+
+msgid "Restart network"
+msgstr "重启网络"
+
+msgid "Restart modem"
+msgstr "重启拨号"
+
+msgid "Period of time without Internet access before network restart."
+msgstr "无互联网访问状态下执行网络重启的时间间隔。"
+
+msgid "Maximum number of network restart attempts before Internet access is available."
+msgstr "在恢复互联网访问之前，网络重启的最大尝试次数。"
+
+msgid "Network device or interface to restart. If not specified, then the network service is restarted."
+msgstr "要重启的网络设备或接口。如果未指定，则重启网络服务。"
+
+msgid "Restart attempts"
+msgstr "重试次数"
+
+msgid "Restart timeout"
+msgstr "超时时间"
+
+msgid "Modem will be restarted when the Internet is disconnected."
+msgstr "当互联网断开时，将重启拨号设备。"
+
+msgid "Period of time without Internet access before modem restart."
+msgstr "在没有互联网访问的情况下，重启调制解调器的时间间隔。"
+
+msgid "Unlock modem bands"
+msgstr "解锁调制解调器频段"
+
+msgid "Set the modem to be allowed to use any band."
+msgstr "设置调制解调器允许使用任何频段"
+
+msgid "ModemManger interface. If specified, it will be restarted after restarting ModemManager."
+msgstr "ModemManager接口。如果指定，该接口将在ModemManager重启后自动重启。"
+
+msgid "Service for determining the public IP address through DNS."
+msgstr "通过DNS获取公网IP地址的服务。"
+
+msgid "The type of record requested in the DNS query (if the service supports it)."
+msgstr "DNS查询中请求的记录类型。"
+
+msgid "When email will be sent"
+msgstr "电子邮件发送时间。"
+
+msgid "Period of time after connecting to the Internet before sending a message."
+msgstr "连接互联网后，发送邮件前的延迟时间。"
+
+msgid "Username for SMTP authentication."
+msgstr "SMTP身份验证的用户名。"
+
+msgid "Password for SMTP authentication."
+msgstr "SMTP身份验证的密码。"
+
+msgid "TCP port connection"
+msgstr "TCP端口连接"
+
+msgid "Polling interval"
+msgstr "查询间隔"
