@@ -1,3 +1,20 @@
+# apfree-wifidog translations for LuCI
+# Copyright (C) 2022 Jo-Philipp Wich <jo@mein.io>
+# This file is distributed under the Apache License, Version 2.0.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: apfree-wifidog 1.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-03-16 00:00+0000\n"
+"PO-Revision-Date: 2025-03-16 00:00+0000\n"
+"Last-Translator: \n"
+"Language-Team: Chinese (Simplified)\n"
+"Language: zh_Hans\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
 #: apfree-wifidog package 
 msgid "apfree-wifidog"
 msgstr "门户认证"
@@ -138,7 +155,7 @@ msgid "Check Timeout"
 msgstr "检查超时"
 
 msgid "The timeout of the client."
-msgstr "客户端的超时次数，超过未响应将被被下线"
+msgstr "客户端的超时次数，超过未响应将被下线"
 
 msgid "Wired Passed"
 msgstr "有线免认证"
@@ -156,7 +173,7 @@ msgid "JS Filter"
 msgstr "JS 过滤"
 
 msgid "Enable JS redirect."
-msgstr "通过启用 JS 重定向的机制降低服务器段的压力"
+msgstr "通过启用 JS 重定向的机制降低服务器端的压力"
 
 msgid "Enable WebSocket"
 msgstr "启用 Websocket"
@@ -214,7 +231,6 @@ msgstr "网关名称"
 
 msgid "The name of the gateway."
 msgstr "开启认证的网关所属网络区域"
-
 
 msgid "Gateway Settings"
 msgstr "网关设置"
@@ -484,19 +500,25 @@ msgid "Enable Global QoS"
 msgstr "启用全局 QoS"
 
 msgid "Global QoS Up"
-msgstr "全局上传 QoS"
+msgstr "全局单主机上传速度"
 
 msgid "Global QoS Down"
-msgstr "全局下载 QoS"
+msgstr "全局单主机下载速度"
 
 msgid "Enable Global QoS."
 msgstr "启用全局 QoS 控制"
 
 msgid "The global QoS up value(Mbps)."
-msgstr "全局上传 QoS 值（Mbps）"
+msgstr "认证设备上传值（Mbps）"
 
 msgid "The global QoS down value(Mbps)."
-msgstr "全局下载 QoS 值（Mbps）"
+msgstr "认证设备下载值（Mbps）"
 
 msgid "QoS Settings"
 msgstr "QoS 设置"
+
+msgid "Auth Enabled"
+msgstr "认证启用"
+
+msgid "Enable the authentication of the gateway."
+msgstr "启用网关认证功能"
