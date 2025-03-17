@@ -542,53 +542,55 @@ return view.extend({
 		await uci.load('hostnames')
 
 		poll.add(L.bind(async function() {
-			var pie = this.pie.bind(this);
-			var kpi = this.kpi.bind(this);
-			var renderHostSpeed = this.renderHostSpeed.bind(this);
-
 			await this.loadHostNames();
-			try {
-				// Get both IPv4 and IPv6 data
-				const results = await Promise.all([
-					fs.exec_direct('/usr/bin/aw-bpfctl', ['ipv4', 'json'], 'json'),
-					fs.exec_direct('/usr/bin/aw-bpfctl', ['ipv6', 'json'], 'json'),
-					fs.exec_direct('/usr/bin/aw-bpfctl', ['mac',  'json'], 'json')
-				]);
-
-				const defaultData = {status: "success", data: []};
-
-				const ipv4Data = results[0] || defaultData;
-				const ipv6Data = results[1] || defaultData;
-				const macData  = results[2] || defaultData;
-
-				ipv4Data.data.forEach(item => {
-					const mac = hostInfo[item.ip];
-					if (mac) {
-						item.mac = mac;
-						item.hostname = hostNames[mac];
-					} else {
-						item.mac = null;
-						item.hostname = "";
-					}
-				});
-				// 遍历macData.data，根据mac地址获取对应的主机名,更新到macData.data中
-				macData.data.forEach(item => {
-					const mac = item.mac;
-					if (mac) {
-						item.hostname = hostNames[mac];
-					} else {
-						item.mac = null;
-						item.hostname = "";
-					}
-				});
-				// Render both IPv4 and IPv6 stats
-				renderHostSpeed(ipv4Data, pie, kpi, "ipv4");  // IPv4
-				renderHostSpeed(ipv6Data, pie, kpi, "ipv6");  // IPv6
-				renderHostSpeed(macData, pie, kpi, "mac");    // MAC
-			} catch (e) {
-				console.error('Error polling data:', e);
-			}
+			await this.loadHostSpeedData();
 		}, this), 5);
+	},
+	loadHostSpeedData: async function() {
+		var pie = this.pie.bind(this);
+		var kpi = this.kpi.bind(this);
+		var renderHostSpeed = this.renderHostSpeed.bind(this);
+		try {
+			// Get both IPv4 and IPv6 data
+			const results = await Promise.all([
+				fs.exec_direct('/usr/bin/aw-bpfctl', ['ipv4', 'json'], 'json'),
+				fs.exec_direct('/usr/bin/aw-bpfctl', ['ipv6', 'json'], 'json'),
+				fs.exec_direct('/usr/bin/aw-bpfctl', ['mac',  'json'], 'json')
+			]);
+
+			const defaultData = {status: "success", data: []};
+
+			const ipv4Data = results[0] || defaultData;
+			const ipv6Data = results[1] || defaultData;
+			const macData  = results[2] || defaultData;
+
+			ipv4Data.data.forEach(item => {
+				const mac = hostInfo[item.ip];
+				if (mac) {
+					item.mac = mac;
+					item.hostname = hostNames[mac];
+				} else {
+					item.mac = null;
+					item.hostname = "";
+				}
+			});
+			// 遍历macData.data，根据mac地址获取对应的主机名,更新到macData.data中
+			macData.data.forEach(item => {
+				const mac = item.mac;
+				if (mac) {
+					item.hostname = hostNames[mac];
+				} else {
+					item.mac = null;
+					item.hostname = "";
+				}
+			});
+			// Render both IPv4 and IPv6 stats
+			renderHostSpeed(ipv4Data, pie, kpi, "ipv4");  // IPv4
+			renderHostSpeed(ipv6Data, pie, kpi, "ipv6");  // IPv6
+			renderHostSpeed(macData, pie, kpi, "mac");    // MAC
+		} catch (e) {
+			console.error('Error polling data:', e);
+		}
 	},
 	handleAddSubmit: async function(val, type) {
 		var pie = this.pie.bind(this);
@@ -636,7 +638,7 @@ return view.extend({
 				'placeholder': _(placeholder)
 			});
 
-		let btn = E('button', {
+		let addBtn = E('button', {
 				'class': 'btn cbi-button cbi-button-add',
 				'id': type + '-add-btn',
 				'disabled': 'disabled',
@@ -651,11 +653,17 @@ return view.extend({
 				})
 			}, _('Add'));
 
+			let freshBtn = E('button', {
+				'class': 'btn cbi-button cbi-button-add',
+				'style': 'float: right',
+				'click': this.loadHostSpeedData.bind(this)
+			}, _('Refreshing'));
+
 		input.addEventListener('input', function() {
 			var isEmpty = this.value.trim() === '';
 			btn.disabled = isEmpty;
 		});
-		return [input, btn]
+		return [input, addBtn, freshBtn];
 	},
 	render: function() {
 		document.addEventListener('tooltip-open', L.bind(function(ev) {
@@ -721,7 +729,7 @@ return view.extend({
 							])
 						])
 					]),
-					E('div', { 'class': 'cbi-section-create cbi-tblsection-create' }, this.createAddButtonValue("ipv4", "Please enter a valid IPv4 address")),
+					E('div', { 'style': 'align-items: center; padding: 0.5rem 1rem;' }, this.createAddButtonValue("ipv4", "Please enter a valid IPv4 address")),
 				]),
 
 				E('div', { 'class': 'cbi-section', 'data-tab': 'ipv6', 'data-tab-title': _('IPv6') }, [
@@ -763,7 +771,7 @@ return view.extend({
 							])
 						])
 					]),
-					E('div', { 'class': 'cbi-section-create cbi-tblsection-create' }, this.createAddButtonValue("ipv6", "Please enter a valid IPv6 address")),
+					E('div', { 'style': 'align-items: center; padding: 0.5rem 1rem;' }, this.createAddButtonValue("ipv6", "Please enter a valid IPv6 address")),
 				]),
 
 				E('div', { 'class': 'cbi-section', 'data-tab': 'mac', 'data-tab-title': _('MAC') }, [
@@ -805,7 +813,7 @@ return view.extend({
 							])
 						])
 					]),
-					E('div', { 'class': 'cbi-section-create cbi-tblsection-create' }, this.createAddButtonValue("mac", "Please enter a valid MAC address")),
+					E('div', { 'style': 'align-items: center; padding: 0.5rem 1rem;' }, this.createAddButtonValue("mac", "Please enter a valid MAC address")),
 				])
 			]),
 		]);
