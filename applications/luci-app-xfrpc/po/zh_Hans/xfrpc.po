@@ -203,11 +203,11 @@ msgstr "警告"
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:30
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:32
 msgid "xfprc client"
-msgstr "内网映射客户端"
+msgstr "内网穿透客户端"
 
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:42
 msgid "xfrpc"
-msgstr "内网映射"
+msgstr "内网穿透"
 
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:43
 msgid "xfrpc is a c language frp client for frps."
