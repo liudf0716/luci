@@ -22,22 +22,13 @@ return view.extend({
 		let m, s, o;
 
 		// Define the Map
-		m = new form.Map('mosquitto', _('Mosquitto MQTT Broker'), _(
-			'mosquitto - the ' +
-			"<a href='http://www.mosquitto.org'>blood thirsty</a>" +
-			' MQTT messaging broker. Note, only some of the available configuration files ' +
-			'are supported at this stage. Use the checkbox below to use config generated ' +
-			'by this page, or the stock mosquitto configuration file in %s.'
-			.format('<code>' + mosquitto_conf + '</code>')));
+		m = new form.Map('mosquitto', _('Mosquitto MQTT Broker'), _('mosquitto - MQTT messaging broker.'));
 
 		// Section: OpenWRT
 		s = m.section(form.TypedSection, 'owrt', 'OpenWRT');
 		s.anonymous = true;
 
-		o = s.option(form.Flag, 'use_uci', _('Use this LuCI configuration page'), _(
-			'If checked, mosquitto runs with a config generated from this page. ' +
-			'If unchecked, mosquitto runs with the config in %s (and this page is ignored).'
-			.format('<code>' + mosquitto_conf + '</code>')));
+		o = s.option(form.Flag, 'use_uci', _('Use this LuCI configuration page'), _('If checked, mosquitto runs with a config generated from this page. If unchecked, mosquitto runs with the config in /etc/mosquitto/mosquitto.conf (and this page is ignored).'));
 
 		// Section: Mosquitto
 		s = m.section(form.TypedSection, 'mosquitto', _('Mosquitto'));
@@ -104,7 +95,7 @@ return view.extend({
 
 		o = s.option(form.Value, 'http_dir', _('http_dir to serve on websockets listeners'));
 
-		o = OptionalFlag(s, 'use_username_as_clientid', 'use_username_as_clientid');
+		o = OptionalFlag(s, 'use_username_as_clientid',_('username as id'), _('use_username_as_clientid'));
 
 		o = s.option(form.Value, 'cafile', _('CA file path'));
 		o.datatype = 'file';
@@ -112,10 +103,10 @@ return view.extend({
 		o = s.option(form.Value, 'capath', _('CA path to search'));
 		o.datatype = 'directory';
 
-		o = s.option(form.Value, 'certfile', _('Server certificate file (PEM encoded)'));
+		o = s.option(form.Value, 'certfile',_('Server certificate file'), _('Server certificate file (PEM encoded)'));
 		o.datatype = 'file';
 
-		o = s.option(form.Value, 'keyfile', _('Keyfile (PEM encoded)'));
+		o = s.option(form.Value, 'keyfile',_('Keyfile'), _('Keyfile (PEM encoded)'));
 		o.datatype = 'file';
 
 		o = s.option(form.ListValue, 'tls_version', _('TLS Version'),
@@ -127,13 +118,13 @@ return view.extend({
 		o.value('tlsv1.3');
 
 		o = OptionalFlag(s, 'require_certificate', _('Require clients to present a certificate'));
-		o = OptionalFlag(s, 'use_identity_as_username', 'use_identity_as_username');
-		o = s.option(form.Value, 'crlfile', _('CRL to use if require_certificate is enabled'));
+		o = OptionalFlag(s, 'use_identity_as_username',_('identity as username'), _('use_identity_as_username'));
+		o = s.option(form.Value, 'crlfile',_('crlfile'), _('CRL to use if require_certificate is enabled'));
 		o.optional = true;
-		o = s.option(form.Value, 'ciphers', _("Ciphers control. Should match 'openssl ciphers' format"));
+		o = s.option(form.Value, 'ciphers',_('Ciphers control'), _("Ciphers control. Should match 'openssl ciphers' format"));
 		o.optional = true;
 
-		o = s.option(form.Value, 'psk_hint', _('PSK Hint to provide to connecting clients'));
+		o = s.option(form.Value, 'psk_hint',_('psk hint'), _('PSK Hint to provide to connecting clients'));
 		o.optional = true;
 
 		s = m.section(form.TypedSection, 'bridge', _('Bridges'),
@@ -190,7 +181,7 @@ return view.extend({
 		o.datatype = 'uinteger';
 		o.optional = true;
 
-		o = OptionalFlag(s, 'try_private', 'try_private',
+		o = OptionalFlag(s, 'try_private', _('try_private'),
 			_('attempt to notify the remote broker that this is a bridge, not all brokers support this.'));
 
 		o = s.option(form.Value, 'remote_username', _('Remote username'));
