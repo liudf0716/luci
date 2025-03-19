@@ -133,6 +133,7 @@ return view.extend({
 		s.tab('https', _('HTTPS Proxy'));
 		s.tab('socks5', _('SOCKS5 Proxy'));
 		s.tab('plugin', _('Plugin Settings'));
+		s.tab('iod', _('Iod Settings'));
 
 		// common settings
 		o = s.taboption('common', form.Flag, 'enabled', _('Enable'), _('Enable xfrpc service.'));
@@ -268,6 +269,22 @@ return view.extend({
 		o.rmempty = false;
 		o.optional = false;
 		
+		// iod settings
+		o = s.taboption('iod', form.SectionValue, '_iod', form.GridSection, 'iod');
+		ss = o.subsection;
+		ss.addremove = true;
+		ss.nodescriptions = true;
+		o = ss.option(form.Value, 'local_port', _('Local Port'),
+			_('Local port specifies the port to proxy to.'));
+		o.datatype = 'port';
+		o.rmempty = false;
+		o.optional = false;
+		o = ss.option(form.Value, 'remote_port', _('Remote Port'),
+			_('Remote port specifies server-side port to proxy to.'));
+		o.datatype = 'port';
+		o.rmempty = false;
+		o.optional = false;
+
 		ss.renderRowActions = function(section_id) {
 			var tdEl = this.super('renderRowActions', [ section_id, _('Edit') ]);
 
