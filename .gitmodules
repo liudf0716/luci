@@ -1,3 +1,0 @@
-[submodule "applications/luci-app-yt-dlp"]
-	path = applications/luci-app-yt-dlp
-	url = https://github.com/liudf0716/luci-app-yt-dlp.git
