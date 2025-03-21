@@ -190,7 +190,16 @@ fi
 
 O=""
 if [ -e /usr/bin/sms_tool ]; then
-	O=$(sms_tool -D -d $DEVICE at "AT+CPIN?;+CSQ;+COPS=3,0;+COPS?;+COPS=3,2;+COPS?;+CREG=2;+CREG?")
+	# Execute AT commands one by one and combine the results
+	O="${O}$(sms_tool -D -d $DEVICE at "AT+CPIN?")"
+	O="${O}$(sms_tool -D -d $DEVICE at "AT+CSQ")"
+	O="${O}$(sms_tool -D -d $DEVICE at "AT^HCSQ?")"
+	O="${O}$(sms_tool -D -d $DEVICE at "AT+COPS=3,0")"
+	O="${O}$(sms_tool -D -d $DEVICE at "AT+COPS?")"
+	O="${O}$(sms_tool -D -d $DEVICE at "AT+COPS=3,2")"
+	O="${O}$(sms_tool -D -d $DEVICE at "AT+COPS?")"
+	O="${O}$(sms_tool -D -d $DEVICE at "AT+CREG=2")"
+	O="${O}$(sms_tool -D -d $DEVICE at "AT+CREG?")"
 else
 	O=$(gcom -d $DEVICE -s $RES/info.gcom 2>/dev/null)
 fi
@@ -412,6 +421,7 @@ case "$MODE_NUM" in
 	5*) MODE="HSUPA";;
 	6*) MODE="HSPA";;
 	7*) MODE="LTE";;
+	12*) MODE="NR";;
 	 *) MODE="-";;
 esac
 
@@ -458,6 +468,41 @@ fi
 
 fi
 
+# convert rsrp to signal
+convert_rsrp_to_signal() {
+	local rsrp=$1
+	
+	# Return early if rsrp is not provided
+	[ -z "$rsrp" ] && echo "255" && return
+	
+	# Value out of range (too low)
+	[ "$rsrp" -lt -140 ] && echo "0" && return
+	
+	# Value out of range (too high)
+	[ "$rsrp" -ge -43 ] && echo "255" && return
+	
+	# Calculate signal strength on a scale from 0 to 97
+	# Map -140 to 0 and -43 to 97 (linear mapping)
+	local adjusted=$(( (rsrp + 140) * 97 / 97 ))
+	
+	# Ensure the result is within bounds
+	[ "$adjusted" -lt 0 ] && adjusted=0
+	[ "$adjusted" -gt 97 ] && adjusted=97
+	
+	echo "$adjusted"
+}
+
+# if no rssi, use rsrp to stand for signal
+SIGNAL=""
+if [ -z "$RSRP" ] || [ "$RSRP" = "-" ] || [ "$RSRP" = "0" ]; then
+	if [ -n "$RSSI" ] && [ "$RSSI" != "-" ] && [ "$RSSI" != "0" ]; then
+		SIGNAL="$RSSI"
+	fi
+else
+	if [ -z "$RSSI" ] || [ "$RSSI" = "-" ] || [ "$RSSI" = "0" ]; then
+		SIGNAL=$(convert_rsrp_to_signal "$RSRP")
+	fi
+fi
 
 cat <<EOF
 {
@@ -472,7 +517,7 @@ cat <<EOF
 "cport":"$DEVICE",
 "protocol":"$PROTO",
 "csq":"$CSQ",
-"signal":"$CSQ_PER",
+"signal":"$SIGNAL",
 "operator_name":"$COPS",
 "operator_mcc":"$COPS_MCC",
 "operator_mnc":"$COPS_MNC",

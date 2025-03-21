@@ -509,427 +509,399 @@ simDialog: baseclass.extend({
 				if (json.registration == 'SIM PUK2 required') { 
 					ui.addNotification(null, E('p', _('SIM PUK2 required')), 'info');
 				}
-				if (json.signal == '0' || json.signal == '' || json.signal == '-') {
+				if (json.rsrp == '') {
 					ui.addNotification(null, E('p', _('There is a problem reading data from the modem. \
 										<br /><br /><b>Please check:</b> \
 										<ul><li>1. Modem availability in the system.</li><li>2. The correct installation of the SIM card in the modem.</li><li> \
 										3. Port for communication with the modem.</li><li><ul>')), 'info');
-				}
-				else {
-					if (json.connt == '' || json.connt == '-') {
-						ui.addNotification(null, E('p', _('There is a problem reading connection data. \
-											<br /><br /><b>Please check:</b> \
-											<ul><li>1. Connection of the modem to the internet, the correctness of the entered APN. Some modems need to force the APN on the modem using at commands to connect to internet.</li><li> \
-											2. Check that the correct interface assigned to the modem is selected. The default name of the interface in the package is wan.</li><li><ul>')), 'info');
-					}
+				} else {
 
+					pollData: poll.add(function() {
+					return L.resolveDefault(fs.exec_direct('/usr/share/3ginfo-lite/3ginfo.sh', 'json'))
+						.then(function(res) {
+						var json = JSON.parse(res);
 
-			pollData: poll.add(function() {
-				return L.resolveDefault(fs.exec_direct('/usr/share/3ginfo-lite/3ginfo.sh', 'json'))
-					.then(function(res) {
-					var json = JSON.parse(res);
+						if (!json.cport.includes('192.')) {
+							if (json.signal == '0' || json.signal == '') {
+								fs.exec('sleep 3');
+								if (json.signal == '0' || json.signal == '' || json.signal == '-') {
+									L.ui.showModal(_('3ginfo-lite'), [
+									E('p', { 'class': 'spinning' }, _('Waiting to read data from the modem...'))
+									]);
 
-				if (!json.cport.includes('192.')) {
-					if (json.signal == '0' || json.signal == '') {
-						fs.exec('sleep 3');
-							if (json.signal == '0' || json.signal == '' || json.signal == '-') {
-							L.ui.showModal(_('3ginfo-lite'), [
-							E('p', { 'class': 'spinning' }, _('Waiting to read data from the modem...'))
-							]);
-
-							window.setTimeout(function() {
-							location.reload();
-							}, 5000).finally();
-							}
-					}
-					else {
-					L.hideModal();
-					}
-				}
-					
-					var icon, wicon, ticon, t;
-					var wicon = L.resource('icons/loading.gif');
-					var ticon = L.resource('icons/ctime.png');
-
-					var p = (json.signal);
-					if (p < 0)
-						icon = L.resource('icons/3ginfo-0.png');
-					else if (p == 0)
-						icon = L.resource('icons/3ginfo-0.png');
-					else if (p < 20)
-						icon = L.resource('icons/3ginfo-0-20.png');
-					else if (p < 40)
-						icon = L.resource('icons/3ginfo-20-40.png');
-					else if (p < 60)
-						icon = L.resource('icons/3ginfo-40-60.png');
-					else if (p < 80)
-						icon = L.resource('icons/3ginfo-60-80.png');
-					else
-						icon = L.resource('icons/3ginfo-80-100.png');
-
-
-					if (document.getElementById('signal')) {
-						var view = document.getElementById("signal");
-						view.innerHTML = String.format('<medium>%d%%</medium><br/>' + '<img style="padding-left: 10px;" src="%s"/>', p, icon);
-					}
-
-					if (document.getElementById('connst')) {
-						var view = document.getElementById("connst");
-						if (json.conn_time == '' || json.conn_time == '-') {
-						view.innerHTML = String.format('<img style="width: 16px; height: 16px; vertical-align: middle;" src="%s"/>' + ' ' +_('Waiting for connection data...'), wicon, p);
-						}
-						else {
-						view.innerHTML = String.format('<img style="width: 16px; height: 16px; vertical-align: middle;" src="%s"/>' + ' ' + formatDuration(json.conn_time_sec) + ' ' + ' | \u25bc\u202f' + json.rx + ' \u25b2\u202f' + json.tx, ticon, t);
-						}
-					}
-
-					if (document.getElementById('operator')) {
-						var view = document.getElementById("operator");
-						if (!json.operator_name.length > 1) { 
-						view.textContent = '-';
-						}
-						else {
-						view.textContent = checkOperatorName(json.operator_name);
-						}
-					}
-
-					if (document.getElementById('location')) {
-						var viewloc = document.getElementById("location");
-						if (!json.location.length > 2) { 
-						viewloc.style.display = 'none';
-						}
-						else {
-						viewloc.innerHTML = json.location;
-						}
-
-					}
-
-					if (document.getElementById('sim')) {
-						var view = document.getElementById("sim");
-						var sv = document.getElementById("simv");
-						if (json.registration == '') { 
-						view.textContent = '-';
-						}
-						else {
-						sv.style.visibility = "visible";
-						view.textContent = json.registration;
-						if (json.registration == '0') { 
-							view.textContent = _('Not registered');
-						}
-						if (json.registration == '1') { 
-							view.textContent = _('Registered');
-						}
-						if (json.registration == '2') { 
-							view.textContent = _('Searching..');
-						}
-						if (json.registration == '3') { 
-							view.textContent = _('Registering denied');
-						}
-						if (json.registration == '5') { 
-							view.textContent = _('Registered (roaming)');
-						}
-						if (json.registration == '6') { 
-							view.textContent = _('Registered, only SMS');
-						}
-						if (json.registration == '7') { 
-							view.textContent = _('Registered (roaming), only SMS');
-						}
-					}
-					}
-
-					if (document.getElementById('mode')) {
-						var view = document.getElementById("mode");
-						if (!json.mode.length > 1) { 
-						view.textContent = '-';
-						}
-						else {
-						view.textContent = json.mode;
-						}
-					}
-
-					if (document.getElementById('modem')) {
-						var view = document.getElementById("modem");
-						if (!json.modem.length > 1) { 
-						view.textContent = '-';
-						}
-						else {
-						view.textContent = json.modem;
-						}
-					}
-
-					if (document.getElementById('fw')) {
-						var view = document.getElementById("fw");
-						if (!json.firmware.length > 1) { 
-						view.textContent = '-';
-						}
-						else {
-						view.textContent = json.firmware;
-						}
-					}
-
-					if (document.getElementById('cport')) {
-						var view = document.getElementById("cport");
-						if (!json.cport.length > 1) { 
-						view.textContent = '-';
-						}
-						else {
-						view.textContent = json.cport;
-						}
-					}
-
-					if (document.getElementById('protocol')) {
-						var view = document.getElementById("protocol");
-						if (!json.protocol.length > 1) { 
-						view.textContent = '-';
-						}
-						else {
-						view.textContent = json.protocol;
-						}
-					}
-
-					if (document.getElementById('temp')) {
-						var view = document.getElementById("temp");
-						var viewn = document.getElementById("tempn");
-						var t = json.mtemp;
-						if (!t.length > 1 && t.includes(' ') || t == '' || t == '-') { 
-						viewn.style.display = 'none';
-						}
-						else {
-						view.textContent = t.replace('&deg;', '°');
-						}
-					}
-
-					if (document.getElementById('csq')) {
-						var view = document.getElementById("csq");
-						if (json.signal == 0 || json.signal == '') {
-						view.style.visibility = 'hidden';
-						}
-						else {
-						if (json.csq == '') { 
-						view.textContent = '-';
-						}
-						else {
-						csq_bar(json.csq, 31);
-						}
-						}
-					}
-
-					if (document.getElementById('rssi')) {
-						var view = document.getElementById("rssi");
-						if (json.rssi == '') { 
-						view.style.visibility = 'hidden';
-						}
-						else {
-							view.style.visibility = 'visible';
-							var z = json.rssi;
-							if (z.includes('dBm')) { 
-							var rssi_min = -110;
-							rssi_bar(json.rssi, rssi_min);	
+									window.setTimeout(function() {
+									location.reload();
+									}, 5000).finally();
+								}
 							}
 							else {
-							var rssi_min = -110;
-							rssi_bar(json.rssi + " dBm", rssi_min);
+								L.hideModal();
 							}
 						}
-					}
+						
+						var icon, wicon, ticon, t;
+						var wicon = L.resource('icons/loading.gif');
+						var ticon = L.resource('icons/ctime.png');
 
-					if (document.getElementById('rsrp')) {
-						var view = document.getElementById('rsrp');
-						if (json.rsrp == '') { 
-						view.style.visibility = 'hidden';
+						var p = (json.signal);
+						if (p > 97)
+							icon = L.resource('icons/3ginfo-0.png');
+						else if (p > 80)
+							icon = L.resource('icons/3ginfo-0.png');
+						else if (p > 60)
+							icon = L.resource('icons/3ginfo-0-20.png');
+						else if (p > 40)
+							icon = L.resource('icons/3ginfo-20-40.png');
+						else if (p > 20)
+							icon = L.resource('icons/3ginfo-40-60.png');
+						else if (p > 0)
+							icon = L.resource('icons/3ginfo-60-80.png');
+						else
+							icon = L.resource('icons/3ginfo-80-100.png');
+
+
+						if (document.getElementById('signal')) {
+							var view = document.getElementById("signal");
+							view.innerHTML = String.format('<medium>%d%%</medium><br/>' + '<img style="padding-left: 10px;" src="%s"/>', p, icon);
 						}
-						else {
-							view.style.visibility = 'visible';
-							var z = json.rsrp;
-							if (z.includes('dBm')) { 
-							var rsrp_min = -140;
-							rsrp_bar(json.rsrp, rsrp_min);
 
+						if (document.getElementById('connst')) {
+							var view = document.getElementById("connst");
+							if (json.conn_time == '' || json.conn_time == '-') {
+							view.innerHTML = String.format('<img style="width: 16px; height: 16px; vertical-align: middle;" src="%s"/>' + ' ' +_('Waiting for connection data...'), wicon, p);
 							}
 							else {
-							var rsrp_min = -140;
-							rsrp_bar(json.rsrp + " dBm", rsrp_min);
+							view.innerHTML = String.format('<img style="width: 16px; height: 16px; vertical-align: middle;" src="%s"/>' + ' ' + formatDuration(json.conn_time_sec) + ' ' + ' | \u25bc\u202f' + json.rx + ' \u25b2\u202f' + json.tx, ticon, t);
 							}
 						}
-					}
 
-					if (document.getElementById('sinr')) {
-						var view = document.getElementById("sinr");
-						if (json.sinr == '') { 
-						view.style.visibility = 'hidden';
+						if (document.getElementById('operator')) {
+							var view = document.getElementById("operator");
+							if (!json.operator_name.length > 1) { 
+								view.textContent = '-';
+							} else {
+								view.textContent = checkOperatorName(json.operator_name);
+							}
 						}
-						else {
-							view.style.visibility = 'visible';
-							var z = json.sinr;
-							if (z.includes('dB')) { 
-							view.textContent = json.sinr;
+
+						if (document.getElementById('location')) {
+							var viewloc = document.getElementById("location");
+							if (!json.location.length > 2) { 
+								viewloc.style.display = 'none';
+							} else {
+								viewloc.innerHTML = json.location;
+							}
+
+						}
+
+						if (document.getElementById('sim')) {
+							var view = document.getElementById("sim");
+							var sv = document.getElementById("simv");
+							if (json.registration == '') { 
+								view.textContent = '-';
 							}
 							else {
-							var sinr_min = -21;
-							sinr_bar(json.sinr + " dB", sinr_min);
+								sv.style.visibility = "visible";
+								view.textContent = json.registration;
+								if (json.registration == '0') { 
+									view.textContent = _('Not registered');
+								}
+								if (json.registration == '1') { 
+									view.textContent = _('Registered');
+								}
+								if (json.registration == '2') { 
+									view.textContent = _('Searching..');
+								}
+								if (json.registration == '3') { 
+									view.textContent = _('Registering denied');
+								}
+								if (json.registration == '5') { 
+									view.textContent = _('Registered (roaming)');
+								}
+								if (json.registration == '6') { 
+									view.textContent = _('Registered, only SMS');
+								}
+								if (json.registration == '7') { 
+									view.textContent = _('Registered (roaming), only SMS');
+								}
 							}
 						}
-					}
 
-					if (document.getElementById('rsrq')) {
-						var view = document.getElementById("rsrq");
-						if (json.rsrq == '') { 
-						view.style.visibility = 'hidden';
+						if (document.getElementById('mode')) {
+							var view = document.getElementById("mode");
+							if (!json.mode.length > 1) { 
+								view.textContent = '-';
+							} else {
+								view.textContent = json.mode;
+							}
 						}
-						else {
-							view.style.visibility = 'visible';
-							var z = json.rsrq;
-							if (z.includes('dB')) { 
-							view.textContent = json.rsrq;
+
+						if (document.getElementById('modem')) {
+							var view = document.getElementById("modem");
+							if (!json.modem.length > 1) { 
+								view.textContent = '-';
 							}
 							else {
-							var rsrq_min = -20;
-							rsrq_bar(json.rsrq + " dB", rsrq_min);
+								view.textContent = json.modem;
 							}
 						}
-					}
 
-					if (document.getElementById('mccmnc')) {
-						var view = document.getElementById("mccmnc");
-						if (json.operator_mcc == '' & json.operator_mnc == '') { 
-						view.textContent = '-';
-						}
-						else {
-						view.textContent = json.operator_mcc + " " + json.operator_mnc;
-						}
-					}
-
-					if (document.getElementById('lac')) {
-						var view = document.getElementById("lac");
-						var viewn = document.getElementById("lacn");
-						if (json.lac_dec.length < 2 || json.lac_hex.length < 2) { 
-						viewn.style.display = "none";
-						}
-						else {
-							if (json.lac_dec == '' || json.lac_hex == '') { 
-							var lc = json.lac_dec   + ' ' + json.lac_hex;
-							var ld = lc.split(' ').join('');
-							view.textContent = ld;
+						if (document.getElementById('fw')) {
+							var view = document.getElementById("fw");
+							if (!json.firmware.length > 1) { 
+								view.textContent = '-';
 							}
 							else {
-							view.innerHTML = json.lac_dec + ' (' + json.lac_hex + ')';
+								view.textContent = json.firmware;
 							}
 						}
-					}
 
-					if (document.getElementById('tac')) {
-						var view = document.getElementById("tac");
-						var tac_dh, tac_dec_hex, lac_dec_hex;
-							if (json.tac_d.length > 1 || json.tac_h.length > 1) {
-							var tac_dh =  json.tac_d + ' (' + json.tac_h + ')';
-									view.textContent = tac_dh;
+						if (document.getElementById('cport')) {
+							var view = document.getElementById("cport");
+							if (!json.cport.length > 1) { 
+								view.textContent = '-';
 							}
 							else {
-								if (json.tac_dec.length > 1 || json.tac_hex.length > 1) {
-									var tac_dh =  json.tac_dec + ' (' + json.tac_hex + ')';
-									view.textContent = tac_dh;
+								view.textContent = json.cport;
+							}
+						}
+
+						if (document.getElementById('protocol')) {
+							var view = document.getElementById("protocol");
+							if (!json.protocol.length > 1) { 
+							view.textContent = '-';
+							}
+							else {
+							view.textContent = json.protocol;
+							}
+						}
+
+						if (document.getElementById('temp')) {
+							var view = document.getElementById("temp");
+							var viewn = document.getElementById("tempn");
+							var t = json.mtemp;
+							if (!t.length > 1 && t.includes(' ') || t == '' || t == '-') { 
+								viewn.style.display = 'none';
+							} else {
+								view.textContent = t.replace('&deg;', '°');
+							}
+						}
+
+						if (document.getElementById('rssi')) {
+							var view = document.getElementById("rssi");
+							if (json.rssi == '') { 
+								view.style.visibility = 'hidden';
+							} else {
+								view.style.visibility = 'visible';
+								var z = json.rssi;
+								if (z.includes('dBm')) { 
+									var rssi_min = -110;
+									rssi_bar(json.rssi, rssi_min);	
 								}
 								else {
-									view.textContent = '-';
+									var rssi_min = -110;
+									rssi_bar(json.rssi + " dBm", rssi_min);
 								}
 							}
-					}
+						}
 
-					if (document.getElementById('cid')) {
-						var view = document.getElementById("cid");
-						if (json.cid_dec == '' || json.cid_hex == '') { 
-						var cc = json.cid_hex   + ' ' + json.cid_dec;
-						var cd = cc.split(' ').join('');
-						view.textContent = cd;
-						}
-						else {
-						view.innerHTML = json.cid_dec + ' (' + '' + json.cid_hex + ')';
-						}
-					}
-
-					if (document.getElementById('pband')) {
-						var view = document.getElementById("pband");
-						if (json.pband == '') { 
-						view.textContent = '-';
-						}
-						else {
-							if (json.pci.length > 0 && json.earfcn.length > 0) { 
-								view.textContent = json.pband + ' | ' + json.pci + ' ' + json.earfcn;
+						if (document.getElementById('rsrp')) {
+							var view = document.getElementById('rsrp');
+							if (json.rsrp == '') { 
+							view.style.visibility = 'hidden';
 							}
 							else {
-								view.textContent = json.pband;
-							}
-						}
-					}
+								view.style.visibility = 'visible';
+								var z = json.rsrp;
+								if (z.includes('dBm')) { 
+								var rsrp_min = -140;
+								rsrp_bar(json.rsrp, rsrp_min);
 
-					if (document.getElementById('s1band')) {
-						var view = document.getElementById("s1band");
-						if (json.s1band == '') { 
-						view.textContent = '-';
-						}
-						else {
-							if (json.s1pci.length > 0 && json.s1earfcn.length > 0) { 
-								view.textContent = json.s1band + ' | ' + json.s1pci + ' ' + json.s1earfcn;
-							}
-							else {
-								view.textContent = json.s1band;
+								}
+								else {
+								var rsrp_min = -140;
+								rsrp_bar(json.rsrp + " dBm", rsrp_min);
+								}
 							}
 						}
-					}
-					
-					if (document.getElementById('s2band')) {
-						var view = document.getElementById("s2band");
-						if (json.s2band == '') { 
-						view.textContent = '-';
-						}
-						else {
-							if (json.s2pci.length > 0 && json.s2earfcn.length > 0) { 
-								view.textContent = json.s2band + ' | ' + json.s2pci + ' ' + json.s2earfcn;
-							}
-							else {
-								view.textContent = json.s2band;
-							}
-						}
-					}
-					
-					if (document.getElementById('s3band')) {
-						var view = document.getElementById("s3band");
-						if (json.s3band == '') { 
-						view.textContent = '-';
-						}
-						else {
-							if (json.s3pci.length > 0 && json.s3earfcn.length > 0) { 
-								view.textContent = json.s3band + ' | ' + json.s3pci + ' ' + json.s3earfcn;
-							}
-							else {
-								view.textContent = json.s3band;
-							}
-						}
-					}
-					
-					if (document.getElementById('s4band')) {
-						var view = document.getElementById("s4band");
-						if (json.s4band == '') { 
-						view.textContent = '-';
-						}
-						else {
-							if (json.s4pci.length > 0 && json.s4earfcn.length > 0) { 
-								view.textContent = json.s4band + ' | ' + json.s4pci + ' ' + json.s4earfcn;
-							}
-							else {
-								view.textContent = json.s4band;
-							}
-						}
-					}
-					});
-				});	
 
-				}
-			}	
+						if (document.getElementById('sinr')) {
+							var view = document.getElementById("sinr");
+							if (json.sinr == '') { 
+							view.style.visibility = 'hidden';
+							}
+							else {
+								view.style.visibility = 'visible';
+								var z = json.sinr;
+								if (z.includes('dB')) { 
+								view.textContent = json.sinr;
+								}
+								else {
+								var sinr_min = -21;
+								sinr_bar(json.sinr + " dB", sinr_min);
+								}
+							}
+						}
 
-		} catch (err) {
+						if (document.getElementById('rsrq')) {
+							var view = document.getElementById("rsrq");
+							if (json.rsrq == '') { 
+							view.style.visibility = 'hidden';
+							}
+							else {
+								view.style.visibility = 'visible';
+								var z = json.rsrq;
+								if (z.includes('dB')) { 
+								view.textContent = json.rsrq;
+								}
+								else {
+								var rsrq_min = -20;
+								rsrq_bar(json.rsrq + " dB", rsrq_min);
+								}
+							}
+						}
+
+						if (document.getElementById('mccmnc')) {
+							var view = document.getElementById("mccmnc");
+							if (json.operator_mcc == '' & json.operator_mnc == '') { 
+							view.textContent = '-';
+							}
+							else {
+							view.textContent = json.operator_mcc + " " + json.operator_mnc;
+							}
+						}
+
+						if (document.getElementById('lac')) {
+							var view = document.getElementById("lac");
+							var viewn = document.getElementById("lacn");
+							if (json.lac_dec.length < 2 || json.lac_hex.length < 2) { 
+							viewn.style.display = "none";
+							}
+							else {
+								if (json.lac_dec == '' || json.lac_hex == '') { 
+								var lc = json.lac_dec   + ' ' + json.lac_hex;
+								var ld = lc.split(' ').join('');
+								view.textContent = ld;
+								}
+								else {
+								view.innerHTML = json.lac_dec + ' (' + json.lac_hex + ')';
+								}
+							}
+						}
+
+						if (document.getElementById('tac')) {
+							var view = document.getElementById("tac");
+							var tac_dh, tac_dec_hex, lac_dec_hex;
+								if (json.tac_d.length > 1 || json.tac_h.length > 1) {
+								var tac_dh =  json.tac_d + ' (' + json.tac_h + ')';
+										view.textContent = tac_dh;
+								}
+								else {
+									if (json.tac_dec.length > 1 || json.tac_hex.length > 1) {
+										var tac_dh =  json.tac_dec + ' (' + json.tac_hex + ')';
+										view.textContent = tac_dh;
+									}
+									else {
+										view.textContent = '-';
+									}
+								}
+						}
+
+						if (document.getElementById('cid')) {
+							var view = document.getElementById("cid");
+							if (json.cid_dec == '' || json.cid_hex == '') { 
+							var cc = json.cid_hex   + ' ' + json.cid_dec;
+							var cd = cc.split(' ').join('');
+							view.textContent = cd;
+							}
+							else {
+							view.innerHTML = json.cid_dec + ' (' + '' + json.cid_hex + ')';
+							}
+						}
+
+						if (document.getElementById('pband')) {
+							var view = document.getElementById("pband");
+							if (json.pband == '') { 
+							view.textContent = '-';
+							}
+							else {
+								if (json.pci.length > 0 && json.earfcn.length > 0) { 
+									view.textContent = json.pband + ' | ' + json.pci + ' ' + json.earfcn;
+								}
+								else {
+									view.textContent = json.pband;
+								}
+							}
+						}
+
+						if (document.getElementById('s1band')) {
+							var view = document.getElementById("s1band");
+							if (json.s1band == '') { 
+							view.textContent = '-';
+							}
+							else {
+								if (json.s1pci.length > 0 && json.s1earfcn.length > 0) { 
+									view.textContent = json.s1band + ' | ' + json.s1pci + ' ' + json.s1earfcn;
+								}
+								else {
+									view.textContent = json.s1band;
+								}
+							}
+						}
+						
+						if (document.getElementById('s2band')) {
+							var view = document.getElementById("s2band");
+							if (json.s2band == '') { 
+							view.textContent = '-';
+							}
+							else {
+								if (json.s2pci.length > 0 && json.s2earfcn.length > 0) { 
+									view.textContent = json.s2band + ' | ' + json.s2pci + ' ' + json.s2earfcn;
+								}
+								else {
+									view.textContent = json.s2band;
+								}
+							}
+						}
+						
+						if (document.getElementById('s3band')) {
+							var view = document.getElementById("s3band");
+							if (json.s3band == '') { 
+							view.textContent = '-';
+							}
+							else {
+								if (json.s3pci.length > 0 && json.s3earfcn.length > 0) { 
+									view.textContent = json.s3band + ' | ' + json.s3pci + ' ' + json.s3earfcn;
+								}
+								else {
+									view.textContent = json.s3band;
+								}
+							}
+						}
+						
+						if (document.getElementById('s4band')) {
+							var view = document.getElementById("s4band");
+							if (json.s4band == '') { 
+							view.textContent = '-';
+							}
+							else {
+								if (json.s4pci.length > 0 && json.s4earfcn.length > 0) { 
+									view.textContent = json.s4band + ' | ' + json.s4pci + ' ' + json.s4earfcn;
+								}
+								else {
+									view.textContent = json.s4band;
+								}
+							}
+						}
+						});
+					});	
+
+					}
+				}	
+
+			} catch (err) {
 				ui.addNotification(null, E('p', _('Error: ') + err.message), 'error');
-				}
+			}
 		}		
 
 		var info = _('More information about the 3ginfo on the %seko.one.pl forum%s.').format('<a href="https://eko.one.pl/?p=openwrt-3ginfo" target="_blank">', '</a>');
