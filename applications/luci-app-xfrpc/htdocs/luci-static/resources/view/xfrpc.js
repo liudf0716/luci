@@ -274,7 +274,7 @@ return view.extend({
 		ss = o.subsection;
 		ss.addremove = true;
 		ss.nodescriptions = true;
-		o = ss.option(form.Value, 'local_port', _('Local Port'),
+		o = ss.option(form.Value, 'local_port', _('Local port'),
 			_('Local port specifies the port to proxy to.'));
 		o.datatype = 'port';
 		o.rmempty = false;
