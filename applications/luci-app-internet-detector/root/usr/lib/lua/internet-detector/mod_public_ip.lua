@@ -358,6 +358,68 @@ function Module:init(t)
 	self._enabled   = true
 end
 
+function Module:httpGetIP()
+    local host = "ipinfo.io"
+    local port = 80
+    local path = "/ip"
+    local timeout = self.timeout
+    local success, ip = false, nil
+
+    -- 创建TCP套接字
+    local sock, err = socket.socket(socket.AF_INET, socket.SOCK_STREAM, 0)
+    if not sock then
+        if self.config.debug then
+            io.stdout:write(string.format("HTTP SOCKET ERROR: %s\n", err))
+        end
+        return nil
+    end
+
+    -- 设置超时
+    socket.setsockopt(sock, socket.SOL_SOCKET, socket.SO_SNDTIMEO, timeout, 0)
+    socket.setsockopt(sock, socket.SOL_SOCKET, socket.SO_RCVTIMEO, timeout, 0)
+
+    -- 绑定接口（如果配置）
+    if self.config.serviceConfig.iface then
+        socket.setsockopt(sock, socket.SOL_SOCKET,
+            socket.SO_BINDTODEVICE, self.config.serviceConfig.iface)
+    end
+
+    -- 连接服务器
+    local sa = socket.getaddrinfo(host, port)[1]
+    if socket.connect(sock, sa) then
+        -- 发送HTTP请求
+        local request = string.format(
+            "GET %s HTTP/1.1\r\nHost: %s\r\nConnection: close\r\n\r\n",
+            path, host
+        )
+
+        if socket.send(sock, request) then
+            -- 读取响应
+            local response = ""
+            while true do
+                local chunk = socket.recv(sock, 1024)
+                if not chunk or #chunk == 0 then break end
+                response = response .. chunk
+            end
+
+            -- 解析IP
+            local body = response:match("\r\n\r\n(.*)$")
+            if body then
+                ip = body:match("(%d+%.%d+%.%d+%.%d+)") or
+                     body:match("([a-f0-9:]+)")  -- IPv6支持
+                if ip then
+                    success = true
+                    self.syslog("notice",
+                        string.format("%s: HTTP fallback got IP %s", self.name, ip))
+                end
+            end
+        end
+    end
+
+    unistd.close(sock)
+    return success and ip or nil
+end
+
 function Module:run(currentStatus, lastStatus, timeDiff, timeNow, inetChecked)
 	if not self._enabled then
 		return
@@ -366,6 +428,10 @@ function Module:run(currentStatus, lastStatus, timeDiff, timeNow, inetChecked)
 		if self._counter == 0 or self._counter >= self._interval or currentStatus ~= lastStatus then
 
 			local ip = self:resolveIP()
+
+			if not ip then
+				ip = self:httpGetIP()
+			end
 
 			if not ip then
 				ip = ""
