@@ -181,6 +181,11 @@ return view.extend({
 		ss = o.subsection;
 		ss.addremove = true;
 		ss.nodescriptions = true;
+		
+		o = ss.option(form.Flag, 'enabled', _('Enable'), _('Enable this TCP proxy.'));
+		o.rmempty = false;
+		o.optional = true;
+
 		o = ss.option(form.Value, 'local_ip', _('Local IP'),
 			_('Local IP specifies the IP address to proxy to.'));
 		o.datatype = 'ip4addr';
@@ -205,6 +210,9 @@ return view.extend({
 			ss = o.subsection;
 			ss.addremove = true;
 			ss.nodescriptions = true;
+			o = ss.option(form.Flag, 'enabled', _('Enable'), _('Enable this %s proxy.'.format(proxy)));
+			o.rmempty = false;
+			o.optional = true;
 			o = ss.option(form.Value, 'local_ip', _('Local IP'),
 				_('Local IP specifies the IP address to proxy to.'));
 			o.datatype = 'ip4addr';
@@ -237,6 +245,9 @@ return view.extend({
 		ss = o.subsection;
 		ss.addremove = true;
 		ss.nodescriptions = true;
+		o = ss.option(form.Flag, 'enabled', _('Enable'), _('Enable this SOCKS5 proxy.'));
+		o.rmempty = false;
+		o.optional = true;
 		o = ss.option(form.Value, 'remote_port', _('Remote port'),
 			_('Remote port specifies server-side port to proxy to.'));
 		o.optional = false;
@@ -274,6 +285,9 @@ return view.extend({
 		ss = o.subsection;
 		ss.addremove = true;
 		ss.nodescriptions = true;
+		o = ss.option(form.Flag, 'enabled', _('Enable'), _('Enable iod service.'));
+		o.rmempty = false;
+		o.optional = true;
 		o = ss.option(form.Value, 'local_port', _('Local port'),
 			_('Local port specifies the port to proxy to.'));
 		o.datatype = 'port';
