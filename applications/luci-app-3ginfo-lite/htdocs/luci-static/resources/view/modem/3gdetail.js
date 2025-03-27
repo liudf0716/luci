@@ -403,44 +403,48 @@ return view.extend({
 			ui.showModal(this.title, [
 				E('div', { class: 'cbi-section' }, [
 					E('div', { class: 'cbi-section-descr' }, this.description),
-					E('div', { class: 'cbi-section' },
-						E('p', {},
-							E('div', { class: 'cbi-value' }, [
-								E('p'),
-								E('label', { class: 'cbi-value-title' }, [_('SIM IMSI')]),
-								E('div', { class: 'cbi-value-field' }, [
-									E('input', {
-										class: 'cbi-input-text',
-										readonly: 'readonly',
-										value: json.imsi
-									}, null),
-								]),
-								E('label', { class: 'cbi-value-title' }, [_('SIM ICCID')]),
-								E('div', { class: 'cbi-value-field' }, [
-									E('input', {
-										class: 'cbi-input-text',
-										readonly: 'readonly',
-										value: json.iccid
-									}, null),
-								]),
-								E('label', { class: 'cbi-value-title' }, [_('Modem IMEI')]),
-								E('div', { class: 'cbi-value-field' }, [
-									E('input', {
-										class: 'cbi-input-text',
-										readonly: 'readonly',
-										value: json.imei
-									}, null),
-								])
-							]),
-						)
-					),
+					E('div', { class: 'cbi-section', style: 'text-align: left; margin: 0 auto; max-width: 90%' }, [
+						E('div', { class: 'cbi-value' }, [
+							E('label', { class: 'cbi-value-title', style: 'text-align: left; width: 30%' }, [_('SIM IMSI')]),
+							E('div', { class: 'cbi-value-field', style: 'text-align: left' }, [
+								E('input', {
+									class: 'cbi-input-text',
+									readonly: 'readonly',
+									value: json.imsi,
+									style: 'width: 100%'
+								})
+							])
+						]),
+						E('div', { class: 'cbi-value' }, [
+							E('label', { class: 'cbi-value-title', style: 'text-align: left; width: 30%' }, [_('SIM ICCID')]),
+							E('div', { class: 'cbi-value-field', style: 'text-align: left' }, [
+								E('input', {
+									class: 'cbi-input-text',
+									readonly: 'readonly',
+									value: json.iccid,
+									style: 'width: 100%'
+								})
+							])
+						]),
+						E('div', { class: 'cbi-value' }, [
+							E('label', { class: 'cbi-value-title', style: 'text-align: left; width: 30%' }, [_('Modem IMEI')]),
+							E('div', { class: 'cbi-value-field', style: 'text-align: left' }, [
+								E('input', {
+									class: 'cbi-input-text',
+									readonly: 'readonly',
+									value: json.imei,
+									style: 'width: 100%'
+								})
+							])
+						])
+					])
 				]),
 				E('div', { class: 'right' }, [
 					E('button', {
 						class: 'btn',
 						click: ui.createHandlerFn(this, this.handleDissmis),
-					}, _('Close')),
-				]),
+					}, _('Close'))
+				])
 			]);
 		},
 

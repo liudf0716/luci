@@ -167,3 +167,66 @@ msgstr "进度条的宽度"
 
 msgid "Select the width of the progress bars."
 msgstr "选择进度条的宽度."
+
+msgid "SIM card menu"
+msgstr "SIM卡菜单"
+
+msgid "Information read from the SIM card and device."
+msgstr "从SIM卡和设备读取的信息"
+
+msgid "CLICK ME TO SEE NEW MENU"
+msgstr "点击查看新菜单"
+
+msgid "SIM IMSI"
+msgstr "SIM卡IMSI"
+
+msgid "SIM ICCID"
+msgstr "SIM卡ICCID"
+
+msgid "Modem IMEI"
+msgstr "调制解调器IMEI"
+
+msgid "Close"
+msgstr "关闭"
+
+msgid "Loading"
+msgstr "加载中"
+
+msgid "Problem with registering to the network, check the SIM card."
+msgstr "注册到网络时出现问题，请检查SIM卡"
+
+msgid "SIM PIN required"
+msgstr "需要SIM卡PIN码"
+
+msgid "SIM PUK required"
+msgstr "需要SIM卡PUK码"
+
+msgid "SIM failure"
+msgstr "SIM卡故障"
+
+msgid "SIM busy"
+msgstr "SIM卡忙"
+
+msgid "SIM wrong"
+msgstr "SIM卡错误"
+
+msgid "SIM PIN2 required"
+msgstr "需要SIM卡PIN2码"
+
+msgid "SIM PUK2 required"
+msgstr "需要SIM卡PUK2码"
+
+msgid "There is a problem reading data from the modem."
+msgstr "从调制解调器读取数据时出现问题"
+
+msgid "Please check:"
+msgstr "请检查："
+
+msgid "1. Modem availability in the system."
+msgstr "1. 系统中调制解调器的可用性"
+
+msgid "2. The correct installation of the SIM card in the modem."
+msgstr "2. SIM卡在调制解调器中的正确安装"
+
+msgid "3. Port for communication with the modem."
+msgstr "3. 与调制解调器通信的端口"
