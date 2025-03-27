@@ -244,13 +244,13 @@ msgid "SOCKS5 Proxy"
 msgstr "SOCKS5 代理"
 
 msgid "Local IP specifies the IP address to proxy to."
-msgstr "Local IP 指定要代理到的 IP 地址"
+msgstr "本地IP指定要代理到的 IP 地址"
 
 msgid "Local port specifies the port to proxy to."
-msgstr "Local port 指定要代理到的端口"
+msgstr "本地端口指定要代理到的端口"
 
 msgid "Remote port specifies server-side port to proxy to."
-msgstr "Remote port 指定要代理到的服务器端口"
+msgstr "远程端口指定要代理到的服务器端口"
 
 msgid "Enable Subdomain"
 msgstr "启用子域名"
@@ -271,7 +271,7 @@ msgid "Specifies the subdomain for http or https proxy, only works when server s
 msgstr "指定 http 或 https 代理的子域名，仅在服务器支持子域名时有效"
 
 msgid "Remote port specifies server-side port to proxy to."
-msgstr "Remote port 指定要代理到的服务器端口"
+msgstr "远程端口指定要代理到的服务器端口"
 
 msgid "Specifies the name of remote xfrpc plugin."
 msgstr "指定远程 xfrpc 插件的名称"
@@ -322,3 +322,6 @@ msgstr "启用此 %s 代理"
 # TCP settings
 msgid "Enable this TCP proxy."
 msgstr "启用此 TCP 代理"
+
+msgid "IOD Settings"
+msgstr "IOD 设置"

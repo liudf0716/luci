@@ -132,8 +132,9 @@ return view.extend({
 		s.tab('http', _('HTTP Proxy'));
 		s.tab('https', _('HTTPS Proxy'));
 		s.tab('socks5', _('SOCKS5 Proxy'));
+		s.tab('iod', _('IOD Settings'));
 		s.tab('plugin', _('Plugin Settings'));
-		s.tab('iod', _('Iod Settings'));
+		
 
 		// common settings
 		o = s.taboption('common', form.Flag, 'enabled', _('Enable'), _('Enable xfrpc service.'));
@@ -184,7 +185,8 @@ return view.extend({
 		
 		o = ss.option(form.Flag, 'enabled', _('Enable'), _('Enable this TCP proxy.'));
 		o.rmempty = false;
-		o.optional = true;
+		o.optional = false;
+		o.defaulValue = 1;
 
 		o = ss.option(form.Value, 'local_ip', _('Local IP'),
 			_('Local IP specifies the IP address to proxy to.'));
@@ -212,7 +214,8 @@ return view.extend({
 			ss.nodescriptions = true;
 			o = ss.option(form.Flag, 'enabled', _('Enable'), _('Enable this %s proxy.'.format(proxy)));
 			o.rmempty = false;
-			o.optional = true;
+			o.optional = false;
+			o.defaulValue = 1;
 			o = ss.option(form.Value, 'local_ip', _('Local IP'),
 				_('Local IP specifies the IP address to proxy to.'));
 			o.datatype = 'ip4addr';
@@ -247,13 +250,34 @@ return view.extend({
 		ss.nodescriptions = true;
 		o = ss.option(form.Flag, 'enabled', _('Enable'), _('Enable this SOCKS5 proxy.'));
 		o.rmempty = false;
-		o.optional = true;
+		o.optional = false;
+		o.defaulValue = 1;
 		o = ss.option(form.Value, 'remote_port', _('Remote port'),
 			_('Remote port specifies server-side port to proxy to.'));
 		o.optional = false;
 		o.rmempty = false;
 		o.datatype = 'port';
 		
+		// iod settings
+		o = s.taboption('iod', form.SectionValue, '_iod', form.GridSection, 'iod');
+		ss = o.subsection;
+		ss.addremove = true;
+		ss.nodescriptions = true;
+		o = ss.option(form.Flag, 'enabled', _('Enable'), _('Enable iod service.'));
+		o.rmempty = false;
+		o.optional = false;
+		o.defaulValue = 1;
+		o = ss.option(form.Value, 'local_port', _('Local port'),
+			_('Local port specifies the port to proxy to.'));
+		o.datatype = 'port';
+		o.rmempty = false;
+		o.optional = false;
+		o = ss.option(form.Value, 'remote_port', _('Remote Port'),
+			_('Remote port specifies server-side port to proxy to.'));
+		o.datatype = 'port';
+		o.rmempty = false;
+		o.optional = false;
+
 		// plugin settings
 		o = s.taboption('plugin', form.SectionValue, '_plugin', form.GridSection, 'plugin');
 		ss = o.subsection;
@@ -276,25 +300,6 @@ return view.extend({
 		o.depends('plugin_action', 'download');
 		o = ss.option(form.Value, 'remote_port', _('Remote Port'),
 			_('Remote port of plugin specifies the remote port of remote xfrpc plugin.'));
-		o.datatype = 'port';
-		o.rmempty = false;
-		o.optional = false;
-		
-		// iod settings
-		o = s.taboption('iod', form.SectionValue, '_iod', form.GridSection, 'iod');
-		ss = o.subsection;
-		ss.addremove = true;
-		ss.nodescriptions = true;
-		o = ss.option(form.Flag, 'enabled', _('Enable'), _('Enable iod service.'));
-		o.rmempty = false;
-		o.optional = true;
-		o = ss.option(form.Value, 'local_port', _('Local port'),
-			_('Local port specifies the port to proxy to.'));
-		o.datatype = 'port';
-		o.rmempty = false;
-		o.optional = false;
-		o = ss.option(form.Value, 'remote_port', _('Remote Port'),
-			_('Remote port specifies server-side port to proxy to.'));
 		o.datatype = 'port';
 		o.rmempty = false;
 		o.optional = false;
