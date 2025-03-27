@@ -198,8 +198,9 @@ if [ -e /usr/bin/sms_tool ]; then
 	O="${O}$(sms_tool -D -d $DEVICE at "AT+COPS?")"
 	O="${O}$(sms_tool -D -d $DEVICE at "AT+COPS=3,2")"
 	O="${O}$(sms_tool -D -d $DEVICE at "AT+COPS?")"
-	O="${O}$(sms_tool -D -d $DEVICE at "AT+CREG=2")"
-	O="${O}$(sms_tool -D -d $DEVICE at "AT+CREG?")"
+	O="${O}$(sms_tool -D -d $DEVICE at "AT+C5GREG=2")"
+	O="${O}$(sms_tool -D -d $DEVICE at "AT+C5GREG?")"
+	O="${O}$(sms_tool -D -d $DEVICE at "AT^MONSC")"
 else
 	O=$(gcom -d $DEVICE -s $RES/info.gcom 2>/dev/null)
 fi
@@ -397,42 +398,53 @@ if [ -n "$T" ]; then
 	esac
 fi
 
-# CREG
-eval $(echo "$O" | awk -F[,] '/^\+CREG/ {gsub(/[[:space:]"]+/,"");printf "T=\"%d\";LAC_HEX=\"%X\";CID_HEX=\"%X\";LAC_DEC=\"%d\";CID_DEC=\"%d\";MODE_NUM=\"%d\"", $2, "0x"$3, "0x"$4, "0x"$3, "0x"$4, $5}')
-case "$T" in
-	0*) REG="0";;
-	1*) REG="1";;
-	2*) REG="2";;
-	3*) REG="3";;
-	5*) REG="5";;
-	6*) REG="6";;
-	7*) REG="7";;
-	*) REG="";;
-esac
-
-# MODE
-if [ -z "$MODE_NUM" ] || [ "x$MODE_NUM" == "x0" ]; then
-	MODE_NUM=$(echo "$O" | awk -F[,] '/^\+COPS/ {print $4;exit}' | xargs)
-fi
-case "$MODE_NUM" in
-	2*) MODE="UMTS";;
-	3*) MODE="EDGE";;
-	4*) MODE="HSDPA";;
-	5*) MODE="HSUPA";;
-	6*) MODE="HSPA";;
-	7*) MODE="LTE";;
-	12*) MODE="NR";;
-	 *) MODE="-";;
-esac
-
-# TAC
-OTX=$(sms_tool -d $DEVICE at "at+cereg")
-TAC=$(echo "$OTX" | awk -F[,] '/^\+CEREG/ {printf "%s", toupper($3)}' | sed 's/[^A-F0-9]//g')
-if [ "x$TAC" != "x" ]; then
-	TAC_HEX=$(printf %d 0x$TAC)
-else
-	TAC="-"
-	TAC_HEX="-"
+# C5GREG
+C5GREG=$(echo "$O" | grep -o "+C5GREG: [^[:cntrl:]]*" | head -1)
+if [ -n "$C5GREG" ]; then
+	# Parse the C5GREG response
+	# Format: +C5GREG: <n>,<stat>[,[<tac>],[<ci>],[<AcT>],[<Allowed_NSSAI_length>],[<Allowed_NSSAI>]]
+	STAT=$(echo "$C5GREG" | cut -d, -f2 | grep -o '[0-9]*')
+	TAC=$(echo "$C5GREG" | cut -d, -f3 | tr -d '"' | xargs)
+	CI=$(echo "$C5GREG" | cut -d, -f4 | tr -d '"' | xargs)
+	ACT=$(echo "$C5GREG" | cut -d, -f5 | grep -o '[0-9]*')
+	
+	# Convert hex values to decimal if they exist
+	if [ -n "$TAC" ] && [ "$TAC" != "" ]; then
+		TAC_HEX=$TAC
+		TAC_DEC=$(printf "%d" "0x$TAC" 2>/dev/null)
+	else
+		TAC_HEX="-"
+		TAC_DEC="-"
+	fi
+	
+	if [ -n "$CI" ] && [ "$CI" != "" ]; then
+		CID_HEX=$CI
+		CID_DEC=$(printf "%d" "0x$CI" 2>/dev/null)
+	else
+		CID_HEX="-"
+		CID_DEC="-"
+	fi
+	
+	# Set registration status
+	case "$STAT" in
+		0) REG="0";;
+		1) REG="1";;
+		2) REG="2";;
+		3) REG="3";;
+		5) REG="5";;
+		8) REG="8";;
+		*) REG="STAT";;
+	esac
+	
+	# Set mode based on AcT
+	if [ -n "$ACT" ]; then
+		MODE_NUM=$ACT
+		case "$ACT" in
+			10) MODE="EUTRAN-5GC";;
+			11) MODE="NR-5GC";;
+			*) MODE="Unknown";;
+		esac
+	fi
 fi
 
 CONF_DEVICE=$(uci -q get 3ginfo.@3ginfo[0].device)
@@ -452,7 +464,7 @@ else
 
 if [ -e /usr/bin/sms_tool ]; then
 	REGOK=0
-	[ "x$REG" == "x1" ] || [ "x$REG" == "x5" ] || [ "x$REG" == "x6" ] || [ "x$REG" == "x7" ] && REGOK=1
+	[ "x$REG" == "x1" ] || [ "x$REG" == "x5" ] || [ "x$REG" == "x8" ] && REGOK=1
 	VIDPID=$(getdevicevendorproduct $DEVICE)
 	if [ -e "$RES/modem/$VIDPID" ]; then
 		case $(cat /tmp/sysinfo/board_name) in

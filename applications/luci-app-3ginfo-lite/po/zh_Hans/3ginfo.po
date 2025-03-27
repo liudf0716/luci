@@ -230,3 +230,57 @@ msgstr "2. SIM卡在调制解调器中的正确安装"
 
 msgid "3. Port for communication with the modem."
 msgstr "3. 与调制解调器通信的端口"
+
+msgid "3ginfo-lite"
+msgstr "5G连接的信息"
+
+msgid "TAC"
+msgstr "位置码"
+
+msgid "CELL ID"
+msgstr "小区ID"
+
+msgid "Not registered"
+msgstr "未注册"
+
+msgid "Registered"
+msgstr "已注册"
+
+msgid "Searching.."
+msgstr "搜索中.."
+
+msgid "Registering denied"
+msgstr "注册被拒绝"
+
+msgid "Registered (roaming)"
+msgstr "已注册（漫游）"
+
+msgid "Registered for emergency service only"
+msgstr "仅注册紧急服务"
+
+msgid "Unknown"
+msgstr "未知"
+
+msgid "Show devices"
+msgstr "显示设备"
+
+msgid "Clear"
+msgstr "清除"
+
+msgid "Check availability of ttyX ports."
+msgstr "检查ttyX端口的可用性."
+
+msgid "Check data read by the 3ginfo scripts."
+msgstr "检查3ginfo脚本读取的数据."
+
+msgid "Execution of various commands to check the availability of the modem and eliminate errors in the data collected by the scripts."
+msgstr "执行各种命令以检查调制解调器的可用性，并消除脚本收集的数据中的错误."
+
+msgid "USB debug information"
+msgstr "USB调试信息"
+
+msgid "Download error"
+msgstr "下载错误"
+
+msgid "Please select a port"
+msgstr "请选择一个端口"

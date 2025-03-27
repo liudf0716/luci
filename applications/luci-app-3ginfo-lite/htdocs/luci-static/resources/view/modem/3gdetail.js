@@ -387,12 +387,8 @@ return view.extend({
 			this.callback = callback;
 		},
 
-		load: function() {
-			return L.resolveDefault(fs.exec_direct('/usr/share/3ginfo-lite/3ginfo.sh', ['json']));
-		},
-
-		render: function(content) {
-			const json = JSON.parse(content);
+		render: function(jsonData) {
+			const json = JSON.parse(jsonData);
 
 			if (json) {
 				if (!json.imei.length > 2) {
@@ -453,18 +449,14 @@ return view.extend({
 			if (!poll.active()) poll.start();
 		},
 
-		show: function() {
+		show: function(jsonData) {
 			ui.showModal(null,
 				E('p', { class: 'spinning' }, _('Loading'))
 			);
 			poll.stop();
-			this.load().then(content => {
-				ui.hideModal();
-				return this.render(content);
-			}).catch(e => {
-				ui.hideModal();
-				return this.error(e);
-			});
+			
+			ui.hideModal();
+			this.render(jsonData);
 		},
 	}),
 
@@ -552,20 +544,20 @@ return view.extend({
 									ticon = L.resource('icons/ctime.png');
 
 									const p = json.signal;
-									if (p > 97) {
-										icon = L.resource('icons/3ginfo-0.png');
-									} else if (p > 80) {
-										icon = L.resource('icons/3ginfo-0.png');
-									} else if (p > 60) {
-										icon = L.resource('icons/3ginfo-0-20.png');
-									} else if (p > 40) {
-										icon = L.resource('icons/3ginfo-20-40.png');
-									} else if (p > 20) {
-										icon = L.resource('icons/3ginfo-40-60.png');
-									} else if (p > 0) {
-										icon = L.resource('icons/3ginfo-60-80.png');
-									} else {
+									if (p > 80) {
 										icon = L.resource('icons/3ginfo-80-100.png');
+									} else if (p > 60) {
+										icon = L.resource('icons/3ginfo-60-80.png');
+									} else if (p > 40) {
+										icon = L.resource('icons/3ginfo-40-60.png');
+									} else if (p > 20) {
+										icon = L.resource('icons/3ginfo-20-40.png');
+									} else if (p > 0) {
+										icon = L.resource('icons/3ginfo-0-20.png');
+									} else if (p > 0) {
+										icon = L.resource('icons/3ginfo-0.png');
+									} else {
+										icon = L.resource('icons/3ginfo-0.png');
 									}
 
 									if (document.getElementById('signal')) {
@@ -623,11 +615,8 @@ return view.extend({
 											if (json.registration === '5') {
 												view.textContent = _('Registered (roaming)');
 											}
-											if (json.registration === '6') {
-												view.textContent = _('Registered, only SMS');
-											}
-											if (json.registration === '7') {
-												view.textContent = _('Registered (roaming), only SMS');
+											if (json.registration === '8') {
+												view.textContent = _('Registered for emergency service only');
 											}
 										}
 									}
@@ -924,7 +913,7 @@ return view.extend({
 								id: 'simv',
 								style: 'visibility: hidden; margin:0 auto; padding: 4px;',
 								click: ui.createHandlerFn(this, function() {
-									return upSIMDialog.show();
+									return upSIMDialog.show(data);
 								}),
 							}, [
 								E('div', { class: 'ifacebox-body' }, [
@@ -981,7 +970,7 @@ return view.extend({
 						E('td', { class: 'td left', id: 'mccmnc' }, ['-']),
 					]),
 					E('tr', { class: 'tr' }, [
-						E('td', { class: 'td left', width: '33%' }, [_('Cell ID')]),
+						E('td', { class: 'td left', width: '33%' }, [_('CELL ID')]),
 						E('td', { class: 'td left', id: 'cid' }, ['-']),
 					]),
 					E('tr', { class: 'tr' }, [
