@@ -1,10 +1,24 @@
 'use strict';
 'require view';
 'require form';
+'require fs';
 'require tools.widgets as widgets';
 
 return view.extend({
-	render: function() {
+	render: async function() {
+		var ipaddrs = {};
+		var macaddrs = {};
+
+		const dhcpLeases = await fs.exec_direct('/usr/bin/awk', ['-F', ' ', '{print $2, $3, $4}', '/tmp/dhcp.leases'], 'text');
+		const dhcpLines = dhcpLeases.split('\n');
+		for (let i = 0; i < dhcpLines.length; i++) {
+			const line = dhcpLines[i];
+			if (line === '') continue;
+			const [mac, ip, hostname] = line.split(' ');
+			ipaddrs[ip] = hostname;
+			macaddrs[mac] = hostname;
+		};
+
 		var m, s, o;
 		m = new form.Map('timecontrol', _('Internet Time Control'), _('Internet time control for clients (children) by MAC address'));
 		m.template = 'timecontrol/index';
@@ -22,15 +36,25 @@ return view.extend({
 		o.rmempty = false;
 		o.default = o.enabled;
 		o.editable = true;
-		
+
 		o = s.option(form.Value, 'hostname', _('Hostname'));
 		o.rmempty = true;
 		o.datatype = 'string';
 		o.placeholder = 'hostname';
 
+		o = s.option(form.Value, 'ipv4', _('IP Address'));
+		o.datatype = 'or(ip4addr,"ignore")';
+		L.sortedKeys(ipaddrs, null, 'addr').forEach(function(ipv4) {
+			o.value(ipv4, ipaddrs[ipv4] ? '%s (%s)'.format(ipv4, ipaddrs[ipv4]) : ipv4);
+		});
+
 		o = s.option(form.Value, 'macaddr', 'MAC');
 		o.rmempty = true;
-		o.datatype = 'macaddr';
+		o.datatype = 'or(macaddr,"ignore")';
+
+		L.sortedKeys(macaddrs, null, 'addr').forEach(function(mac) {
+			o.value(mac, macaddrs[mac] ? '%s (%s)'.format(mac, macaddrs[mac]) : mac);
+		});
 
 		o = s.option(form.Value, 'timeon', _('No Internet start time'));
 		o.default = '00:00';
