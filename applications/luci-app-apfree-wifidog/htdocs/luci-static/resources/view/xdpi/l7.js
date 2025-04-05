@@ -253,6 +253,12 @@ return view.extend({
 
 		var node = E([], [
 			E('link', { 'rel': 'stylesheet', 'href': L.resource('view/wifidogx.css') }),
+			E('style', { type: 'text/css' }, 
+				'.th-sort-asc::after { content: " ▲"; }' +
+				'.th-sort-desc::after { content: " ▼"; }' +
+				'.table .th { cursor: pointer; }' +
+				'.table .th:hover { background-color: #f0f0f0; }'
+			),
 			E('script', {
 				'type': 'text/javascript',
 				'src': L.resource('nlbw.chart.min.js')
