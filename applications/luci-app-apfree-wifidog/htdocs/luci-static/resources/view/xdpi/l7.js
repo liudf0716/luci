@@ -95,6 +95,7 @@ return view.extend({
 		// Reset all header classes
 		table.querySelectorAll('th').forEach(function(th) {
 			th.classList.remove('th-sort-asc', 'th-sort-desc');
+			th.style.position = 'relative';
 		});
 
 		// Add sort indicator to current header
@@ -253,12 +254,27 @@ return view.extend({
 
 		var node = E([], [
 			E('link', { 'rel': 'stylesheet', 'href': L.resource('view/wifidogx.css') }),
-			E('style', { type: 'text/css' }, 
-				'.th-sort-asc::after { content: " ▲"; }' +
-				'.th-sort-desc::after { content: " ▼"; }' +
-				'.table .th { cursor: pointer; }' +
-				'.table .th:hover { background-color: #f0f0f0; }'
-			),
+			E('style', { type: 'text/css' }, `
+				.th-sort-asc::after {
+					content: " ▲";
+					display: inline-block;
+					margin-left: 5px;
+					font-size: 14px;
+				}
+				.th-sort-desc::after {
+					content: " ▼";
+					display: inline-block;
+					margin-left: 5px;
+					font-size: 14px;
+				}
+				.table .th {
+					cursor: pointer;
+					position: relative;
+				}
+				.table .th:hover {
+					background-color: #f0f0f0;
+				}
+			`),
 			E('script', {
 				'type': 'text/javascript',
 				'src': L.resource('nlbw.chart.min.js')
