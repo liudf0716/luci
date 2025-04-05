@@ -10,6 +10,14 @@
 			"acl": [ "luci-app-apfree-wifidog" ]
 		}
 	},
+	"admin/QoS": {
+		"title": "QoS",
+		"order": 2,
+		"action": {
+			"type": "firstchild",
+			"recurse": true
+		}
+	},
 	"admin/QoS/wifidogx": {
 		"title": "Auth User",
 		"order": 2,
