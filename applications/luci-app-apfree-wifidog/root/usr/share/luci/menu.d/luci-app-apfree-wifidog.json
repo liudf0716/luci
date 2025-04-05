@@ -51,13 +51,8 @@
 		"title": "L7 application",
 		"order": 30,
 		"action": {
-			"type": "alias",
-			"path": "admin/QoS/xdpi/l7"
-		},
-		"depends": {
-			"acl": [
-				"luci-app-apfree-wifidog"
-			]
+			"type": "view",
+			"path": "xdpi/l7"
 		}
 	}
 }
