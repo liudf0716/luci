@@ -226,26 +226,6 @@ return view.extend({
 				]),
 
 				E('div', { 'class': 'cbi-section', 'data-tab': 'l7proto', 'data-tab-title': _('L7 Protocol Data') }, [
-					E('div', { 'class': 'head' }, [
-						E('div', { 'class': 'pie' }, [
-							E('label', [ _('Download / Protocol') ]),
-							E('canvas', { 'id': 'l7proto-rx-pie', 'width': 200, 'height': 200 })
-						]),
-
-						E('div', { 'class': 'pie' }, [
-							E('label', [ _('Upload / Protocol') ]),
-							E('canvas', { 'id': 'l7proto-tx-pie', 'width': 200, 'height': 200 })
-						]),
-
-						E('div', { 'class': 'kpi' }, [
-							E('ul', [
-								E('li', _('<big id="l7proto-total">0</big> different protocols')),
-								E('li', _('<big id="l7proto-rx-total">0</big> total download')),
-								E('li', _('<big id="l7proto-tx-total">0</big> total upload'))
-							])
-						])
-					]),
-
 					E('table', { 'class': 'table', 'id': 'l7proto-data' }, [
 						E('tr', { 'class': 'tr table-titles' }, [
 							E('th', { 'class': 'th left' }, [ _('ID') ]),
