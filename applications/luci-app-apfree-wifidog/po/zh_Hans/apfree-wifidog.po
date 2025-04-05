@@ -583,3 +583,8 @@ msgstr "个不同的协议"
 msgid "no traffic"
 msgstr "无流量"
 
+msgid "QoS"
+msgstr "流控"
+
+msgid "L7 application"
+msgstr "L7应用"
