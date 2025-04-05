@@ -91,23 +91,23 @@ return view.extend({
 			data.data.forEach(function(item) {
 				rows.push([
 					item.sid,
-					item.name,
-					'%1024.2mB'.format(item.incoming),
-					'%1024.2mB'.format(item.outgoing)
+					item.domain,
+					'%1024.2mB'.format(item.incoming.total_bytes),
+					'%1024.2mB'.format(item.outgoing.total_bytes)
 				]);
 
 				rxData.push({
-					value: item.incoming,
-					label: [item.name]
+					value: item.incoming.total_bytes,
+					label: [item.domain]
 				});
 
 				txData.push({
-					value: item.outgoing,
-					label: [item.name]
+					value: item.outgoing.total_bytes,
+					label: [item.domain]
 				});
 
-				rx_total += item.incoming;
-				tx_total += item.outgoing;
+				rx_total += item.incoming.total_bytes;
+				tx_total += item.outgoing.total_bytes;
 			});
 		}
 
@@ -123,41 +123,18 @@ return view.extend({
 
 	renderL7ProtoData: function(data) {
 		var rows = [];
-		var rxData = [], txData = [];
-		var rx_total = 0, tx_total = 0;
 		
 		if (data && data.status === 'success' && data.data) {
 			data.data.forEach(function(item) {
 				rows.push([
 					item.id,
-					item.name,
-					item.description,
-					'%1024.2mB'.format(item.bytes)
+					item.domain,
+					item.sid
 				]);
-
-				rxData.push({
-					value: item.bytes,
-					label: [item.name]
-				});
-
-				txData.push({
-					value: item.bytes,
-					label: [item.name]
-				});
-
-				rx_total += item.bytes;
-				tx_total += item.bytes;
 			});
 		}
 
 		cbi_update_table('#l7proto-data', rows, E('em', _('No data recorded yet.')));
-
-		this.pie('l7proto-rx-pie', rxData);
-		this.pie('l7proto-tx-pie', txData);
-
-		this.kpi('l7proto-rx-total', '%1024.2mB'.format(rx_total));
-		this.kpi('l7proto-tx-total', '%1024.2mB'.format(tx_total));
-		this.kpi('l7proto-total', '%u'.format(rows.length));
 	},
 
 	pollL7Data: function() {
@@ -213,7 +190,7 @@ return view.extend({
 					E('table', { 'class': 'table', 'id': 'sid-data' }, [
 						E('tr', { 'class': 'tr table-titles' }, [
 							E('th', { 'class': 'th left' }, [ _('SID') ]),
-							E('th', { 'class': 'th left' }, [ _('Name') ]),
+							E('th', { 'class': 'th left' }, [ _('Domain') ]),
 							E('th', { 'class': 'th right' }, [ _('Incoming') ]),
 							E('th', { 'class': 'th right' }, [ _('Outgoing') ])
 						]),
@@ -229,12 +206,11 @@ return view.extend({
 					E('table', { 'class': 'table', 'id': 'l7proto-data' }, [
 						E('tr', { 'class': 'tr table-titles' }, [
 							E('th', { 'class': 'th left' }, [ _('ID') ]),
-							E('th', { 'class': 'th left' }, [ _('Name') ]),
-							E('th', { 'class': 'th left' }, [ _('Description') ]),
-							E('th', { 'class': 'th right' }, [ _('Bytes') ])
+							E('th', { 'class': 'th left' }, [ _('Domain') ]),
+							E('th', { 'class': 'th right' }, [ _('SID') ])
 						]),
 						E('tr', { 'class': 'tr placeholder' }, [
-							E('td', { 'class': 'td', 'colspan': '4' }, [
+							E('td', { 'class': 'td', 'colspan': '3' }, [
 								E('em', { 'class': 'spinning' }, [ _('Collecting data...') ])
 							])
 						])
