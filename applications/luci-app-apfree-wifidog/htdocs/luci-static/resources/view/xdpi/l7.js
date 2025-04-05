@@ -162,119 +162,114 @@ return view.extend({
 
 	pollL7Data: function() {
 		var self = this;
+		
+		// Load L7 protocol data once
+		this.loadL7ProtoData().then(function(data) {
+			self.renderL7ProtoData(data);
+		});
+
+		// Poll SID data every 5 seconds
 		poll.add(function() {
-			return Promise.all([
-				self.loadSIDData().then(function(data) {
-					self.renderSIDData(data);
-				}),
-				self.loadL7ProtoData().then(function(data) {
-					self.renderL7ProtoData(data);
-				})
-			]);
+			return self.loadSIDData().then(function(data) {
+				self.renderSIDData(data);
+			});
 		}, 5);
 	},
 
 	render: function() {
 		var self = this;
 
-		// Create tabs
-		var tabs = E('div', { 'class': 'cbi-section' }, [
+		var node = E([], [
 			E('link', { 'rel': 'stylesheet', 'href': L.resource('view/wifidogx.css') }),
 			E('script', {
 				'type': 'text/javascript',
 				'src': L.resource('nlbw.chart.min.js')
 			}),
-			E('div', { 'class': 'cbi-section-descr' }, [
-				E('ul', { 'class': 'cbi-tabmenu' }, [
-					E('li', { 'class': 'cbi-tab', 'data-tab': 'sid' }, _('L7 SID Data')),
-					E('li', { 'class': 'cbi-tab', 'data-tab': 'l7proto' }, _('L7 Protocol Data'))
-				])
-			])
-		]);
 
-		// SID Data Tab
-		var sidTab = E('div', { 'class': 'cbi-section', 'data-tab': 'sid', 'data-tab-title': _('L7 SID Data') }, [
-			E('div', { 'class': 'head' }, [
-				E('div', { 'class': 'pie' }, [
-					E('label', [ _('Download / SID') ]),
-					E('canvas', { 'id': 'sid-rx-pie', 'width': 200, 'height': 200 })
-				]),
-				E('div', { 'class': 'pie' }, [
-					E('label', [ _('Upload / SID') ]),
-					E('canvas', { 'id': 'sid-tx-pie', 'width': 200, 'height': 200 })
-				]),
-				E('div', { 'class': 'kpi' }, [
-					E('ul', [
-						E('li', _('<big id="sid-total">0</big> different SIDs')),
-						E('li', _('<big id="sid-rx-total">0</big> total download')),
-						E('li', _('<big id="sid-tx-total">0</big> total upload'))
-					])
-				])
-			]),
-			E('div', { 'class': 'table-wrapper' }, [
-				E('table', { 'class': 'table', 'id': 'sid-data' }, [
-					E('tr', { 'class': 'tr table-titles' }, [
-						E('th', { 'class': 'th left' }, [ _('SID') ]),
-						E('th', { 'class': 'th left' }, [ _('Name') ]),
-						E('th', { 'class': 'th right' }, [ _('Incoming') ]),
-						E('th', { 'class': 'th right' }, [ _('Outgoing') ])
+			E('h2', [ _('L7 Data Monitor') ]),
+
+			E('div', [
+				E('div', { 'class': 'cbi-section', 'data-tab': 'sid', 'data-tab-title': _('L7 SID Data') }, [
+					E('div', { 'class': 'head' }, [
+						E('div', { 'class': 'pie' }, [
+							E('label', [ _('Download / SID') ]),
+							E('canvas', { 'id': 'sid-rx-pie', 'width': 200, 'height': 200 })
+						]),
+
+						E('div', { 'class': 'pie' }, [
+							E('label', [ _('Upload / SID') ]),
+							E('canvas', { 'id': 'sid-tx-pie', 'width': 200, 'height': 200 })
+						]),
+
+						E('div', { 'class': 'kpi' }, [
+							E('ul', [
+								E('li', _('<big id="sid-total">0</big> different SIDs')),
+								E('li', _('<big id="sid-rx-total">0</big> total download')),
+								E('li', _('<big id="sid-tx-total">0</big> total upload'))
+							])
+						])
 					]),
-					E('tr', { 'class': 'tr placeholder' }, [
-						E('td', { 'class': 'td', 'colspan': '4' }, [
-							E('em', { 'class': 'spinning' }, [ _('Collecting data...') ])
+
+					E('table', { 'class': 'table', 'id': 'sid-data' }, [
+						E('tr', { 'class': 'tr table-titles' }, [
+							E('th', { 'class': 'th left' }, [ _('SID') ]),
+							E('th', { 'class': 'th left' }, [ _('Name') ]),
+							E('th', { 'class': 'th right' }, [ _('Incoming') ]),
+							E('th', { 'class': 'th right' }, [ _('Outgoing') ])
+						]),
+						E('tr', { 'class': 'tr placeholder' }, [
+							E('td', { 'class': 'td', 'colspan': '4' }, [
+								E('em', { 'class': 'spinning' }, [ _('Collecting data...') ])
+							])
+						])
+					])
+				]),
+
+				E('div', { 'class': 'cbi-section', 'data-tab': 'l7proto', 'data-tab-title': _('L7 Protocol Data') }, [
+					E('div', { 'class': 'head' }, [
+						E('div', { 'class': 'pie' }, [
+							E('label', [ _('Download / Protocol') ]),
+							E('canvas', { 'id': 'l7proto-rx-pie', 'width': 200, 'height': 200 })
+						]),
+
+						E('div', { 'class': 'pie' }, [
+							E('label', [ _('Upload / Protocol') ]),
+							E('canvas', { 'id': 'l7proto-tx-pie', 'width': 200, 'height': 200 })
+						]),
+
+						E('div', { 'class': 'kpi' }, [
+							E('ul', [
+								E('li', _('<big id="l7proto-total">0</big> different protocols')),
+								E('li', _('<big id="l7proto-rx-total">0</big> total download')),
+								E('li', _('<big id="l7proto-tx-total">0</big> total upload'))
+							])
+						])
+					]),
+
+					E('table', { 'class': 'table', 'id': 'l7proto-data' }, [
+						E('tr', { 'class': 'tr table-titles' }, [
+							E('th', { 'class': 'th left' }, [ _('ID') ]),
+							E('th', { 'class': 'th left' }, [ _('Name') ]),
+							E('th', { 'class': 'th left' }, [ _('Description') ]),
+							E('th', { 'class': 'th right' }, [ _('Bytes') ])
+						]),
+						E('tr', { 'class': 'tr placeholder' }, [
+							E('td', { 'class': 'td', 'colspan': '4' }, [
+								E('em', { 'class': 'spinning' }, [ _('Collecting data...') ])
+							])
 						])
 					])
 				])
 			])
 		]);
-
-		// L7 Protocol Data Tab
-		var l7ProtoTab = E('div', { 'class': 'cbi-section', 'data-tab': 'l7proto', 'data-tab-title': _('L7 Protocol Data') }, [
-			E('div', { 'class': 'head' }, [
-				E('div', { 'class': 'pie' }, [
-					E('label', [ _('Download / Protocol') ]),
-					E('canvas', { 'id': 'l7proto-rx-pie', 'width': 200, 'height': 200 })
-				]),
-				E('div', { 'class': 'pie' }, [
-					E('label', [ _('Upload / Protocol') ]),
-					E('canvas', { 'id': 'l7proto-tx-pie', 'width': 200, 'height': 200 })
-				]),
-				E('div', { 'class': 'kpi' }, [
-					E('ul', [
-						E('li', _('<big id="l7proto-total">0</big> different protocols')),
-						E('li', _('<big id="l7proto-rx-total">0</big> total download')),
-						E('li', _('<big id="l7proto-tx-total">0</big> total upload'))
-					])
-				])
-			]),
-			E('div', { 'class': 'table-wrapper' }, [
-				E('table', { 'class': 'table', 'id': 'l7proto-data' }, [
-					E('tr', { 'class': 'tr table-titles' }, [
-						E('th', { 'class': 'th left' }, [ _('ID') ]),
-						E('th', { 'class': 'th left' }, [ _('Name') ]),
-						E('th', { 'class': 'th left' }, [ _('Description') ]),
-						E('th', { 'class': 'th right' }, [ _('Bytes') ])
-					]),
-					E('tr', { 'class': 'tr placeholder' }, [
-						E('td', { 'class': 'td', 'colspan': '4' }, [
-							E('em', { 'class': 'spinning' }, [ _('Collecting data...') ])
-						])
-					])
-				])
-			])
-		]);
-
-		// Add tabs to the page
-		tabs.appendChild(sidTab);
-		tabs.appendChild(l7ProtoTab);
 
 		// Initialize tabs
-		ui.tabs.initTabGroup(tabs.lastElementChild.childNodes);
+		ui.tabs.initTabGroup(node.lastElementChild.childNodes);
 
 		// Start polling
 		this.pollL7Data();
 
-		return tabs;
+		return node;
 	},
 
 	handleSave: null,
