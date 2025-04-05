@@ -85,29 +85,35 @@ return view.extend({
 	renderSIDData: function(data) {
 		var rows = [];
 		var rxData = [], txData = [];
-		var rx_total = 0, tx_total = 0;
+		var rx_rate_total = 0, tx_rate_total = 0;
 		
-		if (data && data.status === 'success' && data.data) {
+		if (data && data.status === 'success' && Array.isArray(data.data)) {
+			data.data.sort((a, b) => b.incoming.rate - a.incoming.rate);
+			
 			data.data.forEach(function(item) {
 				rows.push([
 					item.sid,
 					item.domain,
-					'%1024.2mB'.format(item.incoming.total_bytes),
-					'%1024.2mB'.format(item.outgoing.total_bytes)
+					[ item.incoming.total_bytes, '%1024.2mB'.format(item.incoming.total_bytes) ],
+					[ item.incoming.total_packets, '%1000.2mP'.format(item.incoming.total_packets) ],
+					[ item.incoming.rate, '%1024.2mbps'.format(item.incoming.rate) ],
+					[ item.outgoing.total_bytes, '%1024.2mB'.format(item.outgoing.total_bytes) ],
+					[ item.outgoing.total_packets, '%1000.2mP'.format(item.outgoing.total_packets) ],
+					[ item.outgoing.rate, '%1024.2mbps'.format(item.outgoing.rate) ]
 				]);
 
 				rxData.push({
-					value: item.incoming.total_bytes,
-					label: [item.domain]
+					value: item.incoming.rate,
+					label: ['%s: %%1024.2mbps'.format(item.domain)]
 				});
 
 				txData.push({
-					value: item.outgoing.total_bytes,
-					label: [item.domain]
+					value: item.outgoing.rate,
+					label: ['%s: %%1024.2mbps'.format(item.domain)]
 				});
 
-				rx_total += item.incoming.total_bytes;
-				tx_total += item.outgoing.total_bytes;
+				rx_rate_total += item.incoming.rate;
+				tx_rate_total += item.outgoing.rate;
 			});
 		}
 
@@ -116,8 +122,8 @@ return view.extend({
 		this.pie('sid-rx-pie', rxData);
 		this.pie('sid-tx-pie', txData);
 
-		this.kpi('sid-rx-total', '%1024.2mB'.format(rx_total));
-		this.kpi('sid-tx-total', '%1024.2mB'.format(tx_total));
+		this.kpi('sid-rx-rate', '%1024.2mbps'.format(rx_rate_total));
+		this.kpi('sid-tx-rate', '%1024.2mbps'.format(tx_rate_total));
 		this.kpi('sid-total', '%u'.format(rows.length));
 	},
 
@@ -169,20 +175,20 @@ return view.extend({
 				E('div', { 'class': 'cbi-section', 'data-tab': 'sid', 'data-tab-title': _('L7 SID Data') }, [
 					E('div', { 'class': 'head' }, [
 						E('div', { 'class': 'pie' }, [
-							E('label', [ _('Download / SID') ]),
+							E('label', [ _('Download Rate / SID') ]),
 							E('canvas', { 'id': 'sid-rx-pie', 'width': 200, 'height': 200 })
 						]),
 
 						E('div', { 'class': 'pie' }, [
-							E('label', [ _('Upload / SID') ]),
+							E('label', [ _('Upload Rate / SID') ]),
 							E('canvas', { 'id': 'sid-tx-pie', 'width': 200, 'height': 200 })
 						]),
 
 						E('div', { 'class': 'kpi' }, [
 							E('ul', [
 								E('li', _('<big id="sid-total">0</big> different SIDs')),
-								E('li', _('<big id="sid-rx-total">0</big> total download')),
-								E('li', _('<big id="sid-tx-total">0</big> total upload'))
+								E('li', _('<big id="sid-rx-rate">0</big> download rate')),
+								E('li', _('<big id="sid-tx-rate">0</big> upload rate'))
 							])
 						])
 					]),
@@ -191,11 +197,15 @@ return view.extend({
 						E('tr', { 'class': 'tr table-titles' }, [
 							E('th', { 'class': 'th left' }, [ _('SID') ]),
 							E('th', { 'class': 'th left' }, [ _('Domain') ]),
-							E('th', { 'class': 'th right' }, [ _('Incoming') ]),
-							E('th', { 'class': 'th right' }, [ _('Outgoing') ])
+							E('th', { 'class': 'th right' }, [ _('Incoming (Bytes)') ]),
+							E('th', { 'class': 'th right' }, [ _('Incoming (Packets)') ]),
+							E('th', { 'class': 'th right' }, [ _('Incoming Rate') ]),
+							E('th', { 'class': 'th right' }, [ _('Outgoing (Bytes)') ]),
+							E('th', { 'class': 'th right' }, [ _('Outgoing (Packets)') ]),
+							E('th', { 'class': 'th right' }, [ _('Outgoing Rate') ])
 						]),
 						E('tr', { 'class': 'tr placeholder' }, [
-							E('td', { 'class': 'td', 'colspan': '4' }, [
+							E('td', { 'class': 'td', 'colspan': '8' }, [
 								E('em', { 'class': 'spinning' }, [ _('Collecting data...') ])
 							])
 						])
