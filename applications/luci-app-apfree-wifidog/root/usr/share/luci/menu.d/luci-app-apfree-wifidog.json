@@ -38,5 +38,13 @@
 			"type": "view",
 			"path": "wifidogx/status"
 		}
+	},
+	"admin/status/xdpi/l7": {
+		"title": "L7",
+		"order": 30,
+		"action": {
+			"type": "view",
+			"path": "xdpi/l7"
+		}
 	}
 }
