@@ -144,12 +144,12 @@ return view.extend({
 				rows.push([
 					item.sid,
 					item.domain,
-					[ item.incoming.total_bytes, '%1024.2mB'.format(item.incoming.total_bytes) ],
-					[ item.incoming.total_packets, '%1000.2mP'.format(item.incoming.total_packets) ],
-					[ item.incoming.rate, '%1024.2mbps'.format(item.incoming.rate) ],
 					[ item.outgoing.total_bytes, '%1024.2mB'.format(item.outgoing.total_bytes) ],
 					[ item.outgoing.total_packets, '%1000.2mP'.format(item.outgoing.total_packets) ],
-					[ item.outgoing.rate, '%1024.2mbps'.format(item.outgoing.rate) ]
+					[ item.outgoing.rate, '%1024.2mbps'.format(item.outgoing.rate) ],
+					[ item.incoming.total_bytes, '%1024.2mB'.format(item.incoming.total_bytes) ],
+					[ item.incoming.total_packets, '%1000.2mP'.format(item.incoming.total_packets) ],
+					[ item.incoming.rate, '%1024.2mbps'.format(item.incoming.rate) ]
 				]);
 
 				rxData.push({
