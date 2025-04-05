@@ -7,6 +7,11 @@
 'require dom';
 
 var chartRegistry = {};
+var currentSortInfo = {
+	table: null,
+	column: null,
+	reverse: false
+};
 
 return view.extend({
 	load: function() {
@@ -82,10 +87,55 @@ return view.extend({
 		e.parentNode.style.display = val1 ? 'list-item' : '';
 	},
 
+	sortTable: function(table, column) {
+		var tbody = table.querySelector('tbody');
+		var rows = Array.from(tbody.querySelectorAll('tr:not(.table-titles):not(.placeholder)'));
+		var reverse = (currentSortInfo.table === table && currentSortInfo.column === column) ? !currentSortInfo.reverse : false;
+
+		// Reset all header classes
+		table.querySelectorAll('th').forEach(function(th) {
+			th.classList.remove('th-sort-asc', 'th-sort-desc');
+		});
+
+		// Add sort indicator to current header
+		var th = table.querySelector('th:nth-child(' + (column + 1) + ')');
+		th.classList.add(reverse ? 'th-sort-desc' : 'th-sort-asc');
+
+		rows.sort(function(row1, row2) {
+			var a = row1.cells[column].getAttribute('data-value') || row1.cells[column].textContent;
+			var b = row2.cells[column].getAttribute('data-value') || row2.cells[column].textContent;
+
+			if (!isNaN(a) && !isNaN(b)) {
+				a = Number(a);
+				b = Number(b);
+			}
+
+			if (a < b) return reverse ? 1 : -1;
+			if (a > b) return reverse ? -1 : 1;
+			return 0;
+		});
+
+		// Update sort state
+		currentSortInfo.table = table;
+		currentSortInfo.column = column;
+		currentSortInfo.reverse = reverse;
+
+		// Remove existing rows
+		rows.forEach(function(row) {
+			tbody.removeChild(row);
+		});
+
+		// Add sorted rows
+		rows.forEach(function(row) {
+			tbody.appendChild(row);
+		});
+	},
+
 	renderSIDData: function(data) {
 		var rows = [];
 		var rxData = [], txData = [];
 		var rx_rate_total = 0, tx_rate_total = 0;
+		var self = this;
 		
 		if (data && data.status === 'success' && Array.isArray(data.data)) {
 			data.data.sort((a, b) => b.incoming.rate - a.incoming.rate);
@@ -117,7 +167,31 @@ return view.extend({
 			});
 		}
 
+		var table = document.getElementById('sid-data');
+		var headers = table.querySelectorAll('th');
+		
+		// Add click handlers to headers if not already added
+		if (!table.hasAttribute('data-sort-initialized')) {
+			headers.forEach(function(header, index) {
+				header.style.cursor = 'pointer';
+				header.addEventListener('click', function() {
+					self.sortTable(table, index);
+				});
+			});
+			table.setAttribute('data-sort-initialized', 'true');
+		}
+
+		// Update table with new data
 		cbi_update_table('#sid-data', rows, E('em', _('No data recorded yet.')));
+
+		// Store numeric values as data attributes for sorting
+		table.querySelectorAll('tr:not(.table-titles):not(.placeholder)').forEach(function(row) {
+			Array.from(row.cells).forEach(function(cell, index) {
+				if (Array.isArray(rows[0][index])) {
+					cell.setAttribute('data-value', rows[0][index][0]);
+				}
+			});
+		});
 
 		this.pie('sid-rx-pie', rxData);
 		this.pie('sid-tx-pie', txData);
@@ -129,6 +203,7 @@ return view.extend({
 
 	renderL7ProtoData: function(data) {
 		var rows = [];
+		var self = this;
 		
 		if (data && data.status === 'success' && data.data) {
 			data.data.forEach(function(item) {
@@ -138,6 +213,20 @@ return view.extend({
 					item.sid
 				]);
 			});
+		}
+
+		var table = document.getElementById('l7proto-data');
+		var headers = table.querySelectorAll('th');
+		
+		// Add click handlers to headers if not already added
+		if (!table.hasAttribute('data-sort-initialized')) {
+			headers.forEach(function(header, index) {
+				header.style.cursor = 'pointer';
+				header.addEventListener('click', function() {
+					self.sortTable(table, index);
+				});
+			});
+			table.setAttribute('data-sort-initialized', 'true');
 		}
 
 		cbi_update_table('#l7proto-data', rows, E('em', _('No data recorded yet.')));
@@ -200,9 +289,9 @@ return view.extend({
 							E('th', { 'class': 'th right' }, [ _('Download Speed (Bit/s)') ]),
 							E('th', { 'class': 'th right' }, [ _('Download (Bytes)') ]),
 							E('th', { 'class': 'th right' }, [ _('Download (Packets)') ]),
-							E('th', { 'class': 'th right' }, [ _('Upload Speed (Bit/s)') ])
+							E('th', { 'class': 'th right' }, [ _('Upload Speed (Bit/s)') ]),
 							E('th', { 'class': 'th right' }, [ _('Upload (Bytes)') ]),
-							E('th', { 'class': 'th right' }, [ _('Upload (Packets)') ]),
+							E('th', { 'class': 'th right' }, [ _('Upload (Packets)') ])
 						]),
 						E('tr', { 'class': 'tr placeholder' }, [
 							E('td', { 'class': 'td', 'colspan': '8' }, [

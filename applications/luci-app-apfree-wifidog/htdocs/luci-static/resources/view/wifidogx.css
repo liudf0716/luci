@@ -127,3 +127,19 @@
 	font-weight: bold;
 	color: #333;
 }
+
+.th-sort-asc::after {
+	content: " ▲";
+}
+
+.th-sort-desc::after {
+	content: " ▼";
+}
+
+.table .th {
+	cursor: pointer;
+}
+
+.table .th:hover {
+	background-color: #f0f0f0;
+}
