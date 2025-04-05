@@ -524,7 +524,7 @@ msgid "Enable the authentication of the gateway."
 msgstr "启用网关认证功能"
 
 msgid "L7 SID Data"
-msgstr "L7 SID 数据"
+msgstr "L7 应用数据"
 
 msgid "L7 Protocol Data"
 msgstr "L7 协议数据"
@@ -542,7 +542,7 @@ msgid "Upload / Protocol"
 msgstr "上传 / 协议"
 
 msgid "SID"
-msgstr "SID"
+msgstr "应用"
 
 msgid "Name"
 msgstr "名称"
@@ -569,7 +569,7 @@ msgid "No data recorded yet."
 msgstr "暂无数据记录"
 
 msgid "different SIDs"
-msgstr "个不同的 SID"
+msgstr "个不同的应用"
 
 msgid "total download"
 msgstr "总下载"
@@ -588,3 +588,83 @@ msgstr "流控"
 
 msgid "L7 application"
 msgstr "L7应用"
+
+#: applications/luci-app-apfree-wifidog/htdocs/luci-static/resources/view/xdpi/l7.js:1
+msgid "L7 Data Monitor"
+msgstr "L7 数据监控"
+
+#: applications/luci-app-apfree-wifidog/htdocs/luci-static/resources/view/xdpi/l7.js:2
+msgid "L7 SID Data"
+msgstr "L7 应用数据"
+
+#: applications/luci-app-apfree-wifidog/htdocs/luci-static/resources/view/xdpi/l7.js:3
+msgid "L7 Protocol Data"
+msgstr "L7 协议数据"
+
+#: applications/luci-app-apfree-wifidog/htdocs/luci-static/resources/view/xdpi/l7.js:4
+msgid "Upload Speed / SID"
+msgstr "上传速率 / 应用"
+
+#: applications/luci-app-apfree-wifidog/htdocs/luci-static/resources/view/xdpi/l7.js:5
+msgid "Download Speed / SID"
+msgstr "下载速率 / 应用"
+
+#: applications/luci-app-apfree-wifidog/htdocs/luci-static/resources/view/xdpi/l7.js:6
+msgid "different SIDs"
+msgstr "个不同的应用"
+
+#: applications/luci-app-apfree-wifidog/htdocs/luci-static/resources/view/xdpi/l7.js:7
+msgid "download speed"
+msgstr "下载速率"
+
+#: applications/luci-app-apfree-wifidog/htdocs/luci-static/resources/view/xdpi/l7.js:8
+msgid "upload speed"
+msgstr "上传速率"
+
+#: applications/luci-app-apfree-wifidog/htdocs/luci-static/resources/view/xdpi/l7.js:9
+msgid "SID"
+msgstr "应用"
+
+#: applications/luci-app-apfree-wifidog/htdocs/luci-static/resources/view/xdpi/l7.js:10
+msgid "Domain"
+msgstr "域名"
+
+#: applications/luci-app-apfree-wifidog/htdocs/luci-static/resources/view/xdpi/l7.js:11
+msgid "Download (Bytes)"
+msgstr "下载 (字节)"
+
+#: applications/luci-app-apfree-wifidog/htdocs/luci-static/resources/view/xdpi/l7.js:12
+msgid "Download (Packets)"
+msgstr "下载 (数据包)"
+
+#: applications/luci-app-apfree-wifidog/htdocs/luci-static/resources/view/xdpi/l7.js:13
+msgid "Download Speed (Bit/s)"
+msgstr "下载速率 (比特/秒)"
+
+#: applications/luci-app-apfree-wifidog/htdocs/luci-static/resources/view/xdpi/l7.js:14
+msgid "Upload (Bytes)"
+msgstr "上传 (字节)"
+
+#: applications/luci-app-apfree-wifidog/htdocs/luci-static/resources/view/xdpi/l7.js:15
+msgid "Upload (Packets)"
+msgstr "上传 (数据包)"
+
+#: applications/luci-app-apfree-wifidog/htdocs/luci-static/resources/view/xdpi/l7.js:16
+msgid "Upload Speed (Bit/s)"
+msgstr "上传速率 (比特/秒)"
+
+#: applications/luci-app-apfree-wifidog/htdocs/luci-static/resources/view/xdpi/l7.js:17
+msgid "ID"
+msgstr "ID"
+
+#: applications/luci-app-apfree-wifidog/htdocs/luci-static/resources/view/xdpi/l7.js:18
+msgid "No data recorded yet."
+msgstr "暂无数据记录"
+
+#: applications/luci-app-apfree-wifidog/htdocs/luci-static/resources/view/xdpi/l7.js:19
+msgid "Collecting data..."
+msgstr "正在收集数据..."
+
+#: applications/luci-app-apfree-wifidog/htdocs/luci-static/resources/view/xdpi/l7.js:20
+msgid "no traffic"
+msgstr "无流量"

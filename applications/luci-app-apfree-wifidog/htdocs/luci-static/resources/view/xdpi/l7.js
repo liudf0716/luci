@@ -175,20 +175,20 @@ return view.extend({
 				E('div', { 'class': 'cbi-section', 'data-tab': 'sid', 'data-tab-title': _('L7 SID Data') }, [
 					E('div', { 'class': 'head' }, [
 						E('div', { 'class': 'pie' }, [
-							E('label', [ _('Download Rate / SID') ]),
-							E('canvas', { 'id': 'sid-rx-pie', 'width': 200, 'height': 200 })
+							E('label', [ _('Upload Speed / SID') ]),
+							E('canvas', { 'id': 'sid-tx-pie', 'width': 200, 'height': 200 })
 						]),
 
 						E('div', { 'class': 'pie' }, [
-							E('label', [ _('Upload Rate / SID') ]),
-							E('canvas', { 'id': 'sid-tx-pie', 'width': 200, 'height': 200 })
+							E('label', [ _('Download Speed / SID') ]),
+							E('canvas', { 'id': 'sid-rx-pie', 'width': 200, 'height': 200 })
 						]),
 
 						E('div', { 'class': 'kpi' }, [
 							E('ul', [
 								E('li', _('<big id="sid-total">0</big> different SIDs')),
-								E('li', _('<big id="sid-rx-rate">0</big> download rate')),
-								E('li', _('<big id="sid-tx-rate">0</big> upload rate'))
+								E('li', _('<big id="sid-rx-rate">0</big> download speed')),
+								E('li', _('<big id="sid-tx-rate">0</big> upload speed'))
 							])
 						])
 					]),
@@ -197,12 +197,12 @@ return view.extend({
 						E('tr', { 'class': 'tr table-titles' }, [
 							E('th', { 'class': 'th left' }, [ _('SID') ]),
 							E('th', { 'class': 'th left' }, [ _('Domain') ]),
-							E('th', { 'class': 'th right' }, [ _('Incoming (Bytes)') ]),
-							E('th', { 'class': 'th right' }, [ _('Incoming (Packets)') ]),
-							E('th', { 'class': 'th right' }, [ _('Incoming Rate') ]),
-							E('th', { 'class': 'th right' }, [ _('Outgoing (Bytes)') ]),
-							E('th', { 'class': 'th right' }, [ _('Outgoing (Packets)') ]),
-							E('th', { 'class': 'th right' }, [ _('Outgoing Rate') ])
+							E('th', { 'class': 'th right' }, [ _('Download (Bytes)') ]),
+							E('th', { 'class': 'th right' }, [ _('Download (Packets)') ]),
+							E('th', { 'class': 'th right' }, [ _('Download Speed (Bit/s)') ]),
+							E('th', { 'class': 'th right' }, [ _('Upload (Bytes)') ]),
+							E('th', { 'class': 'th right' }, [ _('Upload (Packets)') ]),
+							E('th', { 'class': 'th right' }, [ _('Upload Speed (Bit/s)') ])
 						]),
 						E('tr', { 'class': 'tr placeholder' }, [
 							E('td', { 'class': 'td', 'colspan': '8' }, [
