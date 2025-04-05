@@ -3,6 +3,8 @@
 'require fs';
 'require ui';
 'require poll';
+'require rpc';
+'require dom';
 
 var chartRegistry = {};
 
@@ -17,12 +19,18 @@ return view.extend({
 	loadSIDData: function() {
 		return fs.exec_direct('/usr/bin/aw-bpfctl', ['sid', 'json'], 'json').then(function(result) {
 			return result;
+		}).catch(function(error) {
+			console.error('Error loading SID data:', error);
+			return { status: 'error', data: [] };
 		});
 	},
 
 	loadL7ProtoData: function() {
 		return fs.exec_direct('/usr/bin/aw-bpfctl', ['l7', 'json'], 'json').then(function(result) {
 			return result;
+		}).catch(function(error) {
+			console.error('Error loading L7 protocol data:', error);
+			return { status: 'error', data: [] };
 		});
 	},
 
@@ -79,7 +87,7 @@ return view.extend({
 		var rxData = [], txData = [];
 		var rx_total = 0, tx_total = 0;
 		
-		if (data && data.data) {
+		if (data && data.status === 'success' && data.data) {
 			data.data.forEach(function(item) {
 				rows.push([
 					item.sid,
@@ -118,7 +126,7 @@ return view.extend({
 		var rxData = [], txData = [];
 		var rx_total = 0, tx_total = 0;
 		
-		if (data && data.data) {
+		if (data && data.status === 'success' && data.data) {
 			data.data.forEach(function(item) {
 				rows.push([
 					item.id,
@@ -152,13 +160,30 @@ return view.extend({
 		this.kpi('l7proto-total', '%u'.format(rows.length));
 	},
 
+	pollL7Data: function() {
+		var self = this;
+		poll.add(function() {
+			return Promise.all([
+				self.loadSIDData().then(function(data) {
+					self.renderSIDData(data);
+				}),
+				self.loadL7ProtoData().then(function(data) {
+					self.renderL7ProtoData(data);
+				})
+			]);
+		}, 5);
+	},
+
 	render: function() {
 		var self = this;
-		var sidData = null;
-		var l7ProtoData = null;
 
 		// Create tabs
 		var tabs = E('div', { 'class': 'cbi-section' }, [
+			E('link', { 'rel': 'stylesheet', 'href': L.resource('view/wifidogx.css') }),
+			E('script', {
+				'type': 'text/javascript',
+				'src': L.resource('nlbw.chart.min.js')
+			}),
 			E('div', { 'class': 'cbi-section-descr' }, [
 				E('ul', { 'class': 'cbi-tabmenu' }, [
 					E('li', { 'class': 'cbi-tab', 'data-tab': 'sid' }, _('L7 SID Data')),
@@ -243,17 +268,11 @@ return view.extend({
 		tabs.appendChild(sidTab);
 		tabs.appendChild(l7ProtoTab);
 
-		// Set up polling for SID data
-		poll.add(function() {
-			return self.loadSIDData().then(function(data) {
-				self.renderSIDData(data);
-			});
-		}, 5);
+		// Initialize tabs
+		ui.tabs.initTabGroup(tabs.lastElementChild.childNodes);
 
-		// Load L7 Protocol data once
-		this.loadL7ProtoData().then(function(data) {
-			self.renderL7ProtoData(data);
-		});
+		// Start polling
+		this.pollL7Data();
 
 		return tabs;
 	},
@@ -261,4 +280,4 @@ return view.extend({
 	handleSave: null,
 	handleSaveApply: null,
 	handleReset: null
-});
+}); 
