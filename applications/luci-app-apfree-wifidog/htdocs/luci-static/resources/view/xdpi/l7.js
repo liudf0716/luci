@@ -197,12 +197,12 @@ return view.extend({
 						E('tr', { 'class': 'tr table-titles' }, [
 							E('th', { 'class': 'th left' }, [ _('SID') ]),
 							E('th', { 'class': 'th left' }, [ _('Domain') ]),
+							E('th', { 'class': 'th right' }, [ _('Download Speed (Bit/s)') ]),
 							E('th', { 'class': 'th right' }, [ _('Download (Bytes)') ]),
 							E('th', { 'class': 'th right' }, [ _('Download (Packets)') ]),
-							E('th', { 'class': 'th right' }, [ _('Download Speed (Bit/s)') ]),
+							E('th', { 'class': 'th right' }, [ _('Upload Speed (Bit/s)') ])
 							E('th', { 'class': 'th right' }, [ _('Upload (Bytes)') ]),
 							E('th', { 'class': 'th right' }, [ _('Upload (Packets)') ]),
-							E('th', { 'class': 'th right' }, [ _('Upload Speed (Bit/s)') ])
 						]),
 						E('tr', { 'class': 'tr placeholder' }, [
 							E('td', { 'class': 'td', 'colspan': '8' }, [
