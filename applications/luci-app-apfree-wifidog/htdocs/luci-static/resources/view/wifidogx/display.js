@@ -457,85 +457,84 @@ return view.extend({
 	},
 
 	renderHostSpeed: function(data, pie, kpi, type) {
-		var rows = [];
-		var rx_data = [], tx_data = [];
-		var rx_total = 0, tx_total = 0;
-		var recs = [];
-	
-		// Check status and data structure
-		if (data.status === "success" && Array.isArray(data.data)) {
-			recs = data.data;
-		} else {
-			console.log("Invalid data format");
+		if (!data || !data.status || data.status !== "success" || !data.data) {
 			return;
 		}
-	
-		for (var i = 0; i < recs.length; i++) {
-			var rec = recs[i];
 
-			var hostKey = (type == "mac" ? rec.mac : rec.ip);
+		var rows = [];
+		var rx_data = [];
+		var tx_data = [];
+		var rx_total = 0;
+		var tx_total = 0;
+
+		for (var i = 0; i < data.data.length; i++) {
+			var rec = data.data[i];
+			if (!rec || !rec.incoming || !rec.outgoing) continue;
+
+			var host = rec.ip || rec.mac || '';
+			var hostname = rec.hostname || '';
+
 			rows.push([
-				hostKey,
-				rec.hostname || '-',
-				// Download (incoming) data
-				[ rec.incoming.rate, '%1024.2mbps'.format(rec.incoming.rate) ],
-				[ rec.incoming.total_bytes, '%1024.2mB'.format(rec.incoming.total_bytes) ],
-				[ rec.incoming.total_packets, '%1000.2mP'.format(rec.incoming.total_packets) ],
-				// Upload (outgoing) data
-				[ rec.outgoing.rate, '%1024.2mbps'.format(rec.outgoing.rate) ],
-				[ rec.outgoing.total_bytes, '%1024.2mB'.format(rec.outgoing.total_bytes) ],
-				[ rec.outgoing.total_packets, '%1000.2mP'.format(rec.outgoing.total_packets) ],
+				host,
+				hostname,
+				[rec.incoming.rate, '%1024.2mbps'.format(rec.incoming.rate)],
+				[rec.incoming.total_bytes, '%1024.2mB'.format(rec.incoming.total_bytes)],
+				[rec.incoming.total_packets, '%1000.2mP'.format(rec.incoming.total_packets)],
+				[rec.outgoing.rate, '%1024.2mbps'.format(rec.outgoing.rate)],
+				[rec.outgoing.total_bytes, '%1024.2mB'.format(rec.outgoing.total_bytes)],
+				[rec.outgoing.total_packets, '%1000.2mP'.format(rec.outgoing.total_packets)],
 				E('button', {
-					'class': 'btn cbi-button cbi-button-edit center',
+					'class': 'btn cbi-button cbi-button-edit',
 					'click': ui.createHandlerFn(this, function(host, mac, hostname, type, dl, ul) {
-						this.handleEditSpeed(host, mac, hostname, type, dl, ul);
-					}, hostKey, rec.mac, rec.hostname, type, rec.incoming.incoming_rate_limit, rec.outgoing.outgoing_rate_limit)
+						return function() {
+							this.handleEditSpeed(host, mac, hostname, type, dl, ul);
+						};
+					}(host, rec.mac, hostname, type, rec.incoming.rate, rec.outgoing.rate))
 				}, _('Edit'))
 			]);
 
-			// rx is for upload (outgoing), tx is for download (incoming)
 			rx_total += rec.outgoing.rate;
 			tx_total += rec.incoming.rate;
 
 			rx_data.push({
 				value: rec.outgoing.rate,
-				label: [ rec.ip ]
+				label: [rec.ip || rec.mac]
 			});
 
 			tx_data.push({
 				value: rec.incoming.rate,
-				label: [ rec.ip ]
+				label: [rec.ip || rec.mac]
 			});
 		}
 
 		switch (type) {
-		  case "ipv4":
-			cbi_update_table('#speed-data', rows, E('em', _('No data recorded yet.')));
-			pie('speed-rx-pie', rx_data);  // Upload pie chart
-			pie('speed-tx-pie', tx_data);  // Download pie chart
-			kpi('speed-rx-max', '%1024.2mbps'.format(rx_total));  // Upload total
-			kpi('speed-tx-max', '%1024.2mbps'.format(tx_total));  // Download total
-			kpi('speed-host', '%u'.format(rows.length));
-			break;
-		  case "ipv6":
-			cbi_update_table('#ipv6-speed-data', rows, E('em', _('No data recorded yet.')));
-			pie('ipv6-speed-rx-pie', rx_data);  // Upload pie chart
-			pie('ipv6-speed-tx-pie', tx_data);  // Download pie chart
-			kpi('ipv6-speed-rx-max', '%1024.2mbps'.format(rx_total));  // Upload total
-			kpi('ipv6-speed-tx-max', '%1024.2mbps'.format(tx_total));  // Download total
-			kpi('ipv6-speed-host', '%u'.format(rows.length));
-			break;
-		  case "mac":
-			cbi_update_table('#mac-speed-data', rows, E('em', _('No data recorded yet.')));
-			pie('mac-speed-rx-pie', rx_data);  // Upload pie chart
-			pie('mac-speed-tx-pie', tx_data);  // Download pie chart
-			kpi('mac-speed-rx-max', '%1024.2mbps'.format(rx_total));  // Upload total
-			kpi('mac-speed-tx-max', '%1024.2mbps'.format(tx_total));  // Download total
-			kpi('mac-speed-host', '%u'.format(rows.length));
-			break;
-		  default:
-			break;
-		};
+			case "ipv4":
+				cbi_update_table('#speed-data', rows, E('em', _('No data recorded yet.')));
+				pie('speed-tx-pie', tx_data);  // Download pie chart
+				pie('speed-rx-pie', rx_data);  // Upload pie chart
+				kpi('speed-tx-max', '%1024.2mbps'.format(tx_total));  // Download total
+				kpi('speed-rx-max', '%1024.2mbps'.format(rx_total));  // Upload total
+				kpi('speed-host', '%u'.format(rows.length));
+				break;
+			case "ipv6":
+				cbi_update_table('#ipv6-speed-data', rows, E('em', _('No data recorded yet.')));
+				pie('ipv6-speed-tx-pie', tx_data);  // Download pie chart
+				pie('ipv6-speed-rx-pie', rx_data);  // Upload pie chart
+				kpi('ipv6-speed-tx-max', '%1024.2mbps'.format(tx_total));  // Download total
+				kpi('ipv6-speed-rx-max', '%1024.2mbps'.format(rx_total));  // Upload total
+				kpi('ipv6-speed-host', '%u'.format(rows.length));
+				break;
+			case "mac":
+				cbi_update_table('#mac-speed-data', rows, E('em', _('No data recorded yet.')));
+				pie('mac-speed-tx-pie', tx_data);  // Download pie chart
+				pie('mac-speed-rx-pie', rx_data);  // Upload pie chart
+				kpi('mac-speed-tx-max', '%1024.2mbps'.format(tx_total));  // Download total
+				kpi('mac-speed-rx-max', '%1024.2mbps'.format(rx_total));  // Upload total
+				kpi('mac-speed-host', '%u'.format(rows.length));
+				break;
+			default:
+				break;
+		}
 	},
 
 	pollChaQoSData: async function() {
@@ -705,8 +704,8 @@ return view.extend({
 						E('div', { 'class': 'kpi' }, [
 							E('ul', [
 								E('li', _('<big id="speed-host">0</big> hosts')),
-								E('li', _('<big id="speed-rx-max">0</big> upload speed')),
 								E('li', _('<big id="speed-tx-max">0</big> download speed')),
+								E('li', _('<big id="speed-rx-max">0</big> upload speed')),
 							])
 						])
 					]),
@@ -747,8 +746,8 @@ return view.extend({
 						E('div', { 'class': 'kpi' }, [
 							E('ul', [
 								E('li', _('<big id="ipv6-speed-host">0</big> hosts')),
-								E('li', _('<big id="ipv6-speed-rx-max">0</big> download speed')),
 								E('li', _('<big id="ipv6-speed-tx-max">0</big> upload speed')),
+								E('li', _('<big id="ipv6-speed-rx-max">0</big> download speed')),
 							])
 						])
 					]),
@@ -757,12 +756,12 @@ return view.extend({
 						E('tr', { 'class': 'tr table-titles' }, [
 							E('th', { 'class': 'th left hostname' }, [ _('Host') ]),
 							E('th', { 'class': 'th left hostname' }, [ _('Hostname') ]),
-							E('th', { 'class': 'th right' }, [ _('Upload Speed (Bit/s)') ]),
-							E('th', { 'class': 'th right' }, [ _('Upload (Bytes)') ]),
-							E('th', { 'class': 'th right' }, [ _('Upload (Packets)') ]),
 							E('th', { 'class': 'th right' }, [ _('Download Speed (Bit/s)') ]),
 							E('th', { 'class': 'th right' }, [ _('Download (Bytes)') ]),
 							E('th', { 'class': 'th right' }, [ _('Download (Packets)') ]),
+							E('th', { 'class': 'th right' }, [ _('Upload Speed (Bit/s)') ]),
+							E('th', { 'class': 'th right' }, [ _('Upload (Bytes)') ]),
+							E('th', { 'class': 'th right' }, [ _('Upload (Packets)') ]),
 							E('th', { 'class': 'th center' }, [ _('Actions') ])
 						]),
 						E('tr', { 'class': 'tr placeholder' }, [
@@ -789,8 +788,8 @@ return view.extend({
 						E('div', { 'class': 'kpi' }, [
 							E('ul', [
 								E('li', _('<big id="mac-speed-host">0</big> hosts')),
-								E('li', _('<big id="mac-speed-rx-max">0</big> download speed')),
-								E('li', _('<big id="mac-speed-tx-max">0</big> upload speed')),
+								E('li', _('<big id="mac-speed-tx-max">0</big> download speed')),
+								E('li', _('<big id="mac-speed-rx-max">0</big> upload speed')),
 							])
 						])
 					]),
