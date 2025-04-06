@@ -139,32 +139,39 @@ return view.extend({
 		var self = this;
 		
 		if (data && data.status === 'success' && Array.isArray(data.data)) {
+			// Sort by outgoing rate (upload speed)
 			data.data.sort((a, b) => b.incoming.rate - a.incoming.rate);
 			
 			data.data.forEach(function(item) {
+				// outgoing is upload (tx), incoming is download (rx)
 				rows.push([
 					item.sid,
 					item.domain,
-					[ item.outgoing.total_bytes, '%1024.2mB'.format(item.outgoing.total_bytes) ],
-					[ item.outgoing.total_packets, '%1000.2mP'.format(item.outgoing.total_packets) ],
-					[ item.outgoing.rate, '%1024.2mbps'.format(item.outgoing.rate) ],
+					// Download (incoming) data
 					[ item.incoming.total_bytes, '%1024.2mB'.format(item.incoming.total_bytes) ],
 					[ item.incoming.total_packets, '%1000.2mP'.format(item.incoming.total_packets) ],
-					[ item.incoming.rate, '%1024.2mbps'.format(item.incoming.rate) ]
+					[ item.incoming.rate, '%1024.2mbps'.format(item.incoming.rate) ],
+					// Upload (outgoing) data
+					[ item.outgoing.total_bytes, '%1024.2mB'.format(item.outgoing.total_bytes) ],
+					[ item.outgoing.total_packets, '%1000.2mP'.format(item.outgoing.total_packets) ],
+					[ item.outgoing.rate, '%1024.2mbps'.format(item.outgoing.rate) ]
 				]);
 
+				// rxData is for upload (outgoing)
 				rxData.push({
-					value: item.incoming.rate,
-					label: ['%s: %%1024.2mbps'.format(item.domain)]
-				});
-
-				txData.push({
 					value: item.outgoing.rate,
 					label: ['%s: %%1024.2mbps'.format(item.domain)]
 				});
 
-				rx_rate_total += item.incoming.rate;
-				tx_rate_total += item.outgoing.rate;
+				// txData is for download (incoming)
+				txData.push({
+					value: item.incoming.rate,
+					label: ['%s: %%1024.2mbps'.format(item.domain)]
+				});
+
+				// Update totals
+				rx_rate_total += item.outgoing.rate;  // Upload total
+				tx_rate_total += item.incoming.rate;  // Download total
 			});
 		}
 
@@ -194,11 +201,11 @@ return view.extend({
 			});
 		});
 
-		this.pie('sid-rx-pie', rxData);
-		this.pie('sid-tx-pie', txData);
+		this.pie('sid-rx-pie', rxData);  // Upload pie chart
+		this.pie('sid-tx-pie', txData);  // Download pie chart
 
-		this.kpi('sid-rx-rate', '%1024.2mbps'.format(rx_rate_total));
-		this.kpi('sid-tx-rate', '%1024.2mbps'.format(tx_rate_total));
+		this.kpi('sid-rx-rate', '%1024.2mbps'.format(rx_rate_total));  // Upload total
+		this.kpi('sid-tx-rate', '%1024.2mbps'.format(tx_rate_total));  // Download total
 		this.kpi('sid-total', '%u'.format(rows.length));
 	},
 
