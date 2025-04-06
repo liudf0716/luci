@@ -377,16 +377,16 @@ msgid "Speed Distribution"
 msgstr "主机速度"
 
 msgid "Download Speed (Bit/s)"
-msgstr "下载速度（位/秒）"
+msgstr "下载速率 (Bit/s)"
 
 msgid "Upload Speed (Bit/s)"
-msgstr "上传速度（位/秒）"
-
-msgid "Download Speed / Host"
-msgstr "下载速度 / 主机"
+msgstr "上传速率 (Bit/s)"
 
 msgid "Upload Speed / Host"
-msgstr "上传速度 / 主机"
+msgstr "上传速率 / 主机"
+
+msgid "Download Speed / Host"
+msgstr "下载速率 / 主机"
 
 msgid "Traffic History"
 msgstr "流量统计"
@@ -400,29 +400,29 @@ msgstr "认证用户网络流速监控"
 msgid "<big id=\"speed-host\">0</big> hosts"
 msgstr "主机：<big id=\"speed-host\">0</big>"
 
-msgid "<big id=\"speed-tx-max\">0</big> upload speed"
-msgstr "总上传速度：<big id=\"speed-tx-max\">0</big>"
+msgid "<big id=\"speed-tx-max\">0</big> download speed"
+msgstr "总下载速度：<big id=\"speed-tx-max\">0</big>"
 
-msgid "<big id=\"speed-rx-max\">0</big> download speed"
-msgstr "总下载速度：<big id=\"speed-rx-max\">0</big>"
+msgid "<big id=\"speed-rx-max\">0</big> upload speed"
+msgstr "总上传速度：<big id=\"speed-rx-max\">0</big>"
 
 msgid "<big id=\"ipv6-speed-host\">0</big> hosts"
 msgstr "主机：<big id=\"ipv6-speed-host\">0</big>"
 
-msgid "<big id=\"ipv6-speed-tx-max\">0</big> upload speed"
-msgstr "总上传速度：<big id=\"ipv6-speed-tx-max\">0</big>"
+msgid "<big id=\"ipv6-speed-tx-max\">0</big> download speed"
+msgstr "总下载速度：<big id=\"ipv6-speed-tx-max\">0</big>"
 
-msgid "<big id=\"ipv6-speed-rx-max\">0</big> download speed"
-msgstr "总下载速度：<big id=\"ipv6-speed-rx-max\">0</big>"
+msgid "<big id=\"ipv6-speed-rx-max\">0</big> upload speed"
+msgstr "总上传速度：<big id=\"ipv6-speed-rx-max\">0</big>"
 
 msgid "<big id=\"mac-speed-host\">0</big> hosts"
 msgstr "主机：<big id=\"mac-speed-host\">0</big>"
 
-msgid "<big id=\"mac-speed-tx-max\">0</big> upload speed"
-msgstr "总上传速度：<big id=\"mac-speed-tx-max\">0</big>"
+msgid "<big id=\"mac-speed-tx-max\">0</big> download speed"
+msgstr "总下载速度：<big id=\"mac-speed-tx-max\">0</big>"
 
-msgid "<big id=\"mac-speed-rx-max\">0</big> download speed"
-msgstr "总下载速度：<big id=\"mac-speed-rx-max\">0</big>"
+msgid "<big id=\"mac-speed-rx-max\">0</big> upload speed"
+msgstr "总上传速度：<big id=\"mac-speed-rx-max\">0</big>"
 
 msgid "<big id=\"layer7-speed-most-rx\">0</big> cause the most download"
 msgstr "下载量最大的协议：<big id=\"layer7-speed-most-rx\">0</big>"
@@ -443,16 +443,16 @@ msgid "apfree-wifidog Status"
 msgstr "apfree-wifidog 状态"
 
 msgid "Upload (Bytes)"
-msgstr "上传（字节）"
+msgstr "上传流量 (字节)"
 
 msgid "Upload (Packets)"
-msgstr "上传（数据包）"
+msgstr "上传数据包"
 
 msgid "Download (Bytes)"
-msgstr "下载（字节）"
+msgstr "下载流量 (字节)"
 
 msgid "Download (Packets)"
-msgstr "下载（数据包）"
+msgstr "下载数据包"
 
 msgid "download speed"
 msgstr "下载速度"
@@ -668,3 +668,16 @@ msgstr "正在收集数据..."
 #: applications/luci-app-apfree-wifidog/htdocs/luci-static/resources/view/xdpi/l7.js:20
 msgid "no traffic"
 msgstr "无流量"
+
+# SID metrics translations
+msgid "<big id=\"sid-total\">0</big> different SIDs"
+msgstr "应用计数：<big id=\"sid-total\">0</big>"
+
+msgid "<big id=\"sid-rx-rate\">0</big> download speed"
+msgstr "总下载速度：<big id=\"sid-rx-rate\">0</big>"
+
+msgid "<big id=\"sid-tx-rate\">0</big> upload speed"
+msgstr "总上传速度：<big id=\"sid-tx-rate\">0</big>"
+
+msgid "<big id=\"layer7-speed-most-rx\">0</big> cause the most download"
+msgstr "下载量最大的协议：<big id=\"layer7-speed-most-rx\">0</big>"
