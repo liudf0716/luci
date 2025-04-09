@@ -30,7 +30,7 @@ add_rule() {
 			local enabled=$(u_get $i enabled 0)
 			local hostname=$(u_get $i hostname)
 			local macaddr=$(u_get $i macaddr)
-			local ipaddr=$(u_get $i ipaddr)
+			local ipaddr=$(u_get $i ipv4)
 			local timeon=$(u_get $i timeon)
 			local timeoff=$(u_get $i timeoff)
 			local z1=$(u_get $i z1)
@@ -45,7 +45,11 @@ add_rule() {
 			([ -z "$macaddr" ] && [ -z "$ipaddr" ]) || [ -z "$timeon" ] || [ -z "$timeoff" ] && continue
 
 			local origin="ether"
-			[ -z "$macaddr" ] && origin="ip"
+			local addr="$macaddr"
+			[ -z "$macaddr" ] && {
+				origin="ip"
+				addr="$ipaddr"
+			}
 
 			local weekdays=""
 			[ "$z1" = "0" ] || weekdays="Monday"
@@ -78,19 +82,19 @@ add_rule() {
 			if [ "$start_hour" -gt "$end_hour" ] || { [ "$start_hour" -eq "$end_hour" ] && [ "$start_minute" -gt "$end_minute" ]; }; then
 				# 如果跨天，拆成两部分：第一天部分和第二天部分
 				echo "DEBUG: Adding cross-day rules"
-				nft add rule inet filter timecontrol $origin saddr $macaddr \
+				nft add rule inet filter timecontrol $origin saddr $addr \
 					meta hour "$timeon"-"23:59" \
 					$([ -n "$weekday_expr" ] && echo " $weekday_expr ") \
 					drop comment "$hostname"
 
-				nft add rule inet filter timecontrol $origin saddr $macaddr \
+				nft add rule inet filter timecontrol $origin saddr $addr \
 					meta hour "00:00"-"$timeoff" \
 					$([ -n "$weekday_expr" ] && echo " $weekday_expr ") \
 					drop comment "$hostname"
 			else
 				# 不跨天，直接添加规则
 				echo "DEBUG: Adding non-cross-day rule"
-				nft add rule inet filter timecontrol $origin saddr $macaddr \
+				nft add rule inet filter timecontrol $origin saddr $addr \
 					meta hour "$timeon"-"$timeoff" \
 					$([ -n "$weekday_expr" ] && echo "$weekday_expr ") \
 					drop comment "$hostname"
