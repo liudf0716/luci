@@ -143,10 +143,14 @@ return view.extend({
 			data.data.sort((a, b) => b.incoming.rate - a.incoming.rate);
 			
 			data.data.forEach(function(item) {
+				 // Get domain name or protocol description based on sid_type
+				var domainOrProto = item.sid_type === 'Domain' ? item.domain : 
+								   (item.sid_type === 'L7' ? item.l7_proto_desc : '-');
+				
 				// outgoing is upload (tx), incoming is download (rx)
 				rows.push([
 					item.sid,
-					item.domain,
+					domainOrProto,
 					// Download (incoming) data
 					[ item.incoming.total_bytes, '%1024.2mB'.format(item.incoming.total_bytes) ],
 					[ item.incoming.total_packets, '%1000.2mP'.format(item.incoming.total_packets) ],
@@ -160,13 +164,13 @@ return view.extend({
 				// rxData is for upload (outgoing)
 				rxData.push({
 					value: item.outgoing.rate,
-					label: ['%s: %%1024.2mbps'.format(item.domain)]
+					label: ['%s: %%1024.2mbps'.format(domainOrProto)]
 				});
 
 				// txData is for download (incoming)
 				txData.push({
 					value: item.incoming.rate,
-					label: ['%s: %%1024.2mbps'.format(item.domain)]
+					label: ['%s: %%1024.2mbps'.format(domainOrProto)]
 				});
 
 				// Update totals
@@ -214,13 +218,29 @@ return view.extend({
 		var self = this;
 		
 		if (data && data.status === 'success' && data.data) {
-			data.data.forEach(function(item) {
-				rows.push([
-					item.id,
-					item.domain,
-					item.sid
-				]);
-			});
+			// Handle protocols section
+			if (Array.isArray(data.data.protocols)) {
+				data.data.protocols.forEach(function(item) {
+					rows.push([
+						item.id,
+						item.protocol,
+						item.sid,
+						'-' // Empty domain field for protocol entries
+					]);
+				});
+			}
+			
+			// Handle domains section
+			if (Array.isArray(data.data.domains)) {
+				data.data.domains.forEach(function(item) {
+					rows.push([
+						item.id,
+						'-', // Empty protocol field for domain entries
+						item.sid,
+						item.domain
+					]);
+				});
+			}
 		}
 
 		var table = document.getElementById('l7proto-data');
@@ -334,11 +354,12 @@ return view.extend({
 					E('table', { 'class': 'table', 'id': 'l7proto-data' }, [
 						E('tr', { 'class': 'tr table-titles' }, [
 							E('th', { 'class': 'th left' }, [ _('ID') ]),
-							E('th', { 'class': 'th left' }, [ _('Domain') ]),
-							E('th', { 'class': 'th right' }, [ _('SID') ])
+							E('th', { 'class': 'th left' }, [ _('Protocol') ]),
+							E('th', { 'class': 'th right' }, [ _('SID') ]),
+							E('th', { 'class': 'th left' }, [ _('Domain') ])
 						]),
 						E('tr', { 'class': 'tr placeholder' }, [
-							E('td', { 'class': 'td', 'colspan': '3' }, [
+							E('td', { 'class': 'td', 'colspan': '4' }, [
 								E('em', { 'class': 'spinning' }, [ _('Collecting data...') ])
 							])
 						])
@@ -359,4 +380,4 @@ return view.extend({
 	handleSave: null,
 	handleSaveApply: null,
 	handleReset: null
-}); 
+});
