@@ -629,11 +629,16 @@ return view.extend({
 		}
 	},
 	createAddButtonValue: function(type, placeholder) {
+		let addInputWidth = 'width:180px';
+		if (type == "ipv6") {
+			addInputWidth = 'width:320px';
+		}
+
 		let input = E('input', {
 				'type': 'text',
 				'id': type + '-add-input',
 				'class': 'cbi-input-text',
-				'style': 'width:300px',
+				'style': addInputWidth,
 				'placeholder': _(placeholder)
 			});
 
@@ -654,7 +659,6 @@ return view.extend({
 
 			let freshBtn = E('button', {
 				'class': 'btn cbi-button cbi-button-add',
-				'style': 'float: right',
 				'click': this.loadHostSpeedData.bind(this)
 			}, _('Refreshing'));
 
@@ -679,6 +683,12 @@ return view.extend({
 			});
 		}
 
+		let pidWidth = 200, pidHeight = 200;
+		const width = window.innerWidth;
+		if (width < 800) {
+			pidWidth = pidHeight = width/4
+		}
+		console.log("width ", width)
 		var node = E([], [
 			E('link', { 'rel': 'stylesheet', 'href': L.resource('view/wifidogx.css') }),
 			E('script', {
@@ -693,12 +703,12 @@ return view.extend({
 					E('div', { 'class': 'head' }, [
 						E('div', { 'class': 'pie' }, [
 							E('label', [ _('Download Speed / Host') ]),
-							E('canvas', { 'id': 'speed-tx-pie', 'width': 200, 'height': 200 })
+							E('canvas', { 'id': 'speed-tx-pie', 'width': pidWidth, 'height': pidHeight })
 						]),
 
 						E('div', { 'class': 'pie' }, [
 							E('label', [ _('Upload Speed / Host') ]),
-							E('canvas', { 'id': 'speed-rx-pie', 'width': 200, 'height': 200 })
+							E('canvas', { 'id': 'speed-rx-pie', 'width': pidWidth, 'height': pidHeight })
 						]),
 
 						E('div', { 'class': 'kpi' }, [
@@ -714,13 +724,13 @@ return view.extend({
 						E('tr', { 'class': 'tr table-titles' }, [
 							E('th', { 'class': 'th left hostname' }, [ _('Host') ]),
 							E('th', { 'class': 'th left hostname' }, [ _('Hostname') ]),
-							E('th', { 'class': 'th right' }, [ _('Download Speed (Bit/s)') ]),
-							E('th', { 'class': 'th right' }, [ _('Download (Bytes)') ]),
-							E('th', { 'class': 'th right' }, [ _('Download (Packets)') ]),
-							E('th', { 'class': 'th right' }, [ _('Upload Speed (Bit/s)') ]),
-							E('th', { 'class': 'th right' }, [ _('Upload (Bytes)') ]),
-							E('th', { 'class': 'th right' }, [ _('Upload (Packets)') ]),
-							E('th', { 'class': 'th center' }, [ _('Actions') ])
+							E('th', { 'class': 'th left' }, [ _('Download Speed (Bit/s)') ]),
+							E('th', { 'class': 'th left' }, [ _('Download (Bytes)') ]),
+							E('th', { 'class': 'th left' }, [ _('Download (Packets)') ]),
+							E('th', { 'class': 'th left' }, [ _('Upload Speed (Bit/s)') ]),
+							E('th', { 'class': 'th left' }, [ _('Upload (Bytes)') ]),
+							E('th', { 'class': 'th left' }, [ _('Upload (Packets)') ]),
+							E('th', { 'class': 'th left' }, [ _('Actions') ])
 						]),
 						E('tr', { 'class': 'tr placeholder' }, [
 							E('td', { 'class': 'td' }, [
@@ -735,12 +745,12 @@ return view.extend({
 					E('div', { 'class': 'head' }, [
 						E('div', { 'class': 'pie' }, [
 							E('label', [ _('Upload Speed / Host') ]),
-							E('canvas', { 'id': 'ipv6-speed-tx-pie', 'width': 200, 'height': 200 })
+							E('canvas', { 'id': 'ipv6-speed-tx-pie', 'width': pidWidth, 'height': pidHeight })
 						]),
 
 						E('div', { 'class': 'pie' }, [
 							E('label', [ _('Download Speed / Host') ]),
-							E('canvas', { 'id': 'ipv6-speed-rx-pie', 'width': 200, 'height': 200 })
+							E('canvas', { 'id': 'ipv6-speed-rx-pie', 'width': pidWidth, 'height': pidHeight })
 						]),
 
 						E('div', { 'class': 'kpi' }, [
@@ -756,13 +766,13 @@ return view.extend({
 						E('tr', { 'class': 'tr table-titles' }, [
 							E('th', { 'class': 'th left hostname' }, [ _('Host') ]),
 							E('th', { 'class': 'th left hostname' }, [ _('Hostname') ]),
-							E('th', { 'class': 'th right' }, [ _('Download Speed (Bit/s)') ]),
-							E('th', { 'class': 'th right' }, [ _('Download (Bytes)') ]),
-							E('th', { 'class': 'th right' }, [ _('Download (Packets)') ]),
-							E('th', { 'class': 'th right' }, [ _('Upload Speed (Bit/s)') ]),
-							E('th', { 'class': 'th right' }, [ _('Upload (Bytes)') ]),
-							E('th', { 'class': 'th right' }, [ _('Upload (Packets)') ]),
-							E('th', { 'class': 'th center' }, [ _('Actions') ])
+							E('th', { 'class': 'th left' }, [ _('Download Speed (Bit/s)') ]),
+							E('th', { 'class': 'th left' }, [ _('Download (Bytes)') ]),
+							E('th', { 'class': 'th left' }, [ _('Download (Packets)') ]),
+							E('th', { 'class': 'th left' }, [ _('Upload Speed (Bit/s)') ]),
+							E('th', { 'class': 'th left' }, [ _('Upload (Bytes)') ]),
+							E('th', { 'class': 'th left' }, [ _('Upload (Packets)') ]),
+							E('th', { 'class': 'th left' }, [ _('Actions') ])
 						]),
 						E('tr', { 'class': 'tr placeholder' }, [
 							E('td', { 'class': 'td' }, [
@@ -777,12 +787,12 @@ return view.extend({
 					E('div', { 'class': 'head' }, [
 						E('div', { 'class': 'pie' }, [
 							E('label', [ _('Upload Speed / Host') ]),
-							E('canvas', { 'id': 'mac-speed-tx-pie', 'width': 200, 'height': 200 })
+							E('canvas', { 'id': 'mac-speed-tx-pie', 'width': pidWidth, 'height': pidHeight })
 						]),
 
 						E('div', { 'class': 'pie' }, [
 							E('label', [ _('Download Speed / Host') ]),
-							E('canvas', { 'id': 'mac-speed-rx-pie', 'width': 200, 'height': 200 })
+							E('canvas', { 'id': 'mac-speed-rx-pie', 'width': pidWidth, 'height': pidHeight })
 						]),
 
 						E('div', { 'class': 'kpi' }, [
@@ -798,13 +808,13 @@ return view.extend({
 						E('tr', { 'class': 'tr table-titles' }, [
 							E('th', { 'class': 'th left hostname' }, [ _('Host') ]),
 							E('th', { 'class': 'th left hostname' }, [ _('Hostname') ]),
-							E('th', { 'class': 'th right' }, [ _('Download Speed (Bit/s)') ]),
-							E('th', { 'class': 'th right' }, [ _('Download (Bytes)') ]),
-							E('th', { 'class': 'th right' }, [ _('Download (Packets)') ]),
-							E('th', { 'class': 'th right' }, [ _('Upload Speed (Bit/s)') ]),
-							E('th', { 'class': 'th right' }, [ _('Upload (Bytes)') ]),
-							E('th', { 'class': 'th right' }, [ _('Upload (Packets)') ]),
-							E('th', { 'class': 'th center' }, [ _('Actions') ])
+							E('th', { 'class': 'th left' }, [ _('Download Speed (Bit/s)') ]),
+							E('th', { 'class': 'th left' }, [ _('Download (Bytes)') ]),
+							E('th', { 'class': 'th left' }, [ _('Download (Packets)') ]),
+							E('th', { 'class': 'th left' }, [ _('Upload Speed (Bit/s)') ]),
+							E('th', { 'class': 'th left' }, [ _('Upload (Bytes)') ]),
+							E('th', { 'class': 'th left' }, [ _('Upload (Packets)') ]),
+							E('th', { 'class': 'th left' }, [ _('Actions') ])
 						]),
 						E('tr', { 'class': 'tr placeholder' }, [
 							E('td', { 'class': 'td' }, [
