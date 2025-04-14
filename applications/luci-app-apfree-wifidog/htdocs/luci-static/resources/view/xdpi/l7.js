@@ -48,14 +48,14 @@ return view.extend({
 			data = [{
 				value: 1,
 				color: '#cccccc',
-				label: [ _('no traffic') ]
+				label: _('no traffic')
 			}];
 
 		for (var i = 0; i < data.length; i++) {
 			if (!data[i].color) {
 				var hue = 120 / (data.length-1) * i;
 				data[i].color = 'hsl(%u, 80%%, 50%%)'.format(hue);
-				data[i].label.push(hue);
+				 // Don't store hue in label array since it appears in tooltip
 			}
 		}
 
@@ -164,13 +164,13 @@ return view.extend({
 				// txData is for download pie chart (incoming)
 				txData.push({
 					value: item.incoming.rate,
-					label: ['%s: %%1024.2mbps'.format(domainOrProto)]
+					label: domainOrProto // Just use domain/protocol as label, Chart.js will add the value itself
 				});
 
 				// rxData is for upload pie chart (outgoing)
 				rxData.push({
 					value: item.outgoing.rate,
-					label: ['%s: %%1024.2mbps'.format(domainOrProto)]
+					label: domainOrProto // Just use domain/protocol as label, Chart.js will add the value itself
 				});
 
 				// Update totals
