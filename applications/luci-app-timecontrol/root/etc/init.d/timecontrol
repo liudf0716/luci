@@ -51,6 +51,10 @@ add_rule() {
 				addr="$ipaddr"
 			}
 
+			[ -z "$hostname" ] && {
+				hostname="$addr"
+			}
+
 			local weekdays=""
 			[ "$z1" = "0" ] || weekdays="Monday"
 			[ "$z2" = "0" ] || weekdays="$weekdays Tuesday"

@@ -56,13 +56,31 @@ return view.extend({
 			o.value(mac, macaddrs[mac] ? '%s (%s)'.format(mac, macaddrs[mac]) : mac);
 		});
 
+		function validate_time(section, value) {
+			const match = value.match(/^(\d{1,2}):(\d{2})$/);
+			if (!match) {
+				return _("Time HH:MM");
+			}
+
+			let hh = parseInt(match[1], 10);
+			let mm = parseInt(match[2], 10);
+
+			if (hh >= 0 && hh <= 23 && mm >= 0 && mm <= 59) {
+				return true;
+			} else {
+				return _("Time HH:MM");
+			}
+		}
+
 		o = s.option(form.Value, 'timeon', _('No Internet start time'));
 		o.default = '00:00';
 		o.optional = false;
+		o.validate = validate_time
 
 		o = s.option(form.Value, 'timeoff', _('No Internet end time'));
 		o.default = '23:59';
 		o.optional = false;
+		o.validate = validate_time
 
 		o = s.option(form.Flag, 'z1', _('Mo'));
 		o.rmempty = true;
