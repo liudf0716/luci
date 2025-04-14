@@ -931,3 +931,9 @@ msgstr "总上传速度：<big id=\"sid-tx-rate\">0</big>"
 
 msgid "<big id=\"layer7-speed-most-rx\">0</big> cause the most download"
 msgstr "下载量最大的协议：<big id=\"layer7-speed-most-rx\">0</big>"
+
+msgid "Delete Host"
+msgstr "删除主机"
+
+msgid "Are you sure you want to delete this host?"
+msgstr "您确定要删除这个主机吗？"

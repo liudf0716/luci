@@ -351,10 +351,81 @@ return view.extend({
 		return false;
 	},
 
+	handleDeleteHost: function(host, type) {
+		var pie = this.pie.bind(this);
+		var kpi = this.kpi.bind(this);
+		var renderHostSpeed = this.renderHostSpeed.bind(this);
+		
+		ui.showModal(_('Delete Host'), [
+			E('p', _('Are you sure you want to delete this host?')),
+			E('div', { 'class': 'right' }, [
+				E('button', {
+					'class': 'btn',
+					'click': ui.hideModal
+				}, _('Cancel')),
+				E('button', {
+					'class': 'btn cbi-button-negative',
+					'click': ui.createHandlerFn(this, async function() {
+						try {
+							// Execute the delete command
+							await fs.exec_direct('/usr/bin/aw-bpfctl', [type, 'del', host], 'text');
+							
+							// Get updated data
+							const updatedData = await fs.exec_direct('/usr/bin/aw-bpfctl', [type, 'json'], 'json');
+							
+							// Refresh the table with new data
+							const defaultData = {status: "success", data: []};
+							renderHostSpeed(updatedData || defaultData, pie, kpi, type);
+							
+							ui.hideModal();
+							ui.addNotification(null, E('p', _('Host deleted successfully')), 3000, 'success');
+						} catch (e) {
+							ui.hideModal();
+							ui.addNotification(null, E('p', _('Error: ') + e.message), 3000, 'error');
+						}
+					})
+				}, _('Delete'))
+			])
+		]);
+	},
+
 	// 编辑主机
-	handleEditSpeed: function(host, mac, hostname, type, dl, ul) {
-		dl = dl/1024/1024;
-		ul = ul/1024/1024;
+	handleEditSpeed: function(host, mac, hostname, type) {
+		// 原本使用当前的流量统计作为限速值是错误的
+		// 我们需要从系统中获取当前已配置的限速值
+		var rate_limit_dl = 0;
+		var rate_limit_ul = 0;
+		
+		// 直接获取当前正在使用的 rate limit 值
+		fs.exec_direct('/usr/bin/aw-bpfctl', [type, 'json'], 'json').then(result => {
+			if (result && result.status === 'success' && Array.isArray(result.data)) {
+				// 查找当前主机
+				for (var i = 0; i < result.data.length; i++) {
+					var item = result.data[i];
+					if ((item.ip && item.ip === host) || (item.mac && item.mac === host)) {
+						// 找到对应主机，提取其限速值
+						// 根据 aw-bpfctl 的实际输出格式调整字段名
+						if (item.incoming && item.incoming.incoming_rate_limit) {
+							rate_limit_dl = item.incoming.incoming_rate_limit / 1024 / 1024; // 转换为 Mbps
+						}
+						if (item.outgoing && item.outgoing.outgoing_rate_limit) {
+							rate_limit_ul = item.outgoing.outgoing_rate_limit / 1024 / 1024; // 转换为 Mbps
+						}
+						break;
+					}
+				}
+			}
+			
+			// 显示对话框，使用实际的限速值
+			this.displaySpeedLimitDialog(host, mac, hostname, type, rate_limit_dl, rate_limit_ul);
+		}).catch(error => {
+			console.error('获取限速值出错:', error);
+			// 获取失败时使用默认值 0
+			this.displaySpeedLimitDialog(host, mac, hostname, type, 0, 0);
+		});
+	},
+	
+	displaySpeedLimitDialog: function(host, mac, hostname, type, dl, ul) {
 		let inputDom = E('input', {
 			'type': 'text',
 			'id': 'host-name',
@@ -482,14 +553,25 @@ return view.extend({
 				[rec.outgoing.rate, '%1024.2mbps'.format(rec.outgoing.rate)],
 				[rec.outgoing.total_bytes, '%1024.2mB'.format(rec.outgoing.total_bytes)],
 				[rec.outgoing.total_packets, '%1000.2mP'.format(rec.outgoing.total_packets)],
-				E('button', {
-					'class': 'btn cbi-button cbi-button-edit',
-					'click': ui.createHandlerFn(this, function(host, mac, hostname, type, dl, ul) {
-						return function() {
-							this.handleEditSpeed(host, mac, hostname, type, dl, ul);
-						};
-					}(host, rec.mac, hostname, type, rec.incoming.rate, rec.outgoing.rate))
-				}, _('Edit'))
+				E('div', { 'class': 'button-container' }, [
+					E('button', {
+						'class': 'btn cbi-button cbi-button-edit',
+						'style': 'margin-right: 5px;',
+						'click': ui.createHandlerFn(this, function(host, mac, hostname, type) {
+							return function() {
+								this.handleEditSpeed(host, mac, hostname, type);
+							};
+						}(host, rec.mac, hostname, type))
+					}, _('Edit')),
+					E('button', {
+						'class': 'btn cbi-button cbi-button-remove',
+						'click': ui.createHandlerFn(this, function(host, type) {
+							return function() {
+								this.handleDeleteHost(host, type);
+							};
+						}(host, type))
+					}, _('Delete'))
+				])
 			]);
 
 			rx_total += rec.outgoing.rate;
@@ -561,6 +643,9 @@ return view.extend({
 			const ipv4Data = results[0] || defaultData;
 			const ipv6Data = results[1] || defaultData;
 			const macData  = results[2] || defaultData;
+			
+			// 确保所有添加按钮状态一致
+			this.updateAllAddButtons();
 
 			ipv4Data.data.forEach(item => {
 				const mac = hostInfo[item.ip];
@@ -651,21 +736,47 @@ return view.extend({
 						ui.addNotification(null, _('Data format error'), 3000, "error");
 						return
 					}
-					this.handleAddSubmit(inputValue, type);
-					input.value = '';
+					this.handleAddSubmit(inputValue, type).then(() => {
+						// 添加操作完成后刷新页面，以确保所有UI元素正确重置
+						this.loadHostSpeedData();
+					});
+					input.value = ''; // 清空输入框
 				})
 			}, _('Add'));
 
-			let freshBtn = E('button', {
-				'class': 'btn cbi-button cbi-button-add',
-				'click': this.loadHostSpeedData.bind(this)
-			}, _('Refreshing'));
+		let freshBtn = E('button', {
+			'class': 'btn cbi-button cbi-button-add',
+			'click': this.loadHostSpeedData.bind(this)
+		}, _('Refreshing'));
 
+		// 确保初始状态下按钮是禁用的
+		addBtn.disabled = true;
+		
 		input.addEventListener('input', function() {
 			var isEmpty = this.value.trim() === '';
-			btn.disabled = isEmpty;
+			addBtn.disabled = isEmpty;
 		});
+		
+		// 在页面加载后也执行一次检查，确保状态一致
+		setTimeout(function() {
+			var isEmpty = input.value.trim() === '';
+			addBtn.disabled = isEmpty;
+		}, 0);
+		
 		return [input, addBtn, freshBtn];
+	},
+	updateAllAddButtons: function() {
+		// 获取所有类型的添加按钮和输入框
+		['ipv4', 'ipv6', 'mac'].forEach(type => {
+			const input = document.getElementById(type + '-add-input');
+			const addBtn = document.getElementById(type + '-add-btn');
+			
+			if (input && addBtn) {
+				// 检查输入框是否有值，并相应设置按钮状态
+				const isEmpty = input.value.trim() === '';
+				addBtn.disabled = isEmpty;
+			}
+		});
 	},
 	render: function() {
 		document.addEventListener('tooltip-open', L.bind(function(ev) {
@@ -785,12 +896,12 @@ return view.extend({
 				E('div', { 'class': 'cbi-section', 'data-tab': 'mac', 'data-tab-title': _('MAC') }, [
 					E('div', { 'class': 'head' }, [
 						E('div', { 'class': 'pie' }, [
-							E('label', [ _('Upload Speed / Host') ]),
+							E('label', [ _('Download Speed / Host') ]),
 							E('canvas', { 'id': 'mac-speed-tx-pie', 'width': pidWidth, 'height': pidHeight })
 						]),
 
 						E('div', { 'class': 'pie' }, [
-							E('label', [ _('Download Speed / Host') ]),
+							E('label', [ _('Upload Speed / Host') ]),
 							E('canvas', { 'id': 'mac-speed-rx-pie', 'width': pidWidth, 'height': pidHeight })
 						]),
 
