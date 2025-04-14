@@ -95,14 +95,13 @@ return view.extend({
 			data = [{
 				value: 1,
 				color: '#cccccc',
-				label: [ _('no traffic') ]
+				label: _('no traffic')
 			}];
 
 		for (var i = 0; i < data.length; i++) {
 			if (!data[i].color) {
 				var hue = 120 / (data.length-1) * i;
 				data[i].color = 'hsl(%u, 80%%, 50%%)'.format(hue);
-				data[i].label.push(hue);
 			}
 		}
 
@@ -280,13 +279,13 @@ return view.extend({
 			]);
 
 			rxData.push({
-				label: ['%s: %%1024.2mB'.format(rec[col] || _('other')), cell],
-				value: rec.rx_bytes
+				value: rec.rx_bytes,
+				label: rec.ip || rec.mac
 			});
 
 			txData.push({
-				label: ['%s: %%1024.2mB'.format(rec[col] || _('other')), cell],
-				value: rec.tx_bytes
+				value: rec.tx_bytes,
+				label: rec.ip || rec.mac
 			});
 		}
 
@@ -498,12 +497,12 @@ return view.extend({
 
 			rx_data.push({
 				value: rec.outgoing.rate,
-				label: [rec.ip || rec.mac]
+				label: rec.ip || rec.mac
 			});
 
 			tx_data.push({
 				value: rec.incoming.rate,
-				label: [rec.ip || rec.mac]
+				label: rec.ip || rec.mac
 			});
 		}
 
