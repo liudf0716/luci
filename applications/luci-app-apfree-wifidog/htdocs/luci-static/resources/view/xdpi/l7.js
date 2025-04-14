@@ -173,6 +173,12 @@ return view.extend({
 					label: domainOrProto // Just use domain/protocol as label, Chart.js will add the value itself
 				});
 
+				// rxData is for upload pie chart (outgoing)
+				rxData.push({
+					value: item.outgoing.rate,
+					label: ['%s: %%1024.2mbps'.format(domainOrProto)]
+				});
+
 				// Update totals
 				tx_rate_total += item.incoming.rate;  // Download total
 				rx_rate_total += item.outgoing.rate;  // Upload total
