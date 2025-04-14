@@ -673,11 +673,11 @@ msgstr "无流量"
 msgid "<big id=\"sid-total\">0</big> different SIDs"
 msgstr "应用计数：<big id=\"sid-total\">0</big>"
 
-msgid "<big id=\"sid-rx-rate\">0</big> download speed"
-msgstr "总下载速度：<big id=\"sid-rx-rate\">0</big>"
+msgid "<big id=\"sid-tx-rate\">0</big> download speed"
+msgstr "总下载速度：<big id=\"sid-tx-rate\">0</big>"
 
-msgid "<big id=\"sid-tx-rate\">0</big> upload speed"
-msgstr "总上传速度：<big id=\"sid-tx-rate\">0</big>"
+msgid "<big id=\"sid-rx-rate\">0</big> upload speed"
+msgstr "总上传速度：<big id=\"sid-rx-rate\">0</big>"
 
 msgid "<big id=\"layer7-speed-most-rx\">0</big> cause the most download"
 msgstr "下载量最大的协议：<big id=\"layer7-speed-most-rx\">0</big>"

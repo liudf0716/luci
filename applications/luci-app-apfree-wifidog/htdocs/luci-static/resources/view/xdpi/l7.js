@@ -139,43 +139,43 @@ return view.extend({
 		var self = this;
 		
 		if (data && data.status === 'success' && Array.isArray(data.data)) {
-			// Sort by outgoing rate (upload speed)
+			// Sort by incoming rate (download speed)
 			data.data.sort((a, b) => b.incoming.rate - a.incoming.rate);
 			
 			data.data.forEach(function(item) {
-				 // Get domain name or protocol description based on sid_type
+				// Get domain name or protocol description based on sid_type
 				var domainOrProto = item.sid_type === 'Domain' ? item.domain : 
 								   (item.sid_type === 'L7' ? item.l7_proto_desc : '-');
 				
-				// outgoing is upload (tx), incoming is download (rx)
+				// outgoing is upload (rx), incoming is download (tx)
 				rows.push([
 					item.sid,
 					domainOrProto,
 					// Download (incoming) data
+					[ item.incoming.rate, '%1024.2mbps'.format(item.incoming.rate) ],
 					[ item.incoming.total_bytes, '%1024.2mB'.format(item.incoming.total_bytes) ],
 					[ item.incoming.total_packets, '%1000.2mP'.format(item.incoming.total_packets) ],
-					[ item.incoming.rate, '%1024.2mbps'.format(item.incoming.rate) ],
 					// Upload (outgoing) data
+					[ item.outgoing.rate, '%1024.2mbps'.format(item.outgoing.rate) ],
 					[ item.outgoing.total_bytes, '%1024.2mB'.format(item.outgoing.total_bytes) ],
-					[ item.outgoing.total_packets, '%1000.2mP'.format(item.outgoing.total_packets) ],
-					[ item.outgoing.rate, '%1024.2mbps'.format(item.outgoing.rate) ]
+					[ item.outgoing.total_packets, '%1000.2mP'.format(item.outgoing.total_packets) ]
 				]);
 
-				// rxData is for upload (outgoing)
-				rxData.push({
-					value: item.outgoing.rate,
-					label: ['%s: %%1024.2mbps'.format(domainOrProto)]
-				});
-
-				// txData is for download (incoming)
+				// txData is for download pie chart (incoming)
 				txData.push({
 					value: item.incoming.rate,
 					label: ['%s: %%1024.2mbps'.format(domainOrProto)]
 				});
 
+				// rxData is for upload pie chart (outgoing)
+				rxData.push({
+					value: item.outgoing.rate,
+					label: ['%s: %%1024.2mbps'.format(domainOrProto)]
+				});
+
 				// Update totals
-				rx_rate_total += item.outgoing.rate;  // Upload total
 				tx_rate_total += item.incoming.rate;  // Download total
+				rx_rate_total += item.outgoing.rate;  // Upload total
 			});
 		}
 
@@ -205,11 +205,13 @@ return view.extend({
 			});
 		});
 
-		this.pie('sid-rx-pie', rxData);  // Upload pie chart
-		this.pie('sid-tx-pie', txData);  // Download pie chart
+		// Update pie charts with correct data
+		this.pie('sid-tx-pie', txData);  // Download pie chart (left)
+		this.pie('sid-rx-pie', rxData);  // Upload pie chart (right)
 
-		this.kpi('sid-rx-rate', '%1024.2mbps'.format(rx_rate_total));  // Upload total
+		// Update KPI displays
 		this.kpi('sid-tx-rate', '%1024.2mbps'.format(tx_rate_total));  // Download total
+		this.kpi('sid-rx-rate', '%1024.2mbps'.format(rx_rate_total));  // Upload total
 		this.kpi('sid-total', '%u'.format(rows.length));
 	},
 
@@ -313,20 +315,20 @@ return view.extend({
 				E('div', { 'class': 'cbi-section', 'data-tab': 'sid', 'data-tab-title': _('L7 SID Data') }, [
 					E('div', { 'class': 'head' }, [
 						E('div', { 'class': 'pie' }, [
-							E('label', [ _('Upload Speed / SID') ]),
+							E('label', [ _('Download Speed / SID') ]),
 							E('canvas', { 'id': 'sid-tx-pie', 'width': 200, 'height': 200 })
 						]),
 
 						E('div', { 'class': 'pie' }, [
-							E('label', [ _('Download Speed / SID') ]),
+							E('label', [ _('Upload Speed / SID') ]),
 							E('canvas', { 'id': 'sid-rx-pie', 'width': 200, 'height': 200 })
 						]),
 
 						E('div', { 'class': 'kpi' }, [
 							E('ul', [
 								E('li', _('<big id="sid-total">0</big> different SIDs')),
-								E('li', _('<big id="sid-rx-rate">0</big> download speed')),
-								E('li', _('<big id="sid-tx-rate">0</big> upload speed'))
+								E('li', _('<big id="sid-tx-rate">0</big> download speed')),
+								E('li', _('<big id="sid-rx-rate">0</big> upload speed'))
 							])
 						])
 					]),

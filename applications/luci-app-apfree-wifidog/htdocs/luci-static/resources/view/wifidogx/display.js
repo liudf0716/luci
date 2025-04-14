@@ -744,20 +744,20 @@ return view.extend({
 				E('div', { 'class': 'cbi-section', 'data-tab': 'ipv6', 'data-tab-title': _('IPv6') }, [
 					E('div', { 'class': 'head' }, [
 						E('div', { 'class': 'pie' }, [
-							E('label', [ _('Upload Speed / Host') ]),
+							E('label', [ _('Download Speed / Host') ]),
 							E('canvas', { 'id': 'ipv6-speed-tx-pie', 'width': pidWidth, 'height': pidHeight })
 						]),
 
 						E('div', { 'class': 'pie' }, [
-							E('label', [ _('Download Speed / Host') ]),
+							E('label', [ _('Upload Speed / Host') ]),
 							E('canvas', { 'id': 'ipv6-speed-rx-pie', 'width': pidWidth, 'height': pidHeight })
 						]),
 
 						E('div', { 'class': 'kpi' }, [
 							E('ul', [
 								E('li', _('<big id="ipv6-speed-host">0</big> hosts')),
-								E('li', _('<big id="ipv6-speed-tx-max">0</big> upload speed')),
-								E('li', _('<big id="ipv6-speed-rx-max">0</big> download speed')),
+								E('li', _('<big id="ipv6-speed-tx-max">0</big> download speed')),
+								E('li', _('<big id="ipv6-speed-rx-max">0</big> upload speed')),
 							])
 						])
 					]),
