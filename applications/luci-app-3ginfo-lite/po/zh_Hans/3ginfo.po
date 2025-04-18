@@ -216,6 +216,15 @@ msgstr "需要SIM卡PIN2码"
 msgid "SIM PUK2 required"
 msgstr "需要SIM卡PUK2码"
 
+msgid "There is a problem reading data from the modem. \
+<br /><br /><b>Please check:</b> \
+<ul><li>1. Modem availability in the system.</li><li>2. The correct installation of the SIM card in the modem.</li><li> \
+3. Port for communication with the modem.</li><li><ul>"
+msgstr "从调制解调器读取数据时出现问题。\
+<br /><br /><b>请检查：</b>\
+<ul><li>1. 系统中调制解调器的可用性。</li><li>2. SIM卡在调制解调器中的正确安装。</li><li>\
+3. 与调制解调器通信的端口。</li><li><ul>"
+
 msgid "There is a problem reading data from the modem."
 msgstr "从调制解调器读取数据时出现问题"
 
@@ -284,3 +293,27 @@ msgstr "下载错误"
 
 msgid "Please select a port"
 msgstr "请选择一个端口"
+
+msgid "Auto dial"
+msgstr "自动拨号"
+
+msgid "Enable auto dial on startup."
+msgstr "启动时启用自动拨号"
+
+msgid "Fast dormancy"
+msgstr "快速休眠"
+
+msgid "Enable fast dormancy to save battery and network resources."
+msgstr "启用快速休眠以节省电池和网络资源"
+
+msgid "Dormancy time (seconds)"
+msgstr "休眠时间(秒)"
+
+msgid "Specify the duration (in seconds) of inactivity after which the modem will enter energy-saving mode. Valid range: 1-30."
+msgstr "指定调制解调器进入节能模式前的不活动时间(秒)。有效范围：1-30"
+
+msgid "Modem dial"
+msgstr "调制解调器拨号"
+
+msgid "Dial"
+msgstr "拨号"

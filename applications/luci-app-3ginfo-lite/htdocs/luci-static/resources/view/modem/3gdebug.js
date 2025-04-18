@@ -48,6 +48,11 @@ return view.extend({
 	handleDBG: function(ev, cmd) {
 		return this.handleCommand('/bin/sh', ['-x', '/usr/share/3ginfo-lite/3ginfo.sh']);
 	},
+	
+	handleDial: function(ev, cmd) {
+		var device = uci.get('3ginfo', '3ginfo', 'device') || '/dev/ttyUSB1';
+		return this.handleCommand('sms_tool', ['-d', device, 'at', 'AT^NDISDUP=1,1']);
+	},
 
 	handleClear: function(ev) {
 		var out = document.getElementById('pre');
@@ -83,41 +88,83 @@ return view.extend({
 	render: function(res) {
 
 		var table = E('table', { 'class': 'table' }, [
+				// 拨号功能
 				E('tr', { 'class': 'tr' }, [
-					E('td', { 'class': 'td left', 'style': 'overflow:initial' }, [
+					E('td', { 'class': 'td left', 'width': '30%' }, [
+						E('span', { 'class': 'diag-action' }, [
+							E('button', {
+								'class': 'cbi-button cbi-button-action',
+								'style': 'width: 100%',
+								'click': ui.createHandlerFn(this, 'handleDial')
+							}, [ _('Dial') ])
+						])
+					]),
+					E('td', { 'class': 'td left' }, [
+						E('label', { 'class': 'cbi-value-title' },
+							_("Modem dial")						
+						),
+						E('p'),
+						E('label', { 'class': 'cbi-value-title' },
+							_("<code>AT^NDISDUP=1,1</code>.")
+						)
+					])
+				]),
+				
+				// USB调试信息
+				E('tr', { 'class': 'tr' }, [
+					E('td', { 'class': 'td left', 'width': '30%' }, [
+						E('span', { 'class': 'diag-action' }, [
+							E('button', {
+								'class': 'cbi-button cbi-button-action',
+								'style': 'width: 100%',
+								'click': ui.createHandlerFn(this, 'handleUSB')
+							}, [ _('Show devices') ])
+						])
+					]),
+					E('td', { 'class': 'td left' }, [
 						E('label', { 'class': 'cbi-value-title' },
 							_("USB debug information")						
 						),
 						E('p'),
 						E('label', { 'class': 'cbi-value-title' },
 							_("<code>cat /sys/kernel/debug/usb/devices</code>.")
-						),
-						E('p'),
+						)
+					])
+				]),
+				
+				// ttyX端口检查
+				E('tr', { 'class': 'tr' }, [
+					E('td', { 'class': 'td left', 'width': '30%' }, [
 						E('span', { 'class': 'diag-action' }, [
 							E('button', {
 								'class': 'cbi-button cbi-button-action',
-								'click': ui.createHandlerFn(this, 'handleUSB')
+								'style': 'width: 100%',
+								'click': ui.createHandlerFn(this, 'handleTTY')
 							}, [ _('Show devices') ])
 						])
 					]),
-
-					E('td', { 'class': 'td left', 'style': 'overflow:initial' }, [
+					E('td', { 'class': 'td left' }, [
 						E('label', { 'class': 'cbi-value-title' },
 							_("Check availability of ttyX ports.")						
 						),
 						E('p'),
 						E('label', { 'class': 'cbi-value-title' },
 							_("<code>ls /dev</code>.")
-						),
-						E('p'),
+						)
+					])
+				]),
+				
+				// 3ginfo脚本调试
+				E('tr', { 'class': 'tr' }, [
+					E('td', { 'class': 'td left', 'width': '30%' }, [
 						E('span', { 'class': 'diag-action' }, [
 							E('button', {
 								'class': 'cbi-button cbi-button-action',
-								'click': ui.createHandlerFn(this, 'handleTTY')
-							}, [ _('Show devices') ])
+								'style': 'width: 100%',
+								'click': ui.createHandlerFn(this, 'handleDBG')
+							}, [ _('Debug') ])
 						])
 					]),
-
 					E('td', { 'class': 'td left' }, [
 						E('label', { 'class': 'cbi-value-title' },
 							_("Check data read by the 3ginfo scripts.")						
@@ -125,15 +172,8 @@ return view.extend({
 						E('p'),
 						E('label', { 'class': 'cbi-value-title' },
 							_("<code>sh -x /usr/share/3ginfo-lite/3ginfo.sh</code>.")
-						),
-						E('p'),
-						E('span', { 'class': 'diag-action' }, [
-							E('button', {
-								'class': 'cbi-button cbi-button-action',
-								'click': ui.createHandlerFn(this, 'handleDBG')
-							}, [ _('Debug') ])
-						])
-					]),
+						)
+					])
 				])
 			]);
 

@@ -56,6 +56,23 @@ return view.extend({
 		devs.forEach(dev => o.value('/dev/' + dev.name));
 		o.placeholder = _('Please select a port');
 		o.rmempty = true;
+		
+		o = s.option(form.Flag, 'auto_dial', _('Auto dial'),
+			_('Enable auto dial on startup.'));
+		o.default = '1';
+		o.rmempty = false;
+		
+		o = s.option(form.Flag, 'fast_dorm', _('Fast dormancy'),
+			_('Enable fast dormancy to save battery and network resources.'));
+		o.default = '0';
+		o.rmempty = false;
+		
+		o = s.option(form.Value, 'time_length', _('Dormancy time (seconds)'),
+			_('Specify the duration (in seconds) of inactivity after which the modem will enter energy-saving mode. Valid range: 1-30.'));
+		o.datatype = 'range(1, 30)';
+		o.default = '5';
+		o.depends('fast_dorm', '1');
+		o.rmempty = false;
 
 		s = m.section(form.TypedSection, '3ginfo', null);
 		s.anonymous = true;

@@ -10,6 +10,7 @@ chmod +x /usr/share/3ginfo-lite/vendorproduct.gcom 2>&1 &
 chmod +x /usr/share/3ginfo-lite/modem/hilink/alcatel_hilink.sh 2>&1 &
 chmod +x /usr/share/3ginfo-lite/modem/hilink/huawei_hilink.sh 2>&1 &
 chmod +x /usr/share/3ginfo-lite/modem/hilink/zte.sh 2>&1 &
+chmod +x /etc/init.d/3ginfo 2>&1 &
 rm -rf /tmp/luci-indexcache 2>&1 &
 rm -rf /tmp/luci-modulecache/ 2>&1 &
 

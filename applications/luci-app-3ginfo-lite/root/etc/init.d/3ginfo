@@ -1,0 +1,95 @@
+#!/bin/sh /etc/rc.common
+
+START=99
+STOP=10
+NAME=3ginfo
+
+# 解析配置文件中的device和auto_dial选项
+config_get_device() {
+    local section="$1"
+    local option
+    config_get option "$section" "device"
+    DEVICE="$option"
+}
+
+config_get_auto_dial() {
+    local section="$1"
+    local option
+    config_get option "$section" "auto_dial"
+    AUTO_DIAL="$option"
+}
+
+config_get_fast_dorm() {
+    local section="$1"
+    local option
+    config_get option "$section" "fast_dorm"
+    FAST_DORM="$option"
+}
+
+config_get_time_length() {
+    local section="$1"
+    local option
+    config_get option "$section" "time_length"
+    TIME_LENGTH="$option"
+}
+
+start() {
+    # 加载配置
+    config_load ${NAME}
+    
+    # 获取配置选项
+    config_foreach config_get_device ${NAME}
+    config_foreach config_get_auto_dial ${NAME}
+    config_foreach config_get_fast_dorm ${NAME}
+    config_foreach config_get_time_length ${NAME}
+    
+    # 检查设备是否存在
+    if [ -z "$DEVICE" ] || [ ! -e "$DEVICE" ]; then
+        logger -t ${NAME} "设备 $DEVICE 不存在，无法设置自动拨号"
+        return 1
+    fi
+     # 根据auto_dial设置自动拨号
+    if [ -n "$AUTO_DIAL" ]; then
+        if [ "$AUTO_DIAL" = "1" ]; then
+            logger -t ${NAME} "启用自动拨号功能"
+            sms_tool -d "$DEVICE" at "AT^SETAUTODIAL=1,1"
+        else
+            logger -t ${NAME} "禁用自动拨号功能"
+            sms_tool -d "$DEVICE" at "AT^SETAUTODIAL=0,1"
+        fi
+    fi
+    
+    # 根据fast_dorm设置快速休眠功能
+    if [ -n "$FAST_DORM" ]; then
+        if [ "$FAST_DORM" = "1" ]; then
+            # 检查time_length是否在有效范围内(1-30)
+            if [ -n "$TIME_LENGTH" ] && [ "$TIME_LENGTH" -ge 1 ] && [ "$TIME_LENGTH" -le 30 ]; then
+                logger -t ${NAME} "启用快速休眠功能，时长: $TIME_LENGTH 分钟"
+                sms_tool -d "$DEVICE" at "AT^FASTDORM=3,$TIME_LENGTH"
+            else
+                # 如果time_length无效，使用默认值5
+                logger -t ${NAME} "启用快速休眠功能，使用默认时长: 5 分钟"
+                sms_tool -d "$DEVICE" at "AT^FASTDORM=3,5"
+            fi
+        else
+            logger -t ${NAME} "禁用快速休眠功能"
+            sms_tool -d "$DEVICE" at "AT^FASTDORM=0,0"
+        fi
+    fi
+}
+
+stop() {
+    # 停止操作（如有必要）
+    # 例如：清理临时文件，关闭资源等
+    :
+}
+
+restart() {
+    stop
+    start
+}
+
+reload() {
+    # 重新加载配置
+    config_load ${NAME}
+}
