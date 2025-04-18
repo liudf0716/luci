@@ -21,7 +21,8 @@
 				"/bin/ls /dev": [ "exec" ],
 				"/etc/modemdefine": [ "write" ],
 				"/tmp/debug_result.txt": [ "write" ],
-				"/etc/3ginfo": [ "write" ]
+				"/etc/3ginfo": [ "write" ],
+				"/usr/bin/sms_tool": [ "exec" ]
 			},
 			"uci": [ "3ginfo" ]
 		}
