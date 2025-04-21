@@ -1,0 +1,62 @@
+DH-LAB-MIB DEFINITIONS ::= BEGIN
+
+IMPORTS
+    MODULE-IDENTITY, OBJECT-TYPE, enterprises 
+    FROM SNMPv2-SMI;
+
+-- 企业标识
+dhLabMIB MODULE-IDENTITY
+    LAST-UPDATED "2025041500Z"
+    ORGANIZATION "DHLAB"
+    CONTACT-INFO "service@dhlab.com"
+    DESCRIPTION "DHLAB Monitoring MIB"
+    ::= { enterprises 5688 }
+
+-- 根 OID：1.3.6.1.4.1.5688.0
+statBase OBJECT IDENTIFIER ::= { dhLabMIB 0 }
+
+systemInfo OBJECT-IDENTITY
+    STATUS      current
+    DESCRIPTION "System description: includes vendor, device model, firmware version, etc."
+    ::= { statBase 1 }
+
+sysUptime OBJECT-IDENTITY
+    STATUS      current
+    DESCRIPTION "System uptime duration"
+    ::= { statBase 2 }
+
+signal5G OBJECT-IDENTITY
+    STATUS      current
+    DESCRIPTION "5G signal strength"
+    ::= { statBase 3 }
+
+netConnectionState OBJECT-IDENTITY
+    STATUS      current
+    DESCRIPTION "Internet connection status"
+    ::= { statBase 4 }
+
+trafficData OBJECT-IDENTITY
+    STATUS      current
+    DESCRIPTION "Interface traffic statistics"
+    ::= { statBase 5 }
+
+cpuLoad OBJECT-IDENTITY
+    STATUS      current
+    DESCRIPTION "CPU load"
+    ::= { statBase 6 }
+
+memoryUsage OBJECT-IDENTITY
+    STATUS      current
+    DESCRIPTION "Memory usage status"
+    ::= { statBase 7 }
+
+sensorTemp OBJECT-IDENTITY
+    STATUS      current
+    DESCRIPTION "Temperature sensor data"
+    ::= { statBase 8 }
+
+wireless OBJECT-IDENTITY
+    STATUS      current
+    DESCRIPTION "Wireless network status"
+    ::= { statBase 9 }
+END
