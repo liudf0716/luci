@@ -2,6 +2,7 @@
 // Karl Palsson <karlp@etactica.com> 2021
 'use strict';
 'require form';
+'require fs';
 'require ui';
 'require uci';
 'require view';
@@ -15,6 +16,22 @@ var desc = _(""
 );
 
 return view.extend({
+	handleDownload: function(ev) {
+		return L.resolveDefault(fs.read_direct('/usr/share/snmp/mibs/DHLAB-MIB.txt'), null).then(function (res) {
+			if (res) {
+				var link = E('a', {
+					'download': 'DHLAB-MIB.txt',
+					'href': URL.createObjectURL(
+						new Blob([ res ], { type: 'text/plain' })
+					)
+				});
+				link.click();
+				URL.revokeObjectURL(link.href);
+			}
+		}).catch(() => {
+			ui.addNotification(null, E('p', {}, _('Download error') + ': ' + err.message));
+		});
+	},
 	render: async function() {
 		let m, s, o, t;
 
@@ -30,6 +47,11 @@ return view.extend({
 		o = s.option(form.Value, "agentxsocket", _("The address the agent should allow AgentX connections to"),
 			_("This is only necessary if you have subagents using the agentX "
 			+ "socket protocol. Eg: /var/run/agentx.sock"));
+
+		o = s.option(form.Button, 'dl_backup', _('DHLAB-MIB'));
+		o.inputstyle = 'action important';
+		o.inputtitle = _('Download');
+		o.onclick = this.handleDownload;
 		// s.addremove = true;
 
 		// s = m.section(form.TypedSection, "com2sec", _("com2sec security"));

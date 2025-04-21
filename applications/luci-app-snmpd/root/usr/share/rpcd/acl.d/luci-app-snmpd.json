@@ -2,7 +2,10 @@
 	"luci-app-snmpd": {
 		"description": "Grant UCI access for luci-app-snmpd",
 		"read": {
-			"uci": [ "snmpd", "agentx" ]
+			"uci": [ "snmpd", "agentx" ],
+			"file": {
+				"/usr/share/snmp/mibs/DHLAB-MIB.txt": [ "read" ]
+			}
 		},
 		"write": {
 			"uci": [ "snmpd", "agentx" ]
