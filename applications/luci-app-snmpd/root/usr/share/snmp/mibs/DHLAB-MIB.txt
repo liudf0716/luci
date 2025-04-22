@@ -45,14 +45,14 @@ cpuLoad OBJECT-IDENTITY
     DESCRIPTION "CPU load"
     ::= { statBase 6 }
 
-memoryUsage OBJECT-IDENTITY
-    STATUS      current
-    DESCRIPTION "Memory usage status"
-    ::= { statBase 7 }
-
 sensorTemp OBJECT-IDENTITY
     STATUS      current
     DESCRIPTION "Temperature sensor data"
+    ::= { statBase 7 }
+
+memoryUsage OBJECT-IDENTITY
+    STATUS      current
+    DESCRIPTION "Memory usage status"
     ::= { statBase 8 }
 
 wireless OBJECT-IDENTITY
