@@ -187,6 +187,17 @@ return view.extend({
 		o.rmempty = false;
 		o.optional = false;
 		o.defaulValue = 1;
+		
+		o = ss.option(form.ListValue, 'service_type', _('Service Type'),
+			_('For security, you can specify the service type to proxy to.'));
+		o.rmempty = true;
+		o.value('', _('Don\'t specify service type'));
+		o.value('mstsc', 'MSTSC');
+		o.value('ssh', 'SSH');
+		o.value('telnet', 'Telnet');
+		o.value('vnc', 'VNC');
+		o.value('rdp', 'RDP');
+		o.default = '';
 
 		o = ss.option(form.Value, 'local_ip', _('Local IP'),
 			_('Local IP specifies the IP address to proxy to.'));
