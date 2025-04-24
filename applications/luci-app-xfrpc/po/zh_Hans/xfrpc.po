@@ -116,7 +116,7 @@ msgid ""
 "\"Info\", \"Notice\", \"Warning\", \"Error\", \"Critical\", \"Alert\" and "
 "\"Emergency\"."
 msgstr "LogLevel 指定最小日志等级有效值为 \"调试\""
-"”、“信息“、”注意“、”警告“、错误”、“严重”、“警报”和“紧急”"
+"”、"信息"、"注意"、"警告"、错误"、"严重"、"警报"和"紧急""
 
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:32
 msgid "NOT RUNNING"
@@ -322,3 +322,12 @@ msgstr "启用此 %s 代理"
 # TCP settings
 msgid "Enable this TCP proxy."
 msgstr "启用此 TCP 代理"
+
+msgid "Service Type"
+msgstr "服务类型"
+
+msgid "For security, you can specify the service type to proxy to."
+msgstr "出于安全考虑，您可以指定要代理的具体服务。"
+
+msgid "Don't specify service type"
+msgstr "不指定具体服务"
