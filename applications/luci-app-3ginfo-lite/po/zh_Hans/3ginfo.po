@@ -317,3 +317,9 @@ msgstr "调制解调器拨号"
 
 msgid "Dial"
 msgstr "拨号"
+
+msgid "TXPower"
+msgstr "发射功率"
+
+msgid "ADC voltage"
+msgstr "ADC 电压"

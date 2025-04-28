@@ -565,6 +565,23 @@ return view.extend({
 										view.innerHTML = String.format('<medium>%d%%</medium><br/>' + '<img style="padding-left: 10px;" src="%s"/>', p, icon);
 									}
 
+									if (document.getElementById('txpower')) {
+										const view = document.getElementById("txpower");
+										if (!json.txpower.length > 1) {
+											view.textContent = '-';
+										} else {
+											view.textContent = checkOperatorName(json.txpower);
+										}
+									}
+									if (document.getElementById('voltage')) {
+										const view = document.getElementById("voltage");
+										if (!json.voltage.length > 1) {
+											view.textContent = '-';
+										} else {
+											view.textContent = checkOperatorName(json.voltage + "V");
+										}
+									}
+
 									if (document.getElementById('connst')) {
 										const view = document.getElementById("connst");
 										if (json.conn_time === '' || json.conn_time === '-') {
@@ -896,6 +913,10 @@ return view.extend({
 						E('td', { class: 'td left', id: 'signal' }, ['-']),
 					]),
 					E('tr', { class: 'tr' }, [
+						E('td', { class: 'td left', width: '33%' }, [_('TXPower')]),
+						E('td', { class: 'td left', id: 'txpower' }, ['-']),
+					]),
+					E('tr', { class: 'tr' }, [
 						E('td', { class: 'td left', width: '33%' }, [_('Operator')]),
 						E('td', { class: 'td left' }, [
 							E('div', { class: 'right' }, [
@@ -961,6 +982,10 @@ return view.extend({
 					E('tr', { id: 'tempn', class: 'tr' }, [
 						E('td', { class: 'td left', width: '33%' }, [_('Chip Temperature')]),
 						E('td', { class: 'td left', id: 'temp' }, ['-']),
+					]),
+					E('tr', { class: 'tr' }, [
+						E('td', { class: 'td left', width: '33%' }, [_('ADC voltage')]),
+						E('td', { class: 'td left', id: 'voltage' }, ['-']),
 					]),
 				]),
 				E('h4', {}, [_('Cell / Signal Information')]),

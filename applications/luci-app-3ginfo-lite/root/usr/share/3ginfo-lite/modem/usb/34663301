@@ -4,6 +4,8 @@ O=""
 O="$O$(sms_tool -d $DEVICE at "at^chiptemp?")"
 O="$O$(sms_tool -d $DEVICE at "at^hcsq?")"
 O="$O$(sms_tool -d $DEVICE at "at^iccid?")"
+O="$O$(sms_tool -d $DEVICE at "AT^NTXPOWER?")"
+O="$O$(sms_tool -d $DEVICE at "AT^ADCREADEX=0")"
 
 T=$(echo "$O" | awk -F[,:] '/^\^HCSQ:/ {print $2}' | xargs)
 if [ -n "$T" ]; then
@@ -122,4 +124,20 @@ if [ "x$T" != "x0.0" ]; then
 	[ -n "$ADDON" ] && ADDON="$ADDON,"
 	TEMP="$T &deg;C"
 	#ADDON="$ADDON"'{"Temperatura":"'$T' &deg;C"}'
+fi
+
+TX=$(echo "$O" | awk -F[,:] '/^\^NTXPOWER:/ {print $3}' | xargs)
+if [ -n "$TX" ]; then
+	# 注意，通常是直接 dBm 值
+	[ -n "$ADDON" ] && ADDON="$ADDON,"
+	TXPOWER="$TX dBm"
+	ADDON="$ADDON"'{"TXPower":"$TX dBm"}'
+fi
+
+ADC_VALUE=$(echo "$O" | awk -F [:] '/^\^ADCREADEX:/ {print $2}' | xargs)
+if [ -n "$ADC_VALUE" ]; then
+    # 根据公式计算电压值
+    VOLTAGE=$(awk 'BEGIN {printf "%.3f", ('$ADC_VALUE'/1023)*2.8}')
+    [ -n "$ADDON" ] && ADDON="$ADDON,"
+    ADDON="$ADDON"'{"ADCVoltage":"'$VOLTAGE' V"}'
 fi
