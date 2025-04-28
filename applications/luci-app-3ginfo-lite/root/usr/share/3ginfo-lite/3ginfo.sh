@@ -288,12 +288,20 @@ fi
 # CSQ
 CSQ=$(echo "$O" | awk -F[,\ ] '/^\+CSQ/ {print $2}')
 
-[ "x$CSQ" == "x" ] && CSQ=-1
-if [ $CSQ -ge 0 -a $CSQ -le 31 ]; then
-	CSQ_PER=$(($CSQ * 100/31))
+[ "x$CSQ" = "x" ] && CSQ=-1
+
+# 判断是否是数字
+if echo "$CSQ" | grep -Eq '^[0-9]+$'; then
+    if [ "$CSQ" -ge 0 -a "$CSQ" -le 31 ]; then
+        CSQ_PER=$(($CSQ * 100 / 31))
+    else
+        CSQ=""
+        CSQ_PER=""
+    fi
 else
-	CSQ=""
-	CSQ_PER=""
+    # 不是数字，直接清空
+    CSQ=""
+    CSQ_PER=""
 fi
 
 # COPS numeric
@@ -566,7 +574,9 @@ cat <<EOF
 "rsrp":"$RSRP",
 "rsrq":"$RSRQ",
 "rssi":"$RSSI",
-"sinr":"$SINR"
+"sinr":"$SINR",
+"txpower":"$TXPOWER",
+"voltage":"$VOLTAGE"
 }
 EOF
 exit 0
