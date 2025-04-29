@@ -185,7 +185,8 @@ return view.extend({
 		
 		o = ss.option(form.Flag, 'enabled', _('Enable'), _('Enable this TCP proxy.'));
 		o.rmempty = false;
-		o.optional = false;
+		o.default = '1';
+		
 		
 		o = ss.option(form.ListValue, 'service_type', _('Service Type'),
 			_('For security, you can specify the service type to proxy to.'));
