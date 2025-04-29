@@ -185,8 +185,13 @@ return view.extend({
 		
 		o = ss.option(form.Flag, 'enabled', _('Enable'), _('Enable this TCP proxy.'));
 		o.rmempty = false;
+<<<<<<< HEAD
 		o.optional = false;
 		o.defaulValue = 1;
+=======
+		o.default = '1';
+		
+>>>>>>> 326c5c9930 (luci-app-xfrpc: Update xfrpc.js to set default value for 'enabled' option to '1' and remove optional flag)
 		
 		o = ss.option(form.ListValue, 'service_type', _('Service Type'),
 			_('For security, you can specify the service type to proxy to.'));
