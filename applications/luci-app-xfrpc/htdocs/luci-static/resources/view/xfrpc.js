@@ -53,21 +53,23 @@ function executePluginAction(id, ev) {
 	var pluginParam = selectedRow.querySelector('td:nth-child(3)').innerText;
 	console.log(name + " " + pluginName + " " + pluginAction + " " + pluginParam);
 	if (pluginName == "instaloader") {
+		if (pluginParam == "") {
+			alert(_("please input profile url to download"));
+			return;
+		}
 		if (pluginAction == "download") {
-			if (pluginParam == "") {
-				alert("please input profile url to download");
-			} else {
-				callInstaLoader('download', pluginParam, name).then(function (res) {
-					// parse json res
-					var jsonRes = JSON.parse(res);
-					if (jsonRes["status"] == "ok") {
-						alert("start download video");
-					} else {
-						alert("download video failed");
-					}
-				});
-			}
+			alert(_("start download video"));
+			callInstaLoader('download', pluginParam, name).then(function (res) {
+				// parse json res
+				var jsonRes = JSON.parse(res);
+				if (jsonRes["status"] == "ok") {
+					alert("start download video");
+				} else {
+					alert("download video failed");
+				}
+			});
 		} else if (pluginAction == "stop") {
+			alert(_("stop download video"));
 			callInstaLoader('stop', '', name).then(function (res) {
 				var jsonRes = JSON.parse(res);
 				if (jsonRes["status"] == "ok") {
@@ -78,22 +80,23 @@ function executePluginAction(id, ev) {
 			});
 		}
 	} else if (pluginName == "youtubedl") {
+		if (pluginParam == "") {
+			alert(_("please input video url to download"));
+			return;
+		}
 		if (pluginAction == "download") {
-			if (pluginParam == "") {
-				alert("please input video url to download");
-			} else {
-				callInstaLoader('download', pluginParam, name).then(function (res) {
-					var jsonRes = JSON.parse(res);
-					if (jsonRes["status"] == "ok") {
-						alert("start download video");
-					} else {
-						alert("download video failed");
-					}
-				});
-			}
+			alert(_("start download video"));
+			callInstaLoader('download', pluginParam, name).then(function (res) {
+				var jsonRes = JSON.parse(res);
+				if (jsonRes["status"] == "ok") {
+					alert("start download video");
+				} else {
+					alert("download video failed");
+				}
+			});
 		}
 	} else {
-		alert("not support plugin");
+		alert(_("not support plugin"));
 	}
 }
 
@@ -139,7 +142,7 @@ return view.extend({
 		// common settings
 		o = s.taboption('common', form.Flag, 'enabled', _('Enable'), _('Enable xfrpc service.'));
 		o.rmempty = false;
-
+		o.default = '1';
 		o = s.taboption('common', form.Value, 'server_addr', _('Server address'), 
 			'%s <br /> %s'.format(_('Server address specifies the address of the server to connect to.'), 
 			_('By default, this value is "0.0.0.0".')));
@@ -174,7 +177,7 @@ return view.extend({
 		o.value(2, _('Critical'));
 		o.value(1, _('Alert'));
 		o.value(0, _('Emergency'));
-		o.defaulValue = 0;
+		o.default = '6';
 		o.optional = false;
 
 		// TCP proxy settings
@@ -230,8 +233,7 @@ return view.extend({
 			ss.nodescriptions = true;
 			o = ss.option(form.Flag, 'enabled', _('Enable'), _('Enable this %s proxy.'.format(proxy)));
 			o.rmempty = false;
-			o.optional = false;
-			o.defaulValue = 1;
+			o.default = '1';
 			o = ss.option(form.Value, 'local_ip', _('Local IP'),
 				_('Local IP specifies the IP address to proxy to.'));
 			o.datatype = 'ip4addr';
@@ -266,8 +268,7 @@ return view.extend({
 		ss.nodescriptions = true;
 		o = ss.option(form.Flag, 'enabled', _('Enable'), _('Enable this SOCKS5 proxy.'));
 		o.rmempty = false;
-		o.optional = false;
-		o.defaulValue = 1;
+		o.default = '1';
 		o = ss.option(form.Value, 'remote_port', _('Remote port'),
 			_('Remote port specifies server-side port to proxy to.'));
 		o.optional = false;
@@ -281,8 +282,7 @@ return view.extend({
 		ss.nodescriptions = true;
 		o = ss.option(form.Flag, 'enabled', _('Enable'), _('Enable iod service.'));
 		o.rmempty = false;
-		o.optional = false;
-		o.defaulValue = 1;
+		o.default = '1';
 		o = ss.option(form.Value, 'local_port', _('Local port'),
 			_('Local port specifies the port to proxy to.'));
 		o.datatype = 'port';

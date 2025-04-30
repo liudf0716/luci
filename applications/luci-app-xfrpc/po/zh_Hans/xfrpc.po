@@ -334,3 +334,59 @@ msgstr "不指定具体服务"
 
 msgid "IOD Settings"
 msgstr "IOD 设置"
+
+#: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:57
+msgid "please input profile url to download"
+msgstr "请输入要下载的配置文件URL"
+
+#: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:63
+msgid "start download video"
+msgstr "开始下载视频"
+
+#: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:65
+msgid "download video failed"
+msgstr "下载视频失败"
+
+#: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:73
+msgid "stop download video"
+msgstr "停止下载视频"
+
+#: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:75
+msgid "stop download video failed"
+msgstr "停止下载视频失败"
+
+#: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:82
+msgid "please input video url to download"
+msgstr "请输入要下载的视频URL"
+
+#: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:95
+msgid "not support plugin"
+msgstr "不支持的插件"
+
+#: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:295
+msgid "instagram video downloader"
+msgstr "Instagram视频下载器"
+
+#: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:296
+msgid "youtube video downloader"
+msgstr "YouTube视频下载器"
+
+#: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:300
+msgid "start download video"
+msgstr "开始下载视频"
+
+#: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:301
+msgid "stop remote plugin service"
+msgstr "停止远程插件服务"
+
+#: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:315
+msgid "Edit"
+msgstr "编辑"
+
+#: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:321
+msgid "Execute the plugin action"
+msgstr "执行插件操作"
+
+#: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:322
+msgid "Execute"
+msgstr "执行"
