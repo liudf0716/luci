@@ -190,7 +190,6 @@ return view.extend({
 		o.rmempty = false;
 		o.default = '1';
 		
-		
 		o = ss.option(form.ListValue, 'service_type', _('Service Type'),
 			_('For security, you can specify the service type to proxy to.'));
 		o.rmempty = true;
@@ -218,7 +217,32 @@ return view.extend({
 		o.datatype = 'port';
 		o.rmempty = false;
 		o.optional = false;
-
+		o = ss.option(form.ListValue, 'start_time', _('Start time'),
+			_('Start time specifies the start time of the proxy service.'));
+		o.rmempty = false;
+		o.mandatory = false;
+		o.optional = false;
+		o.default = '0';
+		for (let i = 0; i <= 23; i++) {
+			o.value(i.toString(), i.toString());
+		}
+		o = ss.option(form.ListValue, 'end_time', _('End time'),
+			_('End time specifies the end time of the proxy service.'));
+		o.rmempty = false;
+		o.mandatory = false;
+		o.optional = false;
+		o.default = '0';
+		for (let i = 0; i <= 23; i++) {
+			o.value(i.toString(), i.toString());
+		}
+		o.validate = function(section_id, value) {
+			var start_time = this.map.lookupOption('start_time', section_id)[0].formvalue(section_id);
+			if (parseInt(value) < parseInt(start_time)) {
+				return _('End time must be greater than start time');
+			}
+			return true;
+		};
+		
 		// HTTP&HTTPS proxy settings
 		for (var i = 0; i < web_proxy.length; i++) {
 			var proxy = web_proxy[i];

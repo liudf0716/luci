@@ -390,3 +390,18 @@ msgstr "执行插件操作"
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:322
 msgid "Execute"
 msgstr "执行"
+
+msgid "Start time"
+msgstr "开始时间"
+
+msgid "Start time specifies the start time of the proxy service."
+msgstr "开始时间指定代理服务的开始时间。"
+
+msgid "End time"
+msgstr "结束时间"
+
+msgid "End time specifies the end time of the proxy service."
+msgstr "结束时间指定代理服务的结束时间。"
+
+msgid "End time must be greater than start time"
+msgstr "结束时间必须大于开始时间"
