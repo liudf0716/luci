@@ -620,7 +620,73 @@ return baseclass.extend({
 				this.enableFormElems();
 			});
 		},
+		downloadCSV() {
+			this.disableFormElems();
+			return this.getLogData(0).then(logdata => {
+					logdata = logdata || '';
 
+					if (!logdata.trim()) {
+						alert(_('No log data to export.'));
+						return;
+					}
+
+					const lines = logdata.split('\n');
+					const rows = [['时间', '模块', '级别', '来源', '消息']];
+
+					lines.forEach(line => {
+						if (line.trim() === '') return;
+
+						const match = line.match(/^(\S+\s+\S+\s+\d+\s+\d+:\d+:\d+\s+\d+)\s+(\w+)\.(\w+)\s+(.*)$/);
+						if (match) {
+							const [, timestamp, module, level, rawMessage] = match;
+
+							// 提取 source 和 message
+							const sourceMatch = rawMessage.match(/^([^:\s]+(?:\[[^\]]+\])?):\s*(.*)$/);
+							if (sourceMatch) {
+								let [, source, message] = sourceMatch;
+								// 去掉 source 中的 [xxxx] 内容
+								source = source.replace(/\[.*?\]/g, '');
+
+								if (!source) {
+									source = "unknow";
+								}
+								rows.push([timestamp, module, level, source, message]);
+							} else {
+								rows.push([timestamp, module, level, 'unknow', rawMessage]);
+							}
+						} else {
+							// 不符合格式的整行放入 message，其余字段为空
+							rows.push(['', '', '', '', line]);
+						}
+					});
+
+					// 转换为 CSV 文本
+					const csvContent = rows.map(row =>
+						row.map(col => `"${col.replace(/"/g, '""')}"`).join(',')
+					).join('\n');
+
+					let date = new Date();
+					let year = date.getFullYear();
+					let month = String(date.getMonth() + 1).padStart(2, '0');
+					let day = String(date.getDate()).padStart(2, '0');
+					let hours = String(date.getHours()).padStart(2, '0');
+					let minutes = String(date.getMinutes()).padStart(2, '0');
+					let seconds = String(date.getSeconds()).padStart(2, '0');
+
+					let link = E('a', {
+						'download': this.viewName + "_" + year + month + day + hours + minutes + seconds + '.csv',
+						'href'    : URL.createObjectURL(
+							new Blob([ csvContent ], { type: 'text/plain' })),
+						});
+					link.click();
+					URL.revokeObjectURL(link.href);
+				}).catch(err => {
+					ui.addNotification(null,
+					E('p', {}, _('Download error') + ': ' + err.message));
+				}).finally(() => {
+					this.enableFormElems();
+			});
+		},
 		restoreSettingsFromLocalStorage() {
 			let tailValueLocal = localStorage.getItem(`luci-app-${this.viewName}-tailValue`);
 			if(tailValueLocal) {
@@ -1031,6 +1097,13 @@ return baseclass.extend({
 				'click': ui.createHandlerFn(this, this.downloadLog),
 			}, _('Download log'));
 
+			this.csvDownloadBtn = E('button', {
+				'id'   : 'csvDownloadBtn',
+				'name' : 'csvDownloadBtn',
+				'class': 'cbi-button btn cbi-button-action',
+				'click': ui.createHandlerFn(this, this.downloadCSV),
+			}, _('Download csv'));
+
 			this.refreshBtn = E('button', {
 				'title': _('Refresh log'),
 				'class': 'cbi-button btn log-side-btn',
@@ -1093,7 +1166,7 @@ return baseclass.extend({
 			this.actionButtons.push(this.filterEditsBtn, this.logDownloadBtn,
 									this.refreshBtn, this.moreEntriesBtn,
 									this.moreEntriesRowBtn,
-									this.allEntriesBtn, this.filterModalBtn);
+									this.allEntriesBtn, this.filterModalBtn, this.csvDownloadBtn);
 
 			document.body.append(
 				E('div', {
@@ -1161,7 +1234,10 @@ return baseclass.extend({
 							E('div', {
 								'align': 'left',
 								'style': 'width:100%',
-							}, this.logDownloadBtn)
+							}, [
+								this.logDownloadBtn,
+								this.csvDownloadBtn
+							])
 						),
 					)
 				),
