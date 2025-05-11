@@ -18,7 +18,7 @@ msgstr ""
 msgid "127.0.0.1<SPACE><DOMAIN>"
 msgstr ""
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:527
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:528
 msgid "1Hosts List Selection"
 msgstr ""
 
@@ -62,15 +62,11 @@ msgstr ""
 msgid "Add this (sub-)domain to your local blocklist."
 msgstr ""
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:366
-msgid "Additional Jail Blocklist"
-msgstr "فهرست مسدودسازی اضافی"
-
 #: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:197
 msgid "Additional Settings"
 msgstr "تنظیمات اضافی"
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:284
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:219
 msgid "Additional trigger delay in seconds before adblock processing begins."
 msgstr ""
 "تأخیر اضافی در فعال‌سازی به ثانیه قبل از شروع پردازش مسدودکننده تبلیغات."
@@ -145,7 +141,7 @@ msgstr "درخواست‌های DNS مسدودشده"
 msgid "Blocked Domains"
 msgstr "دامنه های مسدود"
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:459
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:460
 msgid "Blocklist Feed"
 msgstr ""
 
@@ -170,9 +166,9 @@ msgstr ""
 
 #: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:366
 msgid ""
-"Builds an additional DNS blocklist to block access to all domains except "
-"those listed in the whitelist. You can use this restrictive blocklist e.g. "
-"for guest wifi or kidsafe configurations."
+"Builds an additional restrictive DNS blocklist to block access to all "
+"domains except those listed in the allowlist. You can use this restrictive "
+"blocklist e.g. for guest wifi or kidsafe configurations."
 msgstr ""
 
 #: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/dnsreport.js:22
@@ -182,22 +178,22 @@ msgstr ""
 msgid "Cancel"
 msgstr "لغو"
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:482
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:497
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:513
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:529
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:483
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:498
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:514
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:530
 msgid "Categories"
 msgstr "دسته بندی ها"
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:454
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:455
 msgid "Changes on this tab needs an adblock service reload to take effect."
 msgstr ""
 
 #: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:208
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:274
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:279
 #: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:314
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:380
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:417
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:381
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:418
 msgid "Changes on this tab needs an adblock service restart to take effect."
 msgstr ""
 
@@ -252,7 +248,7 @@ msgstr "نمونه DNS"
 msgid "DNS Lookup Domain"
 msgstr ""
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:256
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:261
 #: applications/luci-app-adblock/root/usr/share/luci/menu.d/luci-app-adblock.json:51
 msgid "DNS Report"
 msgstr "گزارش DNS"
@@ -297,23 +293,23 @@ msgstr "بارگیری ناامن"
 msgid "Download Utility"
 msgstr "بارگیری ابزار"
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:260
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:265
 msgid "E-Mail Notification"
 msgstr "اعلان ایمیل"
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:428
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:429
 msgid "E-Mail Profile"
 msgstr "نمایه ایمیل"
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:264
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:269
 msgid "E-Mail Receiver Address"
 msgstr "آدرس گیرنده ایمیل"
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:420
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:421
 msgid "E-Mail Sender Address"
 msgstr "آدرس فرستنده ایمیل"
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:424
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:425
 msgid "E-Mail Topic"
 msgstr "موضوع ایمیل"
 
@@ -338,7 +334,7 @@ msgstr ""
 "حافظه پنهان DNS را قبل از شروع پردازش مسدودکننده تبلیغات خالی کنید تا مصرف "
 "حافظه کاهش یابد."
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:242
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:247
 msgid "Enable SafeSearch"
 msgstr "فعال کردن جستجو ایمن"
 
@@ -346,7 +342,7 @@ msgstr "فعال کردن جستجو ایمن"
 msgid "Enable the adblock service."
 msgstr "فعال کردن سرویس ضد تبلیغ."
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:277
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:282
 msgid "Enable verbose debug logging in case of any processing errors."
 msgstr ""
 "ثبت گزارش‌های اشکال‌زدایی با جزئیات کامل را در صورت بروز هر گونه خطای پردازش "
@@ -360,13 +356,13 @@ msgstr "فعال"
 msgid "End Timestamp"
 msgstr "مهر زمانی پایان"
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:242
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:247
 msgid ""
 "Enforcing SafeSearch for google, bing, brave, duckduckgo, yandex, youtube "
 "and pixabay."
 msgstr ""
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:456
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:457
 msgid "External Blocklist Feeds"
 msgstr ""
 
@@ -394,11 +390,11 @@ msgstr ""
 msgid "Filter criteria like date, domain or client (optional)"
 msgstr "معیارهای فیلتر مانند تاریخ، دامنه یا مشتری (اختیاری)"
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:228
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:233
 msgid "Firewall ports that should be forced locally."
 msgstr "پورت‌های دیوار‌آتش که باید به صورت محلی اجباری شوند."
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:222
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:227
 msgid "Firewall source zones that should be forced locally."
 msgstr "مناطق منبع دیوار‌آتش که باید به صورت محلی اجباری شوند."
 
@@ -410,19 +406,19 @@ msgstr "اولین نمونه (پیش‌فرض)"
 msgid "Flush DNS Cache"
 msgstr "خالی کردن حافظه پنهان DNS"
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:219
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:224
 msgid "Force Local DNS"
 msgstr "اجبار DNS داخلی"
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:228
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:233
 msgid "Forced Ports"
 msgstr "پورت های اجباری"
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:222
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:227
 msgid "Forced Zones"
 msgstr "مناطق اجباری"
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:256
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:261
 msgid ""
 "Gather DNS related network traffic via tcpdump and provide a DNS Report on "
 "demand. This needs the additional 'tcpdump' or 'tcpdump-mini' package "
@@ -437,7 +433,7 @@ msgstr "تنظیمات کلی"
 msgid "Grant access to LuCI app adblock"
 msgstr "اعطای دسترسی به برنامه مسدودکننده تبلیغات LuCI"
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:511
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:512
 msgid "Hagezi List Selection"
 msgstr ""
 
@@ -451,6 +447,10 @@ msgstr ""
 
 #: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/feeds.js:117
 msgid "Invalid input values, unable to save modifications."
+msgstr ""
+
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:366
+msgid "Jail Blocklist"
 msgstr ""
 
 #: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:370
@@ -469,26 +469,21 @@ msgstr "آخرین اجرا"
 msgid "Latest DNS Requests"
 msgstr "آخرین درخواست های DNS"
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:245
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:250
 msgid "Limit SafeSearch"
 msgstr "محدود کردن جستجو ایمن"
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:245
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:250
 msgid "Limit SafeSearch to certain providers."
 msgstr "محدود کردن جستجو ایمن به ارائه‌دهندگان خاص."
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:387
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:388
 msgid "List of available network devices used by tcpdump."
 msgstr "لیست دستگاه های شبکه موجود که توسط tcpdump استفاده می شوند."
 
 #: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:214
-msgid ""
-"List of available network interfaces to trigger the adblock start. Choose "
-"'unspecified' to use a classic startup timeout instead of a network trigger."
+msgid "List of available network interfaces to trigger the adblock start."
 msgstr ""
-"لیستی از رابط‌های شبکه موجود برای شروع مسدودکننده تبلیغات را ارائه کنید. "
-"گزینه \"نامشخص\" را انتخاب کنید تا به جای استفاده از یک محرک شبکه، از "
-"زمان‌بندی راه‌اندازی کلاسیک استفاده شود."
 
 #: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:317
 msgid "List of supported DNS backends."
@@ -502,7 +497,7 @@ msgstr "لیستی از ابزارهای دانلود پشتیبانی‌شده 
 msgid "Log View"
 msgstr "نمایش گزارش‌ها"
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:280
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:285
 msgid "Low Priority Service"
 msgstr "سرویس با اولویت پایین"
 
@@ -522,7 +517,7 @@ msgstr "نمای کلی"
 msgid "Overwrite the default target directory for the generated blocklist."
 msgstr ""
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:428
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:429
 msgid "Profile used by 'msmtp' for adblock notification E-Mails."
 msgstr ""
 "پروفایلی که توسط 'msmtp' برای ایمیل‌های اطلاع‌رسانی مسدودکننده تبلیغات استفاده "
@@ -540,11 +535,11 @@ msgstr "پرس و جو"
 msgid "Query active blocklists and backups for a specific domain."
 msgstr "جستجوی لیست‌های مسدودسازی فعال و پشتیبان‌ها برای یک دامنه خاص."
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:264
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:269
 msgid "Receiver address for adblock notification e-mails."
 msgstr "آدرس گیرنده برای ایمیل‌های اطلاع‌رسانی مسدودکننده تبلیغات."
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:219
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:224
 msgid ""
 "Redirect all DNS queries from specified zones to the local DNS resolver, "
 "applies to UDP and TCP protocol."
@@ -552,7 +547,7 @@ msgstr ""
 "هدایت تمام درخواست‌های DNS از مناطق مشخص‌شده به حل‌کننده DNS محلی، که برای "
 "پروتکل‌های UDP و TCP اعمال می‌شود."
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:280
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:285
 msgid ""
 "Reduce the priority of the adblock background processing to take fewer "
 "resources from the system."
@@ -570,39 +565,39 @@ msgstr "تازه‌سازی گزارش DNS"
 msgid "Refresh..."
 msgstr "تازه‌سازی..."
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:395
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:396
 msgid "Report Chunk Count"
 msgstr "گزارش تعداد بخش‌ها"
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:400
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:401
 msgid "Report Chunk Size"
 msgstr "اندازه بخش گزارش"
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:391
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:392
 msgid "Report Directory"
 msgstr "گزارش مسیر"
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:387
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:388
 msgid "Report Interface"
 msgstr "گزارش رابط"
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:405
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:406
 msgid "Report Ports"
 msgstr "گزارش پورت‌ها"
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:395
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:396
 msgid "Report chunk count used by tcpdump."
 msgstr "گزارش تعداد تکه های استفاده شده توسط tcpdump."
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:400
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:401
 msgid "Report chunk size used by tcpdump in MByte."
 msgstr "گزارش اندازه بخش استفاده شده توسط tcpdump به مگابایت."
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:409
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:410
 msgid "Resolve IPs"
 msgstr "حل IPها"
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:409
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:410
 msgid "Resolve reporting IP addresses by using reverse DNS (PTR) lookups."
 msgstr "آدرس های IP گزارش را با استفاده از جستجوهای معکوس DNS (PTR) حل کنید."
 
@@ -636,11 +631,11 @@ msgstr "اجرای ابزارها"
 msgid "Save"
 msgstr "ذخیره"
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:565
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:566
 msgid "Save & Reload"
 msgstr ""
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:572
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:573
 msgid "Save & Restart"
 msgstr ""
 
@@ -648,13 +643,13 @@ msgstr ""
 msgid "Second instance"
 msgstr "نمونه دوم"
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:260
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:265
 msgid ""
 "Send adblock related notification e-mails. This needs the additional 'msmtp' "
 "package installation."
 msgstr ""
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:420
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:421
 msgid "Sender address for adblock notification E-Mails."
 msgstr "آدرس فرستنده برای ایمیل‌های اعلان مربوط به مسدود تبلیغات."
 
@@ -685,7 +680,7 @@ msgstr ""
 msgid "Small"
 msgstr ""
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:405
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:406
 msgid "Space separated list of ports used by tcpdump."
 msgstr "فهرست جدا شده با فاصله از پورت‌های استفاده شده توسط tcpdump."
 
@@ -701,15 +696,15 @@ msgstr "رابط راه‌اندازی محرک"
 msgid "Status / Version"
 msgstr "وضعیت / نسخه"
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:495
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:496
 msgid "StevenBlack List Selection"
 msgstr ""
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:550
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:551
 msgid "Stop"
 msgstr ""
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:558
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:559
 msgid "Suspend"
 msgstr "تعلیق"
 
@@ -717,11 +712,11 @@ msgstr "تعلیق"
 msgid "System Info"
 msgstr ""
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:238
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:243
 msgid "TLD Compression"
 msgstr "فشرده‌سازی دامنه سطح بالا"
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:391
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:392
 msgid "Target directory for DNS related report files."
 msgstr "مسیر هدف برای فایل‌های گزارش مربوط به DNS."
 
@@ -730,7 +725,9 @@ msgid "Target directory for blocklist backups."
 msgstr "مسیر هدف برای پشتیبان‌گیری از لیست‌های مسدودکننده."
 
 #: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:370
-msgid "Target directory for the generated jail blocklist."
+msgid ""
+"Target directory for the generated jail blocklist. If this directory points "
+"to your DNS directory, the jail blocklist replaces your default blocklist."
 msgstr ""
 
 #: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/allowlist.js:25
@@ -741,7 +738,7 @@ msgstr ""
 msgid "The blocklist is too big, unable to save modifications."
 msgstr ""
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:238
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:243
 msgid ""
 "The top level domain compression removes thousands of needless host entries "
 "from the final DNS blocklist."
@@ -787,7 +784,7 @@ msgstr "مدت زمان انتظار برای یک راه‌اندازی مجد�
 msgid "Top Statistics"
 msgstr "آمار برتر"
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:424
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:425
 msgid "Topic for adblock notification E-Mails."
 msgstr "موضوع برای ایمیل‌های اطلاع‌رسانی مسدودکننده تبلیغات."
 
@@ -795,7 +792,7 @@ msgstr "موضوع برای ایمیل‌های اطلاع‌رسانی مسدو
 msgid "Total DNS Requests"
 msgstr "کل درخواست‌های DNS"
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:284
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:219
 msgid "Trigger Delay"
 msgstr "تاخیر در اجرا محرک"
 
@@ -803,15 +800,15 @@ msgstr "تاخیر در اجرا محرک"
 msgid "URL"
 msgstr ""
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:480
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:481
 msgid "UTCapitole Archive Selection"
 msgstr ""
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:441
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:442
 msgid "Unable to parse the custom feed file!"
 msgstr ""
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:448
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:449
 msgid "Unable to parse the default feed file!"
 msgstr ""
 
@@ -838,7 +835,7 @@ msgstr ""
 msgid "Varying"
 msgstr ""
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:277
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:282
 msgid "Verbose Debug Logging"
 msgstr "ثبت اشکال زدایی کامل"
 
@@ -882,285 +879,3 @@ msgstr ""
 #: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:319
 msgid "unbound"
 msgstr ""
-
-#~ msgid "Active Sources"
-#~ msgstr "منابع فعال"
-
-#~ msgid "Adblock action"
-#~ msgstr "اقدام ضد تبلیغ"
-
-#~ msgid "Add Blacklist Domain"
-#~ msgstr "افزودن دامنه به لیست سیاه"
-
-#~ msgid "Add Whitelist Domain"
-#~ msgstr "افزودن دامنه به لیست سفید"
-
-#~ msgid "Add this (sub-)domain to your local blacklist."
-#~ msgstr "این (زیر)دامنه را به لیست سیاه محلی خود اضافه کنید."
-
-#~ msgid "Add this (sub-)domain to your local whitelist."
-#~ msgstr "این (زیر)دامنه را به لیست سفید محلی خود اضافه کنید."
-
-#~ msgid ""
-#~ "Allow all requests of certain DNS clients based on their IP address (RPZ-"
-#~ "CLIENT-IP). Please note: This feature is currently only supported by bind "
-#~ "DNS backend."
-#~ msgstr ""
-#~ "اجازه به تمامی درخواست‌های برخی از مشتریان DNS بر اساس آدرس IP آن‌ها (RPZ-"
-#~ "CLIENT-IP). توجه داشته باشید: این ویژگی در حال حاضر فقط توسط بک‌اند \"DNS "
-#~ "bind\" پشتیبانی می‌شود."
-
-#~ msgid ""
-#~ "Base Temp Directory for all adblock related runtime operations, e.g. "
-#~ "downloading, sorting, merging etc."
-#~ msgstr ""
-#~ "مسیر موقت فایل اضافی برای تمامی عملیات مرتبط با مسدودکننده تبلیغات، مانند "
-#~ "دانلود، مرتب‌سازی، ادغام و غیره."
-
-#~ msgid ""
-#~ "Blacklist changes have been saved. Refresh your adblock lists that "
-#~ "changes take effect."
-#~ msgstr ""
-#~ "تغییرات در لیست سیاه ذخیره شده‌اند. لیست‌های مسدودکننده تبلیغات خود را "
-#~ "تازه‌سازی کنید تا تغییرات اعمال شوند."
-
-#~ msgid "Blacklist..."
-#~ msgstr "لیست سیاه..."
-
-#~ msgid ""
-#~ "Block all requests of certain DNS clients based on their IP address (RPZ-"
-#~ "CLIENT-IP). Please note: This feature is currently only supported by bind "
-#~ "DNS backend."
-#~ msgstr ""
-#~ "مسدود کردن تمامی درخواست‌های برخی از مشتریان DNS بر اساس آدرس IP آن‌ها (RPZ-"
-#~ "CLIENT-IP). توجه داشته باشید: این ویژگی در حال حاضر فقط توسط بک‌اند \"DNS "
-#~ "bind\" پشتیبانی می‌شود."
-
-#~ msgid "Blocklist Backup"
-#~ msgstr "پشتیبان گیری لیست سیاه"
-
-#~ msgid "Blocklist Sources"
-#~ msgstr "منابع لیست سیاه"
-
-#~ msgid ""
-#~ "Builds an additional DNS blocklist to block access to all domains except "
-#~ "those listed in the whitelist. Please note: You can use this restrictive "
-#~ "blocklist e.g. for guest wifi or kidsafe configurations."
-#~ msgstr ""
-#~ "یک لیست مسدودسازی DNS اضافی ایجاد می‌کند تا دسترسی به تمامی دامنه‌ها به‌جز "
-#~ "آن‌هایی که در لیست سفید ذکر شده‌اند، مسدود شود. توجه داشته باشید: می‌توانید "
-#~ "از این لیست مسدودسازی محدودکننده برای مثال برای وای‌فای مهمان یا "
-#~ "پیکربندی‌های ایمن برای کودکان استفاده کنید."
-
-#~ msgid ""
-#~ "Create compressed blocklist backups, they will be used in case of "
-#~ "download errors or during startup."
-#~ msgstr ""
-#~ "پشتیبان‌های فشرده لیست مسدودسازی ایجاد کنید. این پشتیبان‌ها در صورت بروز "
-#~ "خطا در دانلود یا هنگام راه‌اندازی استفاده خواهند شد."
-
-#~ msgid "Disable DNS Allow"
-#~ msgstr "غیرفعال کردن اجازه DNS"
-
-#~ msgid "Disable selective DNS whitelisting (RPZ-PASSTHRU)."
-#~ msgstr "غیرفعال کردن لیست سفید انتخابی DNS (RPZ-PASSTHRU)."
-
-#~ msgid "Download Parameters"
-#~ msgstr "بارگیری پارامترها"
-
-#~ msgid "Edit Blacklist"
-#~ msgstr "ویرایش لیست سیاه"
-
-#~ msgid "Edit Whitelist"
-#~ msgstr "ویرایش لیست سفید"
-
-#~ msgid "Enable moderate SafeSearch filters for youtube."
-#~ msgstr "فعال کردن فیلترهای جستجو ایمن متوسط برای یوتیوب."
-
-#~ msgid ""
-#~ "Enforcing SafeSearch for google, bing, duckduckgo, yandex, youtube and "
-#~ "pixabay."
-#~ msgstr ""
-#~ "اجرای جستجو ایمن برای گوگل، بینگ، داک‌داک‌گو، یاندکس، یوتیوب و پیکسابِی."
-
-#~ msgid "Existing job(s)"
-#~ msgstr "وظیفه(های) موجود"
-
-#~ msgid "External DNS Lookup Domain"
-#~ msgstr "دامنه جستجوی DNS خارجی"
-
-#~ msgid ""
-#~ "External domain to check for a successful DNS backend restart. Please "
-#~ "note: To disable this check set this option to 'false'."
-#~ msgstr ""
-#~ "دامنه خارجی برای بررسی موفقیت‌آمیز بازنشانی بک‌اند DNS. توجه داشته باشید: "
-#~ "برای غیرفعال کردن این بررسی، این گزینه را به \"غلط\" تنظیم کنید."
-
-#~ msgid "Fifth instance"
-#~ msgstr "پنجمین نمونه"
-
-#~ msgid "Fourth instance"
-#~ msgstr "چهارمین نمونه"
-
-#~ msgid ""
-#~ "Gather DNS related network traffic via tcpdump and provide a DNS Report "
-#~ "on demand. Please note: this needs additional 'tcpdump' or 'tcpdump-mini' "
-#~ "package installation and a full adblock service restart to take effect."
-#~ msgstr ""
-#~ "جمع‌آوری ترافیک شبکه مرتبط با DNS از طریق tcpdump و ارائه گزارش DNS به "
-#~ "صورت درخواستی. توجه داشته باشید: این کار نیاز به نصب بسته اضافی "
-#~ "\"tcpdump\" یا \"tcpdump-mini\" دارد و برای اعمال تغییرات باید سرویس "
-#~ "مسدودکننده تبلیغات به‌طور کامل بازنشانی شود."
-
-#~ msgid "Line number to remove"
-#~ msgstr "شماره خط برای حذف کردن"
-
-#~ msgid ""
-#~ "List of supported DNS backends with their default list directory. To "
-#~ "overwrite the default path use the 'DNS Directory' option."
-#~ msgstr ""
-#~ "لیستی از بک‌اندهای DNS پشتیبانی‌شده همراه با مسیر پیش‌فرض لیست آن‌ها. برای "
-#~ "بازنویسی مسیر پیش‌فرض از گزینه \"مسیر DNS\" استفاده کنید."
-
-#~ msgid ""
-#~ "Manually override the pre-configured download options for the selected "
-#~ "download utility."
-#~ msgstr ""
-#~ "به‌صورت دستی تنظیمات دانلود از پیش‌پیکربندی‌شده را برای ابزار دانلود "
-#~ "انتخاب‌شده بازنویسی کنید."
-
-#~ msgid ""
-#~ "Reduce the priority of the adblock background processing to take fewer "
-#~ "resources from the system. Please note: This change requires a full "
-#~ "adblock service restart to take effect."
-#~ msgstr ""
-#~ "کاهش اولویت پردازش پس‌زمینه مسدودکننده تبلیغات برای مصرف منابع کمتر از "
-#~ "سیستم. توجه داشته باشید: این تغییر نیاز به راه‌اندازی مجدد کامل سرویس "
-#~ "مسدودکننده تبلیغات دارد تا اعمال شود."
-
-#~ msgid "Refresh Timer"
-#~ msgstr "تازه‌سازی تایمر"
-
-#~ msgid "Refresh Timer..."
-#~ msgstr "تازه‌سازی تایمر..."
-
-#~ msgid "Relax SafeSearch"
-#~ msgstr "کاهش سختگیری جستجوی امن"
-
-#~ msgid "Reload"
-#~ msgstr "تازه‌سازی"
-
-#~ msgid "Remove an existing job"
-#~ msgstr "حذف یک کار موجود"
-
-#~ msgid "Restart"
-#~ msgstr "راه‌اندازی مجدد"
-
-#~ msgid ""
-#~ "Send adblock related notification e-mails. Please note: this needs "
-#~ "additional 'msmtp' package installation."
-#~ msgstr ""
-#~ "ارسال ایمیل‌های مربوط به اعلان‌های مسدود تبلیغات. لطفاً توجه داشته باشید: "
-#~ "این نیاز به نصب بسته اضافی \"msmtp\" دارد."
-
-#~ msgid "Set a new adblock job"
-#~ msgstr "تنظیم یک کار جدید مسدودکننده تبلیغات"
-
-#~ msgid "Sources (Size, Focus)"
-#~ msgstr "منابع (اندازه، تمرکز)"
-
-#~ msgid "Target directory for the generated blocklist 'adb_list.overall'."
-#~ msgstr "مسیر هدف برای لیست مسدودکننده تولید شده \"adb_list.overall\"."
-
-#~ msgid "Target directory for the generated jail blocklist 'adb_list.jail'."
-#~ msgstr "مسیر هدف برای لیست مسدودکننده زندان تولید شده \"adb_list.jail\"."
-
-#~ msgid "The Refresh Timer could not been updated."
-#~ msgstr "زمان‌سنج تازه‌سازی نمی‌تواند به‌روزرسانی شود."
-
-#~ msgid "The Refresh Timer has been updated."
-#~ msgstr "زمان‌سنج تازه‌سازی به‌روزرسانی شد."
-
-#~ msgid ""
-#~ "The changes to the blacklist have been saved. Reload your adblock lists "
-#~ "for the changes to take effect."
-#~ msgstr ""
-#~ "تغییرات در لیست سیاه ذخیره شده‌اند. لیست‌های مسدودکننده تبلیغات خود را "
-#~ "بارگذاری مجدد کنید تا تغییرات اعمال شوند."
-
-#~ msgid ""
-#~ "The changes to the whitelist have been saved. Reload your adblock lists "
-#~ "for the changes to take effect."
-#~ msgstr ""
-#~ "تغییرات در لیست سفید ذخیره شده‌اند. لیست‌های مسدودکننده تبلیغات خود را "
-#~ "بارگذاری مجدد کنید تا تغییرات اعمال شوند."
-
-#~ msgid "The day of the week (opt., values: 0-6 possibly sep. by , or -)"
-#~ msgstr "روز هفته (اختیاری، مقادیر: ۰-۶ که احتمالاً با , یا - جدا شوند)"
-
-#~ msgid "The hours portition (req., range: 0-23)"
-#~ msgstr "بخش ساعت (الزامی، محدوده: ۰-۲۳)"
-
-#~ msgid "The minutes portion (opt., range: 0-59)"
-#~ msgstr "بخش دقیقه‌ها (اختیاری، محدوده: ۰-۵۹)"
-
-#~ msgid ""
-#~ "This is the local adblock blacklist to always-deny certain (sub) domains."
-#~ "<br /> Please note: add only one domain per line. Comments introduced "
-#~ "with '#' are allowed - ip addresses, wildcards and regex are not."
-#~ msgstr ""
-#~ "این لیست سیاه محلی مسدودکننده تبلیغات است که برای همیشه برخی از دامنه‌ها "
-#~ "یا زیر دامنه‌ها را انکار می‌کند. <br /> لطفاً توجه داشته باشید: فقط یک دامنه "
-#~ "را در هر خط اضافه کنید. نظرات با '#' مجاز هستند - آدرس‌های IP، کاراکترهای "
-#~ "جایگزین و عبارات منظم مجاز نیستند."
-
-#~ msgid ""
-#~ "This is the local adblock whitelist to always allow certain (sub) domains."
-#~ "<br /> Please note: add only one domain per line. Comments introduced "
-#~ "with '#' are allowed - ip addresses, wildcards and regex are not."
-#~ msgstr ""
-#~ "این لیست سفید محلی مسدودکننده تبلیغات است که همیشه اجازه دسترسی به برخی "
-#~ "دامنه‌ها یا زیر دامنه‌ها را می‌دهد. <br /> لطفاً توجه داشته باشید: فقط یک "
-#~ "دامنه را در هر خط اضافه کنید. نظرات با '#' مجاز هستند - آدرس‌های IP، "
-#~ "کاراکترهای جایگزین و عبارات منظم مجاز نیستند."
-
-#~ msgid ""
-#~ "To keep your adblock lists up-to-date, you should set up an automatic "
-#~ "update job for these lists."
-#~ msgstr ""
-#~ "برای به‌روز نگه‌داشتن لیست‌های مسدودکننده تبلیغات خود، باید یک کار "
-#~ "به‌روزرسانی خودکار برای این لیست‌ها تنظیم کنید."
-
-#~ msgid "Unable to save changes: %s"
-#~ msgstr "نمی‌توان تغییرات را ذخیره کرد: %s"
-
-#~ msgid "Variants"
-#~ msgstr "انواع"
-
-#~ msgid ""
-#~ "Whitelist changes have been saved. Refresh your adblock lists that "
-#~ "changes take effect."
-#~ msgstr ""
-#~ "تغییرات لیست سفید ذخیره شده‌اند. لیست‌های مسدودکننده تبلیغات خود را "
-#~ "تازه‌سازی کنید تا تغییرات اعمال شوند."
-
-#~ msgid "Whitelist..."
-#~ msgstr "لیست سفید..."
-
-#~ msgid "bind (/var/lib/bind)"
-#~ msgstr "اتصال (/var/lib/bind)"
-
-#~ msgid "dnsmasq (/tmp/dnsmasq.d)"
-#~ msgstr "دی‌ان‌اس‌مسک (/tmp/dnsmasq.d)"
-
-#~ msgid "kresd (/etc/kresd)"
-#~ msgstr "کرسد (/etc/kresd)"
-
-#~ msgid "raw (/tmp)"
-#~ msgstr "خام (/tmp)"
-
-#~ msgid "smartdns (/tmp/smartdns)"
-#~ msgstr "دی‌ان‌اس هوشمند (/tmp/smartdns)"
-
-#~ msgid "unbound (/var/lib/unbound)"
-#~ msgstr "آزاد (/var/lib/unbound)"

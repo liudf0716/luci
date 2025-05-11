@@ -19,7 +19,7 @@ msgstr "0.0.0.0<SPACJA><DOMENA>"
 msgid "127.0.0.1<SPACE><DOMAIN>"
 msgstr "127.0.0.1<SPACJA><DOMENA>"
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:527
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:528
 msgid "1Hosts List Selection"
 msgstr "Wybór listy 1Hosts"
 
@@ -63,15 +63,11 @@ msgstr "Dodaj tę (sub)domenę do lokalnej listy dozwolonych."
 msgid "Add this (sub-)domain to your local blocklist."
 msgstr "Dodaj tę (sub)domenę do lokalnej listy zablokowanych."
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:366
-msgid "Additional Jail Blocklist"
-msgstr "Dodatkowa, restrykcyjna lista zablokowanych"
-
 #: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:197
 msgid "Additional Settings"
 msgstr "Dodatkowe ustawienia"
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:284
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:219
 msgid "Additional trigger delay in seconds before adblock processing begins."
 msgstr ""
 "Dodatkowe opóźnienie wyzwalacza w sekundach przed rozpoczęciem przetwarzania "
@@ -155,7 +151,7 @@ msgstr "Zablokowane żądania DNS"
 msgid "Blocked Domains"
 msgstr "Zablokowane domeny"
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:459
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:460
 msgid "Blocklist Feed"
 msgstr "Źródło listy zablokowanych"
 
@@ -182,14 +178,10 @@ msgstr "Lista zablokowanych..."
 
 #: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:366
 msgid ""
-"Builds an additional DNS blocklist to block access to all domains except "
-"those listed in the whitelist. You can use this restrictive blocklist e.g. "
-"for guest wifi or kidsafe configurations."
+"Builds an additional restrictive DNS blocklist to block access to all "
+"domains except those listed in the allowlist. You can use this restrictive "
+"blocklist e.g. for guest wifi or kidsafe configurations."
 msgstr ""
-"Tworzy dodatkową listę zablokowanych DNS, aby uniemożliwić dostęp do "
-"wszystkich domen z wyjątkiem tych wymienionych na białej liście. Możesz użyć "
-"tej restrykcyjnej listy zblokowanych np. w konfiguracji Wi-Fi dla gości lub "
-"chroniącej dzieci."
 
 #: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/dnsreport.js:22
 #: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/dnsreport.js:57
@@ -198,24 +190,24 @@ msgstr ""
 msgid "Cancel"
 msgstr "Anuluj"
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:482
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:497
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:513
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:529
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:483
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:498
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:514
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:530
 msgid "Categories"
 msgstr "Kategorie"
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:454
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:455
 msgid "Changes on this tab needs an adblock service reload to take effect."
 msgstr ""
 "Aby zmiany na tej karcie zaczęły obowiązywać, konieczne jest przeładowanie "
 "usługi blokowania reklam."
 
 #: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:208
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:274
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:279
 #: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:314
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:380
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:417
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:381
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:418
 msgid "Changes on this tab needs an adblock service restart to take effect."
 msgstr ""
 "Aby zmiany na tej karcie zaczęły obowiązywać, konieczne jest zrestartowanie "
@@ -272,7 +264,7 @@ msgstr "Instancja DNS"
 msgid "DNS Lookup Domain"
 msgstr "Domena wyszukiwania DNS"
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:256
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:261
 #: applications/luci-app-adblock/root/usr/share/luci/menu.d/luci-app-adblock.json:51
 msgid "DNS Report"
 msgstr "Raport DNS"
@@ -317,23 +309,23 @@ msgstr "Niezabezpieczone pobieranie"
 msgid "Download Utility"
 msgstr "Narzędzie pobierania"
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:260
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:265
 msgid "E-Mail Notification"
 msgstr "Powiadomienie e-mail"
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:428
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:429
 msgid "E-Mail Profile"
 msgstr "Profil e-mail"
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:264
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:269
 msgid "E-Mail Receiver Address"
 msgstr "Adres e-mail odbiorcy"
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:420
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:421
 msgid "E-Mail Sender Address"
 msgstr "Adres e-mail nadawcy"
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:424
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:425
 msgid "E-Mail Topic"
 msgstr "Temat e-mail"
 
@@ -358,7 +350,7 @@ msgstr ""
 "Opróżniaj pamięć podręczną DNS przed rozpoczęciem przetwarzania blokowania "
 "reklam, aby zmniejszyć zużycie pamięci."
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:242
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:247
 msgid "Enable SafeSearch"
 msgstr "Włącz SafeSearch"
 
@@ -366,7 +358,7 @@ msgstr "Włącz SafeSearch"
 msgid "Enable the adblock service."
 msgstr "Włącz usługę blokowania reklam."
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:277
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:282
 msgid "Enable verbose debug logging in case of any processing errors."
 msgstr ""
 "Włącz rejestrowanie debugowania w przypadku wystąpienia błędów w "
@@ -380,7 +372,7 @@ msgstr "Włączone"
 msgid "End Timestamp"
 msgstr "Sygnatura czasowa zakończenia"
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:242
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:247
 msgid ""
 "Enforcing SafeSearch for google, bing, brave, duckduckgo, yandex, youtube "
 "and pixabay."
@@ -388,7 +380,7 @@ msgstr ""
 "Wymuszanie filtrowania SafeSearch w wyszukiwarkach Google, Bing, Brave, "
 "DuckDuckGo, Yandex, YouTube i Pixabay."
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:456
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:457
 msgid "External Blocklist Feeds"
 msgstr "Zewnętrzne źródła listy zablokowanych"
 
@@ -416,11 +408,11 @@ msgstr "Wypełnij"
 msgid "Filter criteria like date, domain or client (optional)"
 msgstr "Kryteria filtrowania takie jak data, domena lub klient (opcjonalnie)"
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:228
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:233
 msgid "Firewall ports that should be forced locally."
 msgstr "Porty zapory, które powinny być wymuszane lokalnie."
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:222
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:227
 msgid "Firewall source zones that should be forced locally."
 msgstr "Strefy źródłowe zapory, które powinny być wymuszane lokalnie."
 
@@ -432,19 +424,19 @@ msgstr "Instancja pierwsza (domyślna)"
 msgid "Flush DNS Cache"
 msgstr "Opróżnij pamięć podręczną DNS"
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:219
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:224
 msgid "Force Local DNS"
 msgstr "Wymuś lokalny DNS"
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:228
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:233
 msgid "Forced Ports"
 msgstr "Wymuszone porty"
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:222
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:227
 msgid "Forced Zones"
 msgstr "Strefy wymuszone"
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:256
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:261
 msgid ""
 "Gather DNS related network traffic via tcpdump and provide a DNS Report on "
 "demand. This needs the additional 'tcpdump' or 'tcpdump-mini' package "
@@ -462,7 +454,7 @@ msgstr "Ustawienia główne"
 msgid "Grant access to LuCI app adblock"
 msgstr "Udziel dostępu do aplikacji LuCI blokowania reklam"
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:511
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:512
 msgid "Hagezi List Selection"
 msgstr "Wybór listy Hagezi"
 
@@ -477,6 +469,10 @@ msgstr "Nieprawidłowe znaki"
 #: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/feeds.js:117
 msgid "Invalid input values, unable to save modifications."
 msgstr "Nieprawidłowe wartości wejściowe, nie można zapisać zmian."
+
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:366
+msgid "Jail Blocklist"
+msgstr ""
 
 #: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:370
 msgid "Jail Directory"
@@ -494,26 +490,21 @@ msgstr "Ostatnie uruchomienie"
 msgid "Latest DNS Requests"
 msgstr "Ostatnie zapytania DNS"
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:245
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:250
 msgid "Limit SafeSearch"
 msgstr "Limit SafeSearch"
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:245
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:250
 msgid "Limit SafeSearch to certain providers."
 msgstr "Limit SafeSearch dla certyfikowanych dostawców."
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:387
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:388
 msgid "List of available network devices used by tcpdump."
 msgstr "Lista dostępnych urządzeń sieciowych używanych przez tcpdump."
 
 #: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:214
-msgid ""
-"List of available network interfaces to trigger the adblock start. Choose "
-"'unspecified' to use a classic startup timeout instead of a network trigger."
+msgid "List of available network interfaces to trigger the adblock start."
 msgstr ""
-"Lista dostępnych interfejsów sieciowych do uruchomienia blokowania reklam. "
-"Wybierz 'nieokreślone', aby użyć klasycznego limitu czasu uruchamiania "
-"zamiast wyzwalacza sieciowego."
 
 #: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:317
 msgid "List of supported DNS backends."
@@ -528,7 +519,7 @@ msgstr ""
 msgid "Log View"
 msgstr "Widok dziennika"
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:280
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:285
 msgid "Low Priority Service"
 msgstr "Usługa niskopriorytetowa"
 
@@ -546,9 +537,10 @@ msgstr "Przegląd"
 
 #: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:338
 msgid "Overwrite the default target directory for the generated blocklist."
-msgstr "Zastąp domyślny katalog docelowy dla wygenerowanej listy zablokowanych."
+msgstr ""
+"Zastąp domyślny katalog docelowy dla wygenerowanej listy zablokowanych."
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:428
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:429
 msgid "Profile used by 'msmtp' for adblock notification E-Mails."
 msgstr ""
 "Profil używany przez „msmtp” do wysyłania powiadomień e-mail przez adblock."
@@ -567,11 +559,11 @@ msgstr ""
 "Wysyłaj zapytania o określoną domenę do aktywnych i zapasowych list "
 "zablokowanych."
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:264
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:269
 msgid "Receiver address for adblock notification e-mails."
 msgstr "Adres odbiorcy dla powiadomień e-mail blokowania reklam."
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:219
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:224
 msgid ""
 "Redirect all DNS queries from specified zones to the local DNS resolver, "
 "applies to UDP and TCP protocol."
@@ -579,7 +571,7 @@ msgstr ""
 "Przekieruj wszystkie zapytania DNS z określonych stref do lokalnego "
 "resolwera DNS, dotyczy protokołów UDP i TCP."
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:280
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:285
 msgid ""
 "Reduce the priority of the adblock background processing to take fewer "
 "resources from the system."
@@ -599,39 +591,39 @@ msgstr "Odśwież raport DNS"
 msgid "Refresh..."
 msgstr "Odśwież..."
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:395
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:396
 msgid "Report Chunk Count"
 msgstr "Zgłoś liczbę fragmentów"
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:400
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:401
 msgid "Report Chunk Size"
 msgstr "Zgłoś wielkość porcji"
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:391
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:392
 msgid "Report Directory"
 msgstr "Katalog raportu"
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:387
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:388
 msgid "Report Interface"
 msgstr "Interfejs raportowania"
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:405
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:406
 msgid "Report Ports"
 msgstr "Porty raportowania"
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:395
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:396
 msgid "Report chunk count used by tcpdump."
 msgstr "Raportuj liczbę fragmentów używaną przez tcpdump."
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:400
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:401
 msgid "Report chunk size used by tcpdump in MByte."
 msgstr "Raportuj wielkość fragmentów używaną przez tcpdump w MB."
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:409
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:410
 msgid "Resolve IPs"
 msgstr "Rozwiązuj adresy IP"
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:409
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:410
 msgid "Resolve reporting IP addresses by using reverse DNS (PTR) lookups."
 msgstr ""
 "Rozwiązuj raportowane adresy IP za pomocą odwrotnych wyszukiwań DNS (PTR)."
@@ -666,11 +658,11 @@ msgstr "Uruchomione narzędzia"
 msgid "Save"
 msgstr "Zapisz"
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:565
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:566
 msgid "Save & Reload"
 msgstr "Zapisz i przeładuj"
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:572
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:573
 msgid "Save & Restart"
 msgstr "Zapisz i zrestartuj"
 
@@ -678,7 +670,7 @@ msgstr "Zapisz i zrestartuj"
 msgid "Second instance"
 msgstr "Instancja druga"
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:260
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:265
 msgid ""
 "Send adblock related notification e-mails. This needs the additional 'msmtp' "
 "package installation."
@@ -686,7 +678,7 @@ msgstr ""
 "Wyślij e-maile z powiadomieniami dotyczącymi usługi blokowania reklam. "
 "Wymaga to dodatkowej instalacji pakietu 'msmtp'."
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:420
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:421
 msgid "Sender address for adblock notification E-Mails."
 msgstr "Adres nadawcy dla powiadomień e-mailowych adblock."
 
@@ -721,7 +713,7 @@ msgstr "Rozmiar"
 msgid "Small"
 msgstr "Mały"
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:405
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:406
 msgid "Space separated list of ports used by tcpdump."
 msgstr "Rozdzielona spacjami lista portów używanych przez tcpdump."
 
@@ -737,15 +729,15 @@ msgstr "Interfejs wyzwalacza"
 msgid "Status / Version"
 msgstr "Status / Wersja"
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:495
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:496
 msgid "StevenBlack List Selection"
 msgstr "Wybór listy StevenBlack"
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:550
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:551
 msgid "Stop"
 msgstr "Zatrzymaj"
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:558
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:559
 msgid "Suspend"
 msgstr "Wstrzymaj"
 
@@ -753,11 +745,11 @@ msgstr "Wstrzymaj"
 msgid "System Info"
 msgstr "Informacje o systemie"
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:238
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:243
 msgid "TLD Compression"
 msgstr "Kompresja TLD"
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:391
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:392
 msgid "Target directory for DNS related report files."
 msgstr "Katalog docelowy dla plików raportów związanych z DNS."
 
@@ -766,8 +758,10 @@ msgid "Target directory for blocklist backups."
 msgstr "Katalog docelowy dla kopii zapasowych listy zablokowanych."
 
 #: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:370
-msgid "Target directory for the generated jail blocklist."
-msgstr "Katalog docelowy dla wygenerowanej restrykcyjnej listy zablokowanych."
+msgid ""
+"Target directory for the generated jail blocklist. If this directory points "
+"to your DNS directory, the jail blocklist replaces your default blocklist."
+msgstr ""
 
 #: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/allowlist.js:25
 msgid "The allowlist is too big, unable to save modifications."
@@ -777,7 +771,7 @@ msgstr "Lista dozwolonych jest za duża, nie można zapisać zmian."
 msgid "The blocklist is too big, unable to save modifications."
 msgstr "Lista zablokowanych jest za duża, nie można zapisać zmian."
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:238
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:243
 msgid ""
 "The top level domain compression removes thousands of needless host entries "
 "from the final DNS blocklist."
@@ -833,7 +827,7 @@ msgstr "Limit czasu oczekiwania na pomyślne ponowne uruchomienie backendu DNS."
 msgid "Top Statistics"
 msgstr "Statystyki czołówek"
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:424
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:425
 msgid "Topic for adblock notification E-Mails."
 msgstr "Temat dla powiadomień e-mail blokowania reklam."
 
@@ -841,7 +835,7 @@ msgstr "Temat dla powiadomień e-mail blokowania reklam."
 msgid "Total DNS Requests"
 msgstr "Łączna liczba żądań DNS"
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:284
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:219
 msgid "Trigger Delay"
 msgstr "Opóźnienie wyzwalacza"
 
@@ -849,15 +843,15 @@ msgstr "Opóźnienie wyzwalacza"
 msgid "URL"
 msgstr "Adres URL"
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:480
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:481
 msgid "UTCapitole Archive Selection"
 msgstr "Wybór archiwum UTCapitole"
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:441
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:442
 msgid "Unable to parse the custom feed file!"
 msgstr "Nie można przeanalizować pliku niestandardowych źródeł!"
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:448
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:449
 msgid "Unable to parse the default feed file!"
 msgstr "Nie można przeanalizować pliku domyślnych źródeł!"
 
@@ -884,7 +878,7 @@ msgstr "Przesyłanie pliku źródeł niestandardowych nie powiodło się."
 msgid "Varying"
 msgstr "Zmienny"
 
-#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:277
+#: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:282
 msgid "Verbose Debug Logging"
 msgstr "Pełne rejestrowanie debugowania"
 
@@ -934,869 +928,3 @@ msgstr "smartdns"
 #: applications/luci-app-adblock/htdocs/luci-static/resources/view/adblock/overview.js:319
 msgid "unbound"
 msgstr "unbound"
-
-#~ msgid "Active Sources"
-#~ msgstr "Aktywne źródła"
-
-#~ msgid "Adblock action"
-#~ msgstr "Akcje blokowania reklam"
-
-#~ msgid "Add Blacklist Domain"
-#~ msgstr "Dodaj domenę do listy blokowanych"
-
-#~ msgid "Add Whitelist Domain"
-#~ msgstr "Dodaj domenę do listy dozwolonych"
-
-#~ msgid "Add this (sub-)domain to your local blacklist."
-#~ msgstr "Dodaj tę (sub-)domenę do Twojej lokalnej listy blokowanych."
-
-#~ msgid "Add this (sub-)domain to your local whitelist."
-#~ msgstr "Dodaj tę (pod-)domenę do Twojej lokalnej listy dozwolonych."
-
-#~ msgid ""
-#~ "Allow all requests of certain DNS clients based on their IP address (RPZ-"
-#~ "CLIENT-IP). Please note: This feature is currently only supported by bind "
-#~ "DNS backend."
-#~ msgstr ""
-#~ "Zezwalaj na wszystkie żądania określonych klientów DNS na podstawie ich "
-#~ "adresu IP (RPZ-CLIENT-IP). Uwaga: ta funkcja jest obecnie obsługiwana "
-#~ "tylko przez backend DNS."
-
-#~ msgid ""
-#~ "Base Temp Directory for all adblock related runtime operations, e.g. "
-#~ "downloading, sorting, merging etc."
-#~ msgstr ""
-#~ "Podstawowy katalog tymczasowy dla wszystkich operacji związanych z "
-#~ "Adblock, np. pobieranie, sortowanie, scalanie itp."
-
-#~ msgid ""
-#~ "Blacklist changes have been saved. Refresh your adblock lists that "
-#~ "changes take effect."
-#~ msgstr ""
-#~ "Zmiany listy blokowanych zostały zapisane. Odśwież listę blokowanych "
-#~ "reklam, aby zmiany zostały wprowadzone."
-
-#~ msgid "Blacklist..."
-#~ msgstr "Lista blokowanych..."
-
-#~ msgid ""
-#~ "Block all requests of certain DNS clients based on their IP address (RPZ-"
-#~ "CLIENT-IP). Please note: This feature is currently only supported by bind "
-#~ "DNS backend."
-#~ msgstr ""
-#~ "Blokuj wszystkie żądania niektórych klientów DNS na podstawie ich adresów "
-#~ "IP (RPZ-CLIENT-IP). Uwaga: ta funkcja jest obecnie obsługiwana tylko "
-#~ "przez backend bind DNS."
-
-#~ msgid "Blocklist Backup"
-#~ msgstr "Kopia zapasowa list blokujących"
-
-#~ msgid "Blocklist Sources"
-#~ msgstr "Źródła list"
-
-#~ msgid ""
-#~ "Builds an additional DNS blocklist to block access to all domains except "
-#~ "those listed in the whitelist. Please note: You can use this restrictive "
-#~ "blocklist e.g. for guest wifi or kidsafe configurations."
-#~ msgstr ""
-#~ "Tworzy dodatkową listę blokującą DNS, aby uniemożliwić dostęp do "
-#~ "wszystkich domen z wyjątkiem tych znajdujących się na liście dozwolonych. "
-#~ "Uwaga: Tę restrykcyjną listę blokującą można wykorzystać np. w "
-#~ "konfiguracji sieci Wi-Fi dla gości lub w trybie bezpiecznym dla dzieci."
-
-#~ msgid ""
-#~ "Create compressed blocklist backups, they will be used in case of "
-#~ "download errors or during startup."
-#~ msgstr ""
-#~ "Utwórz skompresowane kopie zapasowe listy zablokowanych, będą one używane "
-#~ "w przypadku błędów pobierania lub podczas uruchamiania."
-
-#~ msgid "Disable DNS Allow"
-#~ msgstr "Wyłącz pozwolenie na DNS"
-
-#~ msgid "Disable selective DNS whitelisting (RPZ-PASSTHRU)."
-#~ msgstr "Wyłącz selektywne listy dozwolonych DNS (RPZ-PASSTHRU)."
-
-#~ msgid "Download Parameters"
-#~ msgstr "Parametry pobierania"
-
-#~ msgid "Edit Blacklist"
-#~ msgstr "Lista blokowanych"
-
-#~ msgid "Edit Whitelist"
-#~ msgstr "Lista dozwolonych"
-
-#~ msgid "Enable moderate SafeSearch filters for youtube."
-#~ msgstr "Włącz umiarkowane filtry SafeSearch dla YouTube."
-
-#~ msgid ""
-#~ "Enforcing SafeSearch for google, bing, duckduckgo, yandex, youtube and "
-#~ "pixabay."
-#~ msgstr ""
-#~ "Wymuś SafeSearch dla Google, Bing, DuckDuckGo, Yandex, Youtube i Pixabay."
-
-#~ msgid "Existing job(s)"
-#~ msgstr "Istniejące zadania"
-
-#~ msgid "External DNS Lookup Domain"
-#~ msgstr "Zewnętrzna domena wyszukiwania DNS"
-
-#~ msgid ""
-#~ "External domain to check for a successful DNS backend restart. Please "
-#~ "note: To disable this check set this option to 'false'."
-#~ msgstr ""
-#~ "Zewnętrzna domena do sprawdzania, czy restart zaplecza DNS zakończył się "
-#~ "sukcesem. Uwaga: Aby wyłączyć, należy ustawić opcję na 'false'."
-
-#~ msgid "Fifth instance"
-#~ msgstr "Instancja piąta"
-
-#~ msgid "Fourth instance"
-#~ msgstr "Instancja czwarta"
-
-#~ msgid ""
-#~ "Gather DNS related network traffic via tcpdump and provide a DNS Report "
-#~ "on demand. Please note: this needs additional 'tcpdump' or 'tcpdump-mini' "
-#~ "package installation and a full adblock service restart to take effect."
-#~ msgstr ""
-#~ "Zbierz ruch sieciowy związany z DNS za pośrednictwem tcpdump i na żądanie "
-#~ "dostarczaj raport DNS. Uwaga: wymaga to dodatkowej instalacji pakietu "
-#~ "'tcpdump-mini' i pełnego ponownego uruchomienia usługi blokowania reklam."
-
-#~ msgid "Line number to remove"
-#~ msgstr "Numer wiersza do usunięcia"
-
-#~ msgid ""
-#~ "List of supported DNS backends with their default list directory. To "
-#~ "overwrite the default path use the 'DNS Directory' option."
-#~ msgstr ""
-#~ "Lista obsługiwanych zapleczy DNS z domyślnym katalogiem list. Aby "
-#~ "zastąpić domyślną ścieżkę, użyj opcji 'Katalog DNS'."
-
-#~ msgid ""
-#~ "Manually override the pre-configured download options for the selected "
-#~ "download utility."
-#~ msgstr ""
-#~ "Ręcznie zastąp wstępnie skonfigurowane opcje pobierania dla wybranego "
-#~ "narzędzia pobierania."
-
-#~ msgid ""
-#~ "Reduce the priority of the adblock background processing to take fewer "
-#~ "resources from the system. Please note: This change requires a full "
-#~ "adblock service restart to take effect."
-#~ msgstr ""
-#~ "Zmniejsz priorytet przetwarzania w tle, aby pobierać mniej zasobów "
-#~ "systemu. Uwaga: wymagany restart usługi blokowania reklam."
-
-#~ msgid "Refresh Timer"
-#~ msgstr "Zaktualizuj listy automatycznie"
-
-#~ msgid "Refresh Timer..."
-#~ msgstr "Zaktualizuj zegar..."
-
-#~ msgid "Relax SafeSearch"
-#~ msgstr "Łagodny SafeSearch"
-
-#~ msgid "Reload"
-#~ msgstr "Przeładuj"
-
-#~ msgid "Remove an existing job"
-#~ msgstr "Usuń istniejące zadanie"
-
-#~ msgid "Restart"
-#~ msgstr "Restartuj"
-
-#~ msgid ""
-#~ "Send adblock related notification e-mails. Please note: this needs "
-#~ "additional 'msmtp' package installation."
-#~ msgstr ""
-#~ "Wysyłaj powiadomienia e-mail związane z blokowaniem reklam. Uwaga: wymaga "
-#~ "to dodatkowej instalacji pakietu 'msmtp'."
-
-#~ msgid "Set a new adblock job"
-#~ msgstr "Ustaw nowe zadanie blokowania reklam"
-
-#~ msgid "Sources (Size, Focus)"
-#~ msgstr "Źródła (wielkość, skupienie)"
-
-#~ msgid "Target directory for the generated blocklist 'adb_list.overall'."
-#~ msgstr ""
-#~ "Katalog docelowy dla wygenerowanej listy blokowania 'adb_list.overall'."
-
-#~ msgid "Target directory for the generated jail blocklist 'adb_list.jail'."
-#~ msgstr ""
-#~ "Katalog docelowy dla wygenerowanej listy zablokowanych 'adb_list.jail'."
-
-#~ msgid "The Refresh Timer could not been updated."
-#~ msgstr "Nie można zaktualizować czasu odświeżania."
-
-#~ msgid "The Refresh Timer has been updated."
-#~ msgstr "Czas odświeżania został zaktualizowany."
-
-#~ msgid ""
-#~ "The changes to the blacklist have been saved. Reload your adblock lists "
-#~ "for the changes to take effect."
-#~ msgstr ""
-#~ "Zmiany na liście blokowanych zostały zapisane. Przeładuj listy blokera "
-#~ "reklam, aby zmiany zaczęły obowiązywać."
-
-#~ msgid ""
-#~ "The changes to the whitelist have been saved. Reload your adblock lists "
-#~ "for the changes to take effect."
-#~ msgstr ""
-#~ "Zmiany na liście dozwolonych zostały zapisane. Przeładuj listy blokera "
-#~ "reklam, aby zmiany zaczęły obowiązywać."
-
-#~ msgid "The day of the week (opt., values: 0-6 possibly sep. by , or -)"
-#~ msgstr "Dni tygodnia (opcjonalnie, wartości: 0-6, osobno, lub -)"
-
-#~ msgid "The hours portition (req., range: 0-23)"
-#~ msgstr "Przedział godzinowy (wymagane, zakres: 0–23)"
-
-#~ msgid "The minutes portion (opt., range: 0-59)"
-#~ msgstr "Przedział minutowy (opcjonalnie, zakres: 0–59)"
-
-#~ msgid ""
-#~ "This is the local adblock blacklist to always-deny certain (sub) domains."
-#~ "<br /> Please note: add only one domain per line. Comments introduced "
-#~ "with '#' are allowed - ip addresses, wildcards and regex are not."
-#~ msgstr ""
-#~ "Jest to lokalna czarna lista adblock zawsze-blokowanych (sub)domen.<br /> "
-#~ "Uwaga: dodaj tylko jedną domenę na linię. Komentarze wprowadzone z '#' są "
-#~ "dozwolone - adresy ip, wildcards i regex są zabronione."
-
-#~ msgid ""
-#~ "This is the local adblock whitelist to always allow certain (sub) domains."
-#~ "<br /> Please note: add only one domain per line. Comments introduced "
-#~ "with '#' are allowed - ip addresses, wildcards and regex are not."
-#~ msgstr ""
-#~ "Jest to lokalna biała lista adblock zawsze-dozwolonych (sub)domen.<br /> "
-#~ "Uwaga: dodaj tylko jedną domenę na linię. Komentarze wprowadzone z '#' są "
-#~ "dozwolone - adresy ip, wildcards i regex nie są dozwolone."
-
-#~ msgid ""
-#~ "To keep your adblock lists up-to-date, you should set up an automatic "
-#~ "update job for these lists."
-#~ msgstr ""
-#~ "Aby Twoje listy były aktualne, należy ustawić automatyczne zadanie "
-#~ "aktualizacji tych list."
-
-#~ msgid "Unable to save changes: %s"
-#~ msgstr "Nie można zapisać zmian: %s"
-
-#~ msgid "Variants"
-#~ msgstr "Warianty"
-
-#~ msgid ""
-#~ "Whitelist changes have been saved. Refresh your adblock lists that "
-#~ "changes take effect."
-#~ msgstr ""
-#~ "Zmiany na białej liście zostały zapisane. Odśwież listy adblock, aby "
-#~ "zmiany zostały wprowadzone."
-
-#~ msgid "Whitelist..."
-#~ msgstr "Lista dozwolonych"
-
-#~ msgid "bind (/var/lib/bind)"
-#~ msgstr "bind (/var/lib/bind)"
-
-#~ msgid "dnsmasq (/tmp/dnsmasq.d)"
-#~ msgstr "dnsmasq (/tmp/dnsmasq.d)"
-
-#~ msgid "kresd (/etc/kresd)"
-#~ msgstr "kresd (/etc/kresd)"
-
-#~ msgid "raw (/tmp)"
-#~ msgstr "raw (/tmp)"
-
-#~ msgid "smartdns (/tmp/smartdns)"
-#~ msgstr "smartdns (/tmp/smartdns)"
-
-#~ msgid "unbound (/var/lib/unbound)"
-#~ msgstr "unbound (/var/lib/unbound)"
-
-#~ msgid "E-Mail Notification Count"
-#~ msgstr "Licznik powiadomień e-mail"
-
-#~ msgid ""
-#~ "Raise the notification count, to get E-Mails if the overall blocklist "
-#~ "count is less or equal to the given limit."
-#~ msgstr ""
-#~ "Zwiększ liczbę powiadomień, aby otrzymywać wiadomości e-mail jeśli ogólna "
-#~ "liczba blokowanych list jest mniejsza lub równa podanemu limitowi."
-
-#~ msgid "No adblock related logs yet!"
-#~ msgstr "Brak dzienników związanych z blokowaniem reklam!"
-
-#~ msgid "The syslog output, pre-filtered for adblock related messages only."
-#~ msgstr ""
-#~ "Dane wyjściowe dziennika systemowego, wstępnie przefiltrowane dla "
-#~ "informacji związanych z blokowaniem reklam."
-
-#~ msgid "Top 10 Statistics"
-#~ msgstr "Top 10"
-
-#~ msgid "Disable DNS Restarts"
-#~ msgstr "Wyłącz restart DNS"
-
-#~ msgid ""
-#~ "Disable adblock triggered restarts for dns backends with autoload/inotify "
-#~ "functions."
-#~ msgstr ""
-#~ "Wyłącz wyzwalane restarty adblocka dla zaplecza DNS z funkcjami Autoload/"
-#~ "Inotify."
-
-#~ msgid "Download Queue"
-#~ msgstr "Kolejka pobierania"
-
-#~ msgid ""
-#~ "Size of the download queue for download processing (incl. sorting, "
-#~ "merging etc.) in parallel."
-#~ msgstr ""
-#~ "Rozmiar kolejki pobierania do przetwarzania plików (w tym sortowanie, "
-#~ "łączenie itp.) równolegle."
-
-#~ msgid "Flush the DNS Cache before adblock processing as well."
-#~ msgstr "Opróżnij pamięć podręczną DNS przed przetwarzaniem adblocka."
-
-#~ msgid "Special config options for the selected download utility."
-#~ msgstr "Specjalne opcje konfiguracji dla wybranego narzędzia do pobierania."
-
-#~ msgid "- unspecified -"
-#~ msgstr "- nieokreślony -"
-
-#~ msgid "Blocked Domain"
-#~ msgstr "Zablokowana domena"
-
-#~ msgid "Disable selective DNS whitelisting (RPZ pass through)."
-#~ msgstr "Wyłącz selektywną białą listę DNS (RPZ)."
-
-#~ msgid "Name / IP Address"
-#~ msgstr "Nazwa/Adres IP"
-
-#~ msgid "named (/var/lib/bind)"
-#~ msgstr "named (/var/lib/bind)"
-
-#~ msgid ""
-#~ "Changes on this tab needs a full adblock service restart to take effect."
-#~ "<br /><p>&#xa0;</p>"
-#~ msgstr ""
-#~ "Zmiany na tej karcie wymagają ponownego uruchomienia usługi Adblock, aby "
-#~ "zostały wprowadzone. <br /> <p> &#xa0; </p>"
-
-#~ msgid "DNS File Reset"
-#~ msgstr "Resetuj plik DNS"
-
-#~ msgid ""
-#~ "List of supported and fully pre-configured adblock sources, already "
-#~ "active sources are pre-selected.<br /> <b><em>To avoid OOM errors, please "
-#~ "do not select too many lists!</em></b><br /> List size information with "
-#~ "the respective domain ranges as follows:<br /> &#8226;&#xa0;<b>S</b> "
-#~ "(-10k), <b>M</b> (10k-30k) and <b>L</b> (30k-80k) should work for 128 "
-#~ "MByte devices,<br /> &#8226;&#xa0;<b>XL</b> (80k-200k) should work for "
-#~ "256-512 MByte devices,<br /> &#8226;&#xa0;<b>XXL</b> (200k-) needs more "
-#~ "RAM and Multicore support, e.g. x86 or raspberry devices.<br /> <p>&#xa0;"
-#~ "</p>"
-#~ msgstr ""
-#~ "Lista obsługiwanych i w pełni skonfigurowanych źródeł adblock, niektóre "
-#~ "aktywne źródła są wstępnie wybrane. <br /> <b> <em> Aby uniknąć błędów "
-#~ "OOM, nie wybieraj zbyt wielu list! </em> </b> <br /> Informacje o "
-#~ "rozmiarze dla odpowiednich zakresów domen wyglądają w następujący sposób:"
-#~ "<br /> &#8226;&#xa0;<b>S</b> (-10k), <b>M</b> (10k-30k) i <b>L</b> "
-#~ "(30k-80k) powinny działać na urządzeniach z 128 MB pamięci RAM<br /> "
-#~ "&#8226;&#xa0;<b>XL</b> (80k-200k) powinny działać na urządzeniach z "
-#~ "256-512 MB pamięci RAM,<br /> &#8226;&#xa0;<b>XXL</b> (200k-) wymagają "
-#~ "więcej pamięci RAM i obsługi wielordzeniowej, np. urządzenia x86 lub "
-#~ "urządzenia typu raspberry.<br /> <p>&#xa0;</p>"
-
-#~ msgid ""
-#~ "Resets the final DNS blocklist 'adb_list.overall' after DNS backend "
-#~ "loading. Please note: This option starts a small ubus/adblock monitor in "
-#~ "the background."
-#~ msgstr ""
-#~ "Resetuje ostateczną listę bloków DNS 'adb_list.overall' po załadowaniu "
-#~ "zaplecza DNS. Uwaga: Ta opcja uruchamia w tle mały monitor ubus/adblock."
-
-#~ msgid "Set/Replace a new adblock job"
-#~ msgstr "Ustaw/Zmień nowe zadanie Adblock"
-
-#~ msgid ""
-#~ "Target directory for DNS related report files. Default is '/tmp', please "
-#~ "use preferably an usb stick or another local disk."
-#~ msgstr ""
-#~ "Katalog docelowy dla plików raportowania. Domyślnie jest to '/ tmp', "
-#~ "najlepiej użyj pamięci USB."
-
-#~ msgid ""
-#~ "Target directory for blocklist backups. Default is '/tmp', please use "
-#~ "preferably an usb stick or another local disk."
-#~ msgstr ""
-#~ "Katalog docelowy dla kopii zapasowej list. Domyślnie jest to '/tmp', użyj "
-#~ "najlepiej pamięci USB lub innego dysku."
-
-#~ msgid ""
-#~ "This shows the last generated DNS Report, press the refresh button to get "
-#~ "a current one."
-#~ msgstr ""
-#~ "Pokazuje ostatni wygenerowany raport DNS, naciśnij przycisk odświeżania, "
-#~ "aby uzyskać bieżący."
-
-#~ msgid "Local DNS Ports"
-#~ msgstr "Lokalne porty DNS"
-
-#~ msgid ""
-#~ "Redirect all DNS queries from 'lan' zone to the local DNS resolver, "
-#~ "applies to UDP and TCP protocol."
-#~ msgstr ""
-#~ "Przekieruj wszystkie zapytania DNS ze strefy LAN do lokalnego programu "
-#~ "obsługi DNS, dotyczy protokołu UDP i TCP."
-
-#~ msgid ""
-#~ "Space separated list of DNS-related firewall ports which should be forced "
-#~ "locally."
-#~ msgstr ""
-#~ "Rozdzielona spacjami lista portów zapory związanych z DNS, które należy "
-#~ "wymusić lokalnie."
-
-#~ msgid "DNS Requests (blocked)"
-#~ msgstr "Żądania DNS (zablokowane)"
-
-#~ msgid "DNS Requests (total)"
-#~ msgstr "Żądania DNS (ogółem)"
-
-#~ msgid "End Date"
-#~ msgstr "Data końcowa"
-
-#~ msgid "Start Date"
-#~ msgstr "Data rozpoczęcia"
-
-#~ msgid "SafeSearch Moderate"
-#~ msgstr "Moderuj filtr SafeSearch"
-
-#~ msgid ""
-#~ "<b>Caution:</b> To prevent OOM exceptions on low memory devices with less "
-#~ "than 64 MB free RAM, please only select a few of them!"
-#~ msgstr ""
-#~ "<b>Uwaga:</b> Aby uniknąć błędów braku pamięci (OOM) na urządzeniach z "
-#~ "mniej niż 64 MB wolnej pamięci RAM, wybierz tylko kilka z nich!"
-
-#~ msgid "Adblock Status"
-#~ msgstr "Status Adblocka"
-
-#~ msgid "Adblock Version"
-#~ msgstr "Wersja Adblocka"
-
-#~ msgid "Advanced"
-#~ msgstr "Zaawansowane"
-
-#~ msgid "Archive Categories"
-#~ msgstr "Kategoria"
-
-#~ msgid "Blacklist"
-#~ msgstr "Czarna lista"
-
-#~ msgid "Blacklist File"
-#~ msgstr "Plik czarnej listy"
-
-#~ msgid "Blocked DNS Queries"
-#~ msgstr "Zablokowane listy zapytań DNS"
-
-#~ msgid "Blocklist not found!"
-#~ msgstr "Nie znaleziono list blokujących!"
-
-#~ msgid ""
-#~ "Choose 'none' to disable automatic startups, 'timed' to use a classic "
-#~ "timeout (default 30 sec.) or select another trigger interface."
-#~ msgstr ""
-#~ "Wybierz 'none', aby wyłączyć automatyczne uruchamianie, 'timed', aby użyć "
-#~ "klasycznego limitu czasu (domyślnie 30 sek.) lub wybierz inny interfejs "
-#~ "wyzwalacza."
-
-#~ msgid "Collecting data..."
-#~ msgstr "Trwa zbieranie danych..."
-
-#~ msgid ""
-#~ "Configuration of the adblock package to block ad/abuse domains by using "
-#~ "DNS."
-#~ msgstr ""
-#~ "Konfiguracja pakietu adblock do blokowania reklam/nadużyć przy użyciu "
-#~ "systemu DNS."
-
-#~ msgid "DNS Backend (DNS Directory)"
-#~ msgstr "Zaplecze DNS"
-
-#~ msgid "DNS Backend, DNS Directory"
-#~ msgstr "Zaplecze DNS, Katalog DNS"
-
-#~ msgid "DNS Blocking Variant"
-#~ msgstr "Wariant blokowania DNS"
-
-#~ msgid "DNS Inotify"
-#~ msgstr "Powiadomienie DNS"
-
-#~ msgid "DNS Query Report"
-#~ msgstr "Raport zapytań DNS"
-
-#~ msgid "DNS Variant, DNS File Reset"
-#~ msgstr "Wariant DNS, resetuj plik DNS"
-
-#~ msgid ""
-#~ "Disable adblock triggered restarts and the 'DNS File Reset' for DNS "
-#~ "backends with autoload features."
-#~ msgstr ""
-#~ "Wyłącz ponowne uruchamiane adblocka i „Resetuj plik DNS” dla zapleczy DNS "
-#~ "z funkcjami automatycznego ładowania."
-
-#~ msgid ""
-#~ "Disable the toplevel domain compression, if the number of blocked domains "
-#~ "is greater than this threshold."
-#~ msgstr ""
-#~ "Wyłącz kompresję domen najwyższego poziomu, jeśli liczba zablokowanych "
-#~ "domen jest większa niż ten próg."
-
-#~ msgid ""
-#~ "Dnsmasq also supports 'null' block variants, which may provide better "
-#~ "response times."
-#~ msgstr ""
-#~ "Dnsmasq również wspiera warianty blokowania 'null', które mogą zapewnić "
-#~ "lepsze czasy reakcji."
-
-#~ msgid "Domain/Client/Date/Time"
-#~ msgstr "Domena/Klient/Data/Czas"
-
-#~ msgid "Download Utility (SSL Library)"
-#~ msgstr "Narzędzie pobierania (SSL)"
-
-#~ msgid "E-mail Notification Count"
-#~ msgstr "Licznik powiadomień email"
-
-#~ msgid "E-mail Profile"
-#~ msgstr "Profil email"
-
-#~ msgid "E-mail Sender Address"
-#~ msgstr "Adres email nadawcy"
-
-#~ msgid "E-mail Topic"
-#~ msgstr "Temat email"
-
-#~ msgid "Edit Configuration"
-#~ msgstr "Edycja konfiguracji"
-
-#~ msgid "Enable Adblock"
-#~ msgstr "Włącz Adblocka"
-
-#~ msgid "Enable verbose debug logging in case of any processing error."
-#~ msgstr ""
-#~ "Włącz pełne rejestrowanie debugowania w przypadku jakiegokolwiek błędu "
-#~ "przetwarzania."
-
-#~ msgid "Extra Options"
-#~ msgstr "Opcje dodatkowe"
-
-#~ msgid "Filter"
-#~ msgstr "Filtr"
-
-#~ msgid ""
-#~ "Filter the DNS Query result set for a particular domain, client or time "
-#~ "frame."
-#~ msgstr ""
-#~ "Filtruj wynik zapytania DNS ustawiony dla danej domeny, klienta lub "
-#~ "przedziału czasu."
-
-#~ msgid "Flush DNS cache after adblock processing."
-#~ msgstr "Opróżnij pamięć podręczną DNS po przetworzeniu blokady reklam."
-
-#~ msgid ""
-#~ "For further information <a href=\"%s\" target=\"_blank\">check the online "
-#~ "documentation</a>"
-#~ msgstr ""
-#~ "Więcej informacji <a href=\"%s\" target=\"_blank\">znajdziesz w "
-#~ "dokumentacji online </a>"
-
-#~ msgid ""
-#~ "For further performance improvements you can raise this value, e.g. '8' "
-#~ "or '16' should be safe."
-#~ msgstr ""
-#~ "W celu poprawy wydajności możesz zwiększyć tę wartość, np. '8' lub '16' "
-#~ "powinny być bezpieczne."
-
-#~ msgid "Full path to the blacklist file."
-#~ msgstr "Pełna ścieżka do pliku czarnej listy."
-
-#~ msgid "Full path to the whitelist file."
-#~ msgstr "Pełna ścieżka do pliku białej listy."
-
-#~ msgid ""
-#~ "Gather DNS related network traffic via tcpdump to provide a DNS Query "
-#~ "Report on demand."
-#~ msgstr ""
-#~ "Zbierz ruch sieciowy związany z usługą DNS za pośrednictwem programu "
-#~ "tcpdump, aby na żądanie udostępnić raport zapytań DNS."
-
-#~ msgid "Input file not found, please check your configuration."
-#~ msgstr ""
-#~ "Nie znaleziono pliku wejściowego, proszę sprawdzić swoją konfigurację."
-
-#~ msgid "Latest DNS Queries"
-#~ msgstr "Ostatnie zapytania DNS"
-
-#~ msgid ""
-#~ "List of available network interfaces. Usually the startup will be "
-#~ "triggered by the 'wan' interface."
-#~ msgstr ""
-#~ "Lista dostępnych interfejsów sieciowych. Zazwyczaj uruchomienie zostanie "
-#~ "wywołane przez interfejs 'wan'."
-
-#~ msgid ""
-#~ "List of supported DNS backends with their default list export directory."
-#~ msgstr ""
-#~ "Lista obsługiwanych zapleczy DNS z domyślnym katalogiem eksportu list."
-
-#~ msgid ""
-#~ "List of supported DNS blocking variants. By default 'nxdomain' will be "
-#~ "used for all DNS backends."
-#~ msgstr ""
-#~ "Lista obsługiwanych wariantów blokowania DNS. Domyślnie dla wszystkich "
-#~ "zapleczy DNS będzie używana „nxdomain”."
-
-#~ msgid "Loading"
-#~ msgstr "Ładowanie"
-
-#~ msgid "Local FW/DNS Ports"
-#~ msgstr "Lokalne porty FW/DNS"
-
-#~ msgid "Logfile"
-#~ msgstr "Rejestr dziennika"
-
-#~ msgid "Mail profile used in 'msmtp' for adblock notification e-mails."
-#~ msgstr ""
-#~ "Profil poczty używany przez 'msmtp' do wysyłania wiadomości email z "
-#~ "powiadomieniem."
-
-#~ msgid "Max. Download Queue"
-#~ msgstr "Maksymalny rozmiar kolejki pobierania"
-
-#~ msgid "Name / IP-Address"
-#~ msgstr "Nazwa/Adres IP"
-
-#~ msgid "No"
-#~ msgstr "Nie"
-
-#~ msgid ""
-#~ "Options for further tweaking in case the defaults are not suitable for "
-#~ "you."
-#~ msgstr ""
-#~ "Opcje dalszych zmian w przypadku, gdy ustawienia domyślne nie są dla "
-#~ "ciebie wystarczające."
-
-#~ msgid "Overall Domains"
-#~ msgstr "Domen łącznie"
-
-#~ msgid ""
-#~ "Please add only one domain per line. Comments introduced with '#' are "
-#~ "allowed - ip addresses, wildcards and regex are not."
-#~ msgstr ""
-#~ "Dodaj tylko jedną domenę na wierszu. Komentarze wprowadzone za pomocą „#” "
-#~ "są dozwolone - adresy IP, symbole wieloznaczne i wyrażenia regularne nie "
-#~ "są dozwolone."
-
-#~ msgid "Please edit this file directly in a terminal session."
-#~ msgstr "Proszę edytować ten plik bezpośrednio w sesji terminala."
-
-#~ msgid ""
-#~ "Please note: this needs manual 'msmtp' package installation and setup."
-#~ msgstr "Uwaga: wymaga to ręcznej instalacji i konfiguracji pakietu 'msmtp'."
-
-#~ msgid "Please note: this needs manual 'tcpdump-mini' package installation."
-#~ msgstr "Uwaga: wymaga to ręcznej instalacji pakietu 'tcpdump-mini'."
-
-#~ msgid "Query domains"
-#~ msgstr "Domeny zapytań"
-
-#~ msgid ""
-#~ "Raise the minimum notification count, to get e-mails if the overall count "
-#~ "is less or equal to the given limit (default 0),"
-#~ msgstr ""
-#~ "Podnieś minimalną liczbę powiadomień, aby otrzymywać emaila, jeśli ogólna "
-#~ "liczba jest mniejsza lub równa podanemu limitowi (domyślnie 0),"
-
-#~ msgid ""
-#~ "Redirect all DNS queries from 'lan' zone to the local resolver, applies "
-#~ "to UDP and TCP protocol on port 53, 853 and 5353."
-#~ msgstr ""
-#~ "Przekieruj wszystkie zapytania DNS ze strefy 'lan' do lokalnego "
-#~ "resolvera, dotyczy protokołu UDP i TCP na portach 53, 853 i 5353."
-
-#~ msgid "Refresh Blocklist Sources"
-#~ msgstr "Odśwież listę blokujących"
-
-#~ msgid "Refresh Report"
-#~ msgstr "Odśwież raport"
-
-#~ msgid "Report Listen Port(s)"
-#~ msgstr "Raport nasłuchiwania portu(ów)"
-
-#~ msgid "Report chunk count used by tcpdump (default '5')."
-#~ msgstr "Zgłoś liczbę fragmentów używanych przez tcpdump (domyślnie \"5\")."
-
-#~ msgid "Report chunk size used by tcpdump in MB (default '1')."
-#~ msgstr ""
-#~ "Zgłoś rozmiar fragmentu używanego przez tcpdump w MB (domyślnie \"1\")."
-
-#~ msgid ""
-#~ "Reporting interface used by tcpdump, set to 'any' for multiple interfaces "
-#~ "(default 'br-lan')."
-#~ msgstr ""
-#~ "Interfejs raportowania używany przez tcpdump, ustaw na 'any' dla wielu "
-#~ "interfejsów (domyślnie 'br-lan')."
-
-#~ msgid ""
-#~ "Resets the final DNS blockfile 'adb_list.overall' after loading through "
-#~ "the DNS backend."
-#~ msgstr ""
-#~ "Resetuje końcowy plik blokowania DNS 'adb_list.overall' po wczytaniu go "
-#~ "przez zaplecze DNS."
-
-#~ msgid "Resume"
-#~ msgstr "Wznów"
-
-#~ msgid "Runtime Information"
-#~ msgstr "Informacja o środowisku uruchomieniowym"
-
-#~ msgid "SSL req."
-#~ msgstr "Wymóg SSL"
-
-#~ msgid ""
-#~ "Send notification e-mails in case of a processing error or if domain "
-#~ "count is &le; 0."
-#~ msgstr ""
-#~ "Wyślij email z powiadomieniem w przypadku błędu przetwarzania lub gdy "
-#~ "liczba domen to &le; 0."
-
-#~ msgid "Sender address for adblock notification e-mails."
-#~ msgstr "Adres nadawcy dla powiadomień email adblocka."
-
-#~ msgid ""
-#~ "Set the nice level to 'low priority' and the adblock background "
-#~ "processing will take fewer resources from the system."
-#~ msgstr ""
-#~ "Ustawia niski priorytet procesu za pomocą polecenia 'nice', dzięki czemu "
-#~ "przetwarzanie w tle zajmie mniej zasobów systemu."
-
-#~ msgid ""
-#~ "Size of the download queue to handle downloads &amp; list processing in "
-#~ "parallel (default '4')."
-#~ msgstr ""
-#~ "Rozmiar kolejki pobierania do obsługi pobrań; równoległe przetwarzanie "
-#~ "list (domyślnie '4')."
-
-#~ msgid ""
-#~ "Space separated list of firewall ports which should be redirected locally."
-#~ msgstr ""
-#~ "Rozdzielona spacjami lista portów zapory, które powinny być "
-#~ "przekierowywane lokalnie."
-
-#~ msgid ""
-#~ "Space separated list of reporting port(s) used by tcpdump (default: '53')."
-#~ msgstr ""
-#~ "Rozdzielona spacjami lista portu(ów) używanych przez tcpdump (domyślnie: "
-#~ "'53')."
-
-#~ msgid "Startup Trigger"
-#~ msgstr "Wyzwalacz uruchomienia"
-
-#~ msgid "Suspend / Resume Adblock"
-#~ msgstr "Zawieś/Wznów Adblocka"
-
-#~ msgid "TLD Compression Threshold"
-#~ msgstr "Próg kompresji TLD"
-
-#~ msgid ""
-#~ "Target directory for adblock source backups. Default is '/tmp', please "
-#~ "use preferably a non-volatile disk if available."
-#~ msgstr ""
-#~ "Katalog docelowy kopii zapasowych źródeł adblocka. Domyślnie jest to '/"
-#~ "tmp', najlepiej użyć nieulotnego dysku, jeśli jest dostępny."
-
-#~ msgid ""
-#~ "Target directory for dns related report files. Default is '/tmp', please "
-#~ "use preferably a non-volatile disk if available."
-#~ msgstr ""
-#~ "Katalog docelowy dla plików raportów związanych z DNS. Domyślnie jest to "
-#~ "'/tmp', najlepiej użyć nieulotnego dysku, jeśli jest dostępny."
-
-#~ msgid "The file size is too large for online editing in LuCI (&ge; 100 KB)."
-#~ msgstr "Rozmiar pliku jest zbyt duży do edycji online w LuCI (&ge; 100 KB)."
-
-#~ msgid "This change requires a manual service stop/re-start to take effect."
-#~ msgstr ""
-#~ "Ta zmiana wymaga ręcznego zatrzymania/ponownego uruchomienia usługi, aby "
-#~ "została uwzględniona."
-
-#~ msgid ""
-#~ "This form allows you to modify the content of the adblock blacklist (%s)."
-#~ msgstr ""
-#~ "Ten formularz umożliwia modyfikowanie zawartości czarnej listy adblocka "
-#~ "(%s)."
-
-#~ msgid ""
-#~ "This form allows you to modify the content of the adblock whitelist (%s)."
-#~ msgstr ""
-#~ "Ten formularz umożliwia modyfikowanie zawartości białej listy adblocka "
-#~ "(%s)."
-
-#~ msgid ""
-#~ "This form allows you to modify the content of the main adblock "
-#~ "configuration file (/etc/config/adblock)."
-#~ msgstr ""
-#~ "Ten formularz pozwala na modyfikację zawartości głównego pliku "
-#~ "konfiguracyjnego adblocka (/etc/config/adblock)."
-
-#~ msgid ""
-#~ "This form allows you to query active block lists for certain domains, "
-#~ "e.g. for whitelisting."
-#~ msgstr ""
-#~ "Formularz ten pozwala na przeszukanie aktywnych list blokowania dla "
-#~ "pewnych domen, np. w celu dodania do białej listy."
-
-#~ msgid ""
-#~ "This option saves an enormous amount of storage space, but starts a small "
-#~ "ubus/adblock monitor in the background."
-#~ msgstr ""
-#~ "Ta opcja pozwala zaoszczędzić ogromną ilość miejsca na dysku, ale "
-#~ "uruchamia niewielki proces monitorujący ubus w tle."
-
-#~ msgid ""
-#~ "To overwrite the default path use the 'DNS Directory' option in the extra "
-#~ "section below."
-#~ msgstr ""
-#~ "Aby nadpisać ścieżkę domyślną użyj opcji 'Katalog DNS' w sekcji "
-#~ "dodatkowej poniżej."
-
-#~ msgid "Top 10 Reporting"
-#~ msgstr "Top 10 Raportów"
-
-#~ msgid "Topic for adblock notification e-mails."
-#~ msgstr "Temat dla powiadomień email adblocka."
-
-#~ msgid "Total DNS Queries"
-#~ msgstr "Całkowita liczba zapytań DNS"
-
-#~ msgid "Waiting for command to complete..."
-#~ msgstr "Oczekiwanie na polecenie do wykonania..."
-
-#~ msgid "Whitelist"
-#~ msgstr "Biała lista"
-
-#~ msgid "Whitelist File"
-#~ msgstr "Plik białej listy"
-
-#~ msgid "Yes"
-#~ msgstr "Tak"
-
-#~ msgid ""
-#~ "e.g. to receive an e-mail notification with every adblock run set this "
-#~ "value to 200000."
-#~ msgstr ""
-#~ "np. otrzymanie powiadomienień email z każdym uruchomieniem adblocka ustaw "
-#~ "wartość na 200000."
