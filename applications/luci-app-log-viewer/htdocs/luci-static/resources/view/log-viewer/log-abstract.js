@@ -38,9 +38,25 @@ return baseclass.extend({
 				return data || '';
 			});
 		},
+		convertLogDate(logDate) {
+			// 创建 Date 对象
+			const date = new Date(logDate);
 
+			// 获取各个部分
+			const year = date.getFullYear();
+			const month = String(date.getMonth() + 1).padStart(2, '0'); // 月份从0开始，需要加1
+			const day = String(date.getDate()).padStart(2, '0');
+			const hours = String(date.getHours()).padStart(2, '0');
+			const minutes = String(date.getMinutes()).padStart(2, '0');
+			const seconds = String(date.getSeconds()).padStart(2, '0');
+
+			// 拼接为“年月日 时分秒”格式
+			return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+		},
 		// logd
 		logdHandler(strArray, lineNum) {
+			// 将strArray[1] 通过convertLogDate转换为“年月日 时分秒”格式
+			strArray[1] = this.convertLogDate(strArray[1]);
 			return [
 				lineNum,                               // #         (Number)
 				strArray[1],                           // Timestamp (String)

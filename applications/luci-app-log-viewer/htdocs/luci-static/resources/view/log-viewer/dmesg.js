@@ -76,14 +76,13 @@ return widget.view.extend({
 			return t;
 		};
 		let date = new Date((this.localtime - this.uptime + t) * 1000);
-		return '%s %s %d %02d:%02d:%02d %d'.format(
-			this.days[ date.getUTCDay() ],
-			this.months[ date.getUTCMonth() + 1 ],
-			date.getUTCDate(),
-			date.getUTCHours(),
-			date.getUTCMinutes(),
-			date.getUTCSeconds(),
-			date.getUTCFullYear()
+		return '%d-%02d-%02d %02d:%02d:%02d'.format(
+			date.getFullYear(),
+			date.getMonth() + 1,
+			date.getDate(),
+			date.getHours(),
+			date.getMinutes(),
+			date.getSeconds()
 		);
 	},
 
