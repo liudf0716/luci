@@ -37,7 +37,7 @@ document.head.append(E('style', {'type': 'text/css'},
 #logWrapper {
 	overflow: auto !important;
 	width: 100%;
-	min-height: 20em';
+	min-height: 20em;
 }
 .log-empty {
 }
@@ -1234,10 +1234,7 @@ return baseclass.extend({
 							E('div', {
 								'align': 'left',
 								'style': 'width:100%',
-							}, [
-								this.logDownloadBtn,
-								this.csvDownloadBtn
-							])
+							}, this.logDownloadBtn)
 						),
 					)
 				),
