@@ -1,0 +1,13 @@
+{
+	"admin/status/alert-viewer": {
+		"title": "Alert Viewer",
+		"order": 10,
+		"action": {
+			"type": "view",
+			"path": "alert-viewer/display"
+		},
+		"depends": {
+			"acl": [ "luci-app-alert-viewer" ]
+		}
+	}
+}

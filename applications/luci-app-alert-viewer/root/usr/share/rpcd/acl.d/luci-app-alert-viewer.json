@@ -1,0 +1,16 @@
+{
+	"luci-app-alert-viewer": {
+		"description": "Grant access to alert-viewer procedures",
+		"read": {
+			"cgi-io": [ "exec" ],
+			"file": {
+				"/sbin/logread*": [ "exec" ],
+				"/usr/sbin/logread*": [ "exec" ],
+			},
+			"ubus": {
+				"system": [ "info" ],
+				"luci.log-viewer": [ "getSyslogSize", "getSyslogHash", "getDmesgSize", "getDmesgHash", "getLogfileSize" ]
+			}
+		}
+	}
+}
