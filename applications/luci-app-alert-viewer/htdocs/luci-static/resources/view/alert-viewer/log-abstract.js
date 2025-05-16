@@ -56,9 +56,9 @@ return baseclass.extend({
 		// 将日志界别转换为汉字
 		convertLogLevel(logLevel) {
 			switch(logLevel) {
-				case 'error':
+				case 'err':
 					return _('Critical');
-				case 'warning':
+				case 'warn':
 					return _('Moderate');
 				case 'notice':
 					return _('Notice');
@@ -122,7 +122,7 @@ return baseclass.extend({
 				loggerArgs.push('-l', String(tail));
 			};
 			//loggerArgs.push('-e', this.appPattern);
-			loggerArgs.push('-e', "xfrpc");
+			loggerArgs.push('-e', "agentx");
 			if(extraTstamp) {
 				loggerArgs.push('-t');
 			};
