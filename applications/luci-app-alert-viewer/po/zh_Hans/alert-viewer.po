@@ -1,0 +1,16 @@
+msgid ""
+msgstr "Content-Type: text/plain; charset=UTF-8"
+msgid "Alert Viewer"
+msgstr "告警管理"
+
+msgid "Critical"
+msgstr "严重"
+
+msgid "Moderate"
+msgstr "一般"
+
+msgid "Tip"
+msgstr "提示"
+
+msgid "Download csv"
+msgstr "导出日志"
