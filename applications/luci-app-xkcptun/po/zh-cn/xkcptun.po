@@ -1,0 +1,152 @@
+msgid ""
+msgstr "Content-Type: text/plain; charset=UTF-8\n"
+
+msgid "xkcptun"
+msgstr "xkcptun 配置"
+
+msgid "xkcptun is a extremely fast udp tunnel based on kcp protocol"
+msgstr "xkcptun 是一个基于 KCP 协议的极速 UDP 隧道"
+
+msgid "Settings"
+msgstr "设置"
+
+msgid "Enable"
+msgstr "启用"
+
+msgid "Service Status"
+msgstr "服务状态"
+
+msgid "Running"
+msgstr "运行中"
+
+msgid "Stopped"
+msgstr "已停止"
+
+msgid "Log Level"
+msgstr "日志级别"
+
+msgid "Log level (default: 6)"
+msgstr "日志级别（默认：6）"
+
+msgid "Local Interface"
+msgstr "本地接口"
+
+msgid "Local interface to listen"
+msgstr "监听的本地接口"
+
+msgid "Local Port"
+msgstr "本地端口"
+
+msgid "Local port to listen"
+msgstr "监听的本地端口"
+
+msgid "Remote Address"
+msgstr "远程地址"
+
+msgid "xkcptun server address"
+msgstr "xkcptun 服务器地址"
+
+msgid "Remote Port"
+msgstr "远程端口"
+
+msgid "xkcptun server port"
+msgstr "xkcptun 服务器端口"
+
+msgid "Key"
+msgstr "密钥"
+
+msgid "pre-shared secret between client and server"
+msgstr "客户端与服务器间的预共享密钥"
+
+msgid "crypt"
+msgstr "加密方式"
+
+msgid "Mode"
+msgstr "模式"
+
+msgid "profiles: fast3, fast2, fast, normal, manual"
+msgstr "配置：fast3, fast2, fast, normal, manual"
+
+msgid "MTU"
+msgstr "MTU"
+
+msgid "MTU of UDP packets, default 1350"
+msgstr "UDP 数据包的 MTU 值，默认 1350"
+
+msgid "Send Window Size"
+msgstr "发送窗口大小"
+
+msgid "Send Window Size(num of packets)"
+msgstr "发送窗口大小（数据包数量）"
+
+msgid "Receive Window Size"
+msgstr "接收窗口大小"
+
+msgid "Receive Window Size(num of packets)"
+msgstr "接收窗口大小（数据包数量）"
+
+msgid "Data Shard"
+msgstr "数据分片"
+
+msgid "Reed-Solomon Erasure Coding - datashard"
+msgstr "Reed-Solomon 纠删码 - 数据片"
+
+msgid "Parity Shard"
+msgstr "校验分片"
+
+msgid "Reed-Solomon Erasure Coding - parityshard"
+msgstr "Reed-Solomon 纠删码 - 校验片"
+
+msgid "DSCP"
+msgstr "DSCP"
+
+msgid "DSCP(6bit)"
+msgstr "DSCP（6 位）"
+
+msgid "NoComp"
+msgstr "禁用压缩"
+
+msgid "Disable Compression"
+msgstr "禁用数据压缩"
+
+msgid "AckNodelay"
+msgstr "立即确认"
+
+msgid "Delay ACK or not"
+msgstr "是否延迟确认"
+
+msgid "NoDelay"
+msgstr "NoDelay 模式"
+
+msgid "Enable nodelay Mode"
+msgstr "启用 nodelay 模式"
+
+msgid "Interval"
+msgstr "内部更新间隔"
+
+msgid "Internal timer to update"
+msgstr "内部定时器更新间隔"
+
+msgid "Resend"
+msgstr "快速重传"
+
+msgid "Fast resend"
+msgstr "快速重传设置"
+
+msgid "NC"
+msgstr "关闭流控"
+
+msgid "No congestion"
+msgstr "关闭拥塞控制"
+
+msgid "Socket Buffer"
+msgstr "套接字缓冲区"
+
+msgid "Socket buffer size"
+msgstr "套接字缓冲区大小"
+
+msgid "Keep Alive"
+msgstr "保活间隔"
+
+msgid "NAT keepalive interval(seconds)"
+msgstr "NAT 保活间隔（秒）"

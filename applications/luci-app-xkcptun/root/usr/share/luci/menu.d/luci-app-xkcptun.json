@@ -1,0 +1,10 @@
+{
+    "admin/vpn/xkcptun": {
+        "title": "xkcptun",
+        "order": 99,
+        "action": {
+            "type": "view",
+            "path": "xkcptun/xkcptun"
+        }
+    }
+}
