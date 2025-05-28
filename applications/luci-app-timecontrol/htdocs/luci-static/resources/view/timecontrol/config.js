@@ -42,16 +42,23 @@ return view.extend({
 		o.datatype = 'string';
 		o.placeholder = 'hostname';
 
+		o = s.option(form.ListValue, 'match_type', _('Match'));
+		o.default = 'mac';
+		o.rmempty = false;
+		o.value('mac', _('MAC Address'));
+		o.value('ip', _('IP Address'));
+
 		o = s.option(form.Value, 'ipv4', _('IP Address'));
 		o.datatype = 'or(ip4addr,"ignore")';
+		o.depends('match_type', 'ip');
 		L.sortedKeys(ipaddrs, null, 'addr').forEach(function(ipv4) {
 			o.value(ipv4, ipaddrs[ipv4] ? '%s (%s)'.format(ipv4, ipaddrs[ipv4]) : ipv4);
 		});
 
-		o = s.option(form.Value, 'macaddr', 'MAC');
+		o = s.option(form.Value, 'macaddr', _('MAC Address'));
 		o.rmempty = true;
+		o.depends('match_type', 'mac');
 		o.datatype = 'or(macaddr,"ignore")';
-
 		L.sortedKeys(macaddrs, null, 'addr').forEach(function(mac) {
 			o.value(mac, macaddrs[mac] ? '%s (%s)'.format(mac, macaddrs[mac]) : mac);
 		});
