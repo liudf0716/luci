@@ -7,8 +7,7 @@
 'require form';
 'require tools.widgets as widgets';
 
-var callRcList, callRcInit, callTimezone,
-    callGetLocaltime, callSetLocaltime, CBILocalTime;
+var callRcList, callRcInit, callTimezone, callGetLocaltime, callSetLocaltime, CBILocalTime, SyncNtpdate;
 
 callRcList = rpc.declare({
 	object: 'rc',
@@ -61,17 +60,70 @@ function formatTime(epoch) {
 	);
 }
 
+function parseTime(str) {
+	// 解析形如 "2025-05-29 15:30:00" 的字符串为秒级时间戳
+	var parts = str.trim().split(' ');
+	if (parts.length !== 2) return null;
+	var dateParts = parts[0].split('-');
+	var timeParts = parts[1].split(':');
+	if (dateParts.length !== 3 || timeParts.length !== 3) return null;
+
+	var year = parseInt(dateParts[0], 10);
+	var month = parseInt(dateParts[1], 10) - 1; // JS中月份0-11
+	var day = parseInt(dateParts[2], 10);
+	var hour = parseInt(timeParts[0], 10);
+	var minute = parseInt(timeParts[1], 10);
+	var second = parseInt(timeParts[2], 10);
+
+	var d = new Date(Date.UTC(year, month, day, hour, minute, second));
+	if (isNaN(d.getTime())) return null;
+
+	return Math.floor(d.getTime() / 1000);
+}
+
+SyncNtpdate = form.DummyValue.extend({
+	renderWidget: function(section_id, option_id, cfgvalue) {
+		return E([], [
+			E('span', { 'class': 'control-group' }, [
+				E('button', {
+					'class': 'cbi-button cbi-button-apply',
+					'click': ui.createHandlerFn(this, function() {
+						return callRcInit('sysntpd', 'restart');
+					}),
+				}, _('Sync Now'))
+			])
+		]);
+	},
+});
+
 CBILocalTime = form.DummyValue.extend({
 	renderWidget: function(section_id, option_id, cfgvalue) {
 		return E([], [
 			E('input', {
 				'id': 'localtime',
 				'type': 'text',
-				'readonly': true,
 				'value': formatTime(cfgvalue)
 			}),
 			E('br'),
 			E('span', { 'class': 'control-group' }, [
+				E('button', {
+					'class': 'cbi-button cbi-button-apply',
+					'click': ui.createHandlerFn(this, function(ev) {
+						ev.preventDefault();
+						var input = document.getElementById('localtime');
+						var val = input.value;
+						var timestamp = parseTime(val);
+						if (timestamp === null) {
+							ui.addNotification(null, E('p', _('Invalid time format, please use YYYY-MM-DD HH:MM:SS')), 'error');
+							return;
+						}
+						callSetLocaltime(timestamp).then(function(res) {
+							//ui.addNotification(null, E('p', _('Time updated successfully')));
+						}).catch(function() {
+							//ui.addNotification(null, E('p', _('Failed to update time')), 'error');
+						});
+					}),
+				}, _('Manual Conf')),
 				E('button', {
 					'class': 'cbi-button cbi-button-apply',
 					'click': ui.createHandlerFn(this, function() {
@@ -79,14 +131,7 @@ CBILocalTime = form.DummyValue.extend({
 					}),
 					'disabled': (this.readonly != null) ? this.readonly : this.map.readonly
 				}, _('Sync with browser')),
-				' ',
-				this.ntpd_support ? E('button', {
-					'class': 'cbi-button cbi-button-apply',
-					'click': ui.createHandlerFn(this, function() {
-						return callRcInit('sysntpd', 'restart');
-					}),
-					'disabled': (this.readonly != null) ? this.readonly : this.map.readonly
-				}, _('Sync with NTP-Server')) : ''
+				' '
 			])
 		]);
 	},
@@ -305,6 +350,8 @@ return view.extend({
 			o.load = function(section_id) {
 				return uci.get('system', 'ntp', 'server');
 			};
+
+			o = s.taboption('timesync', SyncNtpdate, '', '&nbsp');
 		}
 
 		return m.render().then(function(mapEl) {
