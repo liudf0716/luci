@@ -12,7 +12,7 @@
 			"uci": [ "internet-detector" ],
 			"ubus": {
 				"luci": [ "getInitList", "setInitAction" ],
-				"luci.internet-detector": [ "Init", "Status", "InetStatus", "UIPoll" ]
+				"luci.internet-detector": [ "Init", "Status", "InetStatus", "HostStatus", "UIPoll" ]
 			}
 		},
 		"write": {

@@ -4,10 +4,10 @@
 'require fs';
 'require poll';
 'require rpc';
-'require uci';
 'require ui';
 'require view';
-'require tools.widgets as widgets'
+'require uci';
+'require tools.widgets as widgets';
 
 document.head.append(E('style', {'type': 'text/css'},
 `
@@ -56,6 +56,12 @@ document.head.append(E('style', {'type': 'text/css'},
 	-moz-border-radius: 4px;
 	border-radius: 4px;
 	font-weight: bold;
+}
+.text-success {
+	color: #005F20;
+}
+.text-danger {
+	color: #f8aeba;
 }
 `));
 
@@ -140,6 +146,7 @@ return view.extend({
 	appStatus              : 'stoped',
 	initStatus             : null,
 	inetStatus             : null,
+	hostStatus             : null,
 	inetStatusArea         : E('div', { 'class': 'cbi-value-field', 'id': 'inetStatusArea' }),
 	serviceStatusLabel     : E('em', { 'id': 'serviceStatusLabel' }),
 	initButton             : null,
@@ -237,12 +244,60 @@ return view.extend({
 		expect: { '': {} }
 	}),
 
+	callHostStatus: rpc.declare({
+		object: 'luci.internet-detector',
+		method: 'HostStatus',
+		expect: { '': {} }
+	}),
+
 	getInetStatus() {
 		return this.callInetStatus().then(data => {
 			return data;
 		});
 	},
 
+	getHostStatus() {
+		return this.callHostStatus().then(data => {
+			return data;
+		});
+	},
+
+	setHostStatus() {
+		if(!this.hostStatus || !this.hostStatus.instances || this.hostStatus.instances.length === 0) {
+
+		} else {
+			this.hostStatus.instances.forEach(item => {
+				let instanceId = item.instance;
+				let inetStatus = item.inet;
+
+				// 拼接 tr 的 id
+				let rowId = 'cbi-internet-detector-' + instanceId;
+
+				// 找到该行
+				let row = document.getElementById(rowId);
+				if (!row) return;
+
+				// 找到该行中显示 status 的 <td>
+				let statusTd = row.querySelector('td[data-name="_status"]');
+				if (!statusTd) return;
+
+				// 根据 inet 状态设置文本
+				if (inetStatus === 0) {
+					statusTd.textContent = _('Connected');
+					statusTd.classList.remove('text-danger', 'text-warning');
+					statusTd.classList.add('text-success');
+				} else if (inetStatus === 1) {
+					statusTd.textContent = _('Disconnected');
+					statusTd.classList.remove('text-success', 'text-warning');
+					statusTd.classList.add('text-danger');
+				} else {
+					statusTd.textContent = _('Undefined');
+					statusTd.classList.remove('text-success', 'text-danger');
+					statusTd.classList.add('text-warning');
+				}
+			});
+		};
+	},
 	setInternetStatus() {
 		this.inetStatusArea.innerHTML = '';
 
@@ -302,13 +357,17 @@ return view.extend({
 		return Promise.all([
 			this.getStatus(),
 			this.getInetStatus(),
+			this.getHostStatus(),
 		]).then(stat => {
 			this.appStatus  = stat[0].status;
 			this.inetStatus = stat[1];
+			this.hostStatus = stat[2];
 			this.setInternetStatus();
+			this.setHostStatus();
 		}).catch(e => {
 			this.appStatus  = 'stoped';
 			this.inetStatus = {};
+			this.hostStatus = {};
 		});
 	},
 
@@ -547,9 +606,7 @@ return view.extend({
 		this.currentAppMode = uci.get(this.appName, 'config', 'mode');
 
 		let s, o, ss;
-		let m = new form.Map(this.appName,
-			_('Internet Detector'),
-			_('Checking Internet availability.'));
+		let m = new form.Map(this.appName, _('Internet Detector'));
 
 
 		/* Status widget */
@@ -584,32 +641,139 @@ return view.extend({
 		// mode
 		let mode = s.option(form.ListValue, 'mode',
 			_('Internet detector mode'));
-		mode.value('0', _('Disabled'));
+		mode.value('0', _('Disable'));
 		mode.value('1', _('Service'));
-		mode.value('2', _('Web UI only (UI detector)'));
-		mode.description = '%s<br />%s<br />%s'.format(
-			_('Disabled: detector is completely off.'),
-			_('Service: detector always runs as a system service.'),
+		mode.value('2', _('Web'));
+		mode.description = '%s'.format(
 			_('Web UI only: detector works only when the Web UI is open (UI detector).')
 		);
 		mode.default = '0';
 
-
-		/* Service instances configuration */
-
 		if(this.currentAppMode !== '2') {
-
 			// enable_logger
 			o = s.option(form.Flag, 'enable_logger',
-				_('Enable logging'),
-				_('Write messages to the system log.')
+				_('Enable logging')
 			);
 			o.rmempty = false;
 			o.default = '1';
 		};
 
-		s = m.section(form.GridSection, 'instance');
 
+		/* host instances configuration */
+		s = m.section(form.GridSection, 'host');
+		s.title          = _('Host instances');
+		s.addremove      = true;
+		s.sortable       = true;
+		s.nodescriptions = true;
+		s.addbtntitle    = _('Add host');
+
+		// enabled
+		o = s.option(form.Flag, 'enabled',
+			_('Enabled'),
+		);
+		o.rmempty   = false;
+		o.default   = '1';
+		o.editable  = true;
+		o.modalonly = false;
+
+		// hosts
+		o = s.option(form.Value,
+			'hosts', _('Hosts'),
+			_('Hosts to check Internet availability. Hosts are polled (in list order) until at least one of them responds.')
+		);
+		o.datatype = 'or(or(host,hostport),ipaddrport(1))';
+		o.rmempty  = false;
+
+		// check_type
+		o = s.option(form.ListValue,
+			'check_type', _('Check type'),
+			_('Host availability check type.')
+		);
+		o.value('tcp', _('TCP port connection'));
+		o.value('icmp', _('ICMP-echo request (ping)'));
+		o.default   = 'icmp';
+
+		// tcp_port
+		o = s.option(form.Value,
+			'tcp_port', _('TCP port'),
+			_('Default port value for TCP connections.')
+		);
+		o.datatype = 'port';
+		o.default  = '80';
+		o.depends({ check_type: 'tcp' });
+		o.modalonly = true;
+
+		// icmp_packet_size
+		o = s.option(form.ListValue,
+			'icmp_packet_size', _('ICMP packet data size'));
+		o.value(1,    _('Small: 1 byte'));
+		o.value(32,   _('Windows: 32 bytes'));
+		o.value(56,   _('Standard: 56 bytes'));
+		o.value(248,  _('Big: 248 bytes'));
+		o.value(1492, _('Huge: 1492 bytes'));
+		o.value(9000, _('Jumbo: 9000 bytes'));
+		o.default = '56';
+		o.depends({ check_type: 'icmp' });
+		o.modalonly = true;
+
+		// interval_up
+		o = s.option(form.ListValue,
+			'interval_up', _('Alive interval'),
+			_('Hosts polling interval when the Internet is up.')
+		);
+		o.default   = '30';
+		o.modalonly = true;
+		makeIntervalOptions(o);
+
+		// interval_down
+		o = s.option(form.ListValue,
+			'interval_down', _('Dead interval'),
+			_('Hosts polling interval when the Internet is down.')
+		);
+		o.default   = '5';
+		o.modalonly = true;
+		makeIntervalOptions(o);
+
+		// connection_attempts
+		o = s.option(form.ListValue,
+			'connection_attempts', _('Connection attempts'),
+			_('Maximum number of attempts to connect to each host.')
+		);
+		o.modalonly = true;
+		o.value(1);
+		o.value(2);
+		o.value(3);
+		o.value(4);
+		o.value(5);
+		o.default = '2';
+
+		// connection_timeout
+		o = s.option(form.ListValue,
+			'connection_timeout', _('Connection timeout'),
+			_('Maximum timeout for waiting for a response from the host.')
+		);
+		o.modalonly = true;
+		o.value(1,  '1 ' + _('sec'));
+		o.value(2,  '2 ' + _('sec'));
+		o.value(3,  '3 ' + _('sec'));
+		o.value(4,  '4 ' + _('sec'));
+		o.value(5,  '5 ' + _('sec'));
+		o.value(6,  '6 ' + _('sec'));
+		o.value(7,  '7 ' + _('sec'));
+		o.value(8,  '8 ' + _('sec'));
+		o.value(9,  '9 ' + _('sec'));
+		o.value(10, '10 ' + _('sec'));
+		o.default = '2';
+
+		o = s.option(form.DummyValue, '_status', _('Status'));
+		o.modalonly = false;
+		o.editable = false;
+		o.textvalue = function(section_id) {
+			return _('Checking…');
+		};
+
+		/* Service instances configuration */
+		s = m.section(form.GridSection, 'instance');
 		s.title          = _('Service instances');
 		s.addremove      = true;
 		s.sortable       = true;

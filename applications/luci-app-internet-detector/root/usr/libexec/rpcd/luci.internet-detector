@@ -6,6 +6,7 @@ local mailsendExec     = "/usr/bin/mailsend"
 local modemManagerInit = "/etc/init.d/modemmanager"
 
 local InternetDetector = require(appName .. ".main")
+local HostDetector = require(appName .. ".mod_host")
 local uci              = require("uci")
 local unistd           = require("posix.unistd")
 
@@ -66,7 +67,7 @@ local function uiPoll()
 end
 
 local function list()
-	io.write('{"Init":{},"Status":{},"InetStatus":{},"UIPoll":{}}')
+	io.write('{"Init":{},"Status":{},"InetStatus":{},"HostStatus":{},"UIPoll":{}}')
 end
 
 if arg[1] == "list" then
@@ -76,6 +77,8 @@ elseif arg[1] == "call" then
 		io.write(init())
 	elseif arg[2] == "Status" then
 		io.write(string.format('{"status":"%s"}', tostring(InternetDetector:status())))
+	elseif arg[2] == "HostStatus" then
+		io.write(HostDetector:inetStatus())
 	elseif arg[2] == "InetStatus" then
 		io.write(InternetDetector:inetStatus())
 	elseif arg[2] == "UIPoll" then

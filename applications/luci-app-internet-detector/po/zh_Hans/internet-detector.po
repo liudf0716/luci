@@ -140,7 +140,7 @@ msgid "Enable"
 msgstr "启用"
 
 msgid "Enable logging"
-msgstr "启用日志记录"
+msgstr "启用日志"
 
 msgid "Enable public-ip-script"
 msgstr "启用公网 IP 脚本"
@@ -206,10 +206,10 @@ msgid "Internet Detector"
 msgstr "联网检测"
 
 msgid "Internet detector mode"
-msgstr "互联网检测模式"
+msgstr "检测模式"
 
 msgid "Internet status"
-msgstr "互联网状态"
+msgstr "联网状态"
 
 msgid "Interval between IP address requests."
 msgstr "IP 地址请求间隔。"
@@ -299,10 +299,7 @@ msgid "Service: detector always runs as a system service."
 msgstr "服务：检测器始终作为系统服务运行。"
 
 msgid "Web UI only: detector works only when the Web UI is open (UI detector)."
-msgstr "仅限 Web：检测器仅在 Web 打开时运行。"
-
-msgid "Web UI only (UI detector)"
-msgstr "Web检测"
+msgstr "Web：检测器仅在 Web 打开时运行。"
 
 msgid "Network device for Internet access. If not specified, the default device is used."
 msgstr "用于互联网访问的网络设备。如果未指定，则使用默认设备。"
@@ -312,6 +309,9 @@ msgstr "等待主机响应的最大超时时间。"
 
 msgid "Period of time without Internet access until the device is rebooted."
 msgstr "设备在无互联网访问的情况下重启的时间间隔"
+
+msgid "Service instances"
+msgstr "服务实例"
 
 msgid "Reboot device"
 msgstr "重启设备"
@@ -375,3 +375,12 @@ msgstr "TCP端口连接"
 
 msgid "Polling interval"
 msgstr "查询间隔"
+
+msgid "Host instances"
+msgstr "主机检测"
+
+msgid "Add host"
+msgstr "添加主机"
+
+msgid "Checking…"
+msgstr "检测中"
