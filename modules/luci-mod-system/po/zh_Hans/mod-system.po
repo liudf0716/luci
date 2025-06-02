@@ -21,3 +21,12 @@ msgstr "立即同步"
 
 msgid "Invalid time format, please use YYYY-MM-DD HH:MM:SS"
 msgstr "时间格式错误, 请使用 YYYY-MM-DD hh:mm:ss"
+
+msgid "Download full backup"
+msgstr "全量备份"
+
+msgid "Back up essential system settings and installed software list"
+msgstr "备份关键系统设置和已安装软件列表"
+
+msgid "Back up all user-defined configurations, installed packages, and other writable data."
+msgstr "备份系统中所有用户自定义的数据和配置"

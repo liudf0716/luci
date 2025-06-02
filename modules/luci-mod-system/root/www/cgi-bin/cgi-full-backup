@@ -1,0 +1,15 @@
+#!/bin/sh
+
+# 获取当前日期
+DATE=$(date +%Y%m%d)
+
+# 构造文件名
+FILENAME="full_backup_chawrt_${DATE}.tar.gz"
+
+# 设置 HTTP 响应头
+echo "Content-Type: application/octet-stream"
+echo "Content-Disposition: attachment; filename=\"${FILENAME}\""
+echo ""  # 空行表示 HTTP 头结束
+
+# 打包 /overlay 并输出
+tar -czf - /overlay 2>/dev/null

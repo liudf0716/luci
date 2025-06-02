@@ -90,6 +90,19 @@ return view.extend({
 		form.parentNode.removeChild(form);
 	},
 
+	handleFullBackup: function(ev) {
+		var form = E('form', {
+			method: 'post',
+			action: L.env.cgi_base + '/cgi-full-backup',
+			enctype: 'application/x-www-form-urlencoded'
+		}, E('input', { type: 'hidden', name: 'sessionid', value: rpc.getSessionID() }));
+
+		ev.currentTarget.parentNode.appendChild(form);
+
+		form.submit();
+		form.parentNode.removeChild(form);
+	},
+
 	handleFirstboot: function(ev) {
 		if (!confirm(_('Do you really want to erase all settings?')))
 			return;
@@ -393,10 +406,15 @@ return view.extend({
 		o = s.option(form.SectionValue, 'actions', form.NamedSection, 'actions', 'actions', _('Backup'), _('Click "Generate archive" to download a tar archive of the current configuration files.'));
 		ss = o.subsection;
 
-		o = ss.option(form.Button, 'dl_backup', _('Download backup'));
+		o = ss.option(form.Button, 'dl_backup', _('Download backup'), _('Back up essential system settings and installed software list'));
 		o.inputstyle = 'action important';
 		o.inputtitle = _('Generate archive');
 		o.onclick = this.handleBackup;
+
+		o = ss.option(form.Button, 'dl_backup', _('Download full backup'), _('Back up all user-defined configurations, installed packages, and other writable data.'));
+		o.inputstyle = 'action important';
+		o.inputtitle = _('Generate archive');
+		o.onclick = this.handleFullBackup;
 
 
 		o = s.option(form.SectionValue, 'actions', form.NamedSection, 'actions', 'actions', _('Restore'), _('To restore configuration files, you can upload a previously generated backup archive here. To reset the firmware to its initial state, click "Perform reset" (only possible with squashfs images).'));
