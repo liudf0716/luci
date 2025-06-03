@@ -384,3 +384,10 @@ msgstr "添加主机"
 
 msgid "Checking…"
 msgstr "检测中"
+
+msgid "Connected successfully"
+msgstr "连接正常"
+
+msgid "Unable to connect"
+msgstr "无法连接"
+

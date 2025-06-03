@@ -488,7 +488,7 @@ function InternetDetector:preRun()
 end
 
 function InternetDetector:run()
-	os.execute("mkdir -p" .. self.commonDir)
+	os.execute("mkdir -p " .. self.commonDir)
 	local pidValue = unistd.getpid()
 	self:writeValueToFile(self.pidFile, pidValue)
 	if self.enableLogger then

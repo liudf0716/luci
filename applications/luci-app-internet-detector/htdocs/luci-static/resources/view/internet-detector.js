@@ -283,11 +283,11 @@ return view.extend({
 
 				// 根据 inet 状态设置文本
 				if (inetStatus === 0) {
-					statusTd.textContent = _('Connected');
+					statusTd.textContent = _('Connected successfully');
 					statusTd.classList.remove('text-danger', 'text-warning');
 					statusTd.classList.add('text-success');
 				} else if (inetStatus === 1) {
-					statusTd.textContent = _('Disconnected');
+					statusTd.textContent = _('Unable to connect');
 					statusTd.classList.remove('text-success', 'text-warning');
 					statusTd.classList.add('text-danger');
 				} else {
