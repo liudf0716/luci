@@ -75,7 +75,7 @@ function parseTime(str) {
 	var minute = parseInt(timeParts[1], 10);
 	var second = parseInt(timeParts[2], 10);
 
-	var d = new Date(Date.UTC(year, month, day, hour, minute, second));
+	var d = new Date(year, month, day, hour, minute, second);
 	if (isNaN(d.getTime())) return null;
 
 	return Math.floor(d.getTime() / 1000);
@@ -356,10 +356,19 @@ return view.extend({
 
 		return m.render().then(function(mapEl) {
 			poll.add(function() {
+				const inputEl = mapEl.querySelector('#localtime');
+
+				// 判断当前焦点是否在这个输入框上
+				if (document.activeElement === inputEl) {
+					// 焦点在输入框中，跳过更新
+					return;
+				}
+
+				// 正常更新
 				return callGetLocaltime().then(function(t) {
-					mapEl.querySelector('#localtime').value = formatTime(t);
+					inputEl.value = formatTime(t);
 				});
-			});
+			},1);
 
 			return mapEl;
 		});
