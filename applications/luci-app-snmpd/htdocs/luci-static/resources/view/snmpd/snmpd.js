@@ -93,9 +93,13 @@ return view.extend({
 		o.datatype = "port";
 		o.placeholder = 162;
 
-		o = s.option(form.Value, "interval", _("interval"), _("Time interval for continuous alarms"));
+		o = s.option(form.Value, "trap_interval", _("trap interval"), _("Time interval for continuous alarms"));
 		o.datatype = "uinteger";
 		o.placeholder = 600;
+
+		o = s.option(form.Value, "check_interval", _("check interval"), _("Time interval for check task"));
+		o.datatype = "uinteger";
+		o.placeholder = 30;
 
 		return Promise.all([m.render(), t.render()]).then(function(rendered) {
 			const container = document.createElement('div');

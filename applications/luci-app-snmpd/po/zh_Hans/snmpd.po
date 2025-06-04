@@ -109,4 +109,12 @@ msgstr "告警间隔"
 msgid "Time interval for continuous alarms"
 msgstr "触发告警后连续发送的时间间隔, 单位:秒"
 
+msgid "trap interval"
+msgstr "告警间隔"
+
+msgid "check interval"
+msgstr "检测周期"
+
+msgid "Time interval for check task"
+msgstr "轮询检测任务的时间间隔, 单位:秒"
 
