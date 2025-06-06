@@ -222,7 +222,7 @@ return baseclass.extend({
 			'debug' : E('span', { 'class': 'zonebadge log-debug' }, E('strong', 'Debug')),
 		},
 
-		tailValue            : 25,
+		tailValue            : 0,
 
 		fastTailIncrement    : 50,
 
@@ -1174,9 +1174,9 @@ return baseclass.extend({
 					'class': 'log-side-block',
 				}, [
 					this.refreshBtn,
-					this.moreEntriesBtn,
-					this.allEntriesBtn,
-					this.filterModalBtn,
+					// this.moreEntriesBtn,
+					// this.allEntriesBtn,
+					// this.filterModalBtn,
 					E('button', {
 						'class': 'cbi-button btn log-side-btn',
 						'style': 'margin-top:10px !important',
@@ -1200,7 +1200,7 @@ return baseclass.extend({
 				poll.add(this.pollFuncWrapper, this.pollInterval);
 			};
 
-			let logArea = [ this.moreEntriesBar, this.logWrapper ];
+			let logArea = [ this.logWrapper ];
 			if(this.logSortingValue == 'desc') {
 				logArea.reverse();
 			};
