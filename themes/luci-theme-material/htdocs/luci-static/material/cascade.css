@@ -347,6 +347,7 @@ small {
 	height: calc(100% - 4rem);
 	background-color: var(--menu-bg-color);
 	transition: visibility 400ms, width 400ms;
+	z-index: 800;
 }
 
 .main-right {
@@ -369,7 +370,9 @@ small {
 	float: left;
 }
 
-.nowrap:not(.td) {
+.nowrap:not(.td span) {
+/*	Sometimes you need to wrap: badges on narrow screens look weird 
+	and nowrap defeats other width constraints, so exclude span */
 	white-space: nowrap;
 }
 
