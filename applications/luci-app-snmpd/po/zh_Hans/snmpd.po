@@ -38,7 +38,7 @@ msgstr "组有助于定义访问方法"
 
 #: applications/luci-app-snmpd/root/usr/share/luci/menu.d/luci-app-snmpd.json:3
 msgid "SNMPD"
-msgstr "SNMPD"
+msgstr "SNMP配置"
 
 #: applications/luci-app-snmpd/htdocs/luci-static/resources/view/snmpd/snmpd.js:8
 msgid ""
