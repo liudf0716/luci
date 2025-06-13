@@ -120,7 +120,7 @@ var CBIZoneSelect = form.ListValue.extend({
 				for (var k = 0; k < devices.length; k++) {
 					span.appendChild(E('img', {
 						'title': devices[k].getI18n(),
-						'src': L.resource('icons/%s%s.png'.format(devices[k].getType(), network.isUp() ? '' : '_disabled'))
+						'src': L.resource('icons/%s%s.svg'.format(devices[k].getType(), network.isUp() ? '' : '_disabled'))
 					}));
 				}
 
@@ -265,7 +265,7 @@ var CBIZoneForwards = form.DummyValue.extend({
 			for (var k = 0; k < subdevs.length && subdevs[k]; k++) {
 				span.appendChild(E('img', {
 					'title': subdevs[k].getI18n(),
-					'src': L.resource('icons/%s%s.png'.format(subdevs[k].getType(), network.isUp() ? '' : '_disabled'))
+					'src': L.resource('icons/%s%s.svg'.format(subdevs[k].getType(), network.isUp() ? '' : '_disabled'))
 				}));
 			}
 
@@ -284,7 +284,7 @@ var CBIZoneForwards = form.DummyValue.extend({
 			ifaces.push(E('span', { 'class': 'ifacebadge' }, [
 				E('img', {
 					'title': title,
-					'src': L.resource('icons/%s%s.png'.format(type, up ? '' : '_disabled'))
+					'src': L.resource('icons/%s%s.svg'.format(type, up ? '' : '_disabled'))
 				}),
 				device ? device.getName() : devices[i]
 			]));
@@ -361,7 +361,7 @@ var CBINetworkSelect = form.ListValue.extend({
 		for (var j = 0; j < devices.length && devices[j]; j++) {
 			span.appendChild(E('img', {
 				'title': devices[j].getI18n(),
-				'src': L.resource('icons/%s%s.png'.format(devices[j].getType(), network.isUp() ? '' : '_disabled'))
+				'src': L.resource('icons/%s%s.svg'.format(devices[j].getType(), network.isUp() ? '' : '_disabled'))
 			}));
 		}
 
@@ -506,7 +506,7 @@ var CBIDeviceSelect = form.ListValue.extend({
 			var item = E([
 				E('img', {
 					'title': device.getI18n(),
-					'src': L.resource('icons/%s%s.png'.format(type, device.isUp() ? '' : '_disabled'))
+					'src': L.resource('icons/%s%s.svg'.format(type, device.isUp() ? '' : '_disabled'))
 				}),
 				E('span', { 'class': 'hide-open' }, [ name ]),
 				E('span', { 'class': 'hide-close'}, [ device.getI18n() ])
@@ -539,7 +539,7 @@ var CBIDeviceSelect = form.ListValue.extend({
 				var item = E([
 					E('img', {
 						'title': device.getI18n(),
-						'src': L.resource('icons/alias%s.png'.format(device.isUp() ? '' : '_disabled'))
+						'src': L.resource('icons/alias%s.svg'.format(device.isUp() ? '' : '_disabled'))
 					}),
 					E('span', { 'class': 'hide-open' }, [ name ]),
 					E('span', { 'class': 'hide-close'}, [ device.getI18n() ])
@@ -577,7 +577,7 @@ var CBIDeviceSelect = form.ListValue.extend({
 				choices[keys[i]] = E([
 					E('img', {
 						'title': _('Absent Interface'),
-						'src': L.resource('icons/ethernet_disabled.png')
+						'src': L.resource('icons/ethernet_disabled.svg')
 					}),
 					E('span', { 'class': 'hide-open' }, [ keys[i] ]),
 					E('span', { 'class': 'hide-close'}, [ '%s: "%h"'.format(_('Absent Interface'), keys[i]) ])
@@ -601,7 +601,7 @@ var CBIDeviceSelect = form.ListValue.extend({
 			create: !this.nocreate,
 			create_markup: '' +
 				'<li data-value="{{value}}">' +
-					'<img title="'+_('Custom Interface')+': &quot;{{value}}&quot;" src="'+L.resource('icons/ethernet_disabled.png')+'" />' +
+					'<img title="'+_('Custom Interface')+': &quot;{{value}}&quot;" src="'+L.resource('icons/ethernet_disabled.svg')+'" />' +
 					'<span class="hide-open">{{value}}</span>' +
 					'<span class="hide-close">'+_('Custom Interface')+': "{{value}}"</span>' +
 				'</li>'
