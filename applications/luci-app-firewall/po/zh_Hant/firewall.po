@@ -1,14 +1,14 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-04-15 03:25+0000\n"
-"Last-Translator: ZW <roc_fe@users.noreply.hosted.weblate.org>\n"
+"PO-Revision-Date: 2025-06-15 15:48+0000\n"
+"Last-Translator: EESF-2 <eesf-2@users.noreply.hosted.weblate.org>\n"
 "Language-Team: Chinese (Traditional Han script) <https://hosted.weblate.org/"
 "projects/openwrt/luciapplicationsfirewall/zh_Hant/>\n"
 "Language: zh_Hant\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: Weblate 5.11-dev\n"
+"X-Generator: Weblate 5.12-dev\n"
 
 #: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:48
 msgid ""
@@ -150,16 +150,16 @@ msgid ""
 "traffic, e.g. <code>-p tcp --dport 443</code> to only match outbound HTTPS "
 "traffic."
 msgstr ""
-"允許原生 <em>iptables</em> 對區域目標流量進行分類的參數, 譬如... <code>-p "
-"tcp --dport 443</code> 只針對相符輸出的HTTPS流量."
+"用於對區域目的流量進行分類的額外<em>iptables</em>引數。例如<code>-p tcp --"
+"dport 443</code>僅匹配傳出HTTPS流量。"
 
 #: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:324
 msgid ""
 "Additional raw <em>iptables</em> arguments to classify zone source traffic, "
 "e.g. <code>-p tcp --sport 443</code> to only match inbound HTTPS traffic."
 msgstr ""
-"允許原生 <em>iptables</em> 參數對區域來源流量進行分類, 譬如... <code>-p tcp "
-"--sport 443</code> 只針對相符輸入的HTTPS流量."
+"用於對區域來源流量進行分類的額外<em>iptables</em>引數。例如<code>-p tcp --"
+"sport 443</code>僅匹配傳入HTTPS流量。"
 
 #: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/forwards.js:107
 msgid "Address family, Internal IP address must match"
@@ -387,7 +387,7 @@ msgstr "額外引數"
 
 #: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:334
 msgid "Extra destination arguments"
-msgstr "額外目標引數"
+msgstr "額外目的引數"
 
 #: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:116
 msgid "Extra iptables arguments"
@@ -888,7 +888,7 @@ msgstr ""
 #: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/rules.js:474
 #: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/snats.js:346
 msgid "Passes additional arguments to iptables. Use with care!"
-msgstr "傳遞附加引數到 iptables，小心使用！"
+msgstr "傳遞附加引數至iptables。小心使用！"
 
 #: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/zones.js:321
 msgid ""
@@ -898,9 +898,9 @@ msgid ""
 "invalid values could render the firewall ruleset broken, completely exposing "
 "all services."
 msgstr ""
-"透過將原始 iptables 參數傳遞給來源和目的流量分類規則，可以根據介面或子網路以"
-"外的其他條件來相符封包. 這些選項應格外小心, 因為無效值可能會使防火牆規則集損"
-"壞, 從而對外完全暴露所有服務."
+"將原始iptables引數傳遞給來源和目的流量分類規則可以根據介面或子網路以外的其他"
+"條件匹配封包。使用這些選項時應注意，因為無效值可能會破壞防火牆規則集，從而完"
+"全暴露所有服務。"
 
 #: applications/luci-app-firewall/htdocs/luci-static/resources/view/firewall/ipsets.js:188
 msgid "Path to file of CIDRs, subnets, host IPs, etc.<br />"
