@@ -18,6 +18,11 @@ var callSystemInfo = rpc.declare({
 	method: 'info'
 });
 
+var callNetworkInfo = rpc.declare({
+	object: 'luci-rpc',
+	method: 'getNetworkDevices'
+});
+
 return baseclass.extend({
 	title: _('System'),
 
@@ -25,14 +30,16 @@ return baseclass.extend({
 		return Promise.all([
 			L.resolveDefault(callSystemBoard(), {}),
 			L.resolveDefault(callSystemInfo(), {}),
-			L.resolveDefault(callLuciVersion(), { revision: _('unknown version'), branch: 'LuCI' })
+			L.resolveDefault(callLuciVersion(), { revision: _('unknown version'), branch: 'LuCI' }),
+			L.resolveDefault(callNetworkInfo(), {})
 		]);
 	},
 
 	render: function(data) {
 		var boardinfo   = data[0],
 		    systeminfo  = data[1],
-		    luciversion = data[2];
+		    luciversion = data[2],
+		    iface       = data[3];
 
 		luciversion = luciversion.branch + ' ' + luciversion.revision;
 
@@ -51,9 +58,15 @@ return baseclass.extend({
 			);
 		}
 
+		var sn = '?';
+		if (iface && iface['br-lan'] && iface['br-lan'].mac) {
+			sn = iface['br-lan'].mac.replace(/:/g, '').toUpperCase();
+		}
+
 		var fields = [
 			_('Hostname'),         boardinfo.hostname,
 			_('Model'),            boardinfo.model,
+			_('SN'),               sn,
 			_('Architecture'),     boardinfo.system,
 			_('Target Platform'),  (L.isObject(boardinfo.release) ? boardinfo.release.target : ''),
 			_('Firmware Version'), (L.isObject(boardinfo.release) ? boardinfo.release.description + ' / ' : '') + (luciversion || ''),

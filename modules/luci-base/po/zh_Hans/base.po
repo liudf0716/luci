@@ -14483,3 +14483,6 @@ msgstr "备份关键系统设置和已安装软件列表"
 
 msgid "Back up all user-defined configurations, installed packages, and other writable data."
 msgstr "备份系统中所有用户自定义的数据和配置"
+
+msgid "SN"
+msgstr "设备号"
