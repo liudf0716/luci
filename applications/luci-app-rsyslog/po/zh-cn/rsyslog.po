@@ -1,0 +1,161 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Project-Id-Version: \n"
+"Language: zh_CN\n"
+
+msgid "Rsyslog Configuration"
+msgstr "Rsyslog 配置"
+
+msgid "Configure rsyslog server settings, remote logging, and log selectors."
+msgstr "配置 rsyslog 服务器设置、远程日志记录和日志选择器。"
+
+msgid "General Settings"
+msgstr "常规设置"
+
+msgid "General"
+msgstr "常规"
+
+msgid "Network"
+msgstr "网络"
+
+msgid "TLS Settings"
+msgstr "TLS 设置"
+
+msgid "Remote Server"
+msgstr "远程服务器"
+
+msgid "Modules"
+msgstr "模块"
+
+msgid "List of rsyslog modules to load"
+msgstr "要加载的 rsyslog 模块列表"
+
+msgid "Default Template"
+msgstr "默认模板"
+
+msgid "Default message format template"
+msgstr "默认消息格式模板"
+
+msgid "Traditional File Format"
+msgstr "传统文件格式"
+
+msgid "File Format"
+msgstr "文件格式"
+
+msgid "Forward Format"
+msgstr "转发格式"
+
+msgid "Enable UDP Input"
+msgstr "启用 UDP 输入"
+
+msgid "Enable UDP syslog reception"
+msgstr "启用 UDP syslog 接收"
+
+msgid "UDP Port"
+msgstr "UDP 端口"
+
+msgid "Port for UDP syslog reception"
+msgstr "UDP syslog 接收端口"
+
+msgid "Enable TCP Input"
+msgstr "启用 TCP 输入"
+
+msgid "Enable TCP syslog reception"
+msgstr "启用 TCP syslog 接收"
+
+msgid "TCP Port"
+msgstr "TCP 端口"
+
+msgid "Port for TCP syslog reception"
+msgstr "TCP syslog 接收端口"
+
+msgid "Enable TLS"
+msgstr "启用 TLS"
+
+msgid "Enable TLS support for secure logging"
+msgstr "启用 TLS 支持安全日志记录"
+
+msgid "TLS Driver"
+msgstr "TLS 驱动"
+
+msgid "OpenSSL"
+msgstr "OpenSSL"
+
+msgid "GnuTLS"
+msgstr "GnuTLS"
+
+msgid "CA Certificate File"
+msgstr "CA 证书文件"
+
+msgid "Path to CA certificate file"
+msgstr "CA 证书文件路径"
+
+msgid "Upload CA Certificate"
+msgstr "上传 CA 证书"
+
+msgid "Upload CA certificate file (.pem, .crt, .cer)"
+msgstr "上传 CA 证书文件（.pem、.crt、.cer）"
+
+msgid "Remote Server Settings"
+msgstr "远程服务器设置"
+
+msgid "Enable Remote Logging"
+msgstr "启用远程日志记录"
+
+msgid "Forward logs to remote syslog server"
+msgstr "将日志转发到远程 syslog 服务器"
+
+msgid "Server IP Address"
+msgstr "服务器 IP 地址"
+
+msgid "IP address of remote syslog server"
+msgstr "远程 syslog 服务器的 IP 地址"
+
+msgid "Server Port"
+msgstr "服务器端口"
+
+msgid "Port of remote syslog server"
+msgstr "远程 syslog 服务器端口"
+
+msgid "Protocol"
+msgstr "协议"
+
+msgid "TCP"
+msgstr "TCP"
+
+msgid "UDP"
+msgstr "UDP"
+
+msgid "Use TLS"
+msgstr "使用 TLS"
+
+msgid "Use TLS encryption for remote logging"
+msgstr "为远程日志记录使用 TLS 加密"
+
+msgid "Source Selector"
+msgstr "源选择器"
+
+msgid "Log selector pattern to forward to remote server"
+msgstr "转发到远程服务器的日志选择器模式"
+
+msgid "Log Selectors"
+msgstr "日志选择器"
+
+msgid "Configure log routing based on facility and priority levels"
+msgstr "基于设施和优先级配置日志路由"
+
+msgid "Source Pattern"
+msgstr "源模式"
+
+msgid "Syslog facility and priority pattern (e.g., *.info, mail.*, authpriv.none)"
+msgstr "Syslog 设施和优先级模式（例如：*.info, mail.*, authpriv.none）"
+
+msgid "Destination"
+msgstr "目标"
+
+msgid "Log file path or action"
+msgstr "日志文件路径或操作"
+
+msgid "Rsyslog"
+msgstr "系统日志"
