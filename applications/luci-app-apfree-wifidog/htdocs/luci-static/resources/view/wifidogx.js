@@ -14,7 +14,31 @@ var callServiceList = rpc.declare({
 	method: 'list',
 	params: ['name'],
 	expect: { '': {} }
-});	
+});
+
+var callGetLocation = rpc.declare({
+	object: 'luci.wifidogx',
+	method: 'get_location',
+	params: [],
+	expect: { result: {} }
+});
+
+var callGetWanMac = rpc.declare({
+	object: 'luci.wifidogx',
+	method: 'get_wan_mac',
+	params: [],
+	expect: { result: {} }
+});
+
+// Generate Device ID: AW + 7 random digits + 12-char MAC (total 21 chars)
+function generateDeviceId(macAddress) {
+	var macPart = macAddress.replace(/-/g, ''); // Remove hyphens from MAC
+	var randomPart = '';
+	for (var i = 0; i < 7; i++) {
+		randomPart += Math.floor(Math.random() * 10);
+	}
+	return 'AW' + randomPart + macPart;
+}
 
 function getServiceStatus() {
 	return L.resolveDefault(callServiceList('wifidogx'), {}).then(function (res) {
@@ -56,6 +80,7 @@ return view.extend({
 		s.tab('advanced', _('Advanced Settings'));
 		s.tab('rule', _('Rule Settings'));
 		s.tab('qos', _('QoS Settings'));
+		s.tab('location', _('Authentication Location Settings'));
 
 		// basic settings
 		o = s.taboption('basic', form.Flag, 'enabled', _('Enable'), _('Enable apfree-wifidog service.'));
@@ -300,6 +325,400 @@ return view.extend({
 		o.optional = true;
 		o.defaulValue = 0;
 		o.depends('enable_qos', '1');
+
+		// Authentication Location Settings
+		// Add auto-fill button
+		o = s.taboption('location', form.Button, '_auto_fill', _('Auto Fill All Fields'),
+						_('Automatically fill AP MAC address, Device ID, Longitude, and Latitude'));
+		o.onclick = function() {
+			ui.showModal(_('Auto Fill'), [
+				E('div', { 'class': 'cbi-section' }, [
+					E('div', { 'class': 'cbi-section-descr' }, _('Getting device information and location data, please wait...')),
+					E('div', { 'id': 'auto-fill-progress' }, [
+						E('ul', { 'style': 'margin: 10px 0;' }, [
+							E('li', { 'id': 'mac-status' }, _('Getting WAN MAC address...')),
+							E('li', { 'id': 'device-id-status' }, _('Generating Device ID...')),
+							E('li', { 'id': 'location-status' }, _('Getting location coordinates...'))
+						])
+					])
+				])
+			]);
+			
+			var results = {
+				macAddress: null,
+				deviceId: null,
+				longitude: null,
+				latitude: null
+			};
+			
+			var results = {
+				macAddress: null,
+				deviceId: null,
+				longitude: null,
+				latitude: null
+			};
+			
+			var promises = [];
+			
+			// Get WAN MAC address
+			promises.push(
+				callGetWanMac().then(function(response) {
+					if (response && response.status === 'success') {
+						var macAddr = response.mac.toUpperCase().replace(/:/g, '-');
+						results.macAddress = macAddr;
+						document.getElementById('mac-status').innerHTML = _('✓ WAN MAC address obtained: ') + macAddr + ' (interface: ' + response.interface + ')';
+						
+						results.deviceId = generateDeviceId(macAddr);
+						document.getElementById('device-id-status').innerHTML = _('✓ Device ID generated: ') + results.deviceId;
+					} else {
+						document.getElementById('mac-status').innerHTML = _('RPC failed, trying fallback...');
+						
+						return fs.exec('/bin/sh', ['-c', 'ip route | grep default | awk \'{print $5}\' | head -n1 | xargs -I {} cat /sys/class/net/{}/address 2>/dev/null || echo "failed"']).then(function(response) {
+							if (response.code === 0 && response.stdout && response.stdout.trim() !== 'failed') {
+								var macAddr = response.stdout.trim().toUpperCase().replace(/:/g, '-');
+								results.macAddress = macAddr;
+								document.getElementById('mac-status').innerHTML = _('✓ WAN MAC address obtained (fallback): ') + macAddr;
+								
+								results.deviceId = generateDeviceId(macAddr);
+								document.getElementById('device-id-status').innerHTML = _('✓ Device ID generated: ') + results.deviceId;
+							} else {
+								var errorMsg = (response && response.message) ? response.message : 'Unknown error';
+								document.getElementById('mac-status').innerHTML = _('✗ Failed to get WAN MAC address: ') + errorMsg;
+								document.getElementById('device-id-status').innerHTML = _('✗ Cannot generate Device ID without MAC address');
+							}
+						}).catch(function(error) {
+							document.getElementById('mac-status').innerHTML = _('✗ Error getting WAN MAC address: ') + error.message;
+							document.getElementById('device-id-status').innerHTML = _('✗ Cannot generate Device ID due to MAC error');
+						});
+					}
+				}).catch(function(error) {
+					document.getElementById('mac-status').innerHTML = _('✗ RPC call failed, trying fallback...');
+					
+					return fs.exec('/bin/sh', ['-c', 'ip route | grep default | awk \'{print $5}\' | head -n1 | xargs -I {} cat /sys/class/net/{}/address 2>/dev/null || echo "failed"']).then(function(response) {
+						if (response.code === 0 && response.stdout && response.stdout.trim() !== 'failed') {
+							var macAddr = response.stdout.trim().toUpperCase().replace(/:/g, '-');
+							results.macAddress = macAddr;
+							document.getElementById('mac-status').innerHTML = _('✓ WAN MAC address obtained (fallback): ') + macAddr;
+							
+							results.deviceId = generateDeviceId(macAddr);
+							document.getElementById('device-id-status').innerHTML = _('✓ Device ID generated: ') + results.deviceId;
+						} else {
+							document.getElementById('mac-status').innerHTML = _('✗ Failed to get WAN MAC address');
+							document.getElementById('device-id-status').innerHTML = _('✗ Cannot generate Device ID without MAC address');
+						}
+					}).catch(function(fallbackError) {
+						document.getElementById('mac-status').innerHTML = _('✗ Error getting WAN MAC address: ') + fallbackError.message;
+						document.getElementById('device-id-status').innerHTML = _('✗ Cannot generate Device ID due to MAC error');
+					});
+				})
+			);
+			
+			// Get location
+			promises.push(
+				callGetLocation().then(function(response) {
+					if (response && response.status === 'success') {
+						var lat = parseFloat(response.lat).toFixed(6);
+						var lon = parseFloat(response.lon).toFixed(6);
+						
+						// Pad coordinates to required format
+						if (lat >= 0) {
+							lat = lat.padStart(10, '0');
+						} else {
+							lat = '-' + Math.abs(lat).toFixed(6).padStart(9, '0');
+						}
+						
+						if (lon >= 0) {
+							lon = lon.padStart(10, '0');
+						} else {
+							lon = '-' + Math.abs(lon).toFixed(6).padStart(9, '0');
+						}
+						
+						results.longitude = lon;
+						results.latitude = lat;
+						document.getElementById('location-status').innerHTML = _('✓ Location obtained: ') + lat + ', ' + lon;
+					} else {
+						var errorMsg = (response && response.message) ? response.message : 'Unknown error';
+						document.getElementById('location-status').innerHTML = _('✗ Failed to get location: ') + errorMsg;
+					}
+				}).catch(function(error) {
+					document.getElementById('location-status').innerHTML = _('RPC failed, trying direct method...');
+					
+					return fs.exec('/bin/sh', ['-c', 'curl -s --connect-timeout 10 --max-time 30 "https://ipapi.co/json" 2>/dev/null || curl -s --connect-timeout 10 --max-time 30 "http://ipinfo.io/json" 2>/dev/null || echo "failed"']).then(function(response) {
+						if (response.code === 0 && response.stdout && response.stdout.trim() !== 'failed') {
+							try {
+								var data = JSON.parse(response.stdout);
+								var lat, lon;
+								
+								if (data.latitude && data.longitude) {
+									lat = parseFloat(data.latitude).toFixed(6);
+									lon = parseFloat(data.longitude).toFixed(6);
+								} else if (data.loc) {
+									var coords = data.loc.split(',');
+									lat = parseFloat(coords[0]).toFixed(6);
+									lon = parseFloat(coords[1]).toFixed(6);
+								}
+								
+								if (lat && lon) {
+									// Pad coordinates to required format
+									if (lat >= 0) {
+										lat = lat.padStart(10, '0');
+									} else {
+										lat = '-' + Math.abs(lat).toFixed(6).padStart(9, '0');
+									}
+									
+									if (lon >= 0) {
+										lon = lon.padStart(10, '0');
+									} else {
+										lon = '-' + Math.abs(lon).toFixed(6).padStart(9, '0');
+									}
+									
+									results.longitude = lon;
+									results.latitude = lat;
+									document.getElementById('location-status').innerHTML = _('✓ Location obtained (fallback): ') + lat + ', ' + lon;
+								} else {
+									document.getElementById('location-status').innerHTML = _('✗ No valid coordinates found');
+								}
+							} catch (e) {
+								document.getElementById('location-status').innerHTML = _('✗ Failed to parse location data');
+							}
+						} else {
+							document.getElementById('location-status').innerHTML = _('✗ Failed to get location data');
+						}
+					}).catch(function(fallbackError) {
+						document.getElementById('location-status').innerHTML = _('✗ Error getting location: ') + fallbackError.message;
+					});
+				})
+			);
+			
+			// Wait for all promises to complete and fill form fields
+			Promise.all(promises).then(function() {
+				setTimeout(function() {
+					var successCount = 0;
+					var totalFields = 0;
+					var messages = [];
+					
+					// Find and fill form fields
+					if (results.macAddress) {
+						var macField = document.querySelector('input[data-name="ap_mac_address"]') ||
+									   document.querySelector('input[name*="ap_mac_address"]') ||
+									   document.querySelector('input[id*="ap_mac_address"]') ||
+									   document.querySelector('#cbid\\.wifidogx\\.default\\.ap_mac_address');
+						if (macField) {
+							macField.value = results.macAddress;
+							macField.dispatchEvent(new Event('input', { bubbles: true }));
+							macField.dispatchEvent(new Event('change', { bubbles: true }));
+							successCount++;
+							messages.push(_('MAC Address: ') + results.macAddress);
+						}
+						totalFields++;
+					}
+					
+					if (results.deviceId) {
+						var deviceIdField = document.querySelector('input[data-name="ap_device_id"]') ||
+										   document.querySelector('input[name*="ap_device_id"]') ||
+										   document.querySelector('input[id*="ap_device_id"]') ||
+										   document.querySelector('#cbid\\.wifidogx\\.default\\.ap_device_id');
+						if (deviceIdField) {
+							deviceIdField.value = results.deviceId;
+							deviceIdField.dispatchEvent(new Event('input', { bubbles: true }));
+							deviceIdField.dispatchEvent(new Event('change', { bubbles: true }));
+							successCount++;
+							messages.push(_('Device ID: ') + results.deviceId);
+						}
+						totalFields++;
+					}
+					
+					if (results.longitude) {
+						var lonField = document.querySelector('input[data-name="ap_longitude"]') ||
+									   document.querySelector('input[name*="ap_longitude"]') ||
+									   document.querySelector('input[id*="ap_longitude"]') ||
+									   document.querySelector('#cbid\\.wifidogx\\.default\\.ap_longitude');
+						if (lonField) {
+							lonField.value = results.longitude;
+							lonField.dispatchEvent(new Event('input', { bubbles: true }));
+							lonField.dispatchEvent(new Event('change', { bubbles: true }));
+							successCount++;
+							messages.push(_('Longitude: ') + results.longitude);
+						}
+						totalFields++;
+					}
+					
+					if (results.latitude) {
+						var latField = document.querySelector('input[data-name="ap_latitude"]') ||
+									   document.querySelector('input[name*="ap_latitude"]') ||
+									   document.querySelector('input[id*="ap_latitude"]') ||
+									   document.querySelector('#cbid\\.wifidogx\\.default\\.ap_latitude');
+						if (latField) {
+							latField.value = results.latitude;
+							latField.dispatchEvent(new Event('input', { bubbles: true }));
+							latField.dispatchEvent(new Event('change', { bubbles: true }));
+							successCount++;
+							messages.push(_('Latitude: ') + results.latitude);
+						}
+						totalFields++;
+					}
+					
+					ui.hideModal();
+					
+					if (successCount === totalFields && totalFields > 0) {
+						ui.addNotification(null, E('p', _('Auto fill completed successfully! All fields have been filled.') + '<br>' + messages.join('<br>')), 'info');
+					} else if (successCount > 0) {
+						ui.addNotification(null, E('p', _('Auto fill partially completed.') + ' ' + successCount + '/' + totalFields + ' ' + _('fields filled successfully.') + '<br>' + messages.join('<br>')), 'warning');
+					} else {
+						ui.addNotification(null, E('p', _('Auto fill failed. No fields could be filled. Please check your network connection and try again.')), 'error');
+					}
+				}, 2000);
+			});
+		};
+
+		o = s.taboption('location', form.Value, 'ap_device_id', _('AP Device ID'),
+						_('The unique identifier of the AP device. Must be 21 characters: 9-character vendor code + 12-character MAC address (uppercase).'));
+		o.rmempty = true;
+		o.optional = true;
+		o.validate = function(section_id, value) {
+			if (!value || value === '')
+				return true; // Optional field, empty is allowed
+			
+			// Check total length
+			if (value.length !== 21) {
+				return _('AP Device ID must be exactly 21 characters long');
+			}
+			
+			// Check if all characters are alphanumeric (letters and digits)
+			if (!/^[A-Z0-9]+$/.test(value)) {
+				return _('AP Device ID must contain only uppercase letters and digits');
+			}
+			
+			// Extract MAC address part (last 12 characters)
+			var macPart = value.substring(9);
+			
+			// Validate MAC address format (12 hexadecimal characters)
+			if (!/^[A-F0-9]{12}$/.test(macPart)) {
+				return _('Last 12 characters must be a valid MAC address in uppercase hexadecimal format (e.g., 00E04C3B7D2F)');
+			}
+			
+			return true;
+		};
+		o.placeholder = 'AW123456700E04C3B7D2F';
+
+		o = s.taboption('location', form.Value, 'ap_mac_address', _('AP MAC Address'),
+						_('The MAC address of the AP device. Must be 17 characters in format XX-XX-XX-XX-XX-XX (uppercase, separated by hyphens).'));
+		o.rmempty = true;
+		o.optional = true;
+		o.placeholder = '00-E0-4C-3B-7D-2F';
+		o.validate = function(section_id, value) {
+			if (!value || value === '')
+				return true; // Optional field, empty is allowed
+			
+			// Check total length
+			if (value.length !== 17) {
+				return _('MAC address must be exactly 17 characters long');
+			}
+			
+			// Check format: XX-XX-XX-XX-XX-XX where X is uppercase hex digit
+			if (!/^[A-F0-9]{2}-[A-F0-9]{2}-[A-F0-9]{2}-[A-F0-9]{2}-[A-F0-9]{2}-[A-F0-9]{2}$/.test(value)) {
+				return _('MAC address must be in format XX-XX-XX-XX-XX-XX (uppercase hexadecimal separated by hyphens)');
+			}
+			
+			// Get the AP Device ID to check consistency
+			var deviceId = uci.get('wifidogx', section_id, 'ap_device_id');
+			if (deviceId && deviceId.length === 21) {
+				var deviceMacPart = deviceId.substring(9);
+				var normalizedMac = value.replace(/-/g, '');
+				
+				if (normalizedMac !== deviceMacPart) {
+					return _('MAC address should match the MAC address part (last 12 characters) in AP Device ID');
+				}
+			}
+			
+			return true;
+		};
+
+		o = s.taboption('location', form.Value, 'ap_longitude', _('Mobile AP Longitude'),
+						_('The longitude coordinate using format: ±XXX.XXXXXX (3 integer digits + 6 decimal digits). Positive for East, negative for West.'));
+		o.rmempty = true;
+		o.optional = true;
+		o.placeholder = '123.230000';
+		o.validate = function(section_id, value) {
+			if (!value || value === '')
+				return true; // Optional field, empty is allowed
+			
+			// Allow more flexible input, then validate and suggest correct format
+			var numValue = parseFloat(value);
+			if (isNaN(numValue)) {
+				return _('Longitude must be a valid number');
+			}
+			
+			if (numValue < -180 || numValue > 180) {
+				return _('Longitude must be between -180.000000 and 180.000000');
+			}
+			
+			// Check if the input matches the strict format requirement
+			if (!/^[+-]?\d{3}\.\d{6}$/.test(value)) {
+				// Format the number to the required format and suggest it
+				var formatted = numValue.toFixed(6);
+				if (formatted.indexOf('.') > 0) {
+					var parts = formatted.split('.');
+					var intPart = parts[0];
+					var decPart = parts[1];
+					
+					// Pad integer part to 3 digits
+					if (intPart.startsWith('-')) {
+						intPart = '-' + intPart.substring(1).padStart(3, '0');
+					} else {
+						intPart = intPart.padStart(3, '0');
+					}
+					
+					formatted = intPart + '.' + decPart;
+				}
+				return _('Longitude must be in format ±XXX.XXXXXX (3 integer digits + 6 decimal digits, e.g., 123.230000 or -133.000000). Suggested format: ') + formatted;
+			}
+			
+			return true;
+		};
+
+		o = s.taboption('location', form.Value, 'ap_latitude', _('Mobile AP Latitude'),
+						_('The latitude coordinate using format: ±XXX.XXXXXX (3 integer digits + 6 decimal digits). Positive for North, negative for South.'));
+		o.rmempty = true;
+		o.optional = true;
+		o.placeholder = '39.900000';
+		o.validate = function(section_id, value) {
+			if (!value || value === '')
+				return true; // Optional field, empty is allowed
+			
+			// Allow more flexible input, then validate and suggest correct format
+			var numValue = parseFloat(value);
+			if (isNaN(numValue)) {
+				return _('Latitude must be a valid number');
+			}
+			
+			if (numValue < -90 || numValue > 90) {
+				return _('Latitude must be between -90.000000 and 90.000000');
+			}
+			
+			// Check if the input matches the strict format requirement
+			if (!/^[+-]?\d{3}\.\d{6}$/.test(value)) {
+				// Format the number to the required format and suggest it
+				var formatted = numValue.toFixed(6);
+				if (formatted.indexOf('.') > 0) {
+					var parts = formatted.split('.');
+					var intPart = parts[0];
+					var decPart = parts[1];
+					
+					// Pad integer part to 3 digits
+					if (intPart.startsWith('-')) {
+						intPart = '-' + intPart.substring(1).padStart(3, '0');
+					} else {
+						intPart = intPart.padStart(3, '0');
+					}
+					
+					formatted = intPart + '.' + decPart;
+				}
+				return _('Latitude must be in format ±XXX.XXXXXX (3 integer digits + 6 decimal digits, e.g., 39.900000 or -33.000000). Suggested format: ') + formatted;
+			}
+			
+			return true;
+		};
 
 		// rule settings
 		o = s.taboption('rule', form.DynamicList, 'trusted_wildcard_domains', _('Trusted Wildcard Domains'),
