@@ -472,6 +472,42 @@ msgstr "自动填写失败。无法填写任何字段。请检查网络连接并
 msgid "Auto Fill"
 msgstr "自动填写"
 
+msgid "Location ID"
+msgstr "上网服务场所编码"
+
+msgid "The unique identifier of the internet service location."
+msgstr "上网服务场所的唯一标识符。"
+
+msgid "Generating Location ID..."
+msgstr "正在生成上网服务场所编码..."
+
+msgid "✓ Location ID generated: "
+msgstr "✓ 上网服务场所编码生成成功："
+
+msgid "Location ID: "
+msgstr "上网服务场所编码："
+
+msgid "Location ID is required"
+msgstr "上网服务场所编码为必填项"
+
+msgid "Location ID must be exactly 14 digits long"
+msgstr "上网服务场所编码必须恰好为14位数字"
+
+msgid "Location ID must contain only digits (0-9)"
+msgstr "上网服务场所编码只能包含数字(0-9)"
+
+msgid "First 6 digits must be valid administrative division code (GB/T 2260)"
+msgstr "前6位必须是有效的行政区划代码(GB/T 2260)"
+
+msgid "Service type code (7-9 digits) must be \"100\" for commercial internet service locations, \"2XX\" for non-commercial locations, or \"3XX\" for WiFi wireless collection terminals"
+msgstr "服务类型代码(第7-9位)必须是\"100\"(经营性场所)、\"2XX\"(非经营性场所)或\"3XX\"(WiFi无线采集前端)"
+
+msgid "Last 5 digits must be sequence number (00000-99999)"
+msgstr "最后5位必须是序列号(00000-99999)"
+
+msgid "Automatically fill AP MAC address, Device ID, Location ID, Longitude, and Latitude"
+msgstr "自动填写AP MAC地址、设备编号、上网服务场所编码、经度和纬度"
+
 # apfree-wifidog package 
 msgid "apfree-wifidog"
 msgstr "门户认证"nslations for LuCI
