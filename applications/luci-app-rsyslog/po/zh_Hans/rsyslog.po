@@ -164,3 +164,9 @@ msgstr "日志文件路径或操作"
 
 msgid "Rsyslog"
 msgstr "系统日志"
+
+msgid "Enable Rsyslogd"
+msgstr "启用 Rsyslogd"
+
+msgid "Enable or disable the rsyslogd system service"
+msgstr "启用或禁用 rsyslogd 系统服务"
