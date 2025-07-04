@@ -26,6 +26,7 @@ return view.extend({
 		o = s.taboption('general', form.Flag, 'enabled', _('Enable Rsyslogd'),
 			_('Enable or disable the rsyslogd system service'));
 		o.default = '1';
+		o.rmempty = false;
 
 		o = s.taboption('general', form.DynamicList, 'modules', _('Modules'),
 			_('List of rsyslog modules to load'));
