@@ -1,0 +1,13 @@
+{
+	"admin/services/gpsd": {
+		"title": "GPSD",
+		"order": 50,
+		"action": {
+			"type": "view",
+			"path": "gpsd"
+		},
+		"depends": {
+			"acl": [ "luci-app-gpsd" ]
+		}
+	}
+}

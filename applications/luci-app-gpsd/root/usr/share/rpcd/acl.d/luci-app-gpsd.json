@@ -1,0 +1,17 @@
+{
+	"luci-app-gpsd": {
+		"description": "Grant access to GPSD configuration",
+		"read": {
+			"uci": [ "gpsd" ],
+			"file": {
+				"/etc/init.d/gpsd": [ "exec" ]
+			}
+		},
+		"write": {
+			"uci": [ "gpsd" ],
+			"file": {
+				"/etc/init.d/gpsd": [ "exec" ]
+			}
+		}
+	}
+}

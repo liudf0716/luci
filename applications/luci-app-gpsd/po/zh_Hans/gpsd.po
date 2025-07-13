@@ -1,0 +1,79 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Project-Id-Version: PACKAGE VERSION\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"Language: zh_Hans\n"
+"MIME-Version: 1.0\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+msgid "GPSD Configuration"
+msgstr "GPSD配置"
+
+msgid "GPSD is a daemon that monitors one or more GPS devices and provides location data to client applications."
+msgstr "GPSD是一个监控一个或多个GPS设备并向客户端应用程序提供位置数据的守护进程。"
+
+msgid "Service Status"
+msgstr "服务状态"
+
+msgid "GPSD Status"
+msgstr "GPSD状态"
+
+msgid "Running"
+msgstr "运行中"
+
+msgid "Stopped"
+msgstr "已停止"
+
+msgid "Enabled but not running"
+msgstr "已启用但未运行"
+
+msgid "Starting"
+msgstr "正在启动"
+
+msgid "Unknown"
+msgstr "未知"
+
+msgid "Collecting data ..."
+msgstr "正在收集数据..."
+
+msgid "GPSD service not found. Please install the gpsd package."
+msgstr "未找到GPSD服务。请安装gpsd软件包。"
+
+msgid "General Settings"
+msgstr "基本设置"
+
+msgid "Enable GPSD"
+msgstr "启用GPSD"
+
+msgid "GPS Device"
+msgstr "GPS设备"
+
+msgid "Serial device path where GPS receiver is connected (e.g., /dev/ttyUSB0, /dev/ttyS1)"
+msgstr "GPS接收器连接的串口设备路径（例如：/dev/ttyUSB0、/dev/ttyS1）"
+
+msgid "TCP Port"
+msgstr "TCP端口"
+
+msgid "TCP port for GPSD daemon to listen on (default: 2947)"
+msgstr "GPSD守护进程监听的TCP端口（默认：2947）"
+
+msgid "Listen Globally"
+msgstr "全局监听"
+
+msgid "Allow connections from any IP address (not just localhost). Enable this if you want to access GPS data from other devices on the network."
+msgstr "允许来自任何IP地址的连接（不仅仅是本地主机）。如果您想从网络上的其他设备访问GPS数据，请启用此选项。"
+
+msgid "Advanced Settings"
+msgstr "高级设置"
+
+msgid "Additional Options"
+msgstr "附加选项"
+
+msgid "Additional command line options for GPSD daemon. See gpsd manual for available options."
+msgstr "GPSD守护进程的附加命令行选项。请参阅gpsd手册以了解可用选项。"
+
+msgid "GPSD"
+msgstr "GPSD"
