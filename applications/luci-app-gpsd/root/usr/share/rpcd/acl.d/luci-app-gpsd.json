@@ -4,7 +4,8 @@
 		"read": {
 			"uci": [ "gpsd" ],
 			"file": {
-				"/etc/init.d/gpsd": [ "exec" ]
+				"/etc/init.d/gpsd": [ "exec" ],
+				"/usr/bin/gpspipe": [ "exec" ]
 			}
 		},
 		"write": {

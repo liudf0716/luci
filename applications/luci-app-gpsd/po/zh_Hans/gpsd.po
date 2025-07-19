@@ -39,6 +39,42 @@ msgstr "未知"
 msgid "Collecting data ..."
 msgstr "正在收集数据..."
 
+msgid "GPS Location Information"
+msgstr "GPS位置信息"
+
+msgid "Collecting GPS data ..."
+msgstr "正在收集GPS数据..."
+
+msgid "GPS Fix Available"
+msgstr "GPS定位可用"
+
+msgid "No GPS Fix Available"
+msgstr "GPS定位不可用"
+
+msgid "Latitude"
+msgstr "纬度"
+
+msgid "Longitude"
+msgstr "经度"
+
+msgid "Altitude"
+msgstr "海拔"
+
+msgid "Time"
+msgstr "时间"
+
+msgid "Fix Mode"
+msgstr "定位模式"
+
+msgid "No Fix"
+msgstr "无定位"
+
+msgid "2D Fix"
+msgstr "2D定位"
+
+msgid "3D Fix"
+msgstr "3D定位"
+
 msgid "GPSD service not found. Please install the gpsd package."
 msgstr "未找到GPSD服务。请安装gpsd软件包。"
 
@@ -76,4 +112,7 @@ msgid "Additional command line options for GPSD daemon. See gpsd manual for avai
 msgstr "GPSD守护进程的附加命令行选项。请参阅gpsd手册以了解可用选项。"
 
 msgid "GPSD"
-msgstr "GPSD"
+msgstr "GPS服务"
+
+msgid "Last Update"
+msgstr "最后更新"
