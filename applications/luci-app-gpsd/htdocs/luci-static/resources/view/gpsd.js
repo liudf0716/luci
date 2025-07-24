@@ -41,7 +41,7 @@ function renderStatus(isRunning) {
 }
 
 function getGPSLocation() {
-	return L.resolveDefault(fs.exec('/usr/bin/gpspipe', ['-w', '-n', '11']), {}).then(function (res) {
+	return L.resolveDefault(fs.exec('/usr/bin/gpspipe', ['-w', '-n', '12']), {}).then(function (res) {
 		var locationData = {
 			lat: null,
 			lon: null,
