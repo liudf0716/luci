@@ -63,9 +63,15 @@ return baseclass.extend({
 			sn = iface['br-lan'].mac.replace(/:/g, '').toUpperCase();
 		}
 
+		// 转换特定的型号名称
+		var modelName = boardinfo.model;
+		if (modelName === 'SunnyWiFi S300V20') {
+			modelName = 'S300V2.0';
+		}
+
 		var fields = [
 			_('Hostname'),         boardinfo.hostname,
-			_('Model'),            boardinfo.model,
+			_('Model'),            modelName,
 			_('SN'),               sn,
 			_('Architecture'),     boardinfo.system,
 			_('Target Platform'),  (L.isObject(boardinfo.release) ? boardinfo.release.target : ''),
