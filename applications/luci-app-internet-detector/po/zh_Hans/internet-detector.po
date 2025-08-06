@@ -202,6 +202,9 @@ msgstr "接口"
 msgid "Internet"
 msgstr "互联网"
 
+msgid "Internet Status"
+msgstr "联网状态"
+
 msgid "Internet Detector"
 msgstr "联网检测"
 
