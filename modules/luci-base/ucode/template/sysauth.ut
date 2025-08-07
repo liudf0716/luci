@@ -345,10 +345,10 @@
 					<span class="lockout-icon">🔒</span>
 					<div class="lockout-text">
 						<strong>{{ _('Account temporarily locked') }}</strong>
-						<p>{{ _('Too many failed login attempts. Please wait') }} <span id="countdown">{{ lockout_remaining }}</span> {{ _('seconds before trying again.') }}</p>
+						<p>{{ _('Too many failed login attempts. Please wait') }} <span id="countdown">{{ lockout_remaining || 0 }}</span> {{ _('seconds before trying again.') }}</p>
 					</div>
 				</div>
-			{% elif (error_type == "auth_failed" && fuser): %}
+			{% elif (fuser): %}
 				<div class="error-message">
 					{{ _('Invalid username and/or password! Please try again.') }}
 					{% if (failed_attempts > 0): %}
@@ -361,10 +361,6 @@
 							{% endif %}
 						</div>
 					{% endif %}
-				</div>
-			{% elif (fuser): %}
-				<div class="error-message">
-					{{ _('Invalid username and/or password! Please try again.') }}
 				</div>
 			{% endif %}
 

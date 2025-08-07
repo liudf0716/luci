@@ -509,15 +509,23 @@ function check_login_rate_limit(remote_addr) {
 		
 		// 检查是否超过限制
 		if (length(attempts.timestamps) >= 5) {
-			let oldest_attempt = min(...attempts.timestamps);
-			let lockout_remaining = 120 - (now - oldest_attempt); // 2分钟锁定
+			// 使用最新的（第5次）失败尝试时间来计算锁定时间
+			let latest_attempt = max(...attempts.timestamps);
+			let lockout_remaining = 120 - (now - latest_attempt); // 2分钟锁定
 			
 			if (lockout_remaining > 0) {
 				return {
 					locked: true,
-					remaining: lockout_remaining,
+					remaining: Math.ceil(lockout_remaining), // 向上取整，确保显示正确
 					attempts: length(attempts.timestamps)
 				};
+			} else {
+				// 锁定时间已过，清理记录
+				attempts.timestamps = [];
+				ubus.call("session", "set", {
+					ubus_rpc_session: "00000000000000000000000000000000",
+					values: { [key]: attempts }
+				});
 			}
 		}
 	}
@@ -547,9 +555,16 @@ function record_login_attempt(remote_addr, success) {
 		
 		let attempts = attempts_data?.values?.[key] || { timestamps: [] };
 		
-		// 清理过期记录并添加新记录
+		// 清理过期记录
 		attempts.timestamps = filter(attempts.timestamps || [], t => (now - t) < 300);
+		
+		// 添加新的失败记录
 		push(attempts.timestamps, now);
+		
+		// 如果超过5次，只保留最近的5次记录
+		if (length(attempts.timestamps) > 5) {
+			attempts.timestamps = slice(attempts.timestamps, -5); // 保留最后5次
+		}
 		
 		ubus.call("session", "set", {
 			ubus_rpc_session: "00000000000000000000000000000000",
@@ -598,17 +613,27 @@ function session_setup(user, pass, path) {
 	// 记录失败登录
 	record_login_attempt(remote_addr, false);
 	
-	// 检查记录失败后是否会被锁定
+	// 重新检查限制状态（因为刚刚记录了新的失败）
 	let updated_rate_limit = check_login_rate_limit(remote_addr);
 	
-	syslog("info", sprintf("luci: failed login on /%s for %s from %s (attempts: %d)",
-		join('/', path), user || "?", remote_addr || "?", updated_rate_limit.attempts));
+	syslog("info", sprintf("luci: failed login on /%s for %s from %s (attempts: %d%s)",
+		join('/', path), user || "?", remote_addr || "?", updated_rate_limit.attempts,
+		updated_rate_limit.locked ? ", account locked" : ""));
 	
-	// 返回失败信息，包含当前尝试次数
+	// 如果刚刚的失败导致锁定，返回锁定状态
+	if (updated_rate_limit.locked) {
+		return { 
+			error: "rate_limited", 
+			remaining: updated_rate_limit.remaining,
+			attempts: updated_rate_limit.attempts
+		};
+	}
+	
+	// 返回失败信息，包含当前尝试次数和是否即将锁定
 	return { 
 		error: "auth_failed", 
 		attempts: updated_rate_limit.attempts,
-		will_lock: updated_rate_limit.attempts >= 5
+		will_lock: updated_rate_limit.attempts >= 4 // 下次失败将锁定
 	};
 }
 
