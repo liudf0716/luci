@@ -52,10 +52,22 @@ document.head.append(E('style', { 'type': 'text/css' },
 	border-radius: 8px;
 	overflow: hidden;
 	box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+	position: relative;
 }
 :root[data-darkmode="true"] .dhcp-leases-table {
 	background: rgba(33, 37, 41, 0.8);
 	box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+/* 确保空状态消息在表格内正确显示 */
+.dhcp-leases-table .dhcp-no-leases {
+	position: absolute;
+	top: 50px; /* 在表头下方 */
+	left: 0;
+	right: 0;
+	background: transparent;
+	border: none;
+	margin: 0;
+	z-index: 1;
 }
 .dhcp-leases-table .tr {
 	transition: all 0.2s ease;
@@ -202,9 +214,15 @@ document.head.append(E('style', { 'type': 'text/css' },
 	padding: 40px 20px;
 	color: #6c757d;
 	font-style: italic;
+	background: rgba(248, 249, 250, 0.5);
+	border-radius: 8px;
+	margin: 16px 0;
+	border: 1px dashed rgba(108, 117, 125, 0.3);
 }
 :root[data-darkmode="true"] .dhcp-no-leases {
 	color: #adb5bd;
+	background: rgba(52, 58, 64, 0.5);
+	border-color: rgba(173, 181, 189, 0.3);
 }
 .dhcp-stats-container {
 	display: flex;
@@ -434,35 +452,47 @@ return baseclass.extend({
 			return rows;
 		}, this)), E('div', { 'class': 'dhcp-no-leases' }, _('No active DHCPv6 leases found')));
 
-		return E('div', { 'class': 'dhcp-info-container' }, [
-			// 统计信息卡片
-			E('div', { 'class': 'dhcp-stats-container' }, [
-				E('div', { 'class': 'dhcp-stat-card' }, [
-					E('span', { 'class': 'dhcp-stat-number' }, activeLeases.toString()),
-					E('div', { 'class': 'dhcp-stat-label' }, _('Active IPv4 Leases'))
-				]),
-				E('div', { 'class': 'dhcp-stat-card' }, [
-					E('span', { 'class': 'dhcp-stat-number' }, activeLeases6.toString()),
-					E('div', { 'class': 'dhcp-stat-label' }, _('Active IPv6 Leases'))
-				]),
-				E('div', { 'class': 'dhcp-stat-card' }, [
-					E('span', { 'class': 'dhcp-stat-number' }, staticLeases.toString()),
-					E('div', { 'class': 'dhcp-stat-label' }, _('Static Leases'))
-				]),
-				expiredLeases > 0 ? E('div', { 'class': 'dhcp-stat-card' }, [
-					E('span', { 'class': 'dhcp-stat-number' }, expiredLeases.toString()),
-					E('div', { 'class': 'dhcp-stat-label' }, _('Expired Leases'))
-				]) : E([])
+		// 构建页面元素数组
+		var pageElements = [];
+
+		// 总是显示统计信息卡片
+		pageElements.push(E('div', { 'class': 'dhcp-stats-container' }, [
+			E('div', { 'class': 'dhcp-stat-card' }, [
+				E('span', { 'class': 'dhcp-stat-number' }, activeLeases.toString()),
+				E('div', { 'class': 'dhcp-stat-label' }, _('Active IPv4 Leases'))
 			]),
+			E('div', { 'class': 'dhcp-stat-card' }, [
+				E('span', { 'class': 'dhcp-stat-number' }, activeLeases6.toString()),
+				E('div', { 'class': 'dhcp-stat-label' }, _('Active IPv6 Leases'))
+			]),
+			E('div', { 'class': 'dhcp-stat-card' }, [
+				E('span', { 'class': 'dhcp-stat-number' }, staticLeases.toString()),
+				E('div', { 'class': 'dhcp-stat-label' }, _('Static Leases'))
+			]),
+			expiredLeases > 0 ? E('div', { 'class': 'dhcp-stat-card' }, [
+				E('span', { 'class': 'dhcp-stat-number' }, expiredLeases.toString()),
+				E('div', { 'class': 'dhcp-stat-label' }, _('Expired Leases'))
+			]) : E([])
+		]));
 
-			// IPv4 DHCP租约表
-			E('div', { 'class': 'dhcp-section-title dhcp4' }, _('Active DHCP Leases')),
-			table,
+		// 只有当有IPv4租约数据时才显示IPv4表格
+		if (leases.length > 0) {
+			pageElements.push(E('div', { 'class': 'dhcp-section-title dhcp4' }, _('Active DHCP Leases')));
+			pageElements.push(table);
+		}
 
-			// IPv6 DHCP租约表
-			E('div', { 'class': 'dhcp-section-title dhcp6' }, _('Active DHCPv6 Leases')),
-			table6
-		]);
+		// 只有当有IPv6租约数据时才显示IPv6表格
+		if (leases6.length > 0) {
+			pageElements.push(E('div', { 'class': 'dhcp-section-title dhcp6' }, _('Active DHCPv6 Leases')));
+			pageElements.push(table6);
+		}
+
+		// 如果没有任何租约数据，显示一个提示消息
+		if (leases.length === 0 && leases6.length === 0) {
+			pageElements.push(E('div', { 'class': 'dhcp-no-leases', 'style': 'margin-top: 20px;' }, _('No DHCP leases found')));
+		}
+
+		return E('div', { 'class': 'dhcp-info-container' }, pageElements);
 	},
 
 	render: function (data) {
