@@ -178,7 +178,7 @@ return view.extend({
 		o.ntpd_support = ntpd_enabled;
 
 		o = s.taboption('general', form.Value, 'hostname', _('Hostname'));
-		o.datatype = 'hostname';
+		o.datatype = 'string';
 
 		/* could be used also as a default for LLDP, SNMP "system description" in the future */
 		o = s.taboption('general', form.Value, 'description', _('Description'), _('An optional, short description for this device'));
