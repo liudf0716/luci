@@ -139,6 +139,14 @@ return {
 		const url = dispatcher.build_url();
 
 		if (ctx.authsession) {
+			// 获取会话信息用于日志记录
+			const session_info = ubus.call('session', 'get', { ubus_rpc_session: ctx.authsession });
+			const username = session_info?.values?.username || 'unknown';
+			const remote_addr = http.getenv('REMOTE_ADDR') || 'unknown';
+			
+			// 记录用户退出到系统日志
+			system(`logger -t luci -p daemon.info "User '${username}' logged out from ${remote_addr}"`);
+			
 			ubus.call('session', 'destroy', { ubus_rpc_session: ctx.authsession });
 
 			if (http.getenv('HTTPS') == 'on')
