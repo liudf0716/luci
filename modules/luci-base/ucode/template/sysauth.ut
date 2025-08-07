@@ -6,39 +6,408 @@
 
 {% include('header') %}
 
-<form method="post">
-	{% if (fuser): %}
-		<div class="alert-message warning">
-			<p>{{ _('Invalid username and/or password! Please try again.') }}</p>
-		</div>
-	{% endif %}
+<style>
+.login-container {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	min-height: 60vh;
+	padding: 20px;
+}
 
-	<div class="cbi-map">
-		<h2 name="content">{{ _('Authorization Required') }}</h2>
-		<div class="cbi-map-descr">
-			{{ _('Please enter your username and password.') }}
-		</div>
-		<div class="cbi-section"><div class="cbi-section-node">
-			<div class="cbi-value">
-				<label class="cbi-value-title">{{ _('Username') }}</label>
-				<div class="cbi-value-field">
-					<input class="cbi-input-text" type="text" name="luci_username" value="{{ entityencode(duser, true) }}" />
-				</div>
-			</div>
-			<div class="cbi-value cbi-value-last">
-				<label class="cbi-value-title">{{ _('Password') }}</label>
-				<div class="cbi-value-field">
-					<input class="cbi-input-text" type="password" name="luci_password" />
-				</div>
-			</div>
-		</div></div>
-	</div>
+.login-card {
+	background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.9) 100%);
+	border-radius: 16px;
+	padding: 40px;
+	box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+	border: 1px solid rgba(255,255,255,0.2);
+	backdrop-filter: blur(10px);
+	width: 100%;
+	max-width: 400px;
+	position: relative;
+	overflow: hidden;
+}
 
-	<div class="cbi-page-actions">
-		<input type="submit" value="{{ _('Log in') }}" class="btn cbi-button cbi-button-apply" />
-		<input type="reset" value="{{ _('Reset') }}" class="btn cbi-button cbi-button-reset" />
+:root[data-darkmode="true"] .login-card {
+	background: linear-gradient(135deg, rgba(33,37,41,0.95) 0%, rgba(52,58,64,0.9) 100%);
+	border-color: rgba(255,255,255,0.1);
+	box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+}
+
+.login-card::before {
+	content: '';
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	height: 4px;
+	background: linear-gradient(90deg, #007bff 0%, #0056b3 50%, #007bff 100%);
+	background-size: 200% 100%;
+	animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+	0% { background-position: -200% 0; }
+	100% { background-position: 200% 0; }
+}
+
+.login-header {
+	text-align: center;
+	margin-bottom: 32px;
+}
+
+.login-title {
+	font-size: 28px;
+	font-weight: 700;
+	color: #495057;
+	margin-bottom: 8px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 12px;
+}
+
+:root[data-darkmode="true"] .login-title {
+	color: #f8f9fa;
+}
+
+.login-title::before {
+	content: "🔐";
+	font-size: 32px;
+}
+
+.login-subtitle {
+	color: #6c757d;
+	font-size: 14px;
+	margin-bottom: 0;
+}
+
+:root[data-darkmode="true"] .login-subtitle {
+	color: #adb5bd;
+}
+
+.login-form {
+	margin: 0;
+}
+
+.form-group {
+	margin-bottom: 24px;
+	position: relative;
+}
+
+.form-label {
+	display: block;
+	font-weight: 600;
+	color: #495057;
+	margin-bottom: 8px;
+	font-size: 14px;
+}
+
+:root[data-darkmode="true"] .form-label {
+	color: #f8f9fa;
+}
+
+.form-input {
+	width: 100%;
+	padding: 14px 16px;
+	border: 2px solid #e9ecef;
+	border-radius: 8px;
+	font-size: 16px;
+	transition: all 0.3s ease;
+	background: white;
+	box-sizing: border-box;
+}
+
+:root[data-darkmode="true"] .form-input {
+	background: rgba(52,58,64,0.8);
+	border-color: rgba(255,255,255,0.1);
+	color: #f8f9fa;
+}
+
+.form-input:focus {
+	outline: none;
+	border-color: #007bff;
+	box-shadow: 0 0 0 3px rgba(0,123,255,0.1);
+	transform: translateY(-1px);
+}
+
+.form-input::placeholder {
+	color: #adb5bd;
+}
+
+.login-actions {
+	margin-top: 32px;
+	display: flex;
+	gap: 12px;
+}
+
+.btn-login {
+	flex: 1;
+	padding: 14px 24px;
+	background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+	color: white;
+	border: none;
+	border-radius: 8px;
+	font-size: 16px;
+	font-weight: 600;
+	cursor: pointer;
+	transition: all 0.3s ease;
+	position: relative;
+	overflow: hidden;
+}
+
+.btn-login:hover {
+	transform: translateY(-2px);
+	box-shadow: 0 6px 20px rgba(0,123,255,0.3);
+}
+
+.btn-login:active {
+	transform: translateY(0);
+}
+
+.btn-reset {
+	padding: 14px 24px;
+	background: transparent;
+	color: #6c757d;
+	border: 2px solid #e9ecef;
+	border-radius: 8px;
+	font-size: 16px;
+	font-weight: 500;
+	cursor: pointer;
+	transition: all 0.3s ease;
+}
+
+:root[data-darkmode="true"] .btn-reset {
+	color: #adb5bd;
+	border-color: rgba(255,255,255,0.1);
+}
+
+.btn-reset:hover {
+	background: #f8f9fa;
+	border-color: #dee2e6;
+	transform: translateY(-1px);
+}
+
+:root[data-darkmode="true"] .btn-reset:hover {
+	background: rgba(255,255,255,0.05);
+	border-color: rgba(255,255,255,0.2);
+}
+
+.error-message {
+	background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+	color: white;
+	padding: 16px 20px;
+	border-radius: 8px;
+	margin-bottom: 24px;
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	font-weight: 500;
+	animation: shake 0.5s ease-in-out;
+}
+
+.error-message::before {
+	content: "⚠️";
+	font-size: 18px;
+}
+
+.attempts-warning {
+	margin-top: 8px;
+	font-size: 13px;
+	opacity: 0.9;
+}
+
+.warning-next-lock {
+	margin-top: 4px;
+	font-size: 12px;
+	color: #fff3cd;
+	font-weight: 600;
+	animation: blink 1.5s infinite;
+}
+
+.lockout-message {
+	background: linear-gradient(135deg, #fd7e14 0%, #e55a00 100%);
+	color: white;
+	padding: 20px;
+	border-radius: 8px;
+	margin-bottom: 24px;
+	display: flex;
+	align-items: flex-start;
+	gap: 16px;
+	font-weight: 500;
+	animation: pulse 2s infinite;
+}
+
+.lockout-icon {
+	font-size: 24px;
+	margin-top: 2px;
+}
+
+.lockout-text strong {
+	display: block;
+	font-size: 16px;
+	margin-bottom: 8px;
+}
+
+.lockout-text p {
+	margin: 0;
+	font-size: 14px;
+	line-height: 1.4;
+}
+
+#countdown {
+	font-weight: 700;
+	font-size: 16px;
+	color: #fff3cd;
+}
+
+@keyframes shake {
+	0%, 100% { transform: translateX(0); }
+	25% { transform: translateX(-5px); }
+	75% { transform: translateX(5px); }
+}
+
+@keyframes pulse {
+	0%, 100% { opacity: 1; }
+	50% { opacity: 0.9; }
+}
+
+@keyframes blink {
+	0%, 50% { opacity: 1; }
+	51%, 100% { opacity: 0.7; }
+}
+
+.form-input:disabled,
+.btn-login:disabled,
+.btn-reset:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+	background: #e9ecef;
+	color: #6c757d;
+}
+
+:root[data-darkmode="true"] .form-input:disabled {
+	background: rgba(52,58,64,0.5);
+	color: #6c757d;
+}
+
+.btn-login:disabled {
+	background: #6c757d;
+	transform: none;
+	box-shadow: none;
+}
+
+.btn-login:disabled:hover {
+	transform: none;
+	box-shadow: none;
+}
+
+.https-notice {
+	background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+	color: white;
+	padding: 12px 16px;
+	border-radius: 6px;
+	margin-top: 20px;
+	font-size: 13px;
+	text-align: center;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+}
+
+.https-notice::before {
+	content: "🔒";
+}
+
+@media (max-width: 480px) {
+	.login-card {
+		padding: 24px;
+		margin: 10px;
+	}
+	
+	.login-actions {
+		flex-direction: column;
+	}
+}
+</style>
+
+<div class="login-container">
+	<div class="login-card">
+		<div class="login-header">
+			<h1 class="login-title">{{ _('Authorization Required') }}</h1>
+			<p class="login-subtitle">{{ _('Please enter your username and password.') }}</p>
+		</div>
+
+		<form method="post" class="login-form" id="login-form">
+			{% if (error_type == "rate_limited" || login_locked): %}
+				<div class="lockout-message" id="lockout-message">
+					<span class="lockout-icon">🔒</span>
+					<div class="lockout-text">
+						<strong>{{ _('Account temporarily locked') }}</strong>
+						<p>{{ _('Too many failed login attempts. Please wait') }} <span id="countdown">{{ lockout_remaining }}</span> {{ _('seconds before trying again.') }}</p>
+					</div>
+				</div>
+			{% elif (error_type == "auth_failed" && fuser): %}
+				<div class="error-message">
+					{{ _('Invalid username and/or password! Please try again.') }}
+					{% if (failed_attempts > 0): %}
+						<div class="attempts-warning">
+							{{ _('Failed attempts:') }} {{ failed_attempts }}/5
+							{% if (will_lock_next): %}
+								<div class="warning-next-lock">
+									{{ _('Warning: Next failed attempt will lock your account for 2 minutes!') }}
+								</div>
+							{% endif %}
+						</div>
+					{% endif %}
+				</div>
+			{% elif (fuser): %}
+				<div class="error-message">
+					{{ _('Invalid username and/or password! Please try again.') }}
+				</div>
+			{% endif %}
+
+			<div class="form-group">
+				<label class="form-label" for="luci_username">{{ _('Username') }}</label>
+				<input 
+					class="form-input" 
+					type="text" 
+					id="luci_username"
+					name="luci_username" 
+					value="{{ entityencode(duser, true) }}" 
+					placeholder="{{ _('Enter your username') }}"
+					autocomplete="username"
+					{% if (login_locked): %}disabled{% endif %}
+					required
+				/>
+			</div>
+
+			<div class="form-group">
+				<label class="form-label" for="luci_password">{{ _('Password') }}</label>
+				<input 
+					class="form-input" 
+					type="password" 
+					id="luci_password"
+					name="luci_password" 
+					placeholder="{{ _('Enter your password') }}"
+					autocomplete="current-password"
+					{% if (login_locked): %}disabled{% endif %}
+					required
+				/>
+			</div>
+
+			<div class="login-actions">
+				<button type="submit" class="btn-login" id="login-btn" {% if (login_locked): %}disabled{% endif %}>
+					{{ _('Log in') }}
+				</button>
+				<button type="reset" class="btn-reset" {% if (login_locked): %}disabled{% endif %}>
+					{{ _('Reset') }}
+				</button>
+			</div>
+		</form>
 	</div>
-</form>
+</div>
 
 {%
 	let https_ports = uci.get('uhttpd', 'main', 'listen_https') ?? [];
@@ -53,22 +422,119 @@
 %}
 
 <script>
-	var input = document.getElementsByName('luci_password')[0];
+	document.addEventListener('DOMContentLoaded', function() {
+		var passwordInput = document.getElementById('luci_password');
+		var usernameInput = document.getElementById('luci_username');
+		var loginForm = document.getElementById('login-form');
+		var loginButton = document.getElementById('login-btn');
+		var countdownElement = document.getElementById('countdown');
+		var lockoutMessage = document.getElementById('lockout-message');
 
-	if (input)
-		input.focus();
+		// 倒计时功能
+		{% if (error_type == "rate_limited" || login_locked): %}
+		var remainingTime = {{ lockout_remaining }};
+		
+		function updateCountdown() {
+			if (remainingTime > 0) {
+				countdownElement.textContent = remainingTime;
+				remainingTime--;
+				setTimeout(updateCountdown, 1000);
+			} else {
+				// 倒计时结束，启用表单并刷新页面
+				if (lockoutMessage) {
+					lockoutMessage.style.display = 'none';
+				}
+				
+				// 启用所有输入
+				[usernameInput, passwordInput, loginButton].forEach(function(element) {
+					if (element) {
+						element.disabled = false;
+					}
+				});
+				
+				// 显示解锁消息
+				var unlockMessage = document.createElement('div');
+				unlockMessage.className = 'error-message';
+				unlockMessage.style.background = 'linear-gradient(135deg, #28a745 0%, #20c997 100%)';
+				unlockMessage.innerHTML = '<span style="margin-right: 8px;">✅</span>{{ _("Account unlocked. You can now try to log in again.") }}';
+				
+				if (lockoutMessage && lockoutMessage.parentNode) {
+					lockoutMessage.parentNode.insertBefore(unlockMessage, lockoutMessage);
+				}
+				
+				// 3秒后自动刷新页面
+				setTimeout(function() {
+					window.location.reload();
+				}, 3000);
+			}
+		}
+		
+		updateCountdown();
+		{% endif %}
 
-	if (document.location.protocol != 'https:') {
-		{{ https_ports }}.forEach(function(port) {
-			var url = 'https://' + window.location.hostname + ':' + port + window.location.pathname;
-			var img = new Image();
+		// 自动聚焦到密码输入框（如果用户名已填写）或用户名输入框
+		{% if (!login_locked): %}
+		if (usernameInput && usernameInput.value.trim()) {
+			passwordInput?.focus();
+		} else {
+			usernameInput?.focus();
+		}
+		{% endif %}
 
-			img.onload = function() { window.location = url };
-			img.src = 'https://' + window.location.hostname + ':' + port + '{{ resource }}/icons/loading.svg?' + Math.random();
+		// 添加表单提交时的加载状态
+		if (loginForm && loginButton) {
+			loginForm.addEventListener('submit', function(e) {
+				{% if (login_locked): %}
+				e.preventDefault();
+				return false;
+				{% endif %}
+				
+				if (!loginButton.disabled) {
+					loginButton.innerHTML = '{{ _("Logging in...") }}';
+					loginButton.disabled = true;
+					loginButton.style.opacity = '0.7';
+				}
+			});
+		}
 
-			setTimeout(function() { img.src = '' }, 5000);
+		// 添加输入框的交互效果
+		[usernameInput, passwordInput].forEach(function(input) {
+			if (!input) return;
+			
+			input.addEventListener('focus', function() {
+				if (!this.disabled) {
+					this.parentElement.style.transform = 'scale(1.02)';
+				}
+			});
+			
+			input.addEventListener('blur', function() {
+				this.parentElement.style.transform = 'scale(1)';
+			});
 		});
-	}
+
+		// HTTPS重定向逻辑
+		if (document.location.protocol != 'https:') {
+			var httpsNotice = null;
+			
+			{{ https_ports }}.forEach(function(port) {
+				var url = 'https://' + window.location.hostname + ':' + port + window.location.pathname;
+				var img = new Image();
+
+				img.onload = function() { 
+					if (!httpsNotice) {
+						httpsNotice = document.createElement('div');
+						httpsNotice.className = 'https-notice';
+						httpsNotice.innerHTML = '{{ _("Redirecting to secure connection...") }}';
+						document.querySelector('.login-card').appendChild(httpsNotice);
+					}
+					setTimeout(function() { window.location = url; }, 1000);
+				};
+				
+				img.src = 'https://' + window.location.hostname + ':' + port + '{{ resource }}/icons/loading.svg?' + Math.random();
+				setTimeout(function() { img.src = ''; }, 5000);
+			});
+		}
+	});
 </script>
 
 {% include('footer') %}

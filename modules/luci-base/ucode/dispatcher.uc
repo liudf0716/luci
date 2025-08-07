@@ -489,7 +489,90 @@ function syslog(prio, msg) {
 	warn(sprintf("[%s] %s\n", prio, msg));
 }
 
+function get_login_attempts_key(remote_addr) {
+	return sprintf("login_attempts_%s", replace(remote_addr || "unknown", /[^0-9a-fA-F\.:]/g, "_"));
+}
+
+function check_login_rate_limit(remote_addr) {
+	let key = get_login_attempts_key(remote_addr);
+	let attempts_data = ubus.call("session", "get", {
+		ubus_rpc_session: "00000000000000000000000000000000",
+		keys: [key]
+	});
+	
+	let attempts = attempts_data?.values?.[key];
+	let now = time();
+	
+	if (attempts) {
+		// 清理过期的尝试记录
+		attempts.timestamps = filter(attempts.timestamps || [], t => (now - t) < 300); // 5分钟内的记录
+		
+		// 检查是否超过限制
+		if (length(attempts.timestamps) >= 5) {
+			let oldest_attempt = min(...attempts.timestamps);
+			let lockout_remaining = 120 - (now - oldest_attempt); // 2分钟锁定
+			
+			if (lockout_remaining > 0) {
+				return {
+					locked: true,
+					remaining: lockout_remaining,
+					attempts: length(attempts.timestamps)
+				};
+			}
+		}
+	}
+	
+	return {
+		locked: false,
+		attempts: length(attempts?.timestamps || [])
+	};
+}
+
+function record_login_attempt(remote_addr, success) {
+	let key = get_login_attempts_key(remote_addr);
+	let now = time();
+	
+	if (success) {
+		// 登录成功，清除失败记录
+		ubus.call("session", "set", {
+			ubus_rpc_session: "00000000000000000000000000000000",
+			values: { [key]: null }
+		});
+	} else {
+		// 记录失败尝试
+		let attempts_data = ubus.call("session", "get", {
+			ubus_rpc_session: "00000000000000000000000000000000",
+			keys: [key]
+		});
+		
+		let attempts = attempts_data?.values?.[key] || { timestamps: [] };
+		
+		// 清理过期记录并添加新记录
+		attempts.timestamps = filter(attempts.timestamps || [], t => (now - t) < 300);
+		push(attempts.timestamps, now);
+		
+		ubus.call("session", "set", {
+			ubus_rpc_session: "00000000000000000000000000000000",
+			values: { [key]: attempts }
+		});
+	}
+}
+
 function session_setup(user, pass, path) {
+	let remote_addr = http.getenv("REMOTE_ADDR");
+	let rate_limit = check_login_rate_limit(remote_addr);
+	
+	// 检查是否被锁定
+	if (rate_limit.locked) {
+		syslog("warning", sprintf("luci: login attempt blocked due to rate limit on /%s for %s from %s (remaining: %ds)",
+			join('/', path), user || "?", remote_addr || "?", rate_limit.remaining));
+		return { 
+			error: "rate_limited", 
+			remaining: rate_limit.remaining,
+			attempts: rate_limit.attempts
+		};
+	}
+	
 	let timeout = uci.get('luci', 'sauth', 'sessiontime');
 	let login = ubus.call("session", "login", {
 		username: user,
@@ -502,14 +585,31 @@ function session_setup(user, pass, path) {
 			ubus_rpc_session: login.ubus_rpc_session,
 			values: { token: randomid(16) }
 		});
+		
+		// 记录成功登录
+		record_login_attempt(remote_addr, true);
+		
 		syslog("info", sprintf("luci: accepted login on /%s for %s from %s",
-			join('/', path), user || "?", http.getenv("REMOTE_ADDR") || "?"));
+			join('/', path), user || "?", remote_addr || "?"));
 
 		return session_retrieve(login.ubus_rpc_session);
 	}
 
-	syslog("info", sprintf("luci: failed login on /%s for %s from %s",
-		join('/', path), user || "?", http.getenv("REMOTE_ADDR") || "?"));
+	// 记录失败登录
+	record_login_attempt(remote_addr, false);
+	
+	// 检查记录失败后是否会被锁定
+	let updated_rate_limit = check_login_rate_limit(remote_addr);
+	
+	syslog("info", sprintf("luci: failed login on /%s for %s from %s (attempts: %d)",
+		join('/', path), user || "?", remote_addr || "?", updated_rate_limit.attempts));
+	
+	// 返回失败信息，包含当前尝试次数
+	return { 
+		error: "auth_failed", 
+		attempts: updated_rate_limit.attempts,
+		will_lock: updated_rate_limit.attempts >= 5
+	};
 }
 
 function check_authentication(method) {
@@ -917,16 +1017,52 @@ dispatch = function(_http, path) {
 					pass = http.formvalue('luci_password');
 				}
 
+				let login_result = null;
 				if (user != null && pass != null)
-					session = session_setup(user, pass, resolved.ctx.request_path);
+					login_result = session_setup(user, pass, resolved.ctx.request_path);
 
-				if (!session) {
+				// 检查登录结果
+				if (login_result && type(login_result) == 'object' && login_result.sid) {
+					// 登录成功
+					session = login_result;
+				} else {
+					// 登录失败或被限制
 					resolved.ctx.path = [];
 
 					http.status(403, 'Forbidden');
 					http.header('X-LuCI-Login-Required', 'yes');
 
-					let scope = { duser: 'root', fuser: user };
+					let scope = { 
+						duser: 'root', 
+						fuser: user
+					};
+
+					// 根据登录结果设置不同的状态
+					if (login_result && type(login_result) == 'object') {
+						if (login_result.error == 'rate_limited') {
+							// 登录被限制
+							scope.login_locked = true;
+							scope.lockout_remaining = login_result.remaining || 0;
+							scope.failed_attempts = login_result.attempts || 0;
+							scope.error_type = 'rate_limited';
+						} else if (login_result.error == 'auth_failed') {
+							// 密码错误
+							scope.login_locked = false;
+							scope.failed_attempts = login_result.attempts || 0;
+							scope.will_lock_next = login_result.will_lock || false;
+							scope.error_type = 'auth_failed';
+						}
+					} else {
+						// 兼容旧逻辑，检查当前限制状态
+						let remote_addr = http.getenv("REMOTE_ADDR");
+						let rate_limit = check_login_rate_limit(remote_addr);
+						
+						scope.login_locked = rate_limit.locked;
+						scope.lockout_remaining = rate_limit.remaining || 0;
+						scope.failed_attempts = rate_limit.attempts;
+						scope.error_type = rate_limit.locked ? 'rate_limited' : 'auth_failed';
+					}
+
 					let theme_sysauth = `themes/${basename(runtime.env.media)}/sysauth`;
 
 					if (runtime.is_ucode_template(theme_sysauth) || runtime.is_lua_template(theme_sysauth)) {
