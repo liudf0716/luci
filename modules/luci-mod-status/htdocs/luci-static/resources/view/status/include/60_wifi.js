@@ -311,13 +311,13 @@ return baseclass.extend({
 	callSessionAccess: rpc.declare({
 		object: 'session',
 		method: 'access',
-		params: [ 'scope', 'object', 'function' ],
+		params: ['scope', 'object', 'function'],
 		expect: { 'access': false }
 	}),
 
-	wifirate: function(rt) {
+	wifirate: function (rt) {
 		var s = '%.1f\xa0%s, %d\xa0%s'.format(rt.rate / 1000, _('Mbit/s'), rt.mhz, _('MHz')),
-		    ht = rt.ht, vht = rt.vht,
+			ht = rt.ht, vht = rt.vht,
 			mhz = rt.mhz, nss = rt.nss,
 			mcs = rt.mcs, sgi = rt.short_gi,
 			he = rt.he, he_gi = rt.he_gi,
@@ -326,7 +326,7 @@ return baseclass.extend({
 		if (ht || vht) {
 			if (vht) s += ', VHT-MCS\xa0%d'.format(mcs);
 			if (nss) s += ', VHT-NSS\xa0%d'.format(nss);
-			if (ht)  s += ', MCS\xa0%s'.format(mcs);
+			if (ht) s += ', MCS\xa0%s'.format(mcs);
 			if (sgi) s += ', ' + _('Short GI').replace(/ /g, '\xa0');
 		}
 
@@ -340,7 +340,7 @@ return baseclass.extend({
 		return s;
 	},
 
-	handleDelClient: function(wifinet, mac, ev, cmd) {
+	handleDelClient: function (wifinet, mac, ev, cmd) {
 		var exec = cmd || 'disconnect';
 
 		dom.parent(ev.currentTarget, '.tr').style.opacity = 0.5;
@@ -362,14 +362,14 @@ return baseclass.extend({
 		}
 	},
 
-	handleGetWPSStatus: function(wifinet) {
+	handleGetWPSStatus: function (wifinet) {
 		return rpc.declare({
 			object: 'hostapd.%s'.format(wifinet),
 			method: 'wps_status',
 		})()
 	},
 
-	handleCallWPS: function(wifinet, ev) {
+	handleCallWPS: function (wifinet, ev) {
 		ev.currentTarget.classList.add('spinning');
 		ev.currentTarget.disabled = true;
 		ev.currentTarget.blur();
@@ -380,7 +380,7 @@ return baseclass.extend({
 		})();
 	},
 
-	handleCancelWPS: function(wifinet, ev) {
+	handleCancelWPS: function (wifinet, ev) {
 		ev.currentTarget.classList.add('spinning');
 		ev.currentTarget.disabled = true;
 		ev.currentTarget.blur();
@@ -391,16 +391,16 @@ return baseclass.extend({
 		})();
 	},
 
-	renderbox: function(radio, networks) {
+	renderbox: function (radio, networks) {
 		var chan = null,
-		    freq = null,
-		    rate = null,
-		    badges = [];
+			freq = null,
+			rate = null,
+			badges = [];
 
 		for (var i = 0; i < networks.length; i++) {
 			var net = networks[i],
-			    is_assoc = (net.getBSSID() != '00:00:00:00:00:00' && net.getChannel() && !net.isDisabled()),
-			    quality = net.getSignalPercent();
+				is_assoc = (net.getBSSID() != '00:00:00:00:00:00' && net.getChannel() && !net.isDisabled()),
+				quality = net.getSignalPercent();
 
 			var icon;
 			if (net.isDisabled())
@@ -421,14 +421,14 @@ return baseclass.extend({
 			if (net.isWPSEnabled) {
 				if (net.wps_status == 'Active') {
 					WPS_button = E('button', {
-						'class' : 'wifi-wps-button stop',
+						'class': 'wifi-wps-button stop',
 						'click': L.bind(this.handleCancelWPS, this, net.getIfname()),
-					}, [ _('Stop WPS') ])
+					}, [_('Stop WPS')])
 				} else {
 					WPS_button = E('button', {
-						'class' : 'wifi-wps-button',
+						'class': 'wifi-wps-button',
 						'click': L.bind(this.handleCallWPS, this, net.getIfname()),
-					}, [ _('Start WPS') ])
+					}, [_('Start WPS')])
 				}
 			}
 
@@ -446,7 +446,7 @@ return baseclass.extend({
 					E('div', { 'class': 'wifi-network-ssid' }, net.getActiveSSID() || _('Hidden Network')),
 					E('div', { 'class': 'wifi-network-info' }, [
 						networkInfo.join(' • '),
-						!is_assoc ? E('div', { 'style': 'color: #dc3545; margin-top: 4px; font-weight: 500;' }, 
+						!is_assoc ? E('div', { 'style': 'color: #dc3545; margin-top: 4px; font-weight: 500;' },
 							E('em', net.isDisabled() ? _('Wireless is disabled') : _('Wireless is not associated'))
 						) : ''
 					].filter(Boolean))
@@ -491,7 +491,7 @@ return baseclass.extend({
 
 	isWPSEnabled: {},
 
-	load: function() {
+	load: function () {
 		return Promise.all([
 			network.getWifiDevices(),
 			network.getWifiNetworks(),
@@ -500,48 +500,48 @@ return baseclass.extend({
 			this.callSessionAccess('access-group', 'luci-mod-status-index-wifi', 'write'),
 			firewall.getZones(),
 			L.hasSystemFeature('wifi') ? L.resolveDefault(uci.load('wireless')) : L.resolveDefault(),
-		]).then(L.bind(function(data) {
+		]).then(L.bind(function (data) {
 			var tasks = [],
-			    radios_networks_hints = data[1],
-			    hasWPS = L.hasSystemFeature('hostapd', 'wps');
+				radios_networks_hints = data[1],
+				hasWPS = L.hasSystemFeature('hostapd', 'wps');
 
 			for (var i = 0; i < radios_networks_hints.length; i++) {
-				tasks.push(L.resolveDefault(radios_networks_hints[i].getAssocList(), []).then(L.bind(function(net, list) {
-					net.assoclist = list.sort(function(a, b) { return a.mac > b.mac });
+				tasks.push(L.resolveDefault(radios_networks_hints[i].getAssocList(), []).then(L.bind(function (net, list) {
+					net.assoclist = list.sort(function (a, b) { return a.mac > b.mac });
 				}, this, radios_networks_hints[i])));
 
 				if (hasWPS && uci.get('wireless', radios_networks_hints[i].sid, 'wps_pushbutton') == '1') {
 					radios_networks_hints[i].isWPSEnabled = true;
 					tasks.push(L.resolveDefault(this.handleGetWPSStatus(radios_networks_hints[i].getIfname()), null)
-						.then(L.bind(function(net, data) {
+						.then(L.bind(function (net, data) {
 							net.wps_status = data ? data.pbc_status : _('No Data');
-					}, this, radios_networks_hints[i])));
+						}, this, radios_networks_hints[i])));
 				}
 			}
 
-			return Promise.all(tasks).then(function() {
+			return Promise.all(tasks).then(function () {
 				return data;
 			});
 		}, this));
 	},
 
-	render: function(data) {
+	render: function (data) {
 		var seen = {},
-		    radios = data[0],
-		    networks = data[1],
-		    hosthints = data[2],
-		    hasReadPermission = data[3],
-		    hasWritePermission = data[4],
-		    zones = data[5];
+			radios = data[0],
+			networks = data[1],
+			hosthints = data[2],
+			hasReadPermission = data[3],
+			hasWritePermission = data[4],
+			zones = data[5];
 
 		var container = E('div', { 'class': 'wifi-info-container' });
-		
+
 		// Wireless Devices Section
 		var devicesGrid = E('div', { 'class': 'wifi-devices-grid' });
 
-		for (var i = 0; i < radios.sort(function(a, b) { a.getName() > b.getName() }).length; i++)
+		for (var i = 0; i < radios.sort(function (a, b) { a.getName() > b.getName() }).length; i++)
 			devicesGrid.appendChild(this.renderbox(radios[i],
-				networks.filter(function(net) { return net.getWifiDeviceName() == radios[i].getName() })));
+				networks.filter(function (net) { return net.getWifiDeviceName() == radios[i].getName() })));
 
 		if (!devicesGrid.lastElementChild)
 			return null;
@@ -565,7 +565,7 @@ return baseclass.extend({
 
 			for (var i = 0; i < networks.length; i++) {
 				var macfilter = uci.get('wireless', networks[i].sid, 'macfilter'),
-				    maclist = {};
+					maclist = {};
 
 				if (macfilter != null && macfilter != 'disable') {
 					networks[i].maclist = L.toArray(uci.get('wireless', networks[i].sid, 'maclist'));
@@ -577,9 +577,9 @@ return baseclass.extend({
 
 				for (var k = 0; k < networks[i].assoclist.length; k++) {
 					var bss = networks[i].assoclist[k],
-					    name = hosthints.getHostnameByMACAddr(bss.mac),
-					    ipv4 = hosthints.getIPAddrByMACAddr(bss.mac),
-					    ipv6 = hosthints.getIP6AddrByMACAddr(bss.mac);
+						name = hosthints.getHostnameByMACAddr(bss.mac),
+						ipv4 = hosthints.getIPAddrByMACAddr(bss.mac),
+						ipv6 = hosthints.getIP6AddrByMACAddr(bss.mac);
 
 					var icon;
 					var q = Math.min((bss.signal + 110) / 70 * 100, 100);
@@ -622,7 +622,7 @@ return baseclass.extend({
 							E('img', { 'src': L.resource('icons/wifi.svg'), 'style': 'width:16px;height:16px;margin-right:8px' }),
 							E('span', {}, [
 								networks[i].getShortName(),
-								E('small', { 'style': 'opacity:0.7;margin-left:4px' }, [ '(', networks[i].getIfname(), ')' ])
+								E('small', { 'style': 'opacity:0.7;margin-left:4px' }, ['(', networks[i].getIfname(), ')'])
 							])
 						]),
 						E('span', { 'class': 'wifi-client-mac' }, bss.mac),
@@ -655,10 +655,10 @@ return baseclass.extend({
 
 						row[0].insertBefore(
 							E('div', {
-								'class' : 'zonebadge',
-								'title' : desc,
-								'style' : firewall.getZoneColorStyle(vlan_zone)
-							}, [ desc ]), row[0].firstChild);
+								'class': 'zonebadge',
+								'title': desc,
+								'style': firewall.getZoneColorStyle(vlan_zone)
+							}, [desc]), row[0].firstChild);
 					}
 
 					if (networks[i].isClientDisconnectSupported() && hasWritePermission) {
@@ -667,23 +667,23 @@ return baseclass.extend({
 
 						if (macfilter != null && macfilter != 'disable' && !maclist[bss.mac]) {
 							row.push(new L.ui.ComboButton('button', {
-									'addlist': macfilter == 'allow' ?  _('Add to Whitelist') : _('Add to Blacklist'),
-									'disconnect': _('Disconnect')
-								}, {
-									'click': L.bind(this.handleDelClient, this, networks[i], bss.mac),
-									'sort': [ 'disconnect', 'addlist' ],
-									'classes': {
-										'addlist': 'wifi-disconnect-button',
-										'disconnect': 'wifi-disconnect-button'
-									}
-								}).render()
+								'addlist': macfilter == 'allow' ? _('Add to Whitelist') : _('Add to Blacklist'),
+								'disconnect': _('Disconnect')
+							}, {
+								'click': L.bind(this.handleDelClient, this, networks[i], bss.mac),
+								'sort': ['disconnect', 'addlist'],
+								'classes': {
+									'addlist': 'wifi-disconnect-button',
+									'disconnect': 'wifi-disconnect-button'
+								}
+							}).render()
 							)
 						}
 						else {
 							row.push(E('button', {
 								'class': 'wifi-disconnect-button',
 								'click': L.bind(this.handleDelClient, this, networks[i], bss.mac)
-							}, [ _('Disconnect') ]));
+							}, [_('Disconnect')]));
 						}
 					}
 					else {
@@ -696,8 +696,11 @@ return baseclass.extend({
 
 			cbi_update_table(assoclist, rows, E('em', _('No information available')));
 
-			container.appendChild(E('div', { 'class': 'wifi-section-title', 'style': 'margin-top: 32px;' }, _('Associated Stations')));
-			container.appendChild(assoclist);
+			// 只有当有关联设备时才显示表格
+			if (rows.length > 0) {
+				container.appendChild(E('div', { 'class': 'wifi-section-title', 'style': 'margin-top: 32px;' }, _('Associated Stations')));
+				container.appendChild(assoclist);
+			}
 		}
 
 		return container;
