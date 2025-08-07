@@ -69,36 +69,51 @@ document.head.append(E('style', { 'type': 'text/css' },
 	background: rgba(0,123,255,0.08);
 }
 .dhcp-leases-table .table-titles {
-	background: rgba(248, 249, 250, 0.9);
-	border-bottom: 2px solid rgba(0,123,255,0.2);
+	background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+	border-bottom: 2px solid #007bff;
 	color: #495057;
 	font-weight: 600;
-	backdrop-filter: blur(10px);
+	position: sticky;
+	top: 0;
+	z-index: 10;
 }
 :root[data-darkmode="true"] .dhcp-leases-table .table-titles {
-	background: rgba(33, 37, 41, 0.9);
-	border-bottom-color: rgba(0,123,255,0.3);
+	background: linear-gradient(135deg, #343a40 0%, #495057 100%);
+	border-bottom-color: #66b3ff;
 	color: #adb5bd;
 }
 .dhcp-leases-table .table-titles .th {
-	padding: 14px 16px;
+	padding: 16px 20px;
 	text-align: left;
 	border: none;
-	font-size: 13px;
-	color: #495057 !important;
-	font-weight: 600;
-	text-transform: uppercase;
-	letter-spacing: 0.5px;
+	font-size: 14px;
+	color: #212529 !important;
+	font-weight: 700;
+	text-transform: none;
+	letter-spacing: 0.3px;
 	position: relative;
+	white-space: nowrap;
 }
 :root[data-darkmode="true"] .dhcp-leases-table .table-titles .th {
-	color: #adb5bd !important;
+	color: #f8f9fa !important;
 }
 .dhcp-leases-table .table-titles .th:first-child {
-	border-radius: 6px 0 0 0;
+	border-radius: 8px 0 0 0;
 }
 .dhcp-leases-table .table-titles .th:last-child {
-	border-radius: 0 6px 0 0;
+	border-radius: 0 8px 0 0;
+}
+.dhcp-leases-table .table-titles .th:not(:last-child)::after {
+	content: '';
+	position: absolute;
+	right: 0;
+	top: 25%;
+	height: 50%;
+	width: 1px;
+	background: rgba(0,0,0,0.1);
+}
+:root[data-darkmode="true"] .dhcp-leases-table .table-titles .th:not(:last-child)::after {
+	background: rgba(255,255,255,0.1);
 }
 .dhcp-leases-table .tr:not(.table-titles) .th,
 .dhcp-leases-table .tr:not(.table-titles) .td {
