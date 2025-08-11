@@ -6,6 +6,11 @@
 
 {% include('header') %}
 
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self';">
+<meta http-equiv="X-Content-Type-Options" content="nosniff">
+<meta http-equiv="X-Frame-Options" content="DENY">
+<meta http-equiv="X-XSS-Protection" content="1; mode=block">
+
 <style>
 .login-container {
 	display: flex;
@@ -339,7 +344,8 @@
 			<p class="login-subtitle">{{ _('Please enter your username and password.') }}</p>
 		</div>
 
-		<form method="post" class="login-form" id="login-form">
+		<form method="post" class="login-form" id="login-form" action="{{ pcdata(luci.http.getenv('REQUEST_URI')) }}">
+			<input type="hidden" name="token" value="{{ token }}" />
 			{% if (error_type == "rate_limited" || login_locked): %}
 				<div class="lockout-message" id="lockout-message">
 					<span class="lockout-icon">🔒</span>
@@ -350,13 +356,13 @@
 				</div>
 			{% elif (fuser): %}
 				<div class="error-message">
-					{{ _('Invalid username and/or password! Please try again.') }}
-					{% if (failed_attempts > 0): %}
+					{{ _('Authentication failed. Please check your credentials.') }}
+					{% if (failed_attempts > 2): %}
 						<div class="attempts-warning">
-							{{ _('Failed attempts:') }} {{ failed_attempts }}/5
+							{{ _('Multiple failed attempts detected.') }}
 							{% if (will_lock_next): %}
 								<div class="warning-next-lock">
-									{{ _('Warning: Next failed attempt will lock your account for 2 minutes!') }}
+									{{ _('Account will be temporarily locked after next failed attempt.') }}
 								</div>
 							{% endif %}
 						</div>
@@ -371,9 +377,11 @@
 					type="text" 
 					id="luci_username"
 					name="luci_username" 
-					value="{{ entityencode(duser, true) }}" 
+					value="{{ entityencode(duser || '', true) }}" 
 					placeholder="{{ _('Enter your username') }}"
 					autocomplete="username"
+					maxlength="64"
+					pattern="[a-zA-Z0-9_.-]+"
 					{% if (login_locked): %}disabled{% endif %}
 					required
 				/>
@@ -388,6 +396,10 @@
 					name="luci_password" 
 					placeholder="{{ _('Enter your password') }}"
 					autocomplete="current-password"
+					maxlength="128"
+					spellcheck="false"
+					autocorrect="off"
+					autocapitalize="off"
 					{% if (login_locked): %}disabled{% endif %}
 					required
 				/>
@@ -470,7 +482,7 @@
 
 		// 自动聚焦到密码输入框（如果用户名已填写）或用户名输入框
 		{% if (!login_locked): %}
-		if (usernameInput && usernameInput.value.trim()) {
+		if (usernameInput && usernameInput.value && usernameInput.value.length > 0) {
 			passwordInput?.focus();
 		} else {
 			usernameInput?.focus();
@@ -485,8 +497,23 @@
 				return false;
 				{% endif %}
 				
+				// 验证输入
+				var username = usernameInput?.value?.trim();
+				var password = passwordInput?.value;
+				
+				if (!username || !password) {
+					e.preventDefault();
+					return false;
+				}
+				
+				// 基本输入验证
+				if (username.length > 64 || password.length > 128) {
+					e.preventDefault();
+					return false;
+				}
+				
 				if (!loginButton.disabled) {
-					loginButton.innerHTML = '{{ _("Logging in...") }}';
+					loginButton.textContent = '{{ _("Logging in...") }}';
 					loginButton.disabled = true;
 					loginButton.style.opacity = '0.7';
 				}
@@ -509,26 +536,51 @@
 		});
 
 		// HTTPS重定向逻辑
-		if (document.location.protocol != 'https:') {
+		if (document.location.protocol !== 'https:' && window.location.hostname !== 'localhost') {
 			var httpsNotice = null;
+			var validPorts = {{ https_ports }};
 			
-			{{ https_ports }}.forEach(function(port) {
-				var url = 'https://' + window.location.hostname + ':' + port + window.location.pathname;
-				var img = new Image();
+			if (Array.isArray(validPorts) && validPorts.length > 0) {
+				validPorts.forEach(function(port) {
+					// 验证端口号
+					if (typeof port === 'number' && port > 0 && port <= 65535) {
+						var hostname = window.location.hostname;
+						// 防止开放重定向攻击
+						if (hostname && /^[a-zA-Z0-9.-]+$/.test(hostname)) {
+							var url = 'https://' + hostname + ':' + port + window.location.pathname;
+							var img = new Image();
 
-				img.onload = function() { 
-					if (!httpsNotice) {
-						httpsNotice = document.createElement('div');
-						httpsNotice.className = 'https-notice';
-						httpsNotice.innerHTML = '{{ _("Redirecting to secure connection...") }}';
-						document.querySelector('.login-card').appendChild(httpsNotice);
+							img.onload = function() { 
+								if (!httpsNotice) {
+									httpsNotice = document.createElement('div');
+									httpsNotice.className = 'https-notice';
+									httpsNotice.textContent = '{{ _("Redirecting to secure connection...") }}';
+									var loginCard = document.querySelector('.login-card');
+									if (loginCard) {
+										loginCard.appendChild(httpsNotice);
+									}
+								}
+								setTimeout(function() { 
+									if (url.indexOf(window.location.hostname) !== -1) {
+										window.location.href = url; 
+									}
+								}, 1000);
+							};
+							
+							img.onerror = function() {
+								// 静默处理错误
+							};
+							
+							img.src = 'https://' + hostname + ':' + port + '{{ resource }}/icons/loading.svg?' + Date.now();
+							setTimeout(function() { 
+								img.onload = null;
+								img.onerror = null;
+								img.src = ''; 
+							}, 5000);
+						}
 					}
-					setTimeout(function() { window.location = url; }, 1000);
-				};
-				
-				img.src = 'https://' + window.location.hostname + ':' + port + '{{ resource }}/icons/loading.svg?' + Math.random();
-				setTimeout(function() { img.src = ''; }, 5000);
-			});
+				});
+			}
 		}
 	});
 </script>

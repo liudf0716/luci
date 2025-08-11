@@ -504,19 +504,37 @@ function check_login_rate_limit(remote_addr) {
 	let now = time();
 	
 	if (attempts) {
-		// 清理过期的尝试记录
-		attempts.timestamps = filter(attempts.timestamps || [], t => (now - t) < 300); // 5分钟内的记录
+		// 清理过期的尝试记录 (5分钟内的记录)
+		let valid_timestamps = [];
+		for (let t in (attempts.timestamps || [])) {
+			if ((now - t) < 300) {
+				push(valid_timestamps, t);
+			}
+		}
+		attempts.timestamps = valid_timestamps;
 		
 		// 检查是否超过限制
 		if (length(attempts.timestamps) >= 5) {
-			// 使用最新的（第5次）失败尝试时间来计算锁定时间
-			let latest_attempt = max(...attempts.timestamps);
+			// 找到最新的失败尝试时间
+			let latest_attempt = 0;
+			for (let t in attempts.timestamps) {
+				if (t > latest_attempt) {
+					latest_attempt = t;
+				}
+			}
+			
 			let lockout_remaining = 120 - (now - latest_attempt); // 2分钟锁定
 			
 			if (lockout_remaining > 0) {
+				// 向上取整到整数秒
+				let remaining_seconds = int(lockout_remaining);
+				if (lockout_remaining > remaining_seconds) {
+					remaining_seconds++;
+				}
+				
 				return {
 					locked: true,
-					remaining: Math.ceil(lockout_remaining), // 向上取整，确保显示正确
+					remaining: remaining_seconds,
 					attempts: length(attempts.timestamps)
 				};
 			} else {
@@ -555,8 +573,14 @@ function record_login_attempt(remote_addr, success) {
 		
 		let attempts = attempts_data?.values?.[key] || { timestamps: [] };
 		
-		// 清理过期记录
-		attempts.timestamps = filter(attempts.timestamps || [], t => (now - t) < 300);
+		// 清理过期记录 (5分钟内的记录)
+		let valid_timestamps = [];
+		for (let t in (attempts.timestamps || [])) {
+			if ((now - t) < 300) {
+				push(valid_timestamps, t);
+			}
+		}
+		attempts.timestamps = valid_timestamps;
 		
 		// 添加新的失败记录
 		push(attempts.timestamps, now);
