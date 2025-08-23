@@ -280,7 +280,7 @@ return view.extend({
 		
 		s.tab('basic', _('Basic Settings'));
 		s.tab('gateway', _('Gateway Settings'));
-		s.tab('longconn', _('Long Connection Settings'));
+		s.tab('longconn', _('Auth Server Settings'));
 		s.tab('advanced', _('Advanced Settings'));
 		s.tab('rule', _('Rule Settings'));
 		s.tab('qos', _('QoS Settings'));
@@ -306,30 +306,6 @@ return view.extend({
 		o.default = 'wan';
 
 		o = s.taboption('basic', form.Value, 'device_id', _('Device ID'), _('The ID of the device.'));
-		o.rmempty = false;
-		o.datatype = 'string';
-		o.optional = false;
-		o.depends('auth_server_mode', 'cloud');
-		o.depends('auth_server_mode', 'bypass');
-
-		o = s.taboption('basic', form.Value, 'auth_server_hostname', _('Auth Server Hostname'), 
-						_('The domain or IP address of the authentication server.'));
-		o.rmempty = false;
-		o.datatype = 'or(host,ip4addr)';
-		o.optional = false;
-		o.depends('auth_server_mode', 'cloud');
-		o.depends('auth_server_mode', 'bypass');
-
-		o = s.taboption('basic', form.Value, 'auth_server_port', _('Auth Server Port'),
-						_('The port of the authentication server.'));
-		o.rmempty = false;
-		o.datatype = 'port';
-		o.optional = false;
-		o.depends('auth_server_mode', 'cloud');
-		o.depends('auth_server_mode', 'bypass');
-
-		o = s.taboption('basic', form.Value, 'auth_server_path', _('Auth Server URI path'),
-						_('The URI path of the authentication server.'));
 		o.rmempty = false;
 		o.datatype = 'string';
 		o.optional = false;
@@ -445,13 +421,36 @@ return view.extend({
 		o.rmempty = false;
 		o.defaulValue = false;
 
-		// Long Connection Settings
+		// Auth Server Settings
+		o = s.taboption('longconn', form.Value, 'auth_server_hostname', _('Auth Server Hostname'), 
+						_('The domain or IP address of the authentication server.'));
+		o.rmempty = false;
+		o.datatype = 'or(host,ip4addr)';
+		o.optional = false;
+		o.depends('auth_server_mode', 'cloud');
+		o.depends('auth_server_mode', 'bypass');
+
+		o = s.taboption('longconn', form.Value, 'auth_server_port', _('Auth Server Port'),
+						_('The port of the authentication server.'));
+		o.rmempty = false;
+		o.datatype = 'port';
+		o.optional = false;
+		o.depends('auth_server_mode', 'cloud');
+		o.depends('auth_server_mode', 'bypass');
+
+		o = s.taboption('longconn', form.Value, 'auth_server_path', _('Auth Server URI path'),
+						_('The URI path of the authentication server.'));
+		o.rmempty = false;
+		o.datatype = 'string';
+		o.optional = false;
+		o.depends('auth_server_mode', 'cloud');
+		o.depends('auth_server_mode', 'bypass');
+
 		o = s.taboption('longconn', form.ListValue, 'long_conn_mode', _('Persistent Connection Mode'),
 						_('The persistent connection mode of the device to auth server.'));
 		o.value('ws', _('WebSocket Connection Mode'));
 		o.value('wss', _('WebSocket Secure Connection Mode'));
 		o.value('mqtt', _('MQTT Connection Mode'));
-		o.value('none', _('None'));
 		o.rmempty = false;
 		o.defaulValue = 'ws';
 		o.optional = false;
@@ -1035,7 +1034,6 @@ return view.extend({
 		o = s.option(form.Value, 'g_desc', _('Group Description'), _('The description of the group.'));
 		o.datatype = 'string';
 		o.optional = true;
-
 
 		return m.render();
 	}
