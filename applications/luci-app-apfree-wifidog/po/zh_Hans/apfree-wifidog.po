@@ -1560,3 +1560,12 @@ msgstr "分钟"
 
 msgid "s"
 msgstr "秒"
+
+msgid "Authentication Server"
+msgstr "认证服务器"
+
+msgid "Select the authentication server to use for cloud authentication."
+msgstr "选择用于云认证的认证服务器"
+
+msgid "Please create an authentication server first"
+msgstr "请先创建认证服务器"
