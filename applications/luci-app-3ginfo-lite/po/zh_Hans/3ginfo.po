@@ -8,7 +8,7 @@ msgid "Information about 3G/4G/5G connection"
 msgstr "关于3G/4G/5G连接的信息"
 
 msgid "More information about the 3ginfo on the %seko.one.pl forum%s."
-msgstr "关于 "3ginfo" 在 eko.one.pl 论坛."
+msgstr "在 %seko.one.pl 论坛%s 上了解更多关于 3ginfo 的信息。"
 
 msgid "eko.one.pl forum"
 msgstr "forum eko.one.pl"
@@ -26,7 +26,7 @@ msgid "General Information"
 msgstr "通用信息"
 
 msgid "Modem Information"
-msgstr "modem信息"
+msgstr "调制解调器信息"
 
 msgid "Cell / Signal Information"
 msgstr "单元/信号信息"
@@ -35,7 +35,7 @@ msgid "Technology"
 msgstr "技术"
 
 msgid "Operator"
-msgstr "操作人员"
+msgstr "运营商"
 
 msgid "Signal strength"
 msgstr "信号强度"
@@ -44,7 +44,7 @@ msgid "Connection statistics"
 msgstr "连接统计信息"
 
 msgid "Modem type"
-msgstr "modem类型"
+msgstr "调制解调器类型"
 
 msgid "Additional information"
 msgstr "附加资料"
@@ -85,7 +85,7 @@ msgstr ""
 "192.168.X.X 调制解调器在该X.X下可用."
 
 msgid "Very good"
-msgstr "最好"
+msgstr "很好"
 
 msgid "Good"
 msgstr "好"
@@ -97,16 +97,16 @@ msgid "Very weak"
 msgstr "极差"
 
 msgid "Excellent"
-msgstr "极好的"
+msgstr "极好"
 
 msgid "Good"
 msgstr "好"
 
 msgid "Mid cell"
-msgstr "中间"
+msgstr "中等"
 
 msgid "Cell edge"
-msgstr "信号边缘"
+msgstr "小区边缘"
 
 msgid "SIM status"
 msgstr "SIM状态"
@@ -115,13 +115,13 @@ msgid "Not registered"
 msgstr "未注册"
 
 msgid "Registered"
-msgstr "注册"
+msgstr "已注册"
 
 msgid "Registered (roaming)"
 msgstr "已注册（漫游）"
 
 msgid "Searching.."
-msgstr "搜索.."
+msgstr "搜索中.."
 
 msgid "Registering denied"
 msgstr "注册被拒绝"
@@ -130,7 +130,7 @@ msgid "Waiting to read data from the modem..."
 msgstr "正在等待从调制解调器读取数据..."
 
 msgid "Waiting for connection data..."
-msgstr "正在创建连接..."
+msgstr "正在等待连接数据..."
 
 msgid "BTS Search"
 msgstr "BTS搜索"
@@ -241,7 +241,7 @@ msgid "3. Port for communication with the modem."
 msgstr "3. 与调制解调器通信的端口"
 
 msgid "3ginfo-lite"
-msgstr "5G连接的信息"
+msgstr "3ginfo-lite"
 
 msgid "TAC"
 msgstr "位置码"
@@ -298,19 +298,19 @@ msgid "Auto dial"
 msgstr "自动拨号"
 
 msgid "Enable auto dial on startup."
-msgstr "启动时启用自动拨号"
+msgstr "启动时启用自动拨号。"
 
 msgid "Fast dormancy"
 msgstr "快速休眠"
 
 msgid "Enable fast dormancy to save battery and network resources."
-msgstr "启用快速休眠以节省电池和网络资源"
+msgstr "启用快速休眠以节省电池和网络资源。"
 
 msgid "Dormancy time (seconds)"
 msgstr "休眠时间(秒)"
 
 msgid "Specify the duration (in seconds) of inactivity after which the modem will enter energy-saving mode. Valid range: 1-30."
-msgstr "指定调制解调器进入节能模式前的不活动时间(秒)。有效范围：1-30"
+msgstr "指定调制解调器进入节能模式前的空闲时长（秒），有效范围：1-30。"
 
 msgid "Modem dial"
 msgstr "调制解调器拨号"
@@ -323,3 +323,241 @@ msgstr "发射功率"
 
 msgid "ADC voltage"
 msgstr "ADC 电压"
+
+# --- 现代化界面新增字符串 ---
+msgid "3ginfo-lite Configuration"
+msgstr "3ginfo-lite 配置"
+
+msgid "3G/4G/5G Modem Configuration"
+msgstr "3G/4G/5G 调制解调器配置"
+
+msgid "Configure your modem settings, connection parameters, and diagnostic options for optimal performance."
+msgstr "配置调制解调器参数、连接设置与诊断选项，以获得最佳性能。"
+
+msgid "Basic Configuration"
+msgstr "基础配置"
+
+msgid "🌐 Network Interface"
+msgstr "🌐 网络接口"
+
+msgid "Select the network interface for Internet access."
+msgstr "选择用于访问互联网的网络接口。"
+
+msgid "This determines which network interface will be used for modem communication."
+msgstr "此项决定用于与调制解调器通信的网络接口。"
+
+msgid "🔌 Communication Port / IP Address"
+msgstr "🔌 通信端口 / IP 地址"
+
+msgid "Select the appropriate communication port or IP address for your modem type."
+msgstr "根据调制解调器类型选择合适的通信端口或 IP 地址。"
+
+msgid "Port Selection Guide:"
+msgstr "端口选择指南："
+
+msgid "• Traditional modem: Select ttyUSBX port"
+msgstr "• 传统调制解调器：选择 ttyUSBX 端口"
+
+msgid "• HiLink modem: Enter IP address (e.g., 192.168.1.1)"
+msgstr "• HiLink 调制解调器：输入 IP 地址 (例如 192.168.1.1)"
+
+msgid "📞 Auto Dial"
+msgstr "📞 自动拨号"
+
+msgid "Automatically establish connection on system startup."
+msgstr "系统启动时自动建立连接。"
+
+msgid "⚠️ Recommended for stable connections and automatic recovery."
+msgstr "⚠️ 建议用于保持连接稳定并实现自动恢复。"
+
+msgid "💤 Fast Dormancy"
+msgstr "💤 快速休眠"
+
+msgid "⏱️ Dormancy Time (seconds)"
+msgstr "⏱️ 休眠时间 (秒)"
+
+msgid "Duration (1-30 seconds) of inactivity before entering energy-saving mode."
+msgstr "进入节能模式前的空闲持续时间 (1-30 秒)。"
+
+msgid "Lower values save more power but may affect performance. Recommended: 5-10 seconds."
+msgstr "较低的数值能节省更多能耗，但可能影响性能。推荐：5-10 秒。"
+
+msgid "BTS Search Settings"
+msgstr "BTS 搜索设置"
+
+msgid "🌐 BTS Search Configuration"
+msgstr "🌐 BTS 搜索配置"
+
+msgid "Select a dedicated website for your location to search for Base Transceiver Stations (BTS). This helps identify nearby cell towers and optimize signal reception."
+msgstr "为您所在位置选择适用的网站以搜索基站 (BTS)，有助于识别附近基站并优化信号接收。"
+
+msgid "🌐 Search Website"
+msgstr "🌐 搜索网站"
+
+msgid "Choose the appropriate BTS search engine for your region."
+msgstr "选择适合您所在地区的 BTS 搜索引擎。"
+
+msgid "⚠️ Select the website that covers your geographical area for accurate results."
+msgstr "⚠️ 请选择覆盖您地理区域的网站以获得准确结果。"
+
+msgid "🇵🇱 btsearch.pl (Poland)"
+msgstr "🇵🇱 btsearch.pl (波兰)"
+
+msgid "🇮🇹 lteitaly.it (Italy)"
+msgstr "🇮🇹 lteitaly.it (意大利)"
+
+msgid "3G/4G/5G Modem Information"
+msgstr "3G/4G/5G 调制解调器信息"
+
+msgid "Modem Settings"
+msgstr "调制解调器设置"
+
+msgid "Signal Strength"
+msgstr "信号强度"
+
+msgid "Connection Status"
+msgstr "连接状态"
+
+msgid "Waiting for data..."
+msgstr "正在等待数据..."
+
+msgid "SIM Information"
+msgstr "SIM 信息"
+
+msgid "SIM Status"
+msgstr "SIM 状态"
+
+msgid "Signal Quality Metrics"
+msgstr "信号质量指标"
+
+msgid "CSQ"
+msgstr "CSQ"
+
+msgid "(Signal Strength)"
+msgstr "(信号强度)"
+
+msgid "RSSI"
+msgstr "RSSI"
+
+msgid "(Received Signal Strength Indicator)"
+msgstr "(接收信号强度指示)"
+
+msgid "RSRP"
+msgstr "RSRP"
+
+msgid "(Reference Signal Receive Power)"
+msgstr "(参考信号接收功率)"
+
+msgid "RSRQ"
+msgstr "RSRQ"
+
+msgid "(Reference Signal Received Quality)"
+msgstr "(参考信号接收质量)"
+
+msgid "SINR"
+msgstr "SINR"
+
+msgid "(Signal to Interference plus Noise Ratio)"
+msgstr "(信号与干扰加噪声比)"
+
+msgid "Device Information"
+msgstr "设备信息"
+
+msgid "Modem Type"
+msgstr "调制解调器类型"
+
+msgid "Firmware"
+msgstr "固件"
+
+msgid "Communication Port"
+msgstr "通信端口"
+
+msgid "Temperature"
+msgstr "温度"
+
+msgid "TX Power"
+msgstr "发射功率"
+
+msgid "Voltage"
+msgstr "电压"
+
+msgid "Network Information"
+msgstr "网络信息"
+
+msgid "MCC MNC"
+msgstr "MCC MNC"
+
+msgid "Cell ID"
+msgstr "小区 ID"
+
+msgid "Primary Band"
+msgstr "主频段"
+
+msgid "CA Band (SCC1)"
+msgstr "CA 频段 (SCC1)"
+
+msgid "CA Band (SCC2)"
+msgstr "CA 频段 (SCC2)"
+
+msgid "CA Band (SCC3)"
+msgstr "CA 频段 (SCC3)"
+
+msgid "CA Band (SCC4)"
+msgstr "CA 频段 (SCC4)"
+
+msgid "Defined modems"
+msgstr "已定义的调制解调器"
+
+msgid "Interface for selecting user defined modems."
+msgstr "用于选择用户自定义调制解调器的界面。"
+
+msgid "3G/4G/5G Modem Diagnostics"
+msgstr "3G/4G/5G 调制解调器诊断"
+
+msgid "Execute various diagnostic commands to check modem availability and troubleshoot data collection issues."
+msgstr "执行多种诊断命令以检查调制解调器可用性并排查数据采集问题。"
+
+msgid "Modem Dial"
+msgstr "调制解调器拨号"
+
+msgid "Initialize modem connection and establish data session."
+msgstr "初始化调制解调器连接并建立数据会话。"
+
+msgid "Connect"
+msgstr "连接"
+
+msgid "USB Devices"
+msgstr "USB 设备"
+
+msgid "Show detailed USB device information and debug data."
+msgstr "显示详细的 USB 设备信息与调试数据。"
+
+msgid "Show USB Info"
+msgstr "显示 USB 信息"
+
+msgid "TTY Ports"
+msgstr "TTY 端口"
+
+msgid "Check availability of ttyX communication ports."
+msgstr "检查 ttyX 通信端口的可用性。"
+
+msgid "List Ports"
+msgstr "列出端口"
+
+msgid "Script Debug"
+msgstr "脚本调试"
+
+msgid "Run 3ginfo script in debug mode to trace data collection."
+msgstr "以调试模式运行 3ginfo 脚本以跟踪数据采集。"
+
+msgid "Run Debug"
+msgstr "运行调试"
+
+msgid "Command Output"
+msgstr "命令输出"
+
+msgid "Download"
+msgstr "下载"
+
+msgid "Command output will appear here..."
+msgstr "命令输出将显示在此处..."
