@@ -17,6 +17,132 @@
 	Thanks to https://github.com/koshev-msk for the initial progress bar calculation for rssi/rsrp/rsrq/sinnr.
 */
 
+// 添加现代化的CSS样式
+document.head.append(E('style', { 'type': 'text/css' },
+	`
+.modem-info-container {
+	background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%);
+	border-radius: 12px;
+	padding: 20px;
+	margin: 16px 0;
+	border: 1px solid rgba(255,255,255,0.15);
+	box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+:root[data-darkmode="true"] .modem-info-container {
+	background: linear-gradient(135deg, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.1) 100%);
+	border-color: rgba(255,255,255,0.1);
+	box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+.modem-section-title {
+	font-size: 18px;
+	font-weight: 600;
+	color: #495057;
+	margin-bottom: 16px;
+	display: flex;
+	align-items: center;
+	border-bottom: 2px solid rgba(0,123,255,0.2);
+	padding-bottom: 8px;
+}
+:root[data-darkmode="true"] .modem-section-title {
+	color: #adb5bd;
+}
+.modem-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+	gap: 16px;
+	margin-bottom: 20px;
+}
+.modem-card {
+	background: white;
+	border-radius: 8px;
+	padding: 16px;
+	box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+	border-left: 4px solid #007bff;
+	transition: all 0.3s ease;
+}
+:root[data-darkmode="true"] .modem-card {
+	background: rgba(33, 37, 41, 0.8);
+	box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+.modem-card:hover {
+	transform: translateY(-2px);
+	box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+}
+:root[data-darkmode="true"] .modem-card:hover {
+	box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+}
+.modem-card-title {
+	font-size: 12px;
+	color: #6c757d;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	margin-bottom: 8px;
+	font-weight: 500;
+}
+:root[data-darkmode="true"] .modem-card-title {
+	color: #adb5bd;
+}
+.modem-card-value {
+	font-size: 16px;
+	font-weight: 600;
+	color: #495057;
+	word-break: break-all;
+}
+:root[data-darkmode="true"] .modem-card-value {
+	color: #ffffff;
+}
+.signal-progress {
+	width: 100%;
+	height: 8px;
+	background: rgba(0,0,0,0.1);
+	border-radius: 4px;
+	overflow: hidden;
+	margin: 8px 0;
+}
+.signal-progress-bar {
+	height: 100%;
+	border-radius: 4px;
+	transition: width 0.3s ease;
+	background: linear-gradient(90deg, #28a745 0%, #20c997 100%);
+}
+.signal-strength-container {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+.signal-icon {
+	width: 32px;
+	height: 32px;
+	opacity: 0.8;
+}
+.connection-status {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 12px;
+	background: rgba(40,167,69,0.1);
+	border-radius: 8px;
+	border: 1px solid rgba(40,167,69,0.2);
+}
+:root[data-darkmode="true"] .connection-status {
+	background: rgba(40,167,69,0.2);
+	border-color: rgba(40,167,69,0.3);
+}
+.status-icon {
+	width: 16px;
+	height: 16px;
+}
+.data-transfer {
+	font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+	font-size: 12px;
+	color: #6c757d;
+}
+:root[data-darkmode="true"] .data-transfer {
+	color: #adb5bd;
+}
+	`
+));
+
 function csq_bar(v, m) {
 	const pg = document.querySelector('#csq');
 	const vn = parseInt(v) || 0;
@@ -25,28 +151,41 @@ function csq_bar(v, m) {
 	let tip;
 	
 	if (vn >= 20 && vn <= 31) {
-		pg.firstElementChild.style.background = 'lime';
+		pg.style.background = 'linear-gradient(90deg, #28a745 0%, #28a745 100%)';
 		tip = _('Very good');
 	}
 	
 	if (vn >= 14 && vn <= 19) {
-		pg.firstElementChild.style.background = 'yellow';
+		pg.style.background = 'linear-gradient(90deg, #ffc107 0%, #ffc107 100%)';
 		tip = _('Good');
 	}
 	
 	if (vn >= 10 && vn <= 13) {
-		pg.firstElementChild.style.background = 'darkorange';
+		pg.style.background = 'linear-gradient(90deg, #fd7e14 0%, #fd7e14 100%)';
 		tip = _('Weak');
 	}
 	
 	if (vn <= 9 && vn >= 1) {
-		pg.firstElementChild.style.background = 'red';
+		pg.style.background = 'linear-gradient(90deg, #dc3545 0%, #dc3545 100%)';
 		tip = _('Very weak');
 	}
 	
-	pg.firstElementChild.style.width = `${pc}%`;
-	pg.style.width = '33%';
+	pg.style.width = `${pc}%`;
 	pg.setAttribute('title', `${v} | ${tip} `);
+	
+	// 添加数值显示
+	const parentCard = pg.closest('.modem-card');
+	let valueSpan = parentCard.querySelector('.signal-value');
+	if (!valueSpan) {
+		valueSpan = document.createElement('span');
+		valueSpan.className = 'signal-value';
+		valueSpan.style.fontSize = '12px';
+		valueSpan.style.color = '#6c757d';
+		valueSpan.style.marginTop = '4px';
+		valueSpan.style.display = 'block';
+		pg.parentNode.appendChild(valueSpan);
+	}
+	valueSpan.textContent = `${v} (${tip})`;
 }
 
 function rssi_bar(v, m) {
@@ -61,29 +200,41 @@ function rssi_bar(v, m) {
 	const pc = Math.floor(100 * (1 - (-50 - vn) / (-50 - mn)));
 	
 	if (vn > -70) {
-		pg.firstElementChild.style.background = 'lime';
+		pg.style.background = 'linear-gradient(90deg, #28a745 0%, #28a745 100%)';
 		tip = _('Very good');
 	}
 	
 	if (vn >= -85 && vn <= -70) {
-		pg.firstElementChild.style.background = 'yellow';
+		pg.style.background = 'linear-gradient(90deg, #ffc107 0%, #ffc107 100%)';
 		tip = _('Good');
 	}
 	
 	if (vn >= -100 && vn <= -86) {
-		pg.firstElementChild.style.background = 'darkorange';
+		pg.style.background = 'linear-gradient(90deg, #fd7e14 0%, #fd7e14 100%)';
 		tip = _('Weak');
 	}
 	
 	if (vn < -100) {
-		pg.firstElementChild.style.background = 'red';
+		pg.style.background = 'linear-gradient(90deg, #dc3545 0%, #dc3545 100%)';
 		tip = _('Very weak');
 	}
 	
-	pg.firstElementChild.style.width = `${pc}%`;
-	pg.style.width = '33%';
-	pg.firstElementChild.style.animationDirection = "reverse";
+	pg.style.width = `${pc}%`;
 	pg.setAttribute('title', `${v} | ${tip} `);
+	
+	// 添加数值显示
+	const parentCard = pg.closest('.modem-card');
+	let valueSpan = parentCard.querySelector('.signal-value');
+	if (!valueSpan) {
+		valueSpan = document.createElement('span');
+		valueSpan.className = 'signal-value';
+		valueSpan.style.fontSize = '12px';
+		valueSpan.style.color = '#6c757d';
+		valueSpan.style.marginTop = '4px';
+		valueSpan.style.display = 'block';
+		pg.parentNode.appendChild(valueSpan);
+	}
+	valueSpan.textContent = `${v} (${tip})`;
 }
 
 function rsrp_bar(v, m) {
@@ -98,29 +249,41 @@ function rsrp_bar(v, m) {
 	const pc = Math.floor(120 * (1 - (-50 - vn) / (-70 - mn)));
 	
 	if (vn >= -80) {
-		pg.firstElementChild.style.background = 'lime';
+		pg.style.background = 'linear-gradient(90deg, #28a745 0%, #28a745 100%)';
 		tip = _('Very good');
 	}
 	
 	if (vn >= -90 && vn <= -79) {
-		pg.firstElementChild.style.background = 'yellow';
+		pg.style.background = 'linear-gradient(90deg, #ffc107 0%, #ffc107 100%)';
 		tip = _('Good');
 	}
 	
 	if (vn >= -100 && vn <= -89) {
-		pg.firstElementChild.style.background = 'darkorange';
+		pg.style.background = 'linear-gradient(90deg, #fd7e14 0%, #fd7e14 100%)';
 		tip = _('Weak');
 	}
 	
 	if (vn < -100) {
-		pg.firstElementChild.style.background = 'red';
+		pg.style.background = 'linear-gradient(90deg, #dc3545 0%, #dc3545 100%)';
 		tip = _('Very weak');
 	}
 	
-	pg.firstElementChild.style.width = `${pc}%`;
-	pg.style.width = '33%';
-	pg.firstElementChild.style.animationDirection = "reverse";
+	pg.style.width = `${pc}%`;
 	pg.setAttribute('title', `${v} | ${tip} `);
+	
+	// 添加数值显示
+	const parentCard = pg.closest('.modem-card');
+	let valueSpan = parentCard.querySelector('.signal-value');
+	if (!valueSpan) {
+		valueSpan = document.createElement('span');
+		valueSpan.className = 'signal-value';
+		valueSpan.style.fontSize = '12px';
+		valueSpan.style.color = '#6c757d';
+		valueSpan.style.marginTop = '4px';
+		valueSpan.style.display = 'block';
+		pg.parentNode.appendChild(valueSpan);
+	}
+	valueSpan.textContent = `${v} (${tip})`;
 }
 
 function sinr_bar(v, m) {
@@ -132,29 +295,41 @@ function sinr_bar(v, m) {
 	const pc = Math.floor(100 - (100 * (1 - ((mn - vn) / (mn - 40)))));
 	
 	if (vn > 20) {
-		pg.firstElementChild.style.background = 'lime';
+		pg.style.background = 'linear-gradient(90deg, #28a745 0%, #28a745 100%)';
 		tip = _('Excellent');
 	}
 	
 	if (vn >= 13 && vn <= 20) {
-		pg.firstElementChild.style.background = 'yellow';
+		pg.style.background = 'linear-gradient(90deg, #ffc107 0%, #ffc107 100%)';
 		tip = _('Good');
 	}
 	
 	if (vn > 0 && vn <= 12) {
-		pg.firstElementChild.style.background = 'darkorange';
+		pg.style.background = 'linear-gradient(90deg, #fd7e14 0%, #fd7e14 100%)';
 		tip = _('Mid cell');
 	}
 	
 	if (vn <= 0) {
-		pg.firstElementChild.style.background = 'red';
+		pg.style.background = 'linear-gradient(90deg, #dc3545 0%, #dc3545 100%)';
 		tip = _('Cell edge');
 	}
 	
-	pg.firstElementChild.style.width = `${pc}%`;
-	pg.style.width = '33%';
-	pg.firstElementChild.style.animationDirection = "reverse";
+	pg.style.width = `${pc}%`;
 	pg.setAttribute('title', `${v} | ${tip} `);
+	
+	// 添加数值显示
+	const parentCard = pg.closest('.modem-card');
+	let valueSpan = parentCard.querySelector('.signal-value');
+	if (!valueSpan) {
+		valueSpan = document.createElement('span');
+		valueSpan.className = 'signal-value';
+		valueSpan.style.fontSize = '12px';
+		valueSpan.style.color = '#6c757d';
+		valueSpan.style.marginTop = '4px';
+		valueSpan.style.display = 'block';
+		pg.parentNode.appendChild(valueSpan);
+	}
+	valueSpan.textContent = `${v} (${tip})`;
 }
 
 function rsrq_bar(v, m) {
@@ -168,29 +343,41 @@ function rsrq_bar(v, m) {
 	if (vn > 0) vn = 0;
 	
 	if (vn >= -10) {
-		pg.firstElementChild.style.background = 'lime';
+		pg.style.background = 'linear-gradient(90deg, #28a745 0%, #28a745 100%)';
 		tip = _('Excellent');
 	}
 	
 	if (vn >= -15 && vn <= -9) {
-		pg.firstElementChild.style.background = 'yellow';
+		pg.style.background = 'linear-gradient(90deg, #ffc107 0%, #ffc107 100%)';
 		tip = _('Good');
 	}
 	
 	if (vn >= -20 && vn <= -14) {
-		pg.firstElementChild.style.background = 'darkorange';
+		pg.style.background = 'linear-gradient(90deg, #fd7e14 0%, #fd7e14 100%)';
 		tip = _('Mid cell');
 	}
 	
 	if (vn < -20) {
-		pg.firstElementChild.style.background = 'red';
+		pg.style.background = 'linear-gradient(90deg, #dc3545 0%, #dc3545 100%)';
 		tip = _('Cell edge');
 	}
 	
-	pg.firstElementChild.style.width = `${pc}%`;
-	pg.style.width = '33%';
-	pg.firstElementChild.style.animationDirection = "reverse";
+	pg.style.width = `${pc}%`;
 	pg.setAttribute('title', `${v} | ${tip} `);
+	
+	// 添加数值显示
+	const parentCard = pg.closest('.modem-card');
+	let valueSpan = parentCard.querySelector('.signal-value');
+	if (!valueSpan) {
+		valueSpan = document.createElement('span');
+		valueSpan.className = 'signal-value';
+		valueSpan.style.fontSize = '12px';
+		valueSpan.style.color = '#6c757d';
+		valueSpan.style.marginTop = '4px';
+		valueSpan.style.display = 'block';
+		pg.parentNode.appendChild(valueSpan);
+	}
+	valueSpan.textContent = `${v} (${tip})`;
 }
 
 function SIMdata(data) {
@@ -562,7 +749,27 @@ return view.extend({
 
 									if (document.getElementById('signal')) {
 										const view = document.getElementById("signal");
-										view.innerHTML = String.format('<medium>%d%%</medium><br/>' + '<img style="padding-left: 10px;" src="%s"/>', p, icon);
+										view.textContent = `${p}%`;
+									}
+									
+									if (document.getElementById('signal-icon')) {
+										const iconView = document.getElementById("signal-icon");
+										iconView.src = icon;
+									}
+									
+									if (document.getElementById('signal-bar')) {
+										const barView = document.getElementById("signal-bar");
+										barView.style.width = `${p}%`;
+										// 根据信号强度设置颜色
+										if (p >= 75) {
+											barView.style.background = 'linear-gradient(90deg, #28a745 0%, #28a745 100%)';
+										} else if (p >= 50) {
+											barView.style.background = 'linear-gradient(90deg, #ffc107 0%, #ffc107 100%)';
+										} else if (p >= 25) {
+											barView.style.background = 'linear-gradient(90deg, #fd7e14 0%, #fd7e14 100%)';
+										} else {
+											barView.style.background = 'linear-gradient(90deg, #dc3545 0%, #dc3545 100%)';
+										}
 									}
 
 									if (document.getElementById('txpower')) {
@@ -893,194 +1100,200 @@ return view.extend({
 
 		s.render = L.bind(function(view, section_id) {
 			return E('div', { class: 'cbi-section' }, [
-				E('div', { class: 'right' }, [
+				// 顶部控制栏
+				E('div', { style: 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;' }, [
+					E('h2', { class: 'modem-section-title', style: 'margin: 0; border: none; padding: 0;' }, _('3G/4G/5G Modem Information')),
 					E('button', {
 						id: 'modc',
-						style: 'position:relative; display:block; margin:0 !important; margin-top:-3% !important; left:95%; top:',
-						disabled: 'true',
-						'data-tooltip': _('Modem selection menu'),
-						class: 'btn cbi-button',
+						class: 'btn cbi-button cbi-button-action',
 						click: ui.createHandlerFn(this, function() {
 							return upModemDialog.show();
 						}),
-					}, _('☰')),
+						style: 'display: flex; align-items: center; gap: 8px;'
+					}, [
+						E('span', { style: 'font-size: 18px;' }, '☰'),
+						_('Modem Settings')
+					]),
 				]),
 
-				E('h4', {}, [_('General Information')]),
-				E('table', { class: 'table' }, [
-					E('tr', { class: 'tr' }, [
-						E('td', { class: 'td left', width: '33%' }, [_('Signal strength')]),
-						E('td', { class: 'td left', id: 'signal' }, ['-']),
-					]),
-					E('tr', { class: 'tr' }, [
-						E('td', { class: 'td left', width: '33%' }, [_('TXPower')]),
-						E('td', { class: 'td left', id: 'txpower' }, ['-']),
-					]),
-					E('tr', { class: 'tr' }, [
-						E('td', { class: 'td left', width: '33%' }, [_('Operator')]),
-						E('td', { class: 'td left' }, [
-							E('div', { class: 'right' }, [
-								E('div', { style: 'text-align:left;font-size:100%', id: 'operator' }, ['-']),
-								E('div', { style: 'text-align:left;font-size:66%', id: 'location' }, ['-']),
+				// 信号强度和连接状态卡片
+				E('div', { class: 'modem-grid' }, [
+					E('div', { class: 'modem-card', style: 'border-left-color: #28a745;' }, [
+						E('div', { class: 'modem-card-title' }, _('Signal Strength')),
+						E('div', { id: 'signal-container', class: 'signal-strength-container' }, [
+							E('div', { style: 'flex: 1;' }, [
+								E('div', { class: 'modem-card-value', id: 'signal' }, '-'),
+								E('div', { class: 'signal-progress' }, [
+									E('div', { class: 'signal-progress-bar', id: 'signal-bar' })
+								])
 							]),
-						]),
+							E('img', { class: 'signal-icon', id: 'signal-icon', src: L.resource('icons/3ginfo-0.png') })
+						])
 					]),
-					E('tr', { class: 'tr' }, [
-						E('td', { class: 'td left', width: '33%' }, [_('SIM status')]),
-						E('td', { class: 'td left'}, [
+					E('div', { class: 'modem-card', style: 'border-left-color: #17a2b8;' }, [
+						E('div', { class: 'modem-card-title' }, _('Connection Status')),
+						E('div', { class: 'connection-status', id: 'connst' }, _('Waiting for data...'))
+					]),
+					E('div', { class: 'modem-card', style: 'border-left-color: #ffc107;' }, [
+						E('div', { class: 'modem-card-title' }, _('Operator')),
+						E('div', { class: 'modem-card-value', id: 'operator' }, '-'),
+						E('div', { style: 'font-size: 12px; color: #6c757d; margin-top: 4px;', id: 'location' }, '-')
+					]),
+					E('div', { class: 'modem-card', style: 'border-left-color: #6f42c1;' }, [
+						E('div', { class: 'modem-card-title' }, _('Technology')),
+						E('div', { class: 'modem-card-value', id: 'mode' }, '-')
+					])
+				]),
+
+				// SIM信息
+				E('h4', { class: 'modem-section-title' }, _('SIM Information')),
+				E('div', { class: 'modem-grid' }, [
+					E('div', { class: 'modem-card', style: 'grid-column: span 2;' }, [
+						E('div', { style: 'display: flex; align-items: center; gap: 12px;' }, [
 							E('span', {
 								class: 'ifacebadge',
 								title: null,
 								id: 'simv',
-								style: 'visibility: hidden; margin:0 auto; padding: 4px;',
+								style: 'visibility: hidden; margin: 0; padding: 8px; cursor: pointer; border: 1px solid #ccc; border-radius: 4px;',
 								click: ui.createHandlerFn(this, function() {
 									return upSIMDialog.show(data);
 								}),
 							}, [
-								E('div', { class: 'ifacebox-body' }, [
-									E('div', { class: 'cbi-tooltip-container' }, [
-										E('img', {
-											src: L.resource('icons/sim1m.png'),
-											style: 'width:24px; height:auto; padding: 1%; margin:0 auto;',
-											title: _(''),
-											class: 'middle',
-										}),
-										E('span', { class: 'cbi-tooltip', style: 'text-align:left;font-size:80%' }, SIMdata(data)),
-									]),
-								]),
+								E('img', {
+									src: L.resource('icons/sim1m.png'),
+									style: 'width: 24px; height: auto;'
+								})
 							]),
-							E('normal', { id: 'sim', style: 'margin-left: 0.5em;'}, ['-']),
-						]),
-					]),
-					E('tr', { class: 'tr' }, [
-						E('td', { class: 'td left', width: '33%' }, [_('Connection statistics')]),
-						E('td', { class: 'td left', id: 'connst' }, ['-']),
-					]),
-					E('tr', { class: 'tr' }, [
-						E('td', { class: 'td left', width: '33%' }, [_('Technology')]),
-						E('td', { class: 'td left', id: 'mode' }, ['-']),
-					]),
+							E('div', { style: 'flex: 1;' }, [
+								E('div', { class: 'modem-card-title' }, _('SIM Status')),
+								E('div', { class: 'modem-card-value', id: 'sim' }, '-')
+							])
+						])
+					])
 				]),
-				E('h4', {}, [_('Modem Information')]),
-				E('table', { class: 'table' }, [
-					E('tr', { class: 'tr' }, [
-						E('td', { class: 'td left', width: '33%' }, [_('Modem type')]),
-						E('td', { class: 'td left', id: 'modem' }, ['-']),
-					]),
-					E('tr', { class: 'tr' }, [
-						E('td', { class: 'td left', width: '33%' }, [_('Revision / Firmware')]),
-						E('td', { class: 'td left', id: 'fw' }, ['-']),
-					]),
-					E('tr', { class: 'tr' }, [
-						E('td', { class: 'td left', width: '33%' }, [_('IP adress / Communication Port')]),
-						E('td', { class: 'td left', id: 'cport' }, ['-']),
-					]),
-					E('tr', { class: 'tr' }, [
-						E('td', { class: 'td left', width: '33%' }, [_('Protocol')]),
-						E('td', { class: 'td left', id: 'protocol' }, ['-']),
-					]),
-					E('tr', { id: 'tempn', class: 'tr' }, [
-						E('td', { class: 'td left', width: '33%' }, [_('Chip Temperature')]),
-						E('td', { class: 'td left', id: 'temp' }, ['-']),
-					]),
-					E('tr', { class: 'tr' }, [
-						E('td', { class: 'td left', width: '33%' }, [_('ADC voltage')]),
-						E('td', { class: 'td left', id: 'voltage' }, ['-']),
-					]),
-				]),
-				E('h4', {}, [_('Cell / Signal Information')]),
-				E('table', { class: 'table' }, [
-					E('tr', { class: 'tr' }, [
-						E('td', { class: 'td left', width: '33%' }, [_('MCC MNC')]),
-						E('td', { class: 'td left', id: 'mccmnc' }, ['-']),
-					]),
-					E('tr', { class: 'tr' }, [
-						E('td', { class: 'td left', width: '33%' }, [_('CELL ID')]),
-						E('td', { class: 'td left', id: 'cid' }, ['-']),
-					]),
-					E('tr', { class: 'tr' }, [
-						E('td', { class: 'td left', width: '33%' }, [_('TAC')]),
-						E('td', { class: 'td left', id: 'tac' }, ['-']),
-					]),
-					E('tr', { id: 'lacn', class: 'tr' }, [
-						E('td', { class: 'td left', width: '33%' }, [_('LAC')]),
-						E('td', { class: 'td left', id: 'lac' }, ['-']),
-					]),
-					E('tr', { id: 'csqn', class: 'tr' }, [
-						E('td', { class: 'td left', width: '33%' }, [
+
+				// 信号质量指标
+				E('h4', { class: 'modem-section-title' }, _('Signal Quality Metrics')),
+				E('div', { class: 'modem-grid' }, [
+					E('div', { class: 'modem-card', id: 'csqn' }, [
+						E('div', { class: 'modem-card-title' }, [
 							_('CSQ'),
-							E('div', { style: 'text-align:left;font-size:66%' }, [_('(Signal Strength)')]),
+							E('div', { style: 'font-size: 11px; color: #6c757d; margin-top: 2px;' }, _('(Signal Strength)'))
 						]),
-						E('td', { class: 'td' }, E('div', {
-							id: 'csq',
-							class: 'cbi-progressbar',
-							title: '-'
-						}, E('div')))
+						E('div', { class: 'signal-progress' }, [
+							E('div', { class: 'signal-progress-bar', id: 'csq' })
+						])
 					]),
-					E('tr', { id: 'rssin', class: 'tr' }, [
-						E('td', { class: 'td left', width: '33%' }, [
+					E('div', { class: 'modem-card', id: 'rssin' }, [
+						E('div', { class: 'modem-card-title' }, [
 							_('RSSI'),
-							E('div', { style: 'text-align:left;font-size:66%' }, [_('(Received Signal Strength Indicator)')]),
+							E('div', { style: 'font-size: 11px; color: #6c757d; margin-top: 2px;' }, _('(Received Signal Strength Indicator)'))
 						]),
-						E('td', { class: 'td' }, E('div', {
-							id: 'rssi',
-							class: 'cbi-progressbar',
-							title: '-'
-						}, E('div')))
+						E('div', { class: 'signal-progress' }, [
+							E('div', { class: 'signal-progress-bar', id: 'rssi' })
+						])
 					]),
-					E('tr', { id: 'rsrpn', class: 'tr' }, [
-						E('td', { class: 'td left', width: '33%' }, [
+					E('div', { class: 'modem-card', id: 'rsrpn' }, [
+						E('div', { class: 'modem-card-title' }, [
 							_('RSRP'),
-							E('div', { style: 'text-align:left;font-size:66%' }, [_('(Reference Signal Receive Power)')]),
+							E('div', { style: 'font-size: 11px; color: #6c757d; margin-top: 2px;' }, _('(Reference Signal Receive Power)'))
 						]),
-						E('td', { class: 'td' }, E('div', {
-							id: 'rsrp',
-							class: 'cbi-progressbar',
-							title: '-'
-						}, E('div')))
+						E('div', { class: 'signal-progress' }, [
+							E('div', { class: 'signal-progress-bar', id: 'rsrp' })
+						])
 					]),
-					E('tr', { id: 'sinrn', class: 'tr' }, [
-						E('td', { class: 'td left', width: '33%' }, [
-							_('SINR'),
-							E('div', { style: 'text-align:left;font-size:66%' }, [_('(Signal to Interference plus Noise Ratio)')]),
-						]),
-						E('td', { class: 'td' }, E('div', {
-							id: 'sinr',
-							class: 'cbi-progressbar',
-							title: '-'
-						}, E('div')))
-					]),
-					E('tr', { id: 'rsrqn', class: 'tr' }, [
-						E('td', { class: 'td left', width: '33%' }, [
+					E('div', { class: 'modem-card', id: 'rsrqn' }, [
+						E('div', { class: 'modem-card-title' }, [
 							_('RSRQ'),
-							E('div', { style: 'text-align:left;font-size:66%' }, [_('(Reference Signal Received Quality)')]),
+							E('div', { style: 'font-size: 11px; color: #6c757d; margin-top: 2px;' }, _('(Reference Signal Received Quality)'))
 						]),
-						E('td', { class: 'td' }, E('div', {
-							id: 'rsrq',
-							class: 'cbi-progressbar',
-							title: '-'
-						}, E('div')))
+						E('div', { class: 'signal-progress' }, [
+							E('div', { class: 'signal-progress-bar', id: 'rsrq' })
+						])
 					]),
-					E('tr', { class: 'tr' }, [
-						E('td', { class: 'td left', width: '33%' }, [_('Primary band (PCC) | PCI & EARFCN')]),
-						E('td', { class: 'td left', id: 'pband' }, ['-']),
+					E('div', { class: 'modem-card', id: 'sinrn' }, [
+						E('div', { class: 'modem-card-title' }, [
+							_('SINR'),
+							E('div', { style: 'font-size: 11px; color: #6c757d; margin-top: 2px;' }, _('(Signal to Interference plus Noise Ratio)'))
+						]),
+						E('div', { class: 'signal-progress' }, [
+							E('div', { class: 'signal-progress-bar', id: 'sinr' })
+						])
+					])
+				]),
+
+				// 设备信息
+				E('h4', { class: 'modem-section-title' }, _('Device Information')),
+				E('div', { class: 'modem-grid' }, [
+					E('div', { class: 'modem-card' }, [
+						E('div', { class: 'modem-card-title' }, _('Modem Type')),
+						E('div', { class: 'modem-card-value', id: 'modem' }, '-')
 					]),
-					E('tr', { class: 'tr' }, [
-						E('td', { class: 'td left', width: '33%' }, [_('CA band (SCC1)')]),
-						E('td', { class: 'td left', id: 's1band' }, ['-']),
+					E('div', { class: 'modem-card' }, [
+						E('div', { class: 'modem-card-title' }, _('Firmware')),
+						E('div', { class: 'modem-card-value', id: 'fw' }, '-')
 					]),
-					E('tr', { class: 'tr' }, [
-						E('td', { class: 'td left', width: '33%' }, [_('CA band (SCC2)')]),
-						E('td', { class: 'td left', id: 's2band' }, ['-']),
+					E('div', { class: 'modem-card' }, [
+						E('div', { class: 'modem-card-title' }, _('Communication Port')),
+						E('div', { class: 'modem-card-value', id: 'cport' }, '-')
 					]),
-					E('tr', { class: 'tr' }, [
-						E('td', { class: 'td left', width: '33%' }, [_('CA band (SCC3)')]),
-						E('td', { class: 'td left', id: 's3band' }, ['-']),
+					E('div', { class: 'modem-card' }, [
+						E('div', { class: 'modem-card-title' }, _('Protocol')),
+						E('div', { class: 'modem-card-value', id: 'protocol' }, '-')
 					]),
-					E('tr', { class: 'tr' }, [
-						E('td', { class: 'td left', width: '33%' }, [_('CA band (SCC4)')]),
-						E('td', { class: 'td left', id: 's4band' }, ['-']),
+					E('div', { class: 'modem-card', id: 'tempn' }, [
+						E('div', { class: 'modem-card-title' }, _('Temperature')),
+						E('div', { class: 'modem-card-value', id: 'temp' }, '-')
 					]),
+					E('div', { class: 'modem-card' }, [
+						E('div', { class: 'modem-card-title' }, _('TX Power')),
+						E('div', { class: 'modem-card-value', id: 'txpower' }, '-')
+					]),
+					E('div', { class: 'modem-card' }, [
+						E('div', { class: 'modem-card-title' }, _('Voltage')),
+						E('div', { class: 'modem-card-value', id: 'voltage' }, '-')
+					])
+				]),
+
+				// 网络信息
+				E('h4', { class: 'modem-section-title' }, _('Network Information')),
+				E('div', { class: 'modem-grid' }, [
+					E('div', { class: 'modem-card' }, [
+						E('div', { class: 'modem-card-title' }, _('MCC MNC')),
+						E('div', { class: 'modem-card-value', id: 'mccmnc' }, '-')
+					]),
+					E('div', { class: 'modem-card' }, [
+						E('div', { class: 'modem-card-title' }, _('Cell ID')),
+						E('div', { class: 'modem-card-value', id: 'cid' }, '-')
+					]),
+					E('div', { class: 'modem-card' }, [
+						E('div', { class: 'modem-card-title' }, _('TAC')),
+						E('div', { class: 'modem-card-value', id: 'tac' }, '-')
+					]),
+					E('div', { class: 'modem-card', id: 'lacn' }, [
+						E('div', { class: 'modem-card-title' }, _('LAC')),
+						E('div', { class: 'modem-card-value', id: 'lac' }, '-')
+					]),
+					E('div', { class: 'modem-card' }, [
+						E('div', { class: 'modem-card-title' }, _('Primary Band')),
+						E('div', { class: 'modem-card-value', id: 'pband' }, '-')
+					]),
+					E('div', { class: 'modem-card' }, [
+						E('div', { class: 'modem-card-title' }, _('CA Band (SCC1)')),
+						E('div', { class: 'modem-card-value', id: 's1band' }, '-')
+					]),
+					E('div', { class: 'modem-card' }, [
+						E('div', { class: 'modem-card-title' }, _('CA Band (SCC2)')),
+						E('div', { class: 'modem-card-value', id: 's2band' }, '-')
+					]),
+					E('div', { class: 'modem-card' }, [
+						E('div', { class: 'modem-card-title' }, _('CA Band (SCC3)')),
+						E('div', { class: 'modem-card-value', id: 's3band' }, '-')
+					]),
+					E('div', { class: 'modem-card' }, [
+						E('div', { class: 'modem-card-title' }, _('CA Band (SCC4)')),
+						E('div', { class: 'modem-card-value', id: 's4band' }, '-')
+					])
 				])
 			]);
 		}, o, this);
