@@ -6,6 +6,10 @@
 'require poll';
 'require tools.widgets as widgets';
 
+// State flags
+let manualRefreshInProgress = false; // true only for explicit user-triggered refresh
+let gpsFetchInProgress = false;      // true for any GPS data retrieval (auto or manual)
+
 const callServiceList = rpc.declare({
 	object: 'service',
 	method: 'list',
@@ -53,7 +57,7 @@ function getGPSLocation() {
 			alt: null,
 			time: null,
 			mode: null,
-			error: 'GPS service unavailable or no fix available'
+			error: _('GPS service unavailable or no fix available')
 		};
 	});
 }
@@ -99,15 +103,15 @@ function tryGetGPSData(maxReports, timeout) {
 			}
 			
 			if (!foundTPV) {
-				locationData.error = 'No TPV data found in gpspipe output';
+				locationData.error = _('No TPV data found in gpspipe output');
 			}
 		} else {
-			locationData.error = 'Unable to get GPS data. Please check if GPSD is running and GPS device is connected.';
+			locationData.error = _('Unable to get GPS data. Please check if GPSD is running and GPS device is connected.');
 		}
 		
 		// 如果没有找到有效数据，抛出错误以触发重试
 		if (locationData.lat === null && locationData.lon === null) {
-			throw new Error(locationData.error || 'No GPS fix available');
+			throw new Error(locationData.error || _('No GPS fix available'));
 		}
 		
 		return locationData;
@@ -195,7 +199,7 @@ function renderGPSLocation(data) {
 		// Show error information if available
 		if (data.error) {
 			content += '<div style="background: white; padding: 10px; border-radius: 3px; margin-top: 10px; font-size: 12px; color: #666; text-align: left;">';
-			content += '<strong>Status:</strong> ' + data.error;
+			content += '<strong>' + _('Status') + ':</strong> ' + data.error;
 			content += '</div>';
 		}
 		
@@ -265,10 +269,20 @@ return view.extend({
 		s.anonymous = true;
 		s.render = function (section_id) {
 			L.Poll.add(function () {
+				// Avoid overlapping fetches
+				if (gpsFetchInProgress) return;
+				gpsFetchInProgress = true;
+				var btn = document.getElementById('gps_refresh_btn');
+				if (btn) btn.disabled = true;
 				return L.resolveDefault(getGPSLocation()).then(function(res) {
 					var view = document.getElementById("gps_location");
-					if (view) {
-						view.innerHTML = renderGPSLocation(res);
+					if (view) view.innerHTML = renderGPSLocation(res);
+				}).finally(function(){
+					gpsFetchInProgress = false;
+					// Re-enable button only if no manual refresh currently active
+					if (!manualRefreshInProgress) {
+						var btn2 = document.getElementById('gps_refresh_btn');
+						if (btn2) btn2.disabled = false;
 					}
 				});
 			}, 5); // Update every 5 seconds
@@ -276,6 +290,35 @@ return view.extend({
 			return E('div', { class: 'cbi-map' },
 				E('fieldset', { class: 'cbi-section'}, [
 					E('legend', {}, _('GPS Location Information')),
+					E('div', { style: 'margin: 0 0 10px 0;' }, [
+						E('button', {
+							'id': 'gps_refresh_btn',
+							'class': 'btn cbi-button cbi-button-action',
+							'disabled': true, // disabled until first fetch completes
+							'click': function(ev) {
+								if (manualRefreshInProgress || gpsFetchInProgress)
+									return;
+								manualRefreshInProgress = true;
+								gpsFetchInProgress = true;
+								var btn = ev.target;
+								var originalText = btn.innerText;
+								btn.disabled = true;
+								btn.innerText = _('Refreshing...');
+								var view = document.getElementById('gps_location');
+								if (view) view.innerHTML = '<em>' + _('Manual refresh in progress ...') + '</em>';
+								L.resolveDefault(getGPSLocation()).then(function(res) {
+									if (view) view.innerHTML = renderGPSLocation(res);
+								}).catch(function(err) {
+									if (view) view.innerHTML = '<div style="color:#dc3545"><strong>' + _('Failed to get GPS data') + ':</strong> ' + (err && err.message ? err.message : '') + '</div>';
+								}).finally(function() {
+									manualRefreshInProgress = false;
+									gpsFetchInProgress = false;
+									btn.disabled = false;
+									btn.innerText = originalText;
+								});
+							}
+						}, _('Refresh GPS Data'))
+					]),
 					E('div', { id: 'gps_location' },
 						_('Collecting GPS data ...'))
 				])

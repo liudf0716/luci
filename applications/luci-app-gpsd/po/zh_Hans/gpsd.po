@@ -116,3 +116,30 @@ msgstr "GPS服务"
 
 msgid "Last Update"
 msgstr "最后更新"
+
+msgid "Refresh GPS Data"
+msgstr "刷新GPS数据"
+
+msgid "Refreshing..."
+msgstr "正在刷新..."
+
+msgid "Manual refresh in progress ..."
+msgstr "正在手动刷新..."
+
+msgid "Failed to get GPS data"
+msgstr "获取GPS数据失败"
+
+msgid "GPS service unavailable or no fix available"
+msgstr "GPS服务不可用或无法获得定位"
+
+msgid "No TPV data found in gpspipe output"
+msgstr "在gpspipe输出中未找到TPV数据"
+
+msgid "Unable to get GPS data. Please check if GPSD is running and GPS device is connected."
+msgstr "无法获取GPS数据。请检查GPSD是否正在运行以及GPS设备是否已连接。"
+
+msgid "No GPS fix available"
+msgstr "无GPS定位可用"
+
+msgid "Status"
+msgstr "状态"
