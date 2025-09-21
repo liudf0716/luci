@@ -64,6 +64,40 @@ function findStorageSize(procmtd, procpart) {
 
 var mapdata = { actions: {}, config: {} };
 
+/*
+ * UI / UX helper additions:
+ *  - Provide a small reusable spinner node with aria-live region
+ *  - Provide a function to build a key/value list in a more structured way
+ *  - Centralize common confirmation modal patterns
+ */
+function buildSpinner(text) {
+	return E('p', { 'class': 'spinning', 'aria-live': 'polite' }, text);
+}
+
+function buildKVList(items) {
+	/* items: Array of [label, value] pairs; skip falsy values */
+	return E('table', { 'class': 'flash-kv' }, [
+		E('tbody', {}, items.filter(function(it){ return it && it[1]; }).map(function(it) {
+			return E('tr', {}, [
+				E('th', { 'scope': 'row' }, it[0]),
+				E('td', {}, it[1])
+			]);
+		}))
+	]);
+}
+
+/* Inject minimal styling once */
+if (!document.getElementById('flash-kv-style')) {
+	document.head.appendChild(E('style', { id: 'flash-kv-style' },
+		'.flash-kv{border-collapse:collapse;margin:.5em 0;font-size:.9em}'+
+		'.flash-kv th{ text-align:left; padding:2px 6px; background:#f0f0f0; white-space:nowrap }'+
+		'.flash-kv td{ padding:2px 6px; }'+
+		'.flash-kv tr:nth-child(even) td{ background:#fafafa }'+
+		'.flash-warn{ margin:.5em 0; padding:.5em .75em; border:1px solid #d9534f; background:#fdf7f7; }'+
+		'.flash-note{ margin:.5em 0; padding:.5em .75em; border:1px solid #eee; background:#fcfcfc; }'
+	));
+}
+
 return view.extend({
 	load: function() {
 		var tasks = [
@@ -207,8 +241,17 @@ return view.extend({
 			.then(L.bind(function(btn, reply) {
 				btn.firstChild.data = _('Checking image…');
 
+				var cancel = E('button', {
+					'class': 'btn',
+					'click': function(){
+						fs.remove('/tmp/firmware.bin');
+						ui.hideModal();
+					}
+				}, [ _('Cancel') ]);
+
 				ui.showModal(_('Checking image…'), [
-					E('span', { 'class': 'spinning' }, _('Verifying the uploaded image file.'))
+					buildSpinner(_('Verifying the uploaded image file.')),
+					E('div', { 'class': 'right' }, [ cancel ])
 				]);
 
 				return callSystemValidateFirmwareImage('/tmp/firmware.bin')
@@ -232,11 +275,12 @@ return view.extend({
 				    is_too_big = (storage_size > 0 && res[0].size > storage_size),
 				    body = [];
 
-				body.push(E('p', _("The flash image was uploaded. Below is the checksum and file size listed, compare them with the original file to ensure data integrity. <br /> Click 'Continue' below to start the flash procedure.")));
-				body.push(E('ul', {}, [
-					res[0].size ? E('li', {}, '%s: %1024.2mB'.format(_('Size'), res[0].size)) : '',
-					res[0].checksum ? E('li', {}, '%s: %s'.format(_('MD5'), res[0].checksum)) : '',
-					res[0].sha256sum ? E('li', {}, '%s: %s'.format(_('SHA256'), res[0].sha256sum)) : ''
+				body.push(E('p', _("The image was uploaded successfully. Verify the size and checksums below against the original file.<br />When ready, click 'Continue' to proceed.")));
+
+				body.push(buildKVList([
+					[ _('Size'), res[0].size ? '%1024.2mB'.format(res[0].size) : null ],
+					[ _('MD5'), res[0].checksum || null ],
+					[ _('SHA256'), res[0].sha256sum || null ]
 				]));
 
 				body.push(E('p', {}, E('label', { 'class': 'btn' }, [
@@ -247,21 +291,21 @@ return view.extend({
 					body.push(E('hr'));
 
 				if (is_too_big)
-					body.push(E('p', { 'class': 'alert-message' }, [
-						_('It appears that you are trying to flash an image that does not fit into the flash memory, please verify the image file!')
+					body.push(E('p', { 'class': 'alert-message flash-warn' }, [
+						_('The selected image is larger than the available flash memory. Please verify that you chose the correct file!')
 					]));
 
 				if (!is_valid)
-					body.push(E('p', { 'class': 'alert-message' }, [
+					body.push(E('p', { 'class': 'alert-message flash-warn' }, [
 						res[2].stderr ? res[2].stderr : '',
 						res[2].stderr ? E('br') : '',
 						res[2].stderr ? E('br') : '',
-						_('The uploaded image file does not contain a supported format. Make sure that you choose the generic image format for your platform.')
+						_('The uploaded image format is not recognized for this device. Ensure that you selected a sysupgrade-compatible image intended for your platform.')
 					]));
 
 				if (!allow_backup) {
-					body.push(E('p', { 'class': 'alert-message' }, [
-						_('The uploaded firmware does not allow keeping current configuration.')
+					body.push(E('p', { 'class': 'alert-message flash-note' }, [
+						_('The uploaded firmware does not allow keeping the current configuration (forced reset).')
 					]));
 					opts.keep[0].disabled = true;
 				} else {
@@ -284,18 +328,19 @@ return view.extend({
 				}, [ _('Continue') ]);
 
 				if (res[2].code != 0) {
-					body.push(E('p', { 'class': 'alert-message danger' }, E('label', {}, [
-						_('Image check failed:'),
+					body.push(E('p', { 'class': 'alert-message danger flash-warn' }, E('label', {}, [
+						_('Image test execution failed:'),
 						E('br'), E('br'),
 						res[2].stderr
 					])));
 				};
 
 				if ((!is_valid || is_too_big || res[2].code != 0) && is_forceable) {
-					body.push(E('p', {}, E('label', { 'class': 'btn alert-message danger' }, [
+					opts.force[0].title = _('Override failed checks. Use ONLY if you are absolutely sure.');
+					body.push(E('p', {}, E('label', { 'class': 'btn alert-message danger flash-warn' }, [
 						opts.force[0], ' ', _('Force upgrade'),
 						E('br'), E('br'),
-						_('Select \'Force upgrade\' to flash the image even if the image format check fails. Use only if you are sure that the firmware is correct and meant for your device!')
+						_('Enable to proceed despite failed validation or size warnings. This may brick your device if the image is wrong.')
 					])));
 					cntbtn.disabled = true;
 				};
