@@ -41,7 +41,28 @@ function renderStatus(isRunning) {
 }
 
 function getGPSLocation() {
-	return L.resolveDefault(fs.exec('/usr/bin/gpspipe', ['-w', '-n', '12']), {}).then(function (res) {
+	// 智能获取GPS数据：先尝试快速获取，失败后重试
+	return tryGetGPSData(11, 2000).catch(function() {
+		// 快速尝试失败，使用更多数据重试
+		return tryGetGPSData(18, 5000);
+	}).catch(function(err) {
+		// 最终失败处理
+		return {
+			lat: null,
+			lon: null,
+			alt: null,
+			time: null,
+			mode: null,
+			error: 'GPS service unavailable or no fix available'
+		};
+	});
+}
+
+function tryGetGPSData(maxReports, timeout) {
+	var timeoutArgs = timeout ? ['-w', '-n', maxReports.toString(), '-T', (timeout/1000).toString()] 
+	                         : ['-w', '-n', maxReports.toString()];
+	
+	return L.resolveDefault(fs.exec('/usr/bin/gpspipe', timeoutArgs), {}).then(function (res) {
 		var locationData = {
 			lat: null,
 			lon: null,
@@ -84,16 +105,12 @@ function getGPSLocation() {
 			locationData.error = 'Unable to get GPS data. Please check if GPSD is running and GPS device is connected.';
 		}
 		
+		// 如果没有找到有效数据，抛出错误以触发重试
+		if (locationData.lat === null && locationData.lon === null) {
+			throw new Error(locationData.error || 'No GPS fix available');
+		}
+		
 		return locationData;
-	}).catch(function(err) {
-		return {
-			lat: null,
-			lon: null,
-			alt: null,
-			time: null,
-			mode: null,
-			error: 'GPS service unavailable'
-		};
 	});
 }
 
