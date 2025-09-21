@@ -465,6 +465,11 @@ function checkOperatorName(t) {
 	return uniqueWords.join(" ");
 }
 
+// Helper: determine if a modem field value is effectively empty
+function isEmptyField(v) {
+    return v === undefined || v === null || v === '' || v === '-' || (typeof v === 'string' && v.trim().length === 0);
+}
+
 return view.extend({
 	modemDialog: baseclass.extend({
 		__init__: function(title, description, callback) {
@@ -774,19 +779,11 @@ return view.extend({
 
 									if (document.getElementById('txpower')) {
 										const view = document.getElementById("txpower");
-										if (!json.txpower.length > 1) {
-											view.textContent = '-';
-										} else {
-											view.textContent = checkOperatorName(json.txpower);
-										}
+										if (isEmptyField(json.txpower)) view.textContent = '-'; else view.textContent = checkOperatorName(json.txpower);
 									}
 									if (document.getElementById('voltage')) {
 										const view = document.getElementById("voltage");
-										if (!json.voltage.length > 1) {
-											view.textContent = '-';
-										} else {
-											view.textContent = checkOperatorName(json.voltage + "V");
-										}
+										if (isEmptyField(json.voltage)) view.textContent = '-'; else view.textContent = checkOperatorName(json.voltage + "V");
 									}
 
 									if (document.getElementById('connst')) {
@@ -800,11 +797,7 @@ return view.extend({
 
 									if (document.getElementById('operator')) {
 										const view = document.getElementById("operator");
-										if (!json.operator_name.length > 1) {
-											view.textContent = '-';
-										} else {
-											view.textContent = checkOperatorName(json.operator_name);
-										}
+										if (isEmptyField(json.operator_name)) view.textContent = '-'; else view.textContent = checkOperatorName(json.operator_name);
 									}
 
 									if (document.getElementById('location')) {
@@ -847,47 +840,27 @@ return view.extend({
 
 									if (document.getElementById('mode')) {
 										const view = document.getElementById("mode");
-										if (!json.mode.length > 1) {
-											view.textContent = '-';
-										} else {
-											view.textContent = json.mode;
-										}
+										if (isEmptyField(json.mode)) view.textContent = '-'; else view.textContent = json.mode;
 									}
 
 									if (document.getElementById('modem')) {
 										const view = document.getElementById("modem");
-										if (!json.modem.length > 1) {
-											view.textContent = '-';
-										} else {
-											view.textContent = json.modem;
-										}
+										if (isEmptyField(json.modem)) view.textContent = '-'; else view.textContent = json.modem;
 									}
 
 									if (document.getElementById('fw')) {
 										const view = document.getElementById("fw");
-										if (!json.firmware.length > 1) {
-											view.textContent = '-';
-										} else {
-											view.textContent = json.firmware;
-										}
+										if (isEmptyField(json.firmware)) view.textContent = '-'; else view.textContent = json.firmware;
 									}
 
 									if (document.getElementById('cport')) {
 										const view = document.getElementById("cport");
-										if (!json.cport.length > 1) {
-											view.textContent = '-';
-										} else {
-											view.textContent = json.cport;
-										}
+										if (isEmptyField(json.cport)) view.textContent = '-'; else view.textContent = json.cport;
 									}
 
 									if (document.getElementById('protocol')) {
 										const view = document.getElementById("protocol");
-										if (!json.protocol.length > 1) {
-											view.textContent = '-';
-										} else {
-											view.textContent = json.protocol;
-										}
+										if (isEmptyField(json.protocol)) view.textContent = '-'; else view.textContent = json.protocol;
 									}
 
 									if (document.getElementById('temp')) {
