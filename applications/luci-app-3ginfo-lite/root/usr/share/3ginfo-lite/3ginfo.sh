@@ -310,14 +310,25 @@ fi
 COPS=""
 COPS_MCC=""
 COPS_MNC=""
-COPS_NUM=$(echo "$O" | awk -F[\"] '/^\+COPS:\s*.,2/ {print $2}')
+COPS_NUM=$(echo "$O" | awk -F[\"] '/COPS.*,2,/ {print $2}')
 if [ -n "$COPS_NUM" ]; then
 	COPS_MCC=${COPS_NUM:0:3}
 	COPS_MNC=${COPS_NUM:3:3}
 fi
 
-TCOPS=$(echo "$O" | awk -F[\"] '/^\+COPS:\s*.,0/ {print $2}')
+TCOPS=$(echo "$O" | awk -F[\"] '/COPS.*,0,/ {print $2}')
 [ "x$TCOPS" != "x" ] && COPS="$TCOPS"
+
+# Enhanced COPS parsing with retry logic
+if [ -z "$COPS" ]; then
+	# Try AT+COPS=3,0 to switch to text format and retry
+	sms_tool -d "$DEVICE" at "AT+COPS=3,0" > /dev/null 2>&1
+	sleep 1
+	COPS_RETRY=$(sms_tool -d "$DEVICE" at "AT+COPS?" | awk -F[\"] 'NR==2 && /\+COPS:/ {print $2}' | tr -d '\r\n')
+	if [ -n "$COPS_RETRY" ] && [ "$COPS_RETRY" != "0" ] && [ "$COPS_RETRY" != "1" ]; then
+		COPS="$COPS_RETRY"
+	fi
+fi
 
 if [ -z "$COPS" ]; then
 	if [ -n "$COPS_NUM" ]; then
@@ -325,6 +336,19 @@ if [ -z "$COPS" ]; then
 		LOC=$(awk -F[\;] '/^'$COPS_NUM';/ {print $2}' $RES/mccmnc.dat)
 	fi
 fi
+
+# Parse MNC length dynamically if COPS_NUM is available but MCC/MNC not set
+if [ -n "$COPS_NUM" ] && [ -z "$COPS_MCC" ]; then
+	COPS_LEN=${#COPS_NUM}
+	if [ $COPS_LEN -eq 5 ]; then
+		COPS_MCC=${COPS_NUM:0:3}
+		COPS_MNC=${COPS_NUM:3:2}
+	elif [ $COPS_LEN -eq 6 ]; then
+		COPS_MCC=${COPS_NUM:0:3}
+		COPS_MNC=${COPS_NUM:3:3}
+	fi
+fi
+
 [ -z "$COPS" ] && COPS=$COPS_NUM
 case "$COPS" in
     *\ *) 
