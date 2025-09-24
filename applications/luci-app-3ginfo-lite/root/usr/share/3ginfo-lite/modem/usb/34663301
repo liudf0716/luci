@@ -15,10 +15,18 @@ if [ -n "$T" ]; then
 		WCDMA*)
 			PARAM2=$(echo "$O" | awk -F[,:] '/^\^HCSQ:/ {print $4}' | xargs)
 			PARAM3=$(echo "$O" | awk -F[,:] '/^\^HCSQ:/ {print $5}' | xargs)
-			RSCP=$(awk 'BEGIN {print -121 + '$PARAM2'}')
+			if [ -n "$PARAM2" ] && echo "$PARAM2" | grep -q "^[0-9-]*$"; then
+				RSCP=$(awk "BEGIN {print -121 + $PARAM2}")
+			else
+				RSCP=""
+			fi
 #			[ -n "$ADDON" ] && ADDON="$ADDON,"
 #			ADDON="$ADDON"'{"RSCP":"'$RSCP' dBm"}'
-			ECIO=$(awk 'BEGIN {print -32.5 + '$PARAM3'/2}')
+			if [ -n "$PARAM3" ] && echo "$PARAM3" | grep -q "^[0-9.-]*$"; then
+				ECIO=$(awk "BEGIN {print -32.5 + $PARAM3/2}")
+			else
+				ECIO=""
+			fi
 #			[ -n "$ADDON" ] && ADDON="$ADDON,"
 #			ADDON="$ADDON"'{"ECIO":"'$ECIO' dB"}'
 			;;
@@ -26,13 +34,25 @@ if [ -n "$T" ]; then
 			PARAM2=$(echo "$O" | awk -F[,:] '/^\^HCSQ:/ {print $4}' | xargs)
 			PARAM3=$(echo "$O" | awk -F[,:] '/^\^HCSQ:/ {print $5}' | xargs)
 			PARAM4=$(echo "$O" | awk -F[,:] '/^\^HCSQ:/ {print $6}' | xargs)
-			RSRP=$(awk 'BEGIN {print -141 + '$PARAM2'}')
+			if [ -n "$PARAM2" ] && echo "$PARAM2" | grep -q "^[0-9-]*$"; then
+				RSRP=$(awk "BEGIN {print -141 + $PARAM2}")
+			else
+				RSRP=""
+			fi
 #			[ -n "$ADDON" ] && ADDON="$ADDON,"
 #			ADDON="$ADDON"'{"RSRP":"'$RSRP' dBm"}'
-			SINR=$(awk 'BEGIN {print -20.2 + '$PARAM3'/5}')
+			if [ -n "$PARAM3" ] && echo "$PARAM3" | grep -q "^[0-9.-]*$"; then
+				SINR=$(awk "BEGIN {print -20.2 + $PARAM3/5}")
+			else
+				SINR=""
+			fi
 #			[ -n "$ADDON" ] && ADDON="$ADDON,"
 #			ADDON="$ADDON"'{"SINR":"'$SINR' dB"}'
-			RSRQ=$(awk 'BEGIN {print -20 + '$PARAM4'/2}')
+			if [ -n "$PARAM4" ] && echo "$PARAM4" | grep -q "^[0-9-]*$"; then
+				RSRQ=$(awk "BEGIN {print -20 + $PARAM4/2}")
+			else
+				RSRQ=""
+			fi
 #			[ -n "$ADDON" ] && ADDON="$ADDON,"
 #			ADDON="$ADDON"'{"RSRQ":"'$RSRQ' dB"}'
 			;;
@@ -40,9 +60,21 @@ if [ -n "$T" ]; then
             PARAM2=$(echo "$O" | awk -F[,:] '/^\^HCSQ:/ {print $3}' | xargs)
             PARAM3=$(echo "$O" | awk -F[,:] '/^\^HCSQ:/ {print $4}' | xargs)
             PARAM4=$(echo "$O" | awk -F[,:] '/^\^HCSQ:/ {print $5}' | xargs)
-            RSRP=$(awk 'BEGIN {print -141 + '$PARAM2'}')
-            SINR=$(awk 'BEGIN {print -20.2 + '$PARAM3'/5}')
-            RSRQ=$(awk 'BEGIN {print -20 + '$PARAM4'/2}')
+            if [ -n "$PARAM2" ] && echo "$PARAM2" | grep -q "^[0-9-]*$"; then
+                RSRP=$(awk "BEGIN {print -141 + $PARAM2}")
+            else
+                RSRP=""
+            fi
+            if [ -n "$PARAM3" ] && echo "$PARAM3" | grep -q "^[0-9.-]*$"; then
+                SINR=$(awk "BEGIN {print -20.2 + $PARAM3/5}")
+            else
+                SINR=""
+            fi
+            if [ -n "$PARAM4" ] && echo "$PARAM4" | grep -q "^[0-9-]*$"; then
+                RSRQ=$(awk "BEGIN {print -20 + $PARAM4/2}")
+            else
+                RSRQ=""
+            fi
             ;;
 	esac
 fi
