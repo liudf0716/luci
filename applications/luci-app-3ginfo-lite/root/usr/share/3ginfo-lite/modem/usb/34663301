@@ -1,7 +1,7 @@
 # TDTECH MT5700
 
 O=""
-O="$O$(sms_tool -d $DEVICE at "at^chiptemp?")"
+O="$O$(sms_tool -d $DEVICE at "AT^TDCHIPTEMP?")"
 O="$O$(sms_tool -d $DEVICE at "at^hcsq?")"
 O="$O$(sms_tool -d $DEVICE at "at^iccid?")"
 O="$O$(sms_tool -d $DEVICE at "AT^NTXPOWER?")"
@@ -151,11 +151,9 @@ T_HEX=$LAC_HEX
 T_DEC=$LAC_DEC
 
 # Temperature
-T=$(echo "$O" | awk -F[,:] '/^\^CHIPTEMP/ {gsub(/[ \r]/,"");t=0;for(i=2;i<=NF;i++)if($i!=65535){if($i>100){$i=$i/10};if($i>t){t=$i}};printf "%.1f", t}')
-if [ "x$T" != "x0.0" ]; then
-	[ -n "$ADDON" ] && ADDON="$ADDON,"
-	TEMP="$T &deg;C"
-	#ADDON="$ADDON"'{"Temperatura":"'$T' &deg;C"}'
+TEMP_RAW=$(sms_tool -d $DEVICE at "AT^TDCHIPTEMP?" | awk -F[,:] '/^\^TDCHIPTEMP/ {max=0; for(i=2;i<=NF;i++) if($i > max && $i != 65535) max = $i; print max}' | tr -d '\r\n' | xargs)
+if [ -n "$TEMP_RAW" ] && [ "$TEMP_RAW" != "0" ]; then
+	TEMP="$TEMP_RAW &deg;C"
 fi
 
 TX=$(echo "$O" | awk -F[,:] '/^\^NTXPOWER:/ {print $3}' | xargs)

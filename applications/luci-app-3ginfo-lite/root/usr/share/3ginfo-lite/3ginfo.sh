@@ -256,6 +256,7 @@ fi
 CONN_TIME="-"
 RX="-"
 TX="-"
+TEMP=""
 
 NETUP=$(ifstatus $SEC | grep "\"up\": true")
 if [ -n "$NETUP" ]; then
