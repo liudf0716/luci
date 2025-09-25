@@ -6,6 +6,8 @@
 'require ui';
 'require tools.widgets as widgets'
 
+const withEmoji = (emoji, msgid) => `${emoji} ${_(msgid)}`;
+
 /*
 	Copyright 2021-2024 Rafał Wabik - IceG - From eko.one.pl forum
 	
@@ -381,7 +383,8 @@ return view.extend({
 		s.anonymous = true;
 
 		// 网络接口选项
-		o = s.option(widgets.NetworkSelect, 'network', _('🌐 Network Interface'),
+		const networkLabel = withEmoji('🌐', 'Network Interface');
+		o = s.option(widgets.NetworkSelect, 'network', networkLabel,
 			E('div', { 'class': 'config-field-description' }, [
 				_('Select the network interface for Internet access.'),
 				E('div', { 'class': 'config-info-box', 'style': 'margin-top: 10px;' }, [
@@ -396,8 +399,9 @@ return view.extend({
 		o.default = 'wan';
 
 		// 通信端口选项
+		const deviceLabel = withEmoji('🔌', 'Communication Port / IP Address');
 		o = s.option(form.Value, 'device', 
-			_('🔌 Communication Port / IP Address'), 
+			deviceLabel, 
 			E('div', { 'class': 'config-field-description' }, [
 				_('Select the appropriate communication port or IP address for your modem type.'),
 				E('div', { 'class': 'config-info-box', 'style': 'margin-top: 10px;' }, [
@@ -416,11 +420,13 @@ return view.extend({
 		o.rmempty = true;
 		
 		// 自动拨号选项
-		o = s.option(form.Flag, 'auto_dial', _('📞 Auto Dial'),
+		const autoDialLabel = withEmoji('📞', 'Auto Dial');
+		const autoDialInf = withEmoji('⚠️', _('Recommended for stable connections and automatic recovery.'));
+		o = s.option(form.Flag, 'auto_dial', autoDialLabel,
 			E('div', { 'class': 'config-field-description' }, [
 				_('Automatically establish connection on system startup.'),
 				E('div', { 'class': 'config-warning-box', 'style': 'margin-top: 10px;' }, [
-					_('⚠️ Recommended for stable connections and automatic recovery.')
+					autoDialInf
 				])
 			])
 		);
@@ -428,7 +434,8 @@ return view.extend({
 		o.rmempty = false;
 		
 		// 快速休眠选项
-		o = s.option(form.Flag, 'fast_dorm', _('💤 Fast Dormancy'),
+		const fastDormancyLabel = withEmoji('💤', 'Fast Dormancy');
+		o = s.option(form.Flag, 'fast_dorm', fastDormancyLabel,
 			E('div', { 'class': 'config-field-description' }, [
 				_('Enable fast dormancy to save battery and network resources.'),
 				E('div', { 'class': 'config-info-box', 'style': 'margin-top: 10px;' }, [
@@ -441,7 +448,8 @@ return view.extend({
 		o.rmempty = false;
 		
 		// 休眠时间选项
-		o = s.option(form.Value, 'time_length', _('⏱️ Dormancy Time (seconds)'),
+		const dormTimeLabel = withEmoji('⏱️', 'Dormancy Time (seconds)');
+		o = s.option(form.Value, 'time_length', dormTimeLabel,
 			E('div', { 'class': 'config-field-description' }, [
 				_('Duration (1-30 seconds) of inactivity before entering energy-saving mode.'),
 				E('div', { 'class': 'config-info-box', 'style': 'margin-top: 10px;' }, [
@@ -463,7 +471,8 @@ return view.extend({
 		s.anonymous = true;
 		s.addremove = false;
 
-		s.tab('bts1', _('🌐 BTS Search Configuration'));
+		const btsSearchLabel = withEmoji('🌐', 'BTS Search Configuration');
+		s.tab('bts1', btsSearchLabel);
 
 		o = s.taboption('bts1', form.DummyValue, '_dummy');
 		o.rawhtml = true;
@@ -472,7 +481,8 @@ return view.extend({
 			_('Select a dedicated website for your location to search for Base Transceiver Stations (BTS). This helps identify nearby cell towers and optimize signal reception.')
 		]).outerHTML;
 
-		o = s.taboption('bts1', form.ListValue, 'website', _('🌐 Search Website'),
+		const websiteLabel = withEmoji('🌐', 'Search Website');
+		o = s.taboption('bts1', form.ListValue, 'website', websiteLabel,
 			E('div', { 'class': 'config-field-description' }, [
 				_('Choose the appropriate BTS search engine for your region.'),
 				E('div', { 'class': 'config-warning-box', 'style': 'margin-top: 10px;' }, [

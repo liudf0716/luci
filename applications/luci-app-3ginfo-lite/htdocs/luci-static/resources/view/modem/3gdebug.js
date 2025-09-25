@@ -411,16 +411,13 @@ return view.extend({
 		// 添加CSS样式到页面
 		document.head.insertAdjacentHTML('beforeend', debugPageCSS);
 
-		var info = _('More information about the 3ginfo on the %seko.one.pl forum%s.').format('<a href="https://eko.one.pl/?p=openwrt-3ginfo" target="_blank">', '</a>');
 
 		var view = E('div', { 'class': 'debug-container' }, [
 			// 标题区域
 			E('div', { 'class': 'debug-header' }, [
 				E('h2', {}, [ _('3G/4G/5G Modem Diagnostics') ]),
 				E('p', {}, [
-					_('Execute various diagnostic commands to check modem availability and troubleshoot data collection issues.'),
-					E('br'),
-					info
+					_('Execute various diagnostic commands to check modem availability and troubleshoot data collection issues.')
 				])
 			]),
 

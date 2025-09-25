@@ -222,8 +222,8 @@ msgstr "调制解调器"
 msgid "Basic Configuration"
 msgstr "基础配置"
 
-msgid "🌐 Network Interface"
-msgstr "🌐 网络接口"
+msgid "Network Interface"
+msgstr "网络接口"
 
 msgid "Select the network interface for Internet access."
 msgstr "选择用于互联网访问的网络接口。"
@@ -232,8 +232,8 @@ msgid ""
 "This determines which network interface will be used for modem communication."
 msgstr "这决定了模组通信使用的网络接口。"
 
-msgid "🔌 Communication Port / IP Address"
-msgstr "🔌 通信端口 / IP地址"
+msgid "Communication Port / IP Address"
+msgstr "通信端口 / IP地址"
 
 msgid ""
 "Select the appropriate communication port or IP address for your modem type."
@@ -251,8 +251,8 @@ msgstr "• HiLink模组：输入IP地址（例如：192.168.1.1）"
 msgid "Please select a port"
 msgstr "请选择一个端口"
 
-msgid "📞 Auto Dial"
-msgstr "📞 自动拨号"
+msgid "Auto Dial"
+msgstr "自动拨号"
 
 msgid "Automatically establish connection on system startup."
 msgstr "系统启动时自动建立连接。"
@@ -260,8 +260,8 @@ msgstr "系统启动时自动建立连接。"
 msgid "⚠️ Recommended for stable connections and automatic recovery."
 msgstr "⚠️ 建议用于稳定连接和自动恢复。"
 
-msgid "💤 Fast Dormancy"
-msgstr "💤 快速休眠"
+msgid "Fast Dormancy"
+msgstr "快速休眠"
 
 msgid "Enable fast dormancy to save battery and network resources."
 msgstr "启用快速休眠以节省电池和网络资源。"
@@ -269,8 +269,8 @@ msgstr "启用快速休眠以节省电池和网络资源。"
 msgid "Fast dormancy helps reduce power consumption during idle periods."
 msgstr "快速休眠有助于在空闲期间降低功耗。"
 
-msgid "⏱️ Dormancy Time (seconds)"
-msgstr "⏱️ 休眠时间（秒）"
+msgid "Dormancy Time (seconds)"
+msgstr "休眠时间（秒）"
 
 # Error Messages and Notifications
 # Main Interface
@@ -457,8 +457,8 @@ msgstr "较低的数值可节省更多电力但可能影响性能。建议：5-1
 msgid "BTS Search Settings"
 msgstr "基站搜索设置"
 
-msgid "🌐 BTS Search Configuration"
-msgstr "🌐 基站搜索配置"
+msgid "BTS Search Configuration"
+msgstr "基站搜索配置"
 
 msgid ""
 "Select a dedicated website for your location to search for Base Transceiver "
@@ -468,8 +468,8 @@ msgstr ""
 "为您的位置选择专用网站以搜索基站收发器站（BTS）。这有助于识别附近的基站并优化"
 "信号接收。"
 
-msgid "🌐 Search Website"
-msgstr "🌐 搜索网站"
+msgid "Search Website"
+msgstr "搜索网站"
 
 msgid "Choose the appropriate BTS search engine for your region."
 msgstr "为您的地区选择合适的基站搜索引擎。"
@@ -830,3 +830,6 @@ msgstr "诊断"
 
 msgid "Configuration"
 msgstr "配置"
+
+msgid "Real-time monitoring of modem status, signal quality, and network information."
+msgstr "实时监控调制解调器状态、信号质量和网络信息。"
