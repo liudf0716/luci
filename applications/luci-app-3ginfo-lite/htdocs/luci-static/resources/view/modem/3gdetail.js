@@ -986,19 +986,72 @@ return view.extend({
 									wicon = L.resource('icons/loading.gif');
 									ticon = L.resource('icons/ctime.png');
 
-									const p = json.signal;
-									if (p > 80) {
+									const rawSignal = json.signal;
+									let signalPercent = null;
+									let signalLabel = '-';
+
+									if (!isEmptyField(rawSignal)) {
+										const numericSignal = parseFloat(rawSignal);
+										if (!isNaN(numericSignal)) {
+											if (String(rawSignal).includes('%')) {
+												signalPercent = Math.max(0, Math.min(100, numericSignal));
+												signalLabel = `${signalPercent}%`;
+											} else if (numericSignal <= 0) {
+												if (numericSignal <= -10) {
+													const bounded = Math.max(-110, Math.min(-50, numericSignal));
+													signalPercent = Math.round(((bounded + 110) / 60) * 100);
+													signalPercent = Math.max(0, Math.min(100, signalPercent));
+													signalLabel = `${numericSignal} dBm (${signalPercent}%)`;
+												} else {
+													signalLabel = '-';
+												}
+											} else if (numericSignal <= 97) {
+												signalPercent = Math.round((numericSignal / 97) * 100);
+												signalPercent = Math.max(0, Math.min(100, signalPercent));
+												signalLabel = `${signalPercent}%`;
+											} else {
+												signalPercent = Math.round(Math.min(100, numericSignal));
+												signalLabel = `${signalPercent}%`;
+											}
+										} else {
+											const percentMatch = String(rawSignal).match(/(\d+(?:\.\d+)?)\s*%/);
+											if (percentMatch) {
+												signalPercent = Math.round(Math.min(100, parseFloat(percentMatch[1])));
+												signalLabel = `${signalPercent}%`;
+											} else {
+												signalLabel = String(rawSignal);
+											}
+										}
+									}
+
+									if (signalPercent === null) {
+										const csqNumeric = parseFloat(json.csq);
+										if (!isNaN(csqNumeric) && csqNumeric >= 0) {
+											signalPercent = Math.round((Math.min(31, csqNumeric) / 31) * 100);
+											if (signalLabel === '-' || signalLabel === '') {
+												signalLabel = `${signalPercent}%`;
+											} else if (!signalLabel.includes('%')) {
+												signalLabel += ` (${signalPercent}%)`;
+											}
+										}
+									}
+
+									if (signalPercent === null || isNaN(signalPercent)) {
+										signalPercent = 0;
+									}
+
+									signalPercent = Math.max(0, Math.min(100, signalPercent));
+
+									if (signalPercent >= 80) {
 										icon = L.resource('icons/3ginfo-80-100.png');
-									} else if (p > 60) {
+									} else if (signalPercent >= 60) {
 										icon = L.resource('icons/3ginfo-60-80.png');
-									} else if (p > 40) {
+									} else if (signalPercent >= 40) {
 										icon = L.resource('icons/3ginfo-40-60.png');
-									} else if (p > 20) {
+									} else if (signalPercent >= 20) {
 										icon = L.resource('icons/3ginfo-20-40.png');
-									} else if (p > 0) {
+									} else if (signalPercent > 0) {
 										icon = L.resource('icons/3ginfo-0-20.png');
-									} else if (p > 0) {
-										icon = L.resource('icons/3ginfo-0.png');
 									} else {
 										icon = L.resource('icons/3ginfo-0.png');
 									}
@@ -1006,7 +1059,7 @@ return view.extend({
 									// 平滑更新信号强度
 									const signalTextEl = document.getElementById('signal-text');
 									if (signalTextEl) {
-										const newText = p ? `${p}%` : '-';
+										const newText = signalLabel;
 										if (signalTextEl.textContent !== newText) {
 											signalTextEl.style.transition = 'opacity 0.3s ease';
 											signalTextEl.style.opacity = '0.7';
@@ -1018,7 +1071,7 @@ return view.extend({
 									} else if (document.getElementById('signal')) {
 										// 向后兼容旧结构
 										const view = document.getElementById('signal');
-										const newText = p ? `${p}%` : '-';
+										const newText = signalLabel;
 										if (view.textContent !== newText) {
 											view.style.transition = 'opacity 0.3s ease';
 											view.style.opacity = '0.7';
@@ -1045,7 +1098,7 @@ return view.extend({
 									// 平滑更新信号条
 									if (document.getElementById('signal-bar')) {
 										const barView = document.getElementById("signal-bar");
-										const newWidth = p ? `${p}%` : '0%';
+										const newWidth = `${signalPercent}%`;
 										
 										// 使用CSS过渡更新宽度
 										barView.style.transition = 'width 0.8s ease, background 0.3s ease';
@@ -1053,11 +1106,11 @@ return view.extend({
 										
 										// 根据信号强度设置颜色
 										let newColor;
-										if (p >= 75) {
+										if (signalPercent >= 75) {
 											newColor = 'linear-gradient(90deg, #28a745 0%, #28a745 100%)';
-										} else if (p >= 50) {
+										} else if (signalPercent >= 50) {
 											newColor = 'linear-gradient(90deg, #ffc107 0%, #ffc107 100%)';
-										} else if (p >= 25) {
+										} else if (signalPercent >= 25) {
 											newColor = 'linear-gradient(90deg, #fd7e14 0%, #fd7e14 100%)';
 										} else {
 											newColor = 'linear-gradient(90deg, #dc3545 0%, #dc3545 100%)';
@@ -1141,6 +1194,18 @@ return view.extend({
 											viewn.style.display = 'none';
 										} else {
 											view.textContent = t.replace('&deg;', '°');
+										}
+									}
+
+									if (document.getElementById('csq')) {
+										const csqView = document.getElementById('csq');
+										if (isEmptyField(json.csq)) {
+											csqView.style.visibility = 'hidden';
+											csqView.innerHTML = '-';
+										} else {
+											csqView.style.visibility = 'visible';
+											const csqMax = 31;
+											csq_bar(json.csq, csqMax);
 										}
 									}
 
