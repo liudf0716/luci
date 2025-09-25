@@ -76,3 +76,10 @@ msgstr ""
 #: applications/luci-app-3ginfo/luasrc/model/cbi/modem/3gconfig.lua:31
 msgid "Language"
 msgstr ""
+
+#: applications/luci-app-3ginfo-lite/htdocs/luci-static/resources/view/modem/3gdetail.js
+msgid "Signal icon"
+msgstr ""
+
+msgid "There is a problem reading data from the modem.<br /><br /><b>Please check:</b><ul><li>1. Modem availability in the system.</li><li>2. The correct installation of the SIM card in the modem.</li><li>3. Port for communication with the modem.</li></ul>"
+msgstr ""

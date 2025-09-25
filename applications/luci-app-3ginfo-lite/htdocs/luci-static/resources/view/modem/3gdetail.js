@@ -908,10 +908,7 @@ return view.extend({
 					}
 					
 					if (json.rsrp === '') {
-						ui.addNotification(null, E('p', _('There is a problem reading data from the modem. \
-											<br /><br /><b>Please check:</b> \
-											<ul><li>1. Modem availability in the system.</li><li>2. The correct installation of the SIM card in the modem.</li><li> \
-											3. Port for communication with the modem.</li><li><ul>')), 'info');
+							ui.addNotification(null, E('p', _('There is a problem reading data from the modem.<br /><br /><b>Please check:</b><ul><li>1. Modem availability in the system.</li><li>2. The correct installation of the SIM card in the modem.</li><li>3. Port for communication with the modem.</li></ul>')), 'info');
 					} else {
 						// 添加数据缓存来减少不必要的DOM更新
 						let lastDataCache = null;

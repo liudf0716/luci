@@ -609,6 +609,9 @@ msgstr "信号条"
 msgid "No bars"
 msgstr "无信号条"
 
+msgid "Signal icon"
+msgstr "信号图标"
+
 msgid "1 bar"
 msgstr "1格信号"
 
@@ -806,15 +809,8 @@ msgstr "网络信息不可用，无法进行基站搜索"
 msgid "Error getting modem data: "
 msgstr "获取调制解调器数据时出错："
 
-msgid ""
-"There is a problem reading data from the modem. <br /><br /><b>Please check:"
-"</b> <ul><li>1. Modem availability in the system.</li><li>2. The correct "
-"installation of the SIM card in the modem.</li><li>3. Port for communication "
-"with the modem.</li><li><ul>"
-msgstr ""
-"从调制解调器读取数据时出现问题。<br /><br /><b>请检查：</b><ul><li>1. 系统中"
-"调制解调器的可用性。</li><li>2. SIM卡在调制解调器中的正确安装。</li><li>3. 与"
-"调制解调器通信的端口。</li><li><ul>"
+msgid "There is a problem reading data from the modem.<br /><br /><b>Please check:</b><ul><li>1. Modem availability in the system.</li><li>2. The correct installation of the SIM card in the modem.</li><li>3. Port for communication with the modem.</li></ul>"
+msgstr "从调制解调器读取数据时出现问题。<br /><br /><b>请检查：</b><ul><li>1. 系统中调制解调器的可用性。</li><li>2. SIM卡在调制解调器中的正确安装。</li><li>3. 与调制解调器通信的端口。</li></ul>"
 
 msgid "Network Information"
 msgstr "网络信息"
