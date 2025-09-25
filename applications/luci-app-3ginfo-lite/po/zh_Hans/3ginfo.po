@@ -5,6 +5,8 @@
 #
 msgid ""
 msgstr ""
+"Project-Id-Version: luci-app-3ginfo-lite\n"
+"PO-Revision-Date: 2025-09-25\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "MIME-Version: 1.0\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -14,8 +16,9 @@ msgstr ""
 "X-Generator: Weblate 4.15.1-dev\n"
 
 # Core application information
+# Modal Dialog
 msgid "3ginfo-lite"
-msgstr "模组信息"
+msgstr "3ginfo-lite"
 
 msgid "3ginfo-lite Configuration"
 msgstr "模组配置"
@@ -24,26 +27,29 @@ msgid "Configuration panel for the 3ginfo-lite application."
 msgstr "模组配置面板"
 
 msgid "3G/4G/5G Modem Information"
-msgstr "模组详细信息"
+msgstr "3G/4G/5G调制解调器信息"
 
 msgid "3G/4G/5G Modem Configuration"
 msgstr "模组参数配置"
 
-msgid "Configure your modem settings, connection parameters, and diagnostic options for optimal performance."
+msgid ""
+"Configure your modem settings, connection parameters, and diagnostic options "
+"for optimal performance."
 msgstr "配置模组连接参数和诊断选项，优化网络性能。"
 
 msgid "More information about the 3ginfo on the %seko.one.pl forum%s."
-msgstr "有关3ginfo的更多信息请访问%seko.one.pl论坛%s。"
+msgstr "更多关于3ginfo的信息请访问%seko.one.pl论坛%s。"
 
 # UI Navigation and Controls
 msgid "Modem Settings"
-msgstr "模组设置"
+msgstr "调制解调器设置"
 
+# Menu Items
 msgid "Defined modems"
-msgstr "已定义的模组"
+msgstr "已定义的调制解调器"
 
 msgid "Interface for selecting user defined modems."
-msgstr "选择用户定义的模组界面。"
+msgstr "选择用户定义调制解调器的界面。"
 
 msgid "SIM card menu"
 msgstr "SIM卡菜单"
@@ -64,15 +70,16 @@ msgid "Loading"
 msgstr "正在加载"
 
 msgid "Waiting to read data from the modem..."
-msgstr "正在读取模组数据..."
+msgstr "等待从调制解调器读取数据..."
 
 msgid "Waiting for data..."
-msgstr "正在获取数据..."
+msgstr "等待数据..."
 
 msgid "Waiting for connection data..."
-msgstr "正在获取连接数据..."
+msgstr "等待连接数据..."
 
 # Connection Status Information
+# Table Headers and Sections
 msgid "Connection Status"
 msgstr "连接状态"
 
@@ -93,22 +100,23 @@ msgstr "数值"
 
 # SIM Information
 msgid "SIM Information"
-msgstr "SIM信息"
+msgstr "SIM卡信息"
 
 msgid "SIM Status"
-msgstr "SIM状态"
+msgstr "SIM卡状态"
 
+# SIM Information
 msgid "SIM Slot"
 msgstr "SIM卡槽"
 
 msgid "SIM IMSI"
-msgstr "SIM IMSI"
+msgstr "SIM卡IMSI"
 
 msgid "SIM ICCID"
-msgstr "SIM ICCID"
+msgstr "SIM卡ICCID"
 
 msgid "Modem IMEI"
-msgstr "模组IMEI"
+msgstr "调制解调器IMEI"
 
 msgid "Hint"
 msgstr "提示"
@@ -124,35 +132,36 @@ msgid "CSQ"
 msgstr "CSQ"
 
 msgid "(Signal Strength)"
-msgstr "（信号强度）"
+msgstr "(信号强度)"
 
 msgid "RSSI"
 msgstr "RSSI"
 
 msgid "(Received Signal Strength Indicator)"
-msgstr "（接收信号强度指示）"
+msgstr "(接收信号强度指示器)"
 
 msgid "RSRP"
 msgstr "RSRP"
 
 msgid "(Reference Signal Receive Power)"
-msgstr "（参考信号接收功率）"
+msgstr "(参考信号接收功率)"
 
 msgid "RSRQ"
 msgstr "RSRQ"
 
 msgid "(Reference Signal Received Quality)"
-msgstr "（参考信号接收质量）"
+msgstr "(参考信号接收质量)"
 
 msgid "SINR"
 msgstr "SINR"
 
 msgid "(Signal to Interference plus Noise Ratio)"
-msgstr "（信噪比）"
+msgstr "(信噪干扰比)"
 
 # Signal Quality Descriptions
+# Signal Quality Translations in 3gdetail.js
 msgid "Very good"
-msgstr "很好"
+msgstr "非常好"
 
 msgid "Good"
 msgstr "良好"
@@ -161,16 +170,16 @@ msgid "Weak"
 msgstr "较弱"
 
 msgid "Very weak"
-msgstr "很弱"
+msgstr "非常弱"
 
 msgid "Excellent"
-msgstr "优秀"
+msgstr "极好"
 
 msgid "Mid cell"
-msgstr "中等信号"
+msgstr "中小区"
 
 msgid "Cell edge"
-msgstr "基站边缘"
+msgstr "小区边缘"
 
 msgid "Unknown"
 msgstr "未知"
@@ -189,7 +198,7 @@ msgid "Registering denied"
 msgstr "注册被拒绝"
 
 msgid "Registered (roaming)"
-msgstr "已注册（漫游）"
+msgstr "已注册(漫游)"
 
 msgid "Registered for emergency service only"
 msgstr "仅注册紧急服务"
@@ -199,13 +208,15 @@ msgid "Device Information"
 msgstr "设备信息"
 
 msgid "Modem Type"
-msgstr "模组型号"
+msgstr "调制解调器类型"
 
 msgid "Firmware"
-msgstr "固件版本"
+msgstr "固件"
 
+# Dialog and UI Elements
+# Menu Titles
 msgid "Modem"
-msgstr "模组"
+msgstr "调制解调器"
 
 # Configuration Sections
 msgid "Basic Configuration"
@@ -217,13 +228,15 @@ msgstr "🌐 网络接口"
 msgid "Select the network interface for Internet access."
 msgstr "选择用于互联网访问的网络接口。"
 
-msgid "This determines which network interface will be used for modem communication."
+msgid ""
+"This determines which network interface will be used for modem communication."
 msgstr "这决定了模组通信使用的网络接口。"
 
 msgid "🔌 Communication Port / IP Address"
 msgstr "🔌 通信端口 / IP地址"
 
-msgid "Select the appropriate communication port or IP address for your modem type."
+msgid ""
+"Select the appropriate communication port or IP address for your modem type."
 msgstr "为您的模组选择适当的通信端口或IP地址。"
 
 msgid "Port Selection Guide:"
@@ -260,17 +273,19 @@ msgid "⏱️ Dormancy Time (seconds)"
 msgstr "⏱️ 休眠时间（秒）"
 
 # Error Messages and Notifications
+# Main Interface
 msgid "Error: "
 msgstr "错误："
 
+# Error Messages
 msgid "Problem with registering to the network, check the SIM card."
-msgstr "网络注册有问题，请检查SIM卡。"
+msgstr "网络注册问题，请检查SIM卡。"
 
 msgid "SIM PIN required"
-msgstr "需要SIM PIN码"
+msgstr "需要SIM卡PIN码"
 
 msgid "SIM PUK required"
-msgstr "需要SIM PUK码"
+msgstr "需要SIM卡PUK码"
 
 msgid "SIM failure"
 msgstr "SIM卡故障"
@@ -282,17 +297,17 @@ msgid "SIM wrong"
 msgstr "SIM卡错误"
 
 msgid "SIM PIN2 required"
-msgstr "需要SIM PIN2码"
+msgstr "需要SIM卡PIN2码"
 
 msgid "SIM PUK2 required"
-msgstr "需要SIM PUK2码"
+msgstr "需要SIM卡PUK2码"
 
 # BTS Search and Cell Tower Information (New)
 msgid "Search Cell Tower"
-msgstr "搜索基站"
+msgstr "基站搜索"
 
 msgid "Search Cell Tower using OpenCellID"
-msgstr "使用OpenCellID搜索基站"
+msgstr "使用OpenCellID搜索基站信息"
 
 msgid "Cell Tower Location"
 msgstr "基站位置"
@@ -301,10 +316,10 @@ msgid "Base Station Information"
 msgstr "基站信息"
 
 msgid "Cell ID"
-msgstr "基站ID"
+msgstr "小区ID"
 
 msgid "LAC"
-msgstr "位置区码"
+msgstr "LAC"
 
 msgid "MNC"
 msgstr "移动网络代码"
@@ -316,7 +331,7 @@ msgid "PCI"
 msgstr "物理小区标识"
 
 msgid "TAC"
-msgstr "跟踪区码"
+msgstr "TAC"
 
 msgid "Band"
 msgstr "频段"
@@ -418,7 +433,9 @@ msgstr "正在更新信号信息..."
 msgid "OpenCellID API requires authentication"
 msgstr "OpenCellID API 需要身份验证"
 
-msgid "To use OpenCellID services, you need to register for a free API key at opencellid.org"
+msgid ""
+"To use OpenCellID services, you need to register for a free API key at "
+"opencellid.org"
 msgstr "要使用OpenCellID服务，您需要在opencellid.org注册免费API密钥"
 
 msgid "Registration is free and provides access to global cell tower database"
@@ -426,6 +443,164 @@ msgstr "注册免费，可访问全球基站数据库"
 
 msgid "After registration, configure your API key in the BTS search settings"
 msgstr "注册后，在基站搜索设置中配置您的API密钥"
+
+# Configuration Settings - Extended
+msgid ""
+"Duration (1-30 seconds) of inactivity before entering energy-saving mode."
+msgstr "进入节能模式前的非活动时长（1-30秒）。"
+
+msgid ""
+"Lower values save more power but may affect performance. Recommended: 5-10 "
+"seconds."
+msgstr "较低的数值可节省更多电力但可能影响性能。建议：5-10秒。"
+
+msgid "BTS Search Settings"
+msgstr "基站搜索设置"
+
+msgid "🌐 BTS Search Configuration"
+msgstr "🌐 基站搜索配置"
+
+msgid ""
+"Select a dedicated website for your location to search for Base Transceiver "
+"Stations (BTS). This helps identify nearby cell towers and optimize signal "
+"reception."
+msgstr ""
+"为您的位置选择专用网站以搜索基站收发器站（BTS）。这有助于识别附近的基站并优化"
+"信号接收。"
+
+msgid "🌐 Search Website"
+msgstr "🌐 搜索网站"
+
+msgid "Choose the appropriate BTS search engine for your region."
+msgstr "为您的地区选择合适的基站搜索引擎。"
+
+msgid ""
+"⚠️ OpenCellID provides global coverage. Regional sites may offer more "
+"detailed local information."
+msgstr "⚠️ OpenCellID提供全球覆盖。地区性网站可能提供更详细的本地信息。"
+
+msgid "🌐 opencellid.org (Global)"
+msgstr "🌐 opencellid.org（全球）"
+
+msgid "🇵🇱 btsearch.pl (Poland)"
+msgstr "🇵🇱 btsearch.pl（波兰）"
+
+msgid "🇮🇹 lteitaly.it (Italy)"
+msgstr "🇮🇹 lteitaly.it（意大利）"
+
+# Debug Interface Translations
+msgid "3G/4G/5G Modem Diagnostics"
+msgstr "3G/4G/5G模组诊断"
+
+msgid ""
+"Execute various diagnostic commands to check modem availability and "
+"troubleshoot data collection issues."
+msgstr "执行各种诊断命令检查模组可用性并排除数据收集问题。"
+
+msgid "Modem Dial"
+msgstr "模组拨号"
+
+msgid "Initialize modem connection and establish data session."
+msgstr "初始化模组连接并建立数据会话。"
+
+msgid "Connect"
+msgstr "连接"
+
+msgid "USB Devices"
+msgstr "USB设备"
+
+msgid "Show detailed USB device information and debug data."
+msgstr "显示详细的USB设备信息和调试数据。"
+
+msgid "Show USB Info"
+msgstr "显示USB信息"
+
+msgid "TTY Ports"
+msgstr "TTY端口"
+
+msgid "Check availability of ttyX communication ports."
+msgstr "检查ttyX通信端口的可用性。"
+
+msgid "List Ports"
+msgstr "列出端口"
+
+msgid "Script Debug"
+msgstr "脚本调试"
+
+msgid "Run 3ginfo script in debug mode to trace data collection."
+msgstr "在调试模式下运行3ginfo脚本以跟踪数据收集。"
+
+msgid "Run Debug"
+msgstr "运行调试"
+
+msgid "Command Output"
+msgstr "命令输出"
+
+msgid "Clear"
+msgstr "清除"
+
+msgid "Download"
+msgstr "下载"
+
+msgid "Download error"
+msgstr "下载错误"
+
+msgid "Command output will appear here..."
+msgstr "命令输出将显示在这里..."
+
+# Network Parameters and Device Information
+msgid "Communication Port"
+msgstr "通信端口"
+
+msgid "Protocol"
+msgstr "协议"
+
+msgid "Temperature"
+msgstr "温度"
+
+msgid "TX Power"
+msgstr "发送功率"
+
+msgid "Voltage"
+msgstr "电压"
+
+msgid "MCC MNC"
+msgstr "MCC MNC"
+
+msgid "Primary Band"
+msgstr "主频段"
+
+msgid "CA Band (SCC1)"
+msgstr "载波聚合频段(SCC1)"
+
+msgid "CA Band (SCC2)"
+msgstr "载波聚合频段(SCC2)"
+
+msgid "CA Band (SCC3)"
+msgstr "载波聚合频段(SCC3)"
+
+msgid "CA Band (SCC4)"
+msgstr "载波聚合频段(SCC4)"
+
+# BTS Search Interface
+# BTS Search in 3gdetail.js
+msgid "BTS Search"
+msgstr "基站搜索"
+
+# BTS Search Error Messages
+msgid "Unable to get modem data for BTS search"
+msgstr "无法获取调制解调器数据进行基站搜索"
+
+msgid ""
+"Network information (MCC/MNC/Cell ID) not available for OpenCellID search"
+msgstr "网络信息(MCC/MNC/小区ID)不可用，无法进行OpenCellID搜索"
+
+msgid "Opening OpenCellID with search parameters:"
+msgstr "正在打开OpenCellID，搜索参数："
+
+msgid ""
+"Use the search form on the OpenCellID website with the above parameters."
+msgstr "使用上述参数在OpenCellID网站的搜索表单中搜索。"
 
 # Signal Bars and Visual Indicators
 msgid "Signal bars"
@@ -487,9 +662,6 @@ msgstr "序列号"
 
 msgid "Module Temperature"
 msgstr "模块温度"
-
-msgid "Voltage"
-msgstr "电压"
 
 # Advanced Configuration (Future Enhancement)
 msgid "Advanced Settings"
@@ -619,3 +791,42 @@ msgstr "大文本模式"
 
 msgid "Screen reader compatible"
 msgstr "屏幕阅读器兼容"
+
+msgid ""
+"Search for cell tower information using OpenCellID database. Supports MCC, "
+"MNC, LAC/TAC and Cell ID parameters."
+msgstr "使用OpenCellID数据库搜索基站信息。支持MCC、MNC、LAC/TAC和小区ID参数。"
+
+msgid "Cell ID not available for BTS search"
+msgstr "小区ID不可用，无法进行基站搜索"
+
+msgid "Network information not available for BTS search"
+msgstr "网络信息不可用，无法进行基站搜索"
+
+msgid "Error getting modem data: "
+msgstr "获取调制解调器数据时出错："
+
+msgid ""
+"There is a problem reading data from the modem. <br /><br /><b>Please check:"
+"</b> <ul><li>1. Modem availability in the system.</li><li>2. The correct "
+"installation of the SIM card in the modem.</li><li>3. Port for communication "
+"with the modem.</li><li><ul>"
+msgstr ""
+"从调制解调器读取数据时出现问题。<br /><br /><b>请检查：</b><ul><li>1. 系统中"
+"调制解调器的可用性。</li><li>2. SIM卡在调制解调器中的正确安装。</li><li>3. 与"
+"调制解调器通信的端口。</li><li><ul>"
+
+msgid "Network Information"
+msgstr "网络信息"
+
+msgid "Information about 3G/4G/5G connection"
+msgstr "模组信息"
+
+msgid "Details"
+msgstr "详情"
+
+msgid "Diagnostics"
+msgstr "诊断"
+
+msgid "Configuration"
+msgstr "配置"
