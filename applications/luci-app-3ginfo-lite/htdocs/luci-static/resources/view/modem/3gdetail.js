@@ -48,6 +48,31 @@ document.head.append(E('style', { 'type': 'text/css' },
 	color: #495057;
 	font-size: 14px;
 }
+/* 统一表格列宽 */
+.modem-table th:first-child,
+.modem-table td:first-child {
+	width: 40%;
+	min-width: 140px;
+	font-weight: 500;
+}
+.modem-table th:last-child,
+.modem-table td:last-child {
+	width: 60%;
+	word-break: break-word;
+}
+/* 增强表格视觉一致性 */
+.modem-table th:first-child {
+	font-weight: 600;
+	color: #495057;
+}
+.modem-table td:first-child {
+	background: rgba(248, 249, 250, 0.5);
+	border-right: 1px solid rgba(222, 226, 230, 0.5);
+}
+:root[data-darkmode="true"] .modem-table td:first-child {
+	background: rgba(52, 58, 64, 0.3);
+	border-right: 1px solid rgba(73, 80, 87, 0.5);
+}
 :root[data-darkmode="true"] .modem-table th {
 	background: rgba(52, 58, 64, 0.8);
 	color: #adb5bd;
@@ -78,6 +103,53 @@ document.head.append(E('style', { 'type': 'text/css' },
 }
 :root[data-darkmode="true"] .modem-section-title {
 	color: #adb5bd;
+}
+/* 响应式设计 - 移动端优化 */
+@media (max-width: 768px) {
+	.modem-table {
+		font-size: 13px;
+		margin: 12px 0;
+	}
+	.modem-table th,
+	.modem-table td {
+		padding: 8px 12px;
+	}
+	.modem-table th:first-child,
+	.modem-table td:first-child {
+		width: 45%;
+		min-width: 120px;
+	}
+	.modem-table th:last-child,
+	.modem-table td:last-child {
+		width: 55%;
+	}
+	.modem-section-title {
+		font-size: 16px;
+		margin: 20px 0 10px 0;
+	}
+}
+@media (max-width: 480px) {
+	.modem-table {
+		font-size: 12px;
+		margin: 10px 0;
+	}
+	.modem-table th,
+	.modem-table td {
+		padding: 6px 8px;
+	}
+	.modem-table th:first-child,
+	.modem-table td:first-child {
+		width: 50%;
+		min-width: 100px;
+	}
+	.modem-table th:last-child,
+	.modem-table td:last-child {
+		width: 50%;
+	}
+	.modem-section-title {
+		font-size: 15px;
+		margin: 16px 0 8px 0;
+	}
 }
 .signal-progress {
 	width: 100%;
@@ -127,6 +199,150 @@ document.head.append(E('style', { 'type': 'text/css' },
 }
 :root[data-darkmode="true"] .data-transfer {
 	color: #adb5bd;
+}
+
+/* Config页面样式 */
+.config-container {
+	max-width: 1000px;
+	margin: 0 auto;
+	padding: 20px;
+}
+
+.config-header {
+	text-align: center;
+	margin-bottom: 30px;
+	padding: 25px;
+	background: linear-gradient(135deg, #4e54c8 0%, #8f94fb 100%);
+	border-radius: 12px;
+	color: white;
+	box-shadow: 0 4px 20px rgba(78, 84, 200, 0.2);
+}
+
+.config-header h2 {
+	margin: 0 0 10px 0;
+	font-size: 28px;
+	font-weight: 300;
+}
+
+.config-header p {
+	margin: 0;
+	opacity: 0.9;
+	font-size: 16px;
+	line-height: 1.5;
+}
+
+.config-section {
+	background: white;
+	border-radius: 12px;
+	padding: 30px;
+	margin-bottom: 25px;
+	box-shadow: 0 2px 20px rgba(0,0,0,0.08);
+	border: 1px solid #e9ecef;
+	transition: all 0.3s ease;
+	position: relative;
+	overflow: hidden;
+}
+
+.config-section::before {
+	content: '';
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	height: 4px;
+	background: linear-gradient(90deg, #4e54c8 0%, #8f94fb 100%);
+}
+
+.config-section-title {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	margin-bottom: 25px;
+	font-size: 18px;
+	font-weight: 600;
+	color: #2c3e50;
+}
+
+.config-section-icon {
+	font-size: 20px;
+	width: 28px;
+	height: 28px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: linear-gradient(135deg, #4e54c8 0%, #8f94fb 100%);
+	border-radius: 8px;
+	color: white;
+}
+
+/* 在config-section内的表格样式覆盖 */
+.config-section .modem-table {
+	margin: 0;
+	box-shadow: none;
+	border-radius: 0;
+	border: none;
+}
+
+.config-section .modem-table th,
+.config-section .modem-table td {
+	border-bottom: 1px solid #e9ecef;
+}
+
+.config-section .modem-table th {
+	background: transparent;
+	padding-bottom: 16px;
+}
+
+.config-section .modem-table tr:last-child th,
+.config-section .modem-table tr:last-child td {
+	border-bottom: none;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+	.config-container {
+		padding: 10px;
+	}
+	
+	.config-section {
+		padding: 20px 15px;
+	}
+	
+	.config-section-title {
+		font-size: 16px;
+	}
+	
+	.config-section-icon {
+		width: 24px;
+		height: 24px;
+		font-size: 16px;
+	}
+}
+
+/* 深色模式支持 */
+@media (prefers-color-scheme: dark) {
+	.config-section {
+		background: #2d3748;
+		border-color: #4a5568;
+		color: #e2e8f0;
+	}
+	
+	.config-section-title {
+		color: #e2e8f0;
+	}
+	
+	.config-section .modem-table th {
+		color: #e2e8f0;
+	}
+	
+	.config-section .modem-table td {
+		color: #a0aec0;
+	}
+	
+	.config-section .modem-table th,
+	.config-section .modem-table td {
+		border-bottom-color: #4a5568;
+	}
 }
 	`
 ));
@@ -433,6 +649,9 @@ function formatDataSize(dataStr) {
 }
 
 function checkOperatorName(t) {
+	if (typeof t !== 'string' || t.trim().length === 0)
+		return '-';
+
 	const words = t.split(" ");
 	const firstOccurrences = {};
 
@@ -700,7 +919,7 @@ return view.extend({
 						
 						// 设置10秒的轮询间隔
 						poll.add(function() {
-							return L.resolveDefault(fs.exec_direct('/usr/share/3ginfo-lite/3ginfo.sh', 'json'))
+							return L.resolveDefault(fs.exec_direct('/usr/share/3ginfo-lite/3ginfo.sh', ['json']))
 								.then(function(res) {
 									const json = JSON.parse(res);
 									
@@ -785,8 +1004,20 @@ return view.extend({
 									}
 
 									// 平滑更新信号强度
-									if (document.getElementById('signal')) {
-										const view = document.getElementById("signal");
+									const signalTextEl = document.getElementById('signal-text');
+									if (signalTextEl) {
+										const newText = p ? `${p}%` : '-';
+										if (signalTextEl.textContent !== newText) {
+											signalTextEl.style.transition = 'opacity 0.3s ease';
+											signalTextEl.style.opacity = '0.7';
+											setTimeout(() => {
+												signalTextEl.textContent = newText;
+												signalTextEl.style.opacity = '1';
+											}, 150);
+										}
+									} else if (document.getElementById('signal')) {
+										// 向后兼容旧结构
+										const view = document.getElementById('signal');
 										const newText = p ? `${p}%` : '-';
 										if (view.textContent !== newText) {
 											view.style.transition = 'opacity 0.3s ease';
@@ -1111,222 +1342,269 @@ return view.extend({
 		s.anonymous = true;
 
 		s.render = L.bind(function(view, section_id) {
-			return E('div', { class: 'cbi-section' }, [
+			return E('div', { class: 'config-container' }, [
+				// 配置页面风格的标题区域
+				E('div', { class: 'config-header' }, [
+					E('h2', {}, _('3G/4G/5G Modem Information')),
+					E('p', {}, _('Real-time monitoring of modem status, signal quality, and network information.'))
+				]),
+
 				// 顶部控制栏
-				E('div', { style: 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;' }, [
-					E('h2', { class: 'modem-section-title', style: 'margin: 0; border: none; padding: 0;' }, _('3G/4G/5G Modem Information')),
+				E('div', { style: 'display: flex; justify-content: flex-end; margin-bottom: 20px;' }, [
 					E('button', {
 						id: 'modc',
 						class: 'btn cbi-button cbi-button-action',
 						click: ui.createHandlerFn(this, function() {
 							return upModemDialog.show();
 						}),
-						style: 'display: flex; align-items: center; gap: 8px;'
+						style: 'display: flex; align-items: center; gap: 8px; background: linear-gradient(135deg, #4e54c8 0%, #8f94fb 100%); color: white; border: none; padding: 10px 20px; border-radius: 8px;'
 					}, [
 						E('span', { style: 'font-size: 18px;' }, '☰'),
 						_('Modem Settings')
 					]),
 				]),
 
-				// 连接状态表格
-				E('h4', { class: 'modem-section-title' }, _('Connection Status')),
-				E('table', { class: 'modem-table' }, [
-					E('thead', {}, [
-						E('tr', {}, [
-							E('th', {}, _('Parameter')),
-							E('th', {}, _('Value'))
-						])
+				// 连接状态部分
+				E('div', { class: 'config-section' }, [
+					E('div', { class: 'config-section-title' }, [
+						E('div', { class: 'config-section-icon' }, '📶'),
+						_('Connection Status')
 					]),
-					E('tbody', {}, [
-						E('tr', {}, [
-							E('td', {}, _('Signal Strength')),
-							E('td', { id: 'signal' }, '-')
-						]),
-						E('tr', {}, [
-							E('td', {}, _('Connection Status')),
-							E('td', { id: 'connst' }, _('Waiting for data...'))
-						]),
-						E('tr', {}, [
-							E('td', {}, _('Operator')),
-							E('td', {}, [
-								E('div', { id: 'operator' }, '-'),
-								E('div', { style: 'font-size: 12px; color: #6c757d; margin-top: 4px;', id: 'location' }, '-')
+					E('table', { class: 'modem-table' }, [
+						E('thead', {}, [
+							E('tr', {}, [
+								E('th', {}, _('Parameter')),
+								E('th', {}, _('Value'))
 							])
 						]),
-						E('tr', {}, [
-							E('td', {}, _('Technology')),
-							E('td', { id: 'mode' }, '-')
+						E('tbody', {}, [
+							E('tr', {}, [
+								E('td', {}, _('Signal Strength')),
+								E('td', {}, [
+									E('div', { class: 'signal-strength-container', id: 'signal-container' }, [
+										E('img', {
+											id: 'signal-icon',
+											class: 'signal-icon',
+											src: L.resource('icons/3ginfo-0.png'),
+											alt: _('Signal icon')
+										}),
+										E('div', { class: 'signal-progress' }, [
+											E('div', {
+												id: 'signal-bar',
+												class: 'signal-progress-bar',
+												style: 'width: 0%;'
+											})
+										]),
+										E('span', { id: 'signal-text', style: 'min-width: 48px; text-align: right; font-weight: 600;' }, '-')
+									])
+								])
+							]),
+							E('tr', {}, [
+								E('td', {}, _('Connection Status')),
+								E('td', { id: 'connst' }, _('Waiting for data...'))
+							]),
+							E('tr', {}, [
+								E('td', {}, _('Operator')),
+								E('td', {}, [
+									E('div', { id: 'operator' }, '-'),
+									E('div', { style: 'font-size: 12px; color: #6c757d; margin-top: 4px;', id: 'location' }, '-')
+								])
+							]),
+							E('tr', {}, [
+								E('td', {}, _('Technology')),
+								E('td', { id: 'mode' }, '-')
+							])
 						])
 					])
 				]),
 
-				// SIM 信息表格
-				E('h4', { class: 'modem-section-title' }, _('SIM Information')),
-				E('table', { class: 'modem-table' }, [
-					E('thead', {}, [
-						E('tr', {}, [
-							E('th', {}, _('Parameter')),
-							E('th', {}, _('Value'))
-						])
+				// SIM 信息部分
+				E('div', { class: 'config-section' }, [
+					E('div', { class: 'config-section-title' }, [
+						E('div', { class: 'config-section-icon' }, '📱'),
+						_('SIM Information')
 					]),
-					E('tbody', {}, [
-						E('tr', {}, [
-							E('td', {}, _('SIM Status')),
-							E('td', {}, [
-								E('span', {
-									class: 'ifacebadge',
-									title: null,
-									id: 'simv',
-									style: 'visibility: hidden; margin-right: 8px; padding: 4px; cursor: pointer; border: 1px solid #ccc; border-radius: 4px;',
-									click: ui.createHandlerFn(this, function() {
-										return upSIMDialog.show(data);
-									}),
-								}, [
-									E('img', {
-										src: L.resource('icons/sim1m.png'),
-										style: 'width: 16px; height: auto;'
-									})
+					E('table', { class: 'modem-table' }, [
+						E('thead', {}, [
+							E('tr', {}, [
+								E('th', {}, _('Parameter')),
+								E('th', {}, _('Value'))
+							])
+						]),
+						E('tbody', {}, [
+							E('tr', {}, [
+								E('td', {}, _('SIM Status')),
+								E('td', {}, [
+									E('span', {
+										class: 'ifacebadge',
+										title: null,
+										id: 'simv',
+										style: 'visibility: hidden; margin-right: 8px; padding: 4px; cursor: pointer; border: 1px solid #ccc; border-radius: 4px;',
+										click: ui.createHandlerFn(this, function() {
+											return upSIMDialog.show(data);
+										}),
+									}, [
+										E('img', {
+											src: L.resource('icons/sim1m.png'),
+											style: 'width: 16px; height: auto;'
+										})
+									]),
+									E('span', { id: 'sim' }, '-')
+								])
+							])
+						])
+					])
+				]),
+
+				// 信号质量部分
+				E('div', { class: 'config-section' }, [
+					E('div', { class: 'config-section-title' }, [
+						E('div', { class: 'config-section-icon' }, '📊'),
+						_('Signal Quality Metrics')
+					]),
+					E('table', { class: 'modem-table' }, [
+						E('thead', {}, [
+							E('tr', {}, [
+								E('th', {}, _('Parameter')),
+								E('th', {}, _('Value'))
+							])
+						]),
+						E('tbody', {}, [
+							E('tr', { id: 'csqn' }, [
+								E('td', {}, [
+									_('CSQ'),
+									E('div', { style: 'font-size: 11px; color: #6c757d; margin-top: 2px;' }, _('(Signal Strength)'))
 								]),
-								E('span', { id: 'sim' }, '-')
+								E('td', { id: 'csq' }, '-')
+							]),
+							E('tr', { id: 'rssin' }, [
+								E('td', {}, [
+									_('RSSI'),
+									E('div', { style: 'font-size: 11px; color: #6c757d; margin-top: 2px;' }, _('(Received Signal Strength Indicator)'))
+								]),
+								E('td', { id: 'rssi' }, '-')
+							]),
+							E('tr', { id: 'rsrpn' }, [
+								E('td', {}, [
+									_('RSRP'),
+									E('div', { style: 'font-size: 11px; color: #6c757d; margin-top: 2px;' }, _('(Reference Signal Receive Power)'))
+								]),
+								E('td', { id: 'rsrp' }, '-')
+							]),
+							E('tr', { id: 'rsrqn' }, [
+								E('td', {}, [
+									_('RSRQ'),
+									E('div', { style: 'font-size: 11px; color: #6c757d; margin-top: 2px;' }, _('(Reference Signal Received Quality)'))
+								]),
+								E('td', { id: 'rsrq' }, '-')
+							]),
+							E('tr', { id: 'sinrn' }, [
+								E('td', {}, [
+									_('SINR'),
+									E('div', { style: 'font-size: 11px; color: #6c757d; margin-top: 2px;' }, _('(Signal to Interference plus Noise Ratio)'))
+								]),
+								E('td', { id: 'sinr' }, '-')
 							])
 						])
 					])
 				]),
 
-				// 信号质量表格
-				E('h4', { class: 'modem-section-title' }, _('Signal Quality Metrics')),
-				E('table', { class: 'modem-table' }, [
-					E('thead', {}, [
-						E('tr', {}, [
-							E('th', {}, _('Parameter')),
-							E('th', {}, _('Value'))
-						])
+				// 设备信息部分
+				E('div', { class: 'config-section' }, [
+					E('div', { class: 'config-section-title' }, [
+						E('div', { class: 'config-section-icon' }, '📟'),
+						_('Device Information')
 					]),
-					E('tbody', {}, [
-						E('tr', { id: 'csqn' }, [
-							E('td', {}, [
-								_('CSQ'),
-								E('div', { style: 'font-size: 11px; color: #6c757d; margin-top: 2px;' }, _('(Signal Strength)'))
-							]),
-							E('td', { id: 'csq' }, '-')
+					E('table', { class: 'modem-table' }, [
+						E('thead', {}, [
+							E('tr', {}, [
+								E('th', {}, _('Parameter')),
+								E('th', {}, _('Value'))
+							])
 						]),
-						E('tr', { id: 'rssin' }, [
-							E('td', {}, [
-								_('RSSI'),
-								E('div', { style: 'font-size: 11px; color: #6c757d; margin-top: 2px;' }, _('(Received Signal Strength Indicator)'))
+						E('tbody', {}, [
+							E('tr', {}, [
+								E('td', {}, _('Modem Type')),
+								E('td', { id: 'modem' }, '-')
 							]),
-							E('td', { id: 'rssi' }, '-')
-						]),
-						E('tr', { id: 'rsrpn' }, [
-							E('td', {}, [
-								_('RSRP'),
-								E('div', { style: 'font-size: 11px; color: #6c757d; margin-top: 2px;' }, _('(Reference Signal Receive Power)'))
+							E('tr', {}, [
+								E('td', {}, _('Firmware')),
+								E('td', { id: 'fw' }, '-')
 							]),
-							E('td', { id: 'rsrp' }, '-')
-						]),
-						E('tr', { id: 'rsrqn' }, [
-							E('td', {}, [
-								_('RSRQ'),
-								E('div', { style: 'font-size: 11px; color: #6c757d; margin-top: 2px;' }, _('(Reference Signal Received Quality)'))
+							E('tr', {}, [
+								E('td', {}, _('Communication Port')),
+								E('td', { id: 'cport' }, '-')
 							]),
-							E('td', { id: 'rsrq' }, '-')
-						]),
-						E('tr', { id: 'sinrn' }, [
-							E('td', {}, [
-								_('SINR'),
-								E('div', { style: 'font-size: 11px; color: #6c757d; margin-top: 2px;' }, _('(Signal to Interference plus Noise Ratio)'))
+							E('tr', {}, [
+								E('td', {}, _('Protocol')),
+								E('td', { id: 'protocol' }, '-')
 							]),
-							E('td', { id: 'sinr' }, '-')
+							E('tr', { id: 'tempn' }, [
+								E('td', {}, _('Temperature')),
+								E('td', { id: 'temp' }, '-')
+							]),
+							E('tr', {}, [
+								E('td', {}, _('TX Power')),
+								E('td', { id: 'txpower' }, '-')
+							]),
+							E('tr', {}, [
+								E('td', {}, _('Voltage')),
+								E('td', { id: 'voltage' }, '-')
+							])
 						])
 					])
 				]),
 
-				// 设备信息表格
-				E('h4', { class: 'modem-section-title' }, _('Device Information')),
-				E('table', { class: 'modem-table' }, [
-					E('thead', {}, [
-						E('tr', {}, [
-							E('th', {}, _('Parameter')),
-							E('th', {}, _('Value'))
-						])
+				// 网络信息部分
+				E('div', { class: 'config-section' }, [
+					E('div', { class: 'config-section-title' }, [
+						E('div', { class: 'config-section-icon' }, '🌐'),
+						_('Network Information')
 					]),
-					E('tbody', {}, [
-						E('tr', {}, [
-							E('td', {}, _('Modem Type')),
-							E('td', { id: 'modem' }, '-')
+					E('table', { class: 'modem-table' }, [
+						E('thead', {}, [
+							E('tr', {}, [
+								E('th', {}, _('Parameter')),
+								E('th', {}, _('Value'))
+							])
 						]),
-						E('tr', {}, [
-							E('td', {}, _('Firmware')),
-							E('td', { id: 'fw' }, '-')
-						]),
-						E('tr', {}, [
-							E('td', {}, _('Communication Port')),
-							E('td', { id: 'cport' }, '-')
-						]),
-						E('tr', {}, [
-							E('td', {}, _('Protocol')),
-							E('td', { id: 'protocol' }, '-')
-						]),
-						E('tr', { id: 'tempn' }, [
-							E('td', {}, _('Temperature')),
-							E('td', { id: 'temp' }, '-')
-						]),
-						E('tr', {}, [
-							E('td', {}, _('TX Power')),
-							E('td', { id: 'txpower' }, '-')
-						]),
-						E('tr', {}, [
-							E('td', {}, _('Voltage')),
-							E('td', { id: 'voltage' }, '-')
-						])
-					])
-				]),
-
-				// 网络信息表格
-				E('h4', { class: 'modem-section-title' }, _('Network Information')),
-				E('table', { class: 'modem-table' }, [
-					E('thead', {}, [
-						E('tr', {}, [
-							E('th', {}, _('Parameter')),
-							E('th', {}, _('Value'))
-						])
-					]),
-					E('tbody', {}, [
-						E('tr', {}, [
-							E('td', {}, _('MCC MNC')),
-							E('td', { id: 'mccmnc' }, '-')
-						]),
-						E('tr', {}, [
-							E('td', {}, _('Cell ID')),
-							E('td', { id: 'cid' }, '-')
-						]),
-						E('tr', {}, [
-							E('td', {}, _('TAC')),
-							E('td', { id: 'tac' }, '-')
-						]),
-						E('tr', { id: 'lacn' }, [
-							E('td', {}, _('LAC')),
-							E('td', { id: 'lac' }, '-')
-						]),
-						E('tr', {}, [
-							E('td', {}, _('Primary Band')),
-							E('td', { id: 'pband' }, '-')
-						]),
-						E('tr', {}, [
-							E('td', {}, _('CA Band (SCC1)')),
-							E('td', { id: 's1band' }, '-')
-						]),
-						E('tr', {}, [
-							E('td', {}, _('CA Band (SCC2)')),
-							E('td', { id: 's2band' }, '-')
-						]),
-						E('tr', {}, [
-							E('td', {}, _('CA Band (SCC3)')),
-							E('td', { id: 's3band' }, '-')
-						]),
-						E('tr', {}, [
-							E('td', {}, _('CA Band (SCC4)')),
-							E('td', { id: 's4band' }, '-')
+						E('tbody', {}, [
+							E('tr', {}, [
+								E('td', {}, _('MCC MNC')),
+								E('td', { id: 'mccmnc' }, '-')
+							]),
+							E('tr', {}, [
+								E('td', {}, _('Cell ID')),
+								E('td', { id: 'cid' }, '-')
+							]),
+							E('tr', {}, [
+								E('td', {}, _('TAC')),
+								E('td', { id: 'tac' }, '-')
+							]),
+							E('tr', { id: 'lacn' }, [
+								E('td', {}, _('LAC')),
+								E('td', { id: 'lac' }, '-')
+							]),
+							E('tr', {}, [
+								E('td', {}, _('Primary Band')),
+								E('td', { id: 'pband' }, '-')
+							]),
+							E('tr', {}, [
+								E('td', {}, _('CA Band (SCC1)')),
+								E('td', { id: 's1band' }, '-')
+							]),
+							E('tr', {}, [
+								E('td', {}, _('CA Band (SCC2)')),
+								E('td', { id: 's2band' }, '-')
+							]),
+							E('tr', {}, [
+								E('td', {}, _('CA Band (SCC3)')),
+								E('td', { id: 's3band' }, '-')
+							]),
+							E('tr', {}, [
+								E('td', {}, _('CA Band (SCC4)')),
+								E('td', { id: 's4band' }, '-')
+							])
 						])
 					])
 				])
