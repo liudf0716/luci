@@ -182,6 +182,92 @@ getdevicevendorproduct() {
 
 RES="/usr/share/3ginfo-lite"
 
+print_empty_json() {
+cat <<'EOF'
+{
+"conn_time":"",
+"conn_time_sec":"",
+"conn_time_since":"",
+"rx":"",
+"tx":"",
+"modem":"",
+"mtemp":"",
+"firmware":"",
+"cport":"",
+"protocol":"",
+"csq":"",
+"signal":"",
+"operator_name":"",
+"operator_mcc":"",
+"operator_mnc":"",
+"location":"",
+"mode":"",
+"registration":"",
+"simslot":"",
+"imei":"",
+"imsi":"",
+"iccid":"",
+"lac_dec":"",
+"lac_hex":"",
+"tac_dec":"",
+"tac_hex":"",
+"tac_h":"",
+"tac_d":"",
+"cid_dec":"",
+"cid_hex":"",
+"pci":"",
+"earfcn":"",
+"pband":"",
+"s1band":"",
+"s1pci":"",
+"s1earfcn":"",
+"s2band":"",
+"s2pci":"",
+"s2earfcn":"",
+"s3band":"",
+"s3pci":"",
+"s3earfcn":"",
+"s4band":"",
+"s4pci":"",
+"s4earfcn":"",
+"rsrp":"",
+"rsrq":"",
+"rssi":"",
+"sinr":"",
+"txpower":"",
+"voltage":""
+}
+EOF
+exit 0
+}
+
+BOARD_NAME=$(cat /tmp/sysinfo/board_name 2>/dev/null)
+
+case "$BOARD_NAME" in
+	"dhlab,in500r"|"dhlab,in500")
+		MODEM_PORT="/dev/ttyUSB1"
+		if [ ! -e "$MODEM_PORT" ]; then
+			print_empty_json
+		fi
+
+		if [ -x /usr/bin/sms_tool ]; then
+			MODEM_PROBE=$(sms_tool -D -d "$MODEM_PORT" at "ATI" 2>/dev/null)
+			if [ $? -ne 0 ]; then
+				print_empty_json
+			fi
+
+			if [ -z "$MODEM_PROBE" ]; then
+				print_empty_json
+			fi
+
+			echo "$MODEM_PROBE" | grep -qi "ERROR" && print_empty_json
+			echo "$MODEM_PROBE" | grep -qi "OK" || print_empty_json
+		else
+			print_empty_json
+		fi
+	;;
+esac
+
 DEVICE=$($RES/detect.sh)
 if [ -z "$DEVICE" ]; then
 	echo '{"error":"Device not found"}'
