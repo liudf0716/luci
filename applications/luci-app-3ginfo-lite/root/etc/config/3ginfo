@@ -4,5 +4,5 @@ config 3ginfo
 	option auto_dial '1'
 	option fast_dorm '1'
 	option time_length '5'
-	option website 'http://www.btsearch.pl/szukaj.php?mode=std&search='
+	option website 'https://opencellid.org/'
 

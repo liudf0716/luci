@@ -476,13 +476,14 @@ return view.extend({
 			E('div', { 'class': 'config-field-description' }, [
 				_('Choose the appropriate BTS search engine for your region.'),
 				E('div', { 'class': 'config-warning-box', 'style': 'margin-top: 10px;' }, [
-					_('⚠️ Select the website that covers your geographical area for accurate results.')
+					_('⚠️ OpenCellID provides global coverage. Regional sites may offer more detailed local information.')
 				])
 			])
 		);
+		o.value('https://opencellid.org/', _('🌐 opencellid.org (Global)'));
 		o.value('http://www.btsearch.pl/szukaj.php?mode=std&search=', _('🇵🇱 btsearch.pl (Poland)'));
 		o.value('https://lteitaly.it/internal/map.php#bts=', _('🇮🇹 lteitaly.it (Italy)'));
-		o.default = 'http://www.btsearch.pl/szukaj.php?mode=std&search=';
+		o.default = 'https://opencellid.org/';
 		o.modalonly = true;
 
 		// 添加自定义CSS类到表单sections

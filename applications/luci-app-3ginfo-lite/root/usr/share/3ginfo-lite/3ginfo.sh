@@ -279,10 +279,98 @@ if [ -n "$NETUP" ]; then
 			
 		fi
 		
-		IFACE=$(ifstatus $SEC | awk -F\" '/l3_device/ {print $4}')
-		if [ -n "$IFACE" ]; then
-			RX=$(ifconfig $IFACE | awk -F[\(\)] '/bytes/ {printf "%s",$2}')
-			TX=$(ifconfig $IFACE | awk -F[\(\)] '/bytes/ {printf "%s",$4}')
+		# Priority method: Try device-specific interfaces first
+		BOARD_NAME=$(cat /tmp/sysinfo/board_name 2>/dev/null)
+		RX_FOUND=0
+		
+		case "$BOARD_NAME" in
+			"dhlab,in500r")
+				# For in500r, try usb0 interface first
+				if [ -e "/sys/class/net/usb0" ]; then
+					# Try modern ifconfig format first
+					RX_BYTES=$(cat /sys/class/net/usb0/statistics/rx_bytes 2>/dev/null)
+					TX_BYTES=$(cat /sys/class/net/usb0/statistics/tx_bytes 2>/dev/null)
+					
+					# Fallback to ifconfig parsing if sysfs not available
+					if [ -z "$RX_BYTES" ] || [ -z "$TX_BYTES" ]; then
+						# Try different ifconfig output formats
+						IFCONFIG_OUT=$(ifconfig usb0 2>/dev/null)
+						if echo "$IFCONFIG_OUT" | grep -q "RX bytes"; then
+							# Format: RX bytes:123 (456 MB)  TX bytes:789 (1.0 GB)
+							RX_BYTES=$(echo "$IFCONFIG_OUT" | grep "RX bytes" | sed 's/.*RX bytes:\([0-9]*\).*/\1/')
+							TX_BYTES=$(echo "$IFCONFIG_OUT" | grep "TX bytes" | sed 's/.*TX bytes:\([0-9]*\).*/\1/')
+						elif echo "$IFCONFIG_OUT" | grep -q "RX packets"; then
+							# New format: RX packets 123  bytes 456 (789 KB)
+							RX_BYTES=$(echo "$IFCONFIG_OUT" | awk '/RX packets/ {for(i=1;i<=NF;i++) if($i=="bytes") print $(i+1)}')
+							TX_BYTES=$(echo "$IFCONFIG_OUT" | awk '/TX packets/ {for(i=1;i<=NF;i++) if($i=="bytes") print $(i+1)}')
+						fi
+					fi
+					
+					if [ -n "$RX_BYTES" ] && [ -n "$TX_BYTES" ]; then
+						RX="$RX_BYTES"
+						TX="$TX_BYTES"
+						RX_FOUND=1
+					fi
+				fi
+				;;
+			"dhlab,in500")
+				# For in500, try eth2 interface first
+				if [ -e "/sys/class/net/eth2" ]; then
+					# Try modern sysfs method first
+					RX_BYTES=$(cat /sys/class/net/eth2/statistics/rx_bytes 2>/dev/null)
+					TX_BYTES=$(cat /sys/class/net/eth2/statistics/tx_bytes 2>/dev/null)
+					
+					# Fallback to ifconfig parsing if sysfs not available
+					if [ -z "$RX_BYTES" ] || [ -z "$TX_BYTES" ]; then
+						# Try different ifconfig output formats
+						IFCONFIG_OUT=$(ifconfig eth2 2>/dev/null)
+						if echo "$IFCONFIG_OUT" | grep -q "RX bytes"; then
+							# Format: RX bytes:123 (456 MB)  TX bytes:789 (1.0 GB)
+							RX_BYTES=$(echo "$IFCONFIG_OUT" | grep "RX bytes" | sed 's/.*RX bytes:\([0-9]*\).*/\1/')
+							TX_BYTES=$(echo "$IFCONFIG_OUT" | grep "TX bytes" | sed 's/.*TX bytes:\([0-9]*\).*/\1/')
+						elif echo "$IFCONFIG_OUT" | grep -q "RX packets"; then
+							# New format: RX packets 123  bytes 456 (789 KB)
+							RX_BYTES=$(echo "$IFCONFIG_OUT" | awk '/RX packets/ {for(i=1;i<=NF;i++) if($i=="bytes") print $(i+1)}')
+							TX_BYTES=$(echo "$IFCONFIG_OUT" | awk '/TX packets/ {for(i=1;i<=NF;i++) if($i=="bytes") print $(i+1)}')
+						fi
+					fi
+					
+					if [ -n "$RX_BYTES" ] && [ -n "$TX_BYTES" ]; then
+						RX="$RX_BYTES"
+						TX="$TX_BYTES"
+						RX_FOUND=1
+					fi
+				fi
+				;;
+		esac
+		
+		# Fallback: use ifstatus method if device-specific method failed
+		if [ "$RX_FOUND" = "0" ]; then
+			IFACE=$(ifstatus $SEC | awk -F\" '/l3_device/ {print $4}')
+			if [ -n "$IFACE" ]; then
+				# Try sysfs method first (most reliable)
+				RX_BYTES=$(cat /sys/class/net/$IFACE/statistics/rx_bytes 2>/dev/null)
+				TX_BYTES=$(cat /sys/class/net/$IFACE/statistics/tx_bytes 2>/dev/null)
+				
+				# Fallback to ifconfig parsing
+				if [ -z "$RX_BYTES" ] || [ -z "$TX_BYTES" ]; then
+					IFCONFIG_OUT=$(ifconfig $IFACE 2>/dev/null)
+					if echo "$IFCONFIG_OUT" | grep -q "RX bytes"; then
+						# Format: RX bytes:123 (456 MB)  TX bytes:789 (1.0 GB)
+						RX_BYTES=$(echo "$IFCONFIG_OUT" | grep "RX bytes" | sed 's/.*RX bytes:\([0-9]*\).*/\1/')
+						TX_BYTES=$(echo "$IFCONFIG_OUT" | grep "TX bytes" | sed 's/.*TX bytes:\([0-9]*\).*/\1/')
+					elif echo "$IFCONFIG_OUT" | grep -q "RX packets"; then
+						# New format: RX packets 123  bytes 456 (789 KB)
+						RX_BYTES=$(echo "$IFCONFIG_OUT" | awk '/RX packets/ {for(i=1;i<=NF;i++) if($i=="bytes") print $(i+1)}')
+						TX_BYTES=$(echo "$IFCONFIG_OUT" | awk '/TX packets/ {for(i=1;i<=NF;i++) if($i=="bytes") print $(i+1)}')
+					fi
+				fi
+				
+				if [ -n "$RX_BYTES" ] && [ -n "$TX_BYTES" ]; then
+					RX="$RX_BYTES"
+					TX="$TX_BYTES"
+				fi
+			fi
 		fi
 fi
 
@@ -540,13 +628,26 @@ convert_rsrp_to_signal() {
 # if no rssi, use rsrp to stand for signal
 SIGNAL=""
 if [ -z "$RSRP" ] || [ "$RSRP" = "-" ] || [ "$RSRP" = "0" ]; then
+	# No RSRP, use RSSI if available
 	if [ -n "$RSSI" ] && [ "$RSSI" != "-" ] && [ "$RSSI" != "0" ]; then
 		SIGNAL="$RSSI"
 	fi
 else
+	# RSRP is available
 	if [ -z "$RSSI" ] || [ "$RSSI" = "-" ] || [ "$RSSI" = "0" ]; then
+		# No RSSI, calculate signal from RSRP
 		SIGNAL=$(convert_rsrp_to_signal "$RSRP")
+	else
+		# Both RSRP and RSSI available, prefer RSSI for signal
+		SIGNAL="$RSSI"
 	fi
+fi
+
+# Set SSIM from NR_SIMSLOT if available
+if [ -n "$NR_SIMSLOT" ]; then
+	SSIM="$NR_SIMSLOT"
+else
+	SSIM=""
 fi
 
 cat <<EOF

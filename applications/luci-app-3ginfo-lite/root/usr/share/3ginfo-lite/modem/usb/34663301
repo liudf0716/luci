@@ -1,20 +1,27 @@
 # TDTECH MT5700
 
-O=""
-O="$O$(sms_tool -d $DEVICE at "AT^TDCHIPTEMP?")"
-O="$O$(sms_tool -d $DEVICE at "at^hcsq?")"
-O="$O$(sms_tool -d $DEVICE at "at^iccid?")"
-O="$O$(sms_tool -d $DEVICE at "AT^NTXPOWER?")"
-O="$O$(sms_tool -d $DEVICE at "AT^ADCREADEX=0")"
+# Set device if not provided
+[ -z "$DEVICE" ] && DEVICE=/dev/ttyUSB1# Modem
+OF=$(sms_tool -d $DEVICE at "ati")
+MANUFACTURER=$(echo "$OF" | grep "Manufacturer:" | cut -d: -f2 | xargs)
+MODEL=$(echo "$OF" | grep "Model:" | cut -d: -f2 | xargs)
+NR_IMEI=$(echo "$OF" | grep "IMEI:" | cut -d: -f2 | xargs)
+FW=$(echo "$OF" | grep "Revision:" | cut -d: -f2 | xargs)
+HCSQ_OUTPUT=$(sms_tool -d $DEVICE at "at^hcsq?")
+NTXPOWER_OUTPUT=$(sms_tool -d $DEVICE at "AT^NTXPOWER?")
+HCSQ_OUTPUT="$HCSQ_OUTPUT$NTXPOWER_OUTPUT"
+O="$HCSQ_OUTPUT$(sms_tool -d $DEVICE at "AT^TDCHIPTEMP?")"
+O="$HCSQ_OUTPUT$(sms_tool -d $DEVICE at "at^iccid?")"
+O="$HCSQ_OUTPUT$(sms_tool -d $DEVICE at "AT^ADCREADEX=0")"
 
-T=$(echo "$O" | awk -F[,:] '/^\^HCSQ:/ {print $2}' | xargs)
+T=$(echo "$HCSQ_OUTPUT" | awk -F[,:] '/^\^HCSQ:/ {print $2}' | xargs)
 if [ -n "$T" ]; then
 	MODE="$T"
 
 	case "$MODE" in
 		WCDMA*)
-			PARAM2=$(echo "$O" | awk -F[,:] '/^\^HCSQ:/ {print $4}' | xargs)
-			PARAM3=$(echo "$O" | awk -F[,:] '/^\^HCSQ:/ {print $5}' | xargs)
+			PARAM2=$(echo "$HCSQ_OUTPUT" | awk -F[,:] '/^\^HCSQ:/ {print $4}' | xargs)
+			PARAM3=$(echo "$HCSQ_OUTPUT" | awk -F[,:] '/^\^HCSQ:/ {print $5}' | xargs)
 			if [ -n "$PARAM2" ] && echo "$PARAM2" | grep -q "^[0-9-]*$"; then
 				RSCP=$(awk "BEGIN {print -121 + $PARAM2}")
 			else
@@ -31,9 +38,9 @@ if [ -n "$T" ]; then
 #			ADDON="$ADDON"'{"ECIO":"'$ECIO' dB"}'
 			;;
 		LTE*)
-			PARAM2=$(echo "$O" | awk -F[,:] '/^\^HCSQ:/ {print $4}' | xargs)
-			PARAM3=$(echo "$O" | awk -F[,:] '/^\^HCSQ:/ {print $5}' | xargs)
-			PARAM4=$(echo "$O" | awk -F[,:] '/^\^HCSQ:/ {print $6}' | xargs)
+			PARAM2=$(echo "$HCSQ_OUTPUT" | awk -F[,:] '/^\^HCSQ:/ {print $4}' | xargs)
+			PARAM3=$(echo "$HCSQ_OUTPUT" | awk -F[,:] '/^\^HCSQ:/ {print $5}' | xargs)
+			PARAM4=$(echo "$HCSQ_OUTPUT" | awk -F[,:] '/^\^HCSQ:/ {print $6}' | xargs)
 			if [ -n "$PARAM2" ] && echo "$PARAM2" | grep -q "^[0-9-]*$"; then
 				RSRP=$(awk "BEGIN {print -141 + $PARAM2}")
 			else
@@ -57,9 +64,9 @@ if [ -n "$T" ]; then
 #			ADDON="$ADDON"'{"RSRQ":"'$RSRQ' dB"}'
 			;;
         NR*)
-            PARAM2=$(echo "$O" | awk -F[,:] '/^\^HCSQ:/ {print $3}' | xargs)
-            PARAM3=$(echo "$O" | awk -F[,:] '/^\^HCSQ:/ {print $4}' | xargs)
-            PARAM4=$(echo "$O" | awk -F[,:] '/^\^HCSQ:/ {print $5}' | xargs)
+            PARAM2=$(echo "$HCSQ_OUTPUT" | awk -F[,:] '/^\^HCSQ:/ {print $3}' | xargs)
+            PARAM3=$(echo "$HCSQ_OUTPUT" | awk -F[,:] '/^\^HCSQ:/ {print $4}' | xargs)
+            PARAM4=$(echo "$HCSQ_OUTPUT" | awk -F[,:] '/^\^HCSQ:/ {print $5}' | xargs)
             if [ -n "$PARAM2" ] && echo "$PARAM2" | grep -q "^[0-9-]*$"; then
                 RSRP=$(awk "BEGIN {print -141 + $PARAM2}")
             else
@@ -80,16 +87,12 @@ if [ -n "$T" ]; then
 fi
 
 # Modem
-OF=$(sms_tool -d $DEVICE at "ati")
-MANUFACTURER=$(echo "$OF" | grep "Manufacturer:" | cut -d: -f2 | xargs)
-MODEL=$(echo "$OF" | grep "Model:" | cut -d: -f2 | xargs)
-NR_IMEI=$(echo "$OF" | grep "IMEI:" | cut -d: -f2 | xargs)
-FW=$(echo "$OF" | grep "Revision:" | cut -d: -f2 | xargs)
 
 # Protocol
-# Driver=qmi_wwan & Driver=cdc_mbim & Driver=cdc_ether & Driver=huawei_cdc_ncm
+# Driver=qmi_wwan & Driver=cdc_mbim & Driver=cdc_ether & Driver=cdc_ncm
 PV=$(cat /sys/kernel/debug/usb/devices 2>/dev/null)
-PVCUT=$(echo $PV | awk -F 'Vendor=1d6b ProdID=0003' '{print $2}' | cut -c-1104)
+# Extract MT5710 device section (Vendor=3466 ProdID=3301)
+PVCUT=$(echo "$PV" | awk '/Vendor=3466 ProdID=3301/,/^$/')
 if echo "$PVCUT" | grep -q "Driver=qmi_wwan"
 then
     PROTO="qmi"
@@ -99,7 +102,7 @@ then
 elif echo "$PVCUT" | grep -q "Driver=cdc_ether"
 then
     PROTO="ecm"
-elif echo "$PVCUT" | grep -q "cdc_ncm"
+elif echo "$PVCUT" | grep -q "Driver=cdc_ncm"
 then
     PROTO="ncm"
 fi
@@ -112,8 +115,16 @@ if [ -n "$NR_C" ]; then
     NR_IMSI="$NR_C"
 fi
 
+# SIM Card Slot Information
+CARDMODE_OUTPUT=$(sms_tool -d $DEVICE at "AT^CARDMODE")
+SIMSLOT=$(echo "$CARDMODE_OUTPUT" | awk -F'[ :]+' '/^\^CARDMODE:/{print $2}' | xargs)
+if [ -n "$SIMSLOT" ]; then
+    NR_SIMSLOT="$SIMSLOT"
+fi
+
 # Integrated Circuit Card Identifier (ICCID)
-NR_D=$(echo "$O" | awk -F [:] '/^\^ICCID: /{print $2}' | xargs)
+ICCID_OUTPUT=$(sms_tool -d $DEVICE at "AT^ICCID?")
+NR_D=$(echo "$ICCID_OUTPUT" | awk -F [:] '/^\^ICCID:/{print $2}' | xargs)
 if [ -n "$NR_D" ]; then
 	NR_ICCID="$NR_D"
 fi
@@ -156,16 +167,75 @@ if [ -n "$TEMP_RAW" ] && [ "$TEMP_RAW" != "0" ]; then
 	TEMP="$TEMP_RAW &deg;C"
 fi
 
-TX=$(echo "$O" | awk -F[,:] '/^\^NTXPOWER:/ {print $3}' | xargs)
-if [ -n "$TX" ]; then
-	# 注意，通常是直接 dBm 值
-	[ -n "$ADDON" ] && ADDON="$ADDON,"
-	TXPOWER="$TX dBm"
-	ADDON="$ADDON"'{"TXPower":"$TX dBm"}'
+# Monitor Serving Cell Information for additional signal data
+MONSC_OUTPUT=$(sms_tool -d $DEVICE at "AT^MONSC")
+if [ -n "$MONSC_OUTPUT" ]; then
+    # Parse MONSC output: ^MONSC: NR,460,01,627264,1,57800F003,B6,56C400,-105,-10,11
+    # Fields: RAT,MCC,MNC,EARFCN,Band,CID,PCI,TAC,RSRP,RSRQ,SINR
+    MONSC_RAT=$(echo "$MONSC_OUTPUT" | awk -F[,:] '/^\^MONSC:/{gsub(/ /, "", $2); print $2}')
+    MONSC_MCC=$(echo "$MONSC_OUTPUT" | awk -F[,:] '/^\^MONSC:/{gsub(/ /, "", $3); print $3}')
+    MONSC_MNC=$(echo "$MONSC_OUTPUT" | awk -F[,:] '/^\^MONSC:/{gsub(/ /, "", $4); print $4}')
+    MONSC_EARFCN=$(echo "$MONSC_OUTPUT" | awk -F[,:] '/^\^MONSC:/{gsub(/ /, "", $5); print $5}')
+    MONSC_BAND=$(echo "$MONSC_OUTPUT" | awk -F[,:] '/^\^MONSC:/{gsub(/ /, "", $6); print $6}')
+    MONSC_CID=$(echo "$MONSC_OUTPUT" | awk -F[,:] '/^\^MONSC:/{gsub(/ /, "", $7); print $7}')
+    MONSC_PCI=$(echo "$MONSC_OUTPUT" | awk -F[,:] '/^\^MONSC:/{gsub(/ /, "", $8); print $8}')
+    MONSC_TAC=$(echo "$MONSC_OUTPUT" | awk -F[,:] '/^\^MONSC:/{gsub(/ /, "", $9); print $9}')
+    MONSC_RSRP=$(echo "$MONSC_OUTPUT" | awk -F[,:] '/^\^MONSC:/{gsub(/ /, "", $10); print $10}')
+    MONSC_RSRQ=$(echo "$MONSC_OUTPUT" | awk -F[,:] '/^\^MONSC:/{gsub(/ /, "", $11); print $11}')
+    MONSC_SINR=$(echo "$MONSC_OUTPUT" | awk -F[,:] '/^\^MONSC:/{gsub(/ /, "", $12); print $12}')
+    
+    # Use MONSC data for missing fields
+    if [ -n "$MONSC_RSRQ" ] && [ "$MONSC_RSRQ" != "" ]; then
+        RSRQ="$MONSC_RSRQ"
+    fi
+    if [ -n "$MONSC_PCI" ] && [ "$MONSC_PCI" != "" ]; then
+        PCI="$MONSC_PCI"
+    fi
+    
+    # Calculate RSSI from RSRP (approximate formula: RSSI ≈ RSRP + 10*log10(12*RBs))
+    # For NR, use a more conservative approach: RSSI ≈ RSRP + 10
+    if [ -n "$MONSC_RSRP" ] && [ "$MONSC_RSRP" != "" ]; then
+        RSSI=$(awk "BEGIN {print $MONSC_RSRP + 10}")
+    fi
 fi
 
-ADC_VALUE=$(echo "$O" | awk -F [:] '/^\^ADCREADEX:/ {print $2}' | xargs)
-if [ -n "$ADC_VALUE" ]; then
+# 5G Network Registration (for LAC/TAC information)
+C5GREG_OUTPUT=$(sms_tool -d $DEVICE at "AT+C5GREG?")
+if [ -n "$C5GREG_OUTPUT" ]; then
+    # Parse: +C5GREG: 2,1,"56C400","000000057800F003",11,4,"01.000000"
+    C5GREG_TAC=$(echo "$C5GREG_OUTPUT" | awk -F[,\"] '/^\+C5GREG:/{print $4}' | tr -d '"' | xargs)
+    C5GREG_CID=$(echo "$C5GREG_OUTPUT" | awk -F[,\"] '/^\+C5GREG:/{print $6}' | tr -d '"' | xargs)
+    
+    if [ -n "$C5GREG_TAC" ] && [ "$C5GREG_TAC" != "" ]; then
+        # Convert hex TAC to decimal for LAC fields
+        LAC_HEX="$C5GREG_TAC"
+        LAC_DEC=$(printf "%d" 0x$C5GREG_TAC 2>/dev/null)
+    fi
+fi
+
+# CSQ from HCSQ
+if [ -n "$HCSQ_OUTPUT" ]; then
+    # Extract signal level from HCSQ for CSQ approximation
+    HCSQ_SIGNAL=$(echo "$HCSQ_OUTPUT" | awk -F[,:] '/^\^HCSQ:/{print $3}' | xargs)
+    if [ -n "$HCSQ_SIGNAL" ] && [ "$HCSQ_SIGNAL" != "" ]; then
+        # Convert to CSQ scale (0-31), HCSQ signal is typically higher range
+        CSQ_VALUE=$(awk "BEGIN {val=int($HCSQ_SIGNAL/5); if(val>31) val=31; if(val<0) val=0; print val}")
+        CSQ="$CSQ_VALUE"
+    fi
+fi
+
+NTXPOWER_RAW=$(sms_tool -d $DEVICE at "AT^NTXPOWER?")
+TX_POWER=$(echo "$NTXPOWER_RAW" | awk -F[,:] '/NTXPOWER/ {print $2}' | xargs)
+if [ -n "$TX_POWER" ]; then
+	# 注意，通常是直接 dBm 值
+	[ -n "$ADDON" ] && ADDON="$ADDON,"
+	TXPOWER="$TX_POWER dBm"
+	ADDON="$ADDON"'{"TXPower":"$TX_POWER dBm"}'
+fi
+
+ADC_OUTPUT=$(sms_tool -d $DEVICE at "AT^ADCREADEX=0")
+ADC_VALUE=$(echo "$ADC_OUTPUT" | awk -F [:] '/^\^ADCREADEX:/{print $2}' | xargs)
+if [ -n "$ADC_VALUE" ] && [ "$ADC_VALUE" != "" ]; then
     # 根据公式计算电压值
     VOLTAGE=$(awk 'BEGIN {printf "%.3f", ('$ADC_VALUE'/1023)*2.8}')
     [ -n "$ADDON" ] && ADDON="$ADDON,"

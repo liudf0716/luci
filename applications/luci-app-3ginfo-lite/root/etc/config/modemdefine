@@ -1,0 +1,9 @@
+config general
+	option main_modem '/dev/ttyUSB1'
+	option main_network 'wan'
+
+config modemdefine
+	option modem '/dev/ttyUSB1'
+	option comm_port '/dev/ttyUSB1'
+	option network 'wan'
+	option user_desc 'Primary Modem'

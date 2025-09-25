@@ -17,79 +17,67 @@
 	Thanks to https://github.com/koshev-msk for the initial progress bar calculation for rssi/rsrp/rsrq/sinnr.
 */
 
-// 添加现代化的CSS样式
+// 添加表格样式
 document.head.append(E('style', { 'type': 'text/css' },
 	`
-.modem-info-container {
-	background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%);
-	border-radius: 12px;
-	padding: 20px;
+.modem-table {
+	width: 100%;
+	border-collapse: collapse;
 	margin: 16px 0;
-	border: 1px solid rgba(255,255,255,0.15);
-	box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+	background: #fff;
+	border-radius: 8px;
+	overflow: hidden;
+	box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
-:root[data-darkmode="true"] .modem-info-container {
-	background: linear-gradient(135deg, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.1) 100%);
-	border-color: rgba(255,255,255,0.1);
-	box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+:root[data-darkmode="true"] .modem-table {
+	background: rgba(33, 37, 41, 0.9);
+}
+.modem-table th,
+.modem-table td {
+	padding: 12px 16px;
+	text-align: left;
+	border-bottom: 1px solid #dee2e6;
+}
+:root[data-darkmode="true"] .modem-table th,
+:root[data-darkmode="true"] .modem-table td {
+	border-bottom-color: #495057;
+}
+.modem-table th {
+	background: #f8f9fa;
+	font-weight: 600;
+	color: #495057;
+	font-size: 14px;
+}
+:root[data-darkmode="true"] .modem-table th {
+	background: rgba(52, 58, 64, 0.8);
+	color: #adb5bd;
+}
+.modem-table td {
+	color: #212529;
+	font-size: 14px;
+}
+:root[data-darkmode="true"] .modem-table td {
+	color: #ffffff;
+}
+.modem-table tr:hover {
+	background: rgba(0,123,255,0.05);
+}
+:root[data-darkmode="true"] .modem-table tr:hover {
+	background: rgba(0,123,255,0.1);
+}
+.modem-table tr:last-child td {
+	border-bottom: none;
 }
 .modem-section-title {
 	font-size: 18px;
 	font-weight: 600;
 	color: #495057;
-	margin-bottom: 16px;
-	display: flex;
-	align-items: center;
-	border-bottom: 2px solid rgba(0,123,255,0.2);
+	margin: 24px 0 12px 0;
+	border-bottom: 2px solid #007bff;
 	padding-bottom: 8px;
 }
 :root[data-darkmode="true"] .modem-section-title {
 	color: #adb5bd;
-}
-.modem-grid {
-	display: grid;
-	grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-	gap: 16px;
-	margin-bottom: 20px;
-}
-.modem-card {
-	background: white;
-	border-radius: 8px;
-	padding: 16px;
-	box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-	border-left: 4px solid #007bff;
-	transition: all 0.3s ease;
-}
-:root[data-darkmode="true"] .modem-card {
-	background: rgba(33, 37, 41, 0.8);
-	box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-}
-.modem-card:hover {
-	transform: translateY(-2px);
-	box-shadow: 0 4px 16px rgba(0,0,0,0.15);
-}
-:root[data-darkmode="true"] .modem-card:hover {
-	box-shadow: 0 4px 16px rgba(0,0,0,0.3);
-}
-.modem-card-title {
-	font-size: 12px;
-	color: #6c757d;
-	text-transform: uppercase;
-	letter-spacing: 0.5px;
-	margin-bottom: 8px;
-	font-weight: 500;
-}
-:root[data-darkmode="true"] .modem-card-title {
-	color: #adb5bd;
-}
-.modem-card-value {
-	font-size: 16px;
-	font-weight: 600;
-	color: #495057;
-	word-break: break-all;
-}
-:root[data-darkmode="true"] .modem-card-value {
-	color: #ffffff;
 }
 .signal-progress {
 	width: 100%;
@@ -102,7 +90,7 @@ document.head.append(E('style', { 'type': 'text/css' },
 .signal-progress-bar {
 	height: 100%;
 	border-radius: 4px;
-	transition: width 0.3s ease;
+	transition: width 0.8s ease, background 0.3s ease;
 	background: linear-gradient(90deg, #28a745 0%, #20c997 100%);
 }
 .signal-strength-container {
@@ -144,55 +132,46 @@ document.head.append(E('style', { 'type': 'text/css' },
 ));
 
 function csq_bar(v, m) {
-	const pg = document.querySelector('#csq');
+	const cell = document.querySelector('#csq');
 	const vn = parseInt(v) || 0;
 	const mn = parseInt(m) || 100;
 	const pc = Math.floor((100 / mn) * vn);
 	let tip;
+	let color;
 	
 	if (vn >= 20 && vn <= 31) {
-		pg.style.background = 'linear-gradient(90deg, #28a745 0%, #28a745 100%)';
+		color = '#28a745';
 		tip = _('Very good');
-	}
-	
-	if (vn >= 14 && vn <= 19) {
-		pg.style.background = 'linear-gradient(90deg, #ffc107 0%, #ffc107 100%)';
+	} else if (vn >= 14 && vn <= 19) {
+		color = '#ffc107';
 		tip = _('Good');
-	}
-	
-	if (vn >= 10 && vn <= 13) {
-		pg.style.background = 'linear-gradient(90deg, #fd7e14 0%, #fd7e14 100%)';
+	} else if (vn >= 10 && vn <= 13) {
+		color = '#fd7e14';
 		tip = _('Weak');
-	}
-	
-	if (vn <= 9 && vn >= 1) {
-		pg.style.background = 'linear-gradient(90deg, #dc3545 0%, #dc3545 100%)';
+	} else if (vn <= 9 && vn >= 1) {
+		color = '#dc3545';
 		tip = _('Very weak');
+	} else {
+		color = '#6c757d';
+		tip = _('Unknown');
 	}
 	
-	pg.style.width = `${pc}%`;
-	pg.setAttribute('title', `${v} | ${tip} `);
-	
-	// 添加数值显示
-	const parentCard = pg.closest('.modem-card');
-	let valueSpan = parentCard.querySelector('.signal-value');
-	if (!valueSpan) {
-		valueSpan = document.createElement('span');
-		valueSpan.className = 'signal-value';
-		valueSpan.style.fontSize = '12px';
-		valueSpan.style.color = '#6c757d';
-		valueSpan.style.marginTop = '4px';
-		valueSpan.style.display = 'block';
-		pg.parentNode.appendChild(valueSpan);
-	}
-	valueSpan.textContent = `${v} (${tip})`;
+	cell.innerHTML = `
+		<div style="display: flex; align-items: center; gap: 8px;">
+			<div style="flex: 1; height: 8px; background: rgba(0,0,0,0.1); border-radius: 4px; overflow: hidden;">
+				<div style="height: 100%; width: ${pc}%; background: ${color}; border-radius: 4px; transition: all 0.3s ease;"></div>
+			</div>
+			<span style="font-size: 12px; color: #6c757d; white-space: nowrap;">${v} (${tip})</span>
+		</div>
+	`;
 }
 
 function rssi_bar(v, m) {
-	const pg = document.querySelector('#rssi');
+	const cell = document.querySelector('#rssi');
 	let vn = parseInt(v) || 0;
 	const mn = parseInt(m) || 100;
 	let tip;
+	let color;
 	
 	if (vn > -50) vn = -50;
 	if (vn < -110) vn = -110;
@@ -200,48 +179,38 @@ function rssi_bar(v, m) {
 	const pc = Math.floor(100 * (1 - (-50 - vn) / (-50 - mn)));
 	
 	if (vn > -70) {
-		pg.style.background = 'linear-gradient(90deg, #28a745 0%, #28a745 100%)';
+		color = '#28a745';
 		tip = _('Very good');
-	}
-	
-	if (vn >= -85 && vn <= -70) {
-		pg.style.background = 'linear-gradient(90deg, #ffc107 0%, #ffc107 100%)';
+	} else if (vn >= -85 && vn <= -70) {
+		color = '#ffc107';
 		tip = _('Good');
-	}
-	
-	if (vn >= -100 && vn <= -86) {
-		pg.style.background = 'linear-gradient(90deg, #fd7e14 0%, #fd7e14 100%)';
+	} else if (vn >= -100 && vn <= -86) {
+		color = '#fd7e14';
 		tip = _('Weak');
-	}
-	
-	if (vn < -100) {
-		pg.style.background = 'linear-gradient(90deg, #dc3545 0%, #dc3545 100%)';
+	} else if (vn < -100) {
+		color = '#dc3545';
 		tip = _('Very weak');
+	} else {
+		color = '#6c757d';
+		tip = _('Unknown');
 	}
 	
-	pg.style.width = `${pc}%`;
-	pg.setAttribute('title', `${v} | ${tip} `);
-	
-	// 添加数值显示
-	const parentCard = pg.closest('.modem-card');
-	let valueSpan = parentCard.querySelector('.signal-value');
-	if (!valueSpan) {
-		valueSpan = document.createElement('span');
-		valueSpan.className = 'signal-value';
-		valueSpan.style.fontSize = '12px';
-		valueSpan.style.color = '#6c757d';
-		valueSpan.style.marginTop = '4px';
-		valueSpan.style.display = 'block';
-		pg.parentNode.appendChild(valueSpan);
-	}
-	valueSpan.textContent = `${v} (${tip})`;
+	cell.innerHTML = `
+		<div style="display: flex; align-items: center; gap: 8px;">
+			<div style="flex: 1; height: 8px; background: rgba(0,0,0,0.1); border-radius: 4px; overflow: hidden;">
+				<div style="height: 100%; width: ${pc}%; background: ${color}; border-radius: 4px; transition: all 0.3s ease;"></div>
+			</div>
+			<span style="font-size: 12px; color: #6c757d; white-space: nowrap;">${v} (${tip})</span>
+		</div>
+	`;
 }
 
 function rsrp_bar(v, m) {
-	const pg = document.querySelector('#rsrp');
+	const cell = document.querySelector('#rsrp');
 	let vn = parseInt(v) || 0;
 	const mn = parseInt(m) || 100;
 	let tip;
+	let color;
 	
 	if (vn > -50) vn = -50;
 	if (vn < -140) vn = -140;
@@ -249,135 +218,104 @@ function rsrp_bar(v, m) {
 	const pc = Math.floor(120 * (1 - (-50 - vn) / (-70 - mn)));
 	
 	if (vn >= -80) {
-		pg.style.background = 'linear-gradient(90deg, #28a745 0%, #28a745 100%)';
+		color = '#28a745';
 		tip = _('Very good');
-	}
-	
-	if (vn >= -90 && vn <= -79) {
-		pg.style.background = 'linear-gradient(90deg, #ffc107 0%, #ffc107 100%)';
+	} else if (vn >= -90 && vn <= -79) {
+		color = '#ffc107';
 		tip = _('Good');
-	}
-	
-	if (vn >= -100 && vn <= -89) {
-		pg.style.background = 'linear-gradient(90deg, #fd7e14 0%, #fd7e14 100%)';
+	} else if (vn >= -100 && vn <= -89) {
+		color = '#fd7e14';
 		tip = _('Weak');
-	}
-	
-	if (vn < -100) {
-		pg.style.background = 'linear-gradient(90deg, #dc3545 0%, #dc3545 100%)';
+	} else if (vn < -100) {
+		color = '#dc3545';
 		tip = _('Very weak');
+	} else {
+		color = '#6c757d';
+		tip = _('Unknown');
 	}
 	
-	pg.style.width = `${pc}%`;
-	pg.setAttribute('title', `${v} | ${tip} `);
-	
-	// 添加数值显示
-	const parentCard = pg.closest('.modem-card');
-	let valueSpan = parentCard.querySelector('.signal-value');
-	if (!valueSpan) {
-		valueSpan = document.createElement('span');
-		valueSpan.className = 'signal-value';
-		valueSpan.style.fontSize = '12px';
-		valueSpan.style.color = '#6c757d';
-		valueSpan.style.marginTop = '4px';
-		valueSpan.style.display = 'block';
-		pg.parentNode.appendChild(valueSpan);
-	}
-	valueSpan.textContent = `${v} (${tip})`;
+	cell.innerHTML = `
+		<div style="display: flex; align-items: center; gap: 8px;">
+			<div style="flex: 1; height: 8px; background: rgba(0,0,0,0.1); border-radius: 4px; overflow: hidden;">
+				<div style="height: 100%; width: ${pc}%; background: ${color}; border-radius: 4px; transition: all 0.3s ease;"></div>
+			</div>
+			<span style="font-size: 12px; color: #6c757d; white-space: nowrap;">${v} (${tip})</span>
+		</div>
+	`;
 }
 
 function sinr_bar(v, m) {
-	const pg = document.querySelector('#sinr');
+	const cell = document.querySelector('#sinr');
 	const vn = parseInt(v) || 0;
 	const mn = parseInt(m) || 100;
 	let tip;
+	let color;
 	
 	const pc = Math.floor(100 - (100 * (1 - ((mn - vn) / (mn - 40)))));
 	
 	if (vn > 20) {
-		pg.style.background = 'linear-gradient(90deg, #28a745 0%, #28a745 100%)';
+		color = '#28a745';
 		tip = _('Excellent');
-	}
-	
-	if (vn >= 13 && vn <= 20) {
-		pg.style.background = 'linear-gradient(90deg, #ffc107 0%, #ffc107 100%)';
+	} else if (vn >= 13 && vn <= 20) {
+		color = '#ffc107';
 		tip = _('Good');
-	}
-	
-	if (vn > 0 && vn <= 12) {
-		pg.style.background = 'linear-gradient(90deg, #fd7e14 0%, #fd7e14 100%)';
+	} else if (vn > 0 && vn <= 12) {
+		color = '#fd7e14';
 		tip = _('Mid cell');
-	}
-	
-	if (vn <= 0) {
-		pg.style.background = 'linear-gradient(90deg, #dc3545 0%, #dc3545 100%)';
+	} else if (vn <= 0) {
+		color = '#dc3545';
 		tip = _('Cell edge');
+	} else {
+		color = '#6c757d';
+		tip = _('Unknown');
 	}
 	
-	pg.style.width = `${pc}%`;
-	pg.setAttribute('title', `${v} | ${tip} `);
-	
-	// 添加数值显示
-	const parentCard = pg.closest('.modem-card');
-	let valueSpan = parentCard.querySelector('.signal-value');
-	if (!valueSpan) {
-		valueSpan = document.createElement('span');
-		valueSpan.className = 'signal-value';
-		valueSpan.style.fontSize = '12px';
-		valueSpan.style.color = '#6c757d';
-		valueSpan.style.marginTop = '4px';
-		valueSpan.style.display = 'block';
-		pg.parentNode.appendChild(valueSpan);
-	}
-	valueSpan.textContent = `${v} (${tip})`;
+	cell.innerHTML = `
+		<div style="display: flex; align-items: center; gap: 8px;">
+			<div style="flex: 1; height: 8px; background: rgba(0,0,0,0.1); border-radius: 4px; overflow: hidden;">
+				<div style="height: 100%; width: ${pc}%; background: ${color}; border-radius: 4px; transition: all 0.3s ease;"></div>
+			</div>
+			<span style="font-size: 12px; color: #6c757d; white-space: nowrap;">${v} (${tip})</span>
+		</div>
+	`;
 }
 
 function rsrq_bar(v, m) {
-	const pg = document.querySelector('#rsrq');
+	const cell = document.querySelector('#rsrq');
 	let vn = parseInt(v) || 0;
 	const mn = parseInt(m) || 100;
 	let tip;
+	let color;
 	
 	const pc = Math.floor(115 - (100 / mn) * vn);
 	
 	if (vn > 0) vn = 0;
 	
 	if (vn >= -10) {
-		pg.style.background = 'linear-gradient(90deg, #28a745 0%, #28a745 100%)';
+		color = '#28a745';
 		tip = _('Excellent');
-	}
-	
-	if (vn >= -15 && vn <= -9) {
-		pg.style.background = 'linear-gradient(90deg, #ffc107 0%, #ffc107 100%)';
+	} else if (vn >= -15 && vn <= -9) {
+		color = '#ffc107';
 		tip = _('Good');
-	}
-	
-	if (vn >= -20 && vn <= -14) {
-		pg.style.background = 'linear-gradient(90deg, #fd7e14 0%, #fd7e14 100%)';
+	} else if (vn >= -20 && vn <= -14) {
+		color = '#fd7e14';
 		tip = _('Mid cell');
-	}
-	
-	if (vn < -20) {
-		pg.style.background = 'linear-gradient(90deg, #dc3545 0%, #dc3545 100%)';
+	} else if (vn < -20) {
+		color = '#dc3545';
 		tip = _('Cell edge');
+	} else {
+		color = '#6c757d';
+		tip = _('Unknown');
 	}
 	
-	pg.style.width = `${pc}%`;
-	pg.setAttribute('title', `${v} | ${tip} `);
-	
-	// 添加数值显示
-	const parentCard = pg.closest('.modem-card');
-	let valueSpan = parentCard.querySelector('.signal-value');
-	if (!valueSpan) {
-		valueSpan = document.createElement('span');
-		valueSpan.className = 'signal-value';
-		valueSpan.style.fontSize = '12px';
-		valueSpan.style.color = '#6c757d';
-		valueSpan.style.marginTop = '4px';
-		valueSpan.style.display = 'block';
-		pg.parentNode.appendChild(valueSpan);
-	}
-	valueSpan.textContent = `${v} (${tip})`;
+	cell.innerHTML = `
+		<div style="display: flex; align-items: center; gap: 8px;">
+			<div style="flex: 1; height: 8px; background: rgba(0,0,0,0.1); border-radius: 4px; overflow: hidden;">
+				<div style="height: 100%; width: ${pc}%; background: ${color}; border-radius: 4px; transition: all 0.3s ease;"></div>
+			</div>
+			<span style="font-size: 12px; color: #6c757d; white-space: nowrap;">${v} (${tip})</span>
+		</div>
+	`;
 }
 
 function SIMdata(data) {
@@ -403,8 +341,21 @@ function SIMdata(data) {
 
 function active_select() {
 	uci.load('modemdefine').then(function() {
-		const modemz = uci.get('modemdefine', '@modemdefine[1]', 'comm_port');
-		document.getElementById("modc").disabled = !modemz;
+		// Try index 1 first (multi-modem setup), then fallback to index 0 (single modem)
+		let modemz = uci.get('modemdefine', '@modemdefine[1]', 'comm_port');
+		if (!modemz) {
+			modemz = uci.get('modemdefine', '@modemdefine[0]', 'comm_port');
+		}
+		const modcElement = document.getElementById("modc");
+		if (modcElement) {
+			modcElement.disabled = !modemz;
+		}
+	}).catch(function(e) {
+		// If modemdefine config doesn't exist or has errors, disable the button
+		const modcElement = document.getElementById("modc");
+		if (modcElement) {
+			modcElement.disabled = true;
+		}
 	});
 }
 
@@ -445,6 +396,40 @@ function formatDateTime(s) {
 		return s.replace(/(\d{4})(\d{2})/, "$1-$2");
 	}
 	return s;
+}
+
+function formatDataSize(dataStr) {
+	if (!dataStr || dataStr === '-' || dataStr === '') return '-';
+	
+	// 提取数字部分，支持各种格式（如 "1.23 MB", "1234567", "1,234,567 bytes" 等）
+	const numMatch = dataStr.replace(/,/g, '').match(/[\d.]+/);
+	if (!numMatch) return dataStr;
+	
+	let bytes = parseFloat(numMatch[0]);
+	
+	// 如果原始数据已经包含单位，先转换为字节
+	const upperStr = dataStr.toUpperCase();
+	if (upperStr.includes('KB') || upperStr.includes('KBYTES')) {
+		bytes *= 1024;
+	} else if (upperStr.includes('MB') || upperStr.includes('MBYTES')) {
+		bytes *= 1024 * 1024;
+	} else if (upperStr.includes('GB') || upperStr.includes('GBYTES')) {
+		bytes *= 1024 * 1024 * 1024;
+	} else if (upperStr.includes('TB') || upperStr.includes('TBYTES')) {
+		bytes *= 1024 * 1024 * 1024 * 1024;
+	}
+	// 如果没有单位或包含'B'/'BYTES'，假设是字节
+	
+	// 转换为合适的单位
+	if (bytes >= 1024 * 1024 * 1024) {
+		return (bytes / (1024 * 1024 * 1024)).toFixed(2) + ' GB';
+	} else if (bytes >= 1024 * 1024) {
+		return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+	} else if (bytes >= 1024) {
+		return (bytes / 1024).toFixed(2) + ' KB';
+	} else {
+		return bytes.toFixed(0) + ' B';
+	}
 }
 
 function checkOperatorName(t) {
@@ -709,10 +694,25 @@ return view.extend({
 											<ul><li>1. Modem availability in the system.</li><li>2. The correct installation of the SIM card in the modem.</li><li> \
 											3. Port for communication with the modem.</li><li><ul>')), 'info');
 					} else {
+						// 添加数据缓存来减少不必要的DOM更新
+						let lastDataCache = null;
+						let pollCounter = 0;
+						
+						// 设置10秒的轮询间隔
 						poll.add(function() {
 							return L.resolveDefault(fs.exec_direct('/usr/share/3ginfo-lite/3ginfo.sh', 'json'))
 								.then(function(res) {
 									const json = JSON.parse(res);
+									
+									// 检查数据是否有变化
+									const currentDataString = JSON.stringify(json);
+									if (lastDataCache === currentDataString && pollCounter % 3 !== 0) {
+										// 数据没变化且不是每3次强制刷新，跳过DOM更新
+										pollCounter++;
+										return;
+									}
+									lastDataCache = currentDataString;
+									pollCounter++;
 
 									if (!json.cport.includes('192.')) {
 										if (json.signal === '0' || json.signal === '') {
@@ -728,6 +728,38 @@ return view.extend({
 											}
 										} else {
 											L.hideModal();
+										}
+									}
+									
+									// 辅助函数：平滑更新文本内容
+									function updateTextContent(elementId, newValue, defaultValue = '-') {
+										const element = document.getElementById(elementId);
+										if (element) {
+											const displayValue = isEmptyField(newValue) ? defaultValue : newValue;
+											if (element.textContent !== displayValue) {
+												element.style.transition = 'opacity 0.3s ease';
+												element.style.opacity = '0.7';
+												setTimeout(() => {
+													element.textContent = displayValue;
+													element.style.opacity = '1';
+												}, 150);
+											}
+										}
+									}
+									
+									// 辅助函数：平滑更新HTML内容
+									function updateHtmlContent(elementId, newValue, defaultValue = '-') {
+										const element = document.getElementById(elementId);
+										if (element) {
+											const displayValue = isEmptyField(newValue) ? defaultValue : newValue;
+											if (element.innerHTML !== displayValue) {
+												element.style.transition = 'opacity 0.3s ease';
+												element.style.opacity = '0.7';
+												setTimeout(() => {
+													element.innerHTML = displayValue;
+													element.style.opacity = '1';
+												}, 150);
+											}
 										}
 									}
 									
@@ -752,115 +784,122 @@ return view.extend({
 										icon = L.resource('icons/3ginfo-0.png');
 									}
 
+									// 平滑更新信号强度
 									if (document.getElementById('signal')) {
 										const view = document.getElementById("signal");
-										view.textContent = `${p}%`;
+										const newText = p ? `${p}%` : '-';
+										if (view.textContent !== newText) {
+											view.style.transition = 'opacity 0.3s ease';
+											view.style.opacity = '0.7';
+											setTimeout(() => {
+												view.textContent = newText;
+												view.style.opacity = '1';
+											}, 150);
+										}
 									}
 									
+									// 平滑更新信号图标
 									if (document.getElementById('signal-icon')) {
 										const iconView = document.getElementById("signal-icon");
-										iconView.src = icon;
+										if (iconView.src !== icon) {
+											iconView.style.transition = 'opacity 0.3s ease';
+											iconView.style.opacity = '0.5';
+											setTimeout(() => {
+												iconView.src = icon;
+												iconView.style.opacity = '1';
+											}, 150);
+										}
 									}
 									
+									// 平滑更新信号条
 									if (document.getElementById('signal-bar')) {
 										const barView = document.getElementById("signal-bar");
-										barView.style.width = `${p}%`;
+										const newWidth = p ? `${p}%` : '0%';
+										
+										// 使用CSS过渡更新宽度
+										barView.style.transition = 'width 0.8s ease, background 0.3s ease';
+										barView.style.width = newWidth;
+										
 										// 根据信号强度设置颜色
+										let newColor;
 										if (p >= 75) {
-											barView.style.background = 'linear-gradient(90deg, #28a745 0%, #28a745 100%)';
+											newColor = 'linear-gradient(90deg, #28a745 0%, #28a745 100%)';
 										} else if (p >= 50) {
-											barView.style.background = 'linear-gradient(90deg, #ffc107 0%, #ffc107 100%)';
+											newColor = 'linear-gradient(90deg, #ffc107 0%, #ffc107 100%)';
 										} else if (p >= 25) {
-											barView.style.background = 'linear-gradient(90deg, #fd7e14 0%, #fd7e14 100%)';
+											newColor = 'linear-gradient(90deg, #fd7e14 0%, #fd7e14 100%)';
 										} else {
-											barView.style.background = 'linear-gradient(90deg, #dc3545 0%, #dc3545 100%)';
+											newColor = 'linear-gradient(90deg, #dc3545 0%, #dc3545 100%)';
 										}
+										barView.style.background = newColor;
 									}
 
-									if (document.getElementById('txpower')) {
-										const view = document.getElementById("txpower");
-										if (isEmptyField(json.txpower)) view.textContent = '-'; else view.textContent = checkOperatorName(json.txpower);
-									}
-									if (document.getElementById('voltage')) {
-										const view = document.getElementById("voltage");
-										if (isEmptyField(json.voltage)) view.textContent = '-'; else view.textContent = checkOperatorName(json.voltage + "V");
-									}
+									// 使用平滑更新函数更新基本字段
+									updateTextContent('txpower', json.txpower);
+									updateTextContent('voltage', json.voltage ? json.voltage + "V" : '');
+									updateTextContent('operator', checkOperatorName(json.operator_name));
+									updateTextContent('mode', json.mode);
+									updateTextContent('modem', json.modem);
+									updateTextContent('fw', json.firmware);
+									updateTextContent('cport', json.cport);
+									updateTextContent('protocol', json.protocol);
 
+									// 连接状态更新
 									if (document.getElementById('connst')) {
 										const view = document.getElementById("connst");
+										let newContent;
 										if (json.conn_time === '' || json.conn_time === '-') {
-											view.innerHTML = String.format('<img style="width: 16px; height: 16px; vertical-align: middle;" src="%s"/>' + ' ' + _('Waiting for connection data...'), wicon);
+											newContent = String.format('<img style="width: 16px; height: 16px; vertical-align: middle;" src="%s"/>' + ' ' + _('Waiting for connection data...'), wicon);
 										} else {
-											view.innerHTML = String.format('<img style="width: 16px; height: 16px; vertical-align: middle;" src="%s"/>' + ' ' + formatDuration(json.conn_time_sec) + ' ' + ' | \u25bc\u202f' + json.rx + ' \u25b2\u202f' + json.tx, ticon);
+											const formattedRx = formatDataSize(json.rx);
+											const formattedTx = formatDataSize(json.tx);
+											newContent = String.format('<img style="width: 16px; height: 16px; vertical-align: middle;" src="%s"/>' + ' ' + formatDuration(json.conn_time_sec) + ' ' + ' | \u25bc\u202f' + formattedRx + ' \u25b2\u202f' + formattedTx, ticon);
+										}
+										
+										if (view.innerHTML !== newContent) {
+											view.style.transition = 'opacity 0.3s ease';
+											view.style.opacity = '0.7';
+											setTimeout(() => {
+												view.innerHTML = newContent;
+												view.style.opacity = '1';
+											}, 150);
 										}
 									}
 
-									if (document.getElementById('operator')) {
-										const view = document.getElementById("operator");
-										if (isEmptyField(json.operator_name)) view.textContent = '-'; else view.textContent = checkOperatorName(json.operator_name);
-									}
-
+									// 位置信息更新
 									if (document.getElementById('location')) {
 										const viewloc = document.getElementById("location");
-										if (!json.location.length > 2) {
-											viewloc.style.display = 'none';
+										if (!json.location || json.location.length <= 2) {
+											if (viewloc.style.display !== 'none') {
+												viewloc.style.display = 'none';
+											}
 										} else {
-											viewloc.innerHTML = json.location;
+											if (viewloc.innerHTML !== json.location) {
+												viewloc.style.display = 'block';
+												updateHtmlContent('location', json.location);
+											}
 										}
 									}
 
+									// SIM状态更新
 									if (document.getElementById('sim')) {
 										const view = document.getElementById("sim");
 										const sv = document.getElementById("simv");
-										if (json.registration === '') {
-											view.textContent = '-';
-										} else {
+										let simStatus = '-';
+										
+										if (json.registration !== '') {
 											sv.style.visibility = "visible";
-											view.textContent = json.registration;
-											if (json.registration === '0') {
-												view.textContent = _('Not registered');
-											}
-											if (json.registration === '1') {
-												view.textContent = _('Registered');
-											}
-											if (json.registration === '2') {
-												view.textContent = _('Searching..');
-											}
-											if (json.registration === '3') {
-												view.textContent = _('Registering denied');
-											}
-											if (json.registration === '5') {
-												view.textContent = _('Registered (roaming)');
-											}
-											if (json.registration === '8') {
-												view.textContent = _('Registered for emergency service only');
+											switch (json.registration) {
+												case '0': simStatus = _('Not registered'); break;
+												case '1': simStatus = _('Registered'); break;
+												case '2': simStatus = _('Searching..'); break;
+												case '3': simStatus = _('Registering denied'); break;
+												case '5': simStatus = _('Registered (roaming)'); break;
+												case '8': simStatus = _('Registered for emergency service only'); break;
+												default: simStatus = json.registration;
 											}
 										}
-									}
-
-									if (document.getElementById('mode')) {
-										const view = document.getElementById("mode");
-										if (isEmptyField(json.mode)) view.textContent = '-'; else view.textContent = json.mode;
-									}
-
-									if (document.getElementById('modem')) {
-										const view = document.getElementById("modem");
-										if (isEmptyField(json.modem)) view.textContent = '-'; else view.textContent = json.modem;
-									}
-
-									if (document.getElementById('fw')) {
-										const view = document.getElementById("fw");
-										if (isEmptyField(json.firmware)) view.textContent = '-'; else view.textContent = json.firmware;
-									}
-
-									if (document.getElementById('cport')) {
-										const view = document.getElementById("cport");
-										if (isEmptyField(json.cport)) view.textContent = '-'; else view.textContent = json.cport;
-									}
-
-									if (document.getElementById('protocol')) {
-										const view = document.getElementById("protocol");
-										if (isEmptyField(json.protocol)) view.textContent = '-'; else view.textContent = json.protocol;
+										updateTextContent('sim', simStatus);
 									}
 
 									if (document.getElementById('temp')) {
@@ -1089,183 +1128,206 @@ return view.extend({
 					]),
 				]),
 
-				// 信号强度和连接状态卡片
-				E('div', { class: 'modem-grid' }, [
-					E('div', { class: 'modem-card', style: 'border-left-color: #28a745;' }, [
-						E('div', { class: 'modem-card-title' }, _('Signal Strength')),
-						E('div', { id: 'signal-container', class: 'signal-strength-container' }, [
-							E('div', { style: 'flex: 1;' }, [
-								E('div', { class: 'modem-card-value', id: 'signal' }, '-'),
-								E('div', { class: 'signal-progress' }, [
-									E('div', { class: 'signal-progress-bar', id: 'signal-bar' })
-								])
-							]),
-							E('img', { class: 'signal-icon', id: 'signal-icon', src: L.resource('icons/3ginfo-0.png') })
+				// 连接状态表格
+				E('h4', { class: 'modem-section-title' }, _('Connection Status')),
+				E('table', { class: 'modem-table' }, [
+					E('thead', {}, [
+						E('tr', {}, [
+							E('th', {}, _('Parameter')),
+							E('th', {}, _('Value'))
 						])
 					]),
-					E('div', { class: 'modem-card', style: 'border-left-color: #17a2b8;' }, [
-						E('div', { class: 'modem-card-title' }, _('Connection Status')),
-						E('div', { class: 'connection-status', id: 'connst' }, _('Waiting for data...'))
-					]),
-					E('div', { class: 'modem-card', style: 'border-left-color: #ffc107;' }, [
-						E('div', { class: 'modem-card-title' }, _('Operator')),
-						E('div', { class: 'modem-card-value', id: 'operator' }, '-'),
-						E('div', { style: 'font-size: 12px; color: #6c757d; margin-top: 4px;', id: 'location' }, '-')
-					]),
-					E('div', { class: 'modem-card', style: 'border-left-color: #6f42c1;' }, [
-						E('div', { class: 'modem-card-title' }, _('Technology')),
-						E('div', { class: 'modem-card-value', id: 'mode' }, '-')
+					E('tbody', {}, [
+						E('tr', {}, [
+							E('td', {}, _('Signal Strength')),
+							E('td', { id: 'signal' }, '-')
+						]),
+						E('tr', {}, [
+							E('td', {}, _('Connection Status')),
+							E('td', { id: 'connst' }, _('Waiting for data...'))
+						]),
+						E('tr', {}, [
+							E('td', {}, _('Operator')),
+							E('td', {}, [
+								E('div', { id: 'operator' }, '-'),
+								E('div', { style: 'font-size: 12px; color: #6c757d; margin-top: 4px;', id: 'location' }, '-')
+							])
+						]),
+						E('tr', {}, [
+							E('td', {}, _('Technology')),
+							E('td', { id: 'mode' }, '-')
+						])
 					])
 				]),
 
-				// SIM信息
+				// SIM 信息表格
 				E('h4', { class: 'modem-section-title' }, _('SIM Information')),
-				E('div', { class: 'modem-grid' }, [
-					E('div', { class: 'modem-card', style: 'grid-column: span 2;' }, [
-						E('div', { style: 'display: flex; align-items: center; gap: 12px;' }, [
-							E('span', {
-								class: 'ifacebadge',
-								title: null,
-								id: 'simv',
-								style: 'visibility: hidden; margin: 0; padding: 8px; cursor: pointer; border: 1px solid #ccc; border-radius: 4px;',
-								click: ui.createHandlerFn(this, function() {
-									return upSIMDialog.show(data);
-								}),
-							}, [
-								E('img', {
-									src: L.resource('icons/sim1m.png'),
-									style: 'width: 24px; height: auto;'
-								})
-							]),
-							E('div', { style: 'flex: 1;' }, [
-								E('div', { class: 'modem-card-title' }, _('SIM Status')),
-								E('div', { class: 'modem-card-value', id: 'sim' }, '-')
+				E('table', { class: 'modem-table' }, [
+					E('thead', {}, [
+						E('tr', {}, [
+							E('th', {}, _('Parameter')),
+							E('th', {}, _('Value'))
+						])
+					]),
+					E('tbody', {}, [
+						E('tr', {}, [
+							E('td', {}, _('SIM Status')),
+							E('td', {}, [
+								E('span', {
+									class: 'ifacebadge',
+									title: null,
+									id: 'simv',
+									style: 'visibility: hidden; margin-right: 8px; padding: 4px; cursor: pointer; border: 1px solid #ccc; border-radius: 4px;',
+									click: ui.createHandlerFn(this, function() {
+										return upSIMDialog.show(data);
+									}),
+								}, [
+									E('img', {
+										src: L.resource('icons/sim1m.png'),
+										style: 'width: 16px; height: auto;'
+									})
+								]),
+								E('span', { id: 'sim' }, '-')
 							])
 						])
 					])
 				]),
 
-				// 信号质量指标
+				// 信号质量表格
 				E('h4', { class: 'modem-section-title' }, _('Signal Quality Metrics')),
-				E('div', { class: 'modem-grid' }, [
-					E('div', { class: 'modem-card', id: 'csqn' }, [
-						E('div', { class: 'modem-card-title' }, [
-							_('CSQ'),
-							E('div', { style: 'font-size: 11px; color: #6c757d; margin-top: 2px;' }, _('(Signal Strength)'))
-						]),
-						E('div', { class: 'signal-progress' }, [
-							E('div', { class: 'signal-progress-bar', id: 'csq' })
+				E('table', { class: 'modem-table' }, [
+					E('thead', {}, [
+						E('tr', {}, [
+							E('th', {}, _('Parameter')),
+							E('th', {}, _('Value'))
 						])
 					]),
-					E('div', { class: 'modem-card', id: 'rssin' }, [
-						E('div', { class: 'modem-card-title' }, [
-							_('RSSI'),
-							E('div', { style: 'font-size: 11px; color: #6c757d; margin-top: 2px;' }, _('(Received Signal Strength Indicator)'))
+					E('tbody', {}, [
+						E('tr', { id: 'csqn' }, [
+							E('td', {}, [
+								_('CSQ'),
+								E('div', { style: 'font-size: 11px; color: #6c757d; margin-top: 2px;' }, _('(Signal Strength)'))
+							]),
+							E('td', { id: 'csq' }, '-')
 						]),
-						E('div', { class: 'signal-progress' }, [
-							E('div', { class: 'signal-progress-bar', id: 'rssi' })
-						])
-					]),
-					E('div', { class: 'modem-card', id: 'rsrpn' }, [
-						E('div', { class: 'modem-card-title' }, [
-							_('RSRP'),
-							E('div', { style: 'font-size: 11px; color: #6c757d; margin-top: 2px;' }, _('(Reference Signal Receive Power)'))
+						E('tr', { id: 'rssin' }, [
+							E('td', {}, [
+								_('RSSI'),
+								E('div', { style: 'font-size: 11px; color: #6c757d; margin-top: 2px;' }, _('(Received Signal Strength Indicator)'))
+							]),
+							E('td', { id: 'rssi' }, '-')
 						]),
-						E('div', { class: 'signal-progress' }, [
-							E('div', { class: 'signal-progress-bar', id: 'rsrp' })
-						])
-					]),
-					E('div', { class: 'modem-card', id: 'rsrqn' }, [
-						E('div', { class: 'modem-card-title' }, [
-							_('RSRQ'),
-							E('div', { style: 'font-size: 11px; color: #6c757d; margin-top: 2px;' }, _('(Reference Signal Received Quality)'))
+						E('tr', { id: 'rsrpn' }, [
+							E('td', {}, [
+								_('RSRP'),
+								E('div', { style: 'font-size: 11px; color: #6c757d; margin-top: 2px;' }, _('(Reference Signal Receive Power)'))
+							]),
+							E('td', { id: 'rsrp' }, '-')
 						]),
-						E('div', { class: 'signal-progress' }, [
-							E('div', { class: 'signal-progress-bar', id: 'rsrq' })
-						])
-					]),
-					E('div', { class: 'modem-card', id: 'sinrn' }, [
-						E('div', { class: 'modem-card-title' }, [
-							_('SINR'),
-							E('div', { style: 'font-size: 11px; color: #6c757d; margin-top: 2px;' }, _('(Signal to Interference plus Noise Ratio)'))
+						E('tr', { id: 'rsrqn' }, [
+							E('td', {}, [
+								_('RSRQ'),
+								E('div', { style: 'font-size: 11px; color: #6c757d; margin-top: 2px;' }, _('(Reference Signal Received Quality)'))
+							]),
+							E('td', { id: 'rsrq' }, '-')
 						]),
-						E('div', { class: 'signal-progress' }, [
-							E('div', { class: 'signal-progress-bar', id: 'sinr' })
+						E('tr', { id: 'sinrn' }, [
+							E('td', {}, [
+								_('SINR'),
+								E('div', { style: 'font-size: 11px; color: #6c757d; margin-top: 2px;' }, _('(Signal to Interference plus Noise Ratio)'))
+							]),
+							E('td', { id: 'sinr' }, '-')
 						])
 					])
 				]),
 
-				// 设备信息
+				// 设备信息表格
 				E('h4', { class: 'modem-section-title' }, _('Device Information')),
-				E('div', { class: 'modem-grid' }, [
-					E('div', { class: 'modem-card' }, [
-						E('div', { class: 'modem-card-title' }, _('Modem Type')),
-						E('div', { class: 'modem-card-value', id: 'modem' }, '-')
+				E('table', { class: 'modem-table' }, [
+					E('thead', {}, [
+						E('tr', {}, [
+							E('th', {}, _('Parameter')),
+							E('th', {}, _('Value'))
+						])
 					]),
-					E('div', { class: 'modem-card' }, [
-						E('div', { class: 'modem-card-title' }, _('Firmware')),
-						E('div', { class: 'modem-card-value', id: 'fw' }, '-')
-					]),
-					E('div', { class: 'modem-card' }, [
-						E('div', { class: 'modem-card-title' }, _('Communication Port')),
-						E('div', { class: 'modem-card-value', id: 'cport' }, '-')
-					]),
-					E('div', { class: 'modem-card' }, [
-						E('div', { class: 'modem-card-title' }, _('Protocol')),
-						E('div', { class: 'modem-card-value', id: 'protocol' }, '-')
-					]),
-					E('div', { class: 'modem-card', id: 'tempn' }, [
-						E('div', { class: 'modem-card-title' }, _('Temperature')),
-						E('div', { class: 'modem-card-value', id: 'temp' }, '-')
-					]),
-					E('div', { class: 'modem-card' }, [
-						E('div', { class: 'modem-card-title' }, _('TX Power')),
-						E('div', { class: 'modem-card-value', id: 'txpower' }, '-')
-					]),
-					E('div', { class: 'modem-card' }, [
-						E('div', { class: 'modem-card-title' }, _('Voltage')),
-						E('div', { class: 'modem-card-value', id: 'voltage' }, '-')
+					E('tbody', {}, [
+						E('tr', {}, [
+							E('td', {}, _('Modem Type')),
+							E('td', { id: 'modem' }, '-')
+						]),
+						E('tr', {}, [
+							E('td', {}, _('Firmware')),
+							E('td', { id: 'fw' }, '-')
+						]),
+						E('tr', {}, [
+							E('td', {}, _('Communication Port')),
+							E('td', { id: 'cport' }, '-')
+						]),
+						E('tr', {}, [
+							E('td', {}, _('Protocol')),
+							E('td', { id: 'protocol' }, '-')
+						]),
+						E('tr', { id: 'tempn' }, [
+							E('td', {}, _('Temperature')),
+							E('td', { id: 'temp' }, '-')
+						]),
+						E('tr', {}, [
+							E('td', {}, _('TX Power')),
+							E('td', { id: 'txpower' }, '-')
+						]),
+						E('tr', {}, [
+							E('td', {}, _('Voltage')),
+							E('td', { id: 'voltage' }, '-')
+						])
 					])
 				]),
 
-				// 网络信息
+				// 网络信息表格
 				E('h4', { class: 'modem-section-title' }, _('Network Information')),
-				E('div', { class: 'modem-grid' }, [
-					E('div', { class: 'modem-card' }, [
-						E('div', { class: 'modem-card-title' }, _('MCC MNC')),
-						E('div', { class: 'modem-card-value', id: 'mccmnc' }, '-')
+				E('table', { class: 'modem-table' }, [
+					E('thead', {}, [
+						E('tr', {}, [
+							E('th', {}, _('Parameter')),
+							E('th', {}, _('Value'))
+						])
 					]),
-					E('div', { class: 'modem-card' }, [
-						E('div', { class: 'modem-card-title' }, _('Cell ID')),
-						E('div', { class: 'modem-card-value', id: 'cid' }, '-')
-					]),
-					E('div', { class: 'modem-card' }, [
-						E('div', { class: 'modem-card-title' }, _('TAC')),
-						E('div', { class: 'modem-card-value', id: 'tac' }, '-')
-					]),
-					E('div', { class: 'modem-card', id: 'lacn' }, [
-						E('div', { class: 'modem-card-title' }, _('LAC')),
-						E('div', { class: 'modem-card-value', id: 'lac' }, '-')
-					]),
-					E('div', { class: 'modem-card' }, [
-						E('div', { class: 'modem-card-title' }, _('Primary Band')),
-						E('div', { class: 'modem-card-value', id: 'pband' }, '-')
-					]),
-					E('div', { class: 'modem-card' }, [
-						E('div', { class: 'modem-card-title' }, _('CA Band (SCC1)')),
-						E('div', { class: 'modem-card-value', id: 's1band' }, '-')
-					]),
-					E('div', { class: 'modem-card' }, [
-						E('div', { class: 'modem-card-title' }, _('CA Band (SCC2)')),
-						E('div', { class: 'modem-card-value', id: 's2band' }, '-')
-					]),
-					E('div', { class: 'modem-card' }, [
-						E('div', { class: 'modem-card-title' }, _('CA Band (SCC3)')),
-						E('div', { class: 'modem-card-value', id: 's3band' }, '-')
-					]),
-					E('div', { class: 'modem-card' }, [
-						E('div', { class: 'modem-card-title' }, _('CA Band (SCC4)')),
-						E('div', { class: 'modem-card-value', id: 's4band' }, '-')
+					E('tbody', {}, [
+						E('tr', {}, [
+							E('td', {}, _('MCC MNC')),
+							E('td', { id: 'mccmnc' }, '-')
+						]),
+						E('tr', {}, [
+							E('td', {}, _('Cell ID')),
+							E('td', { id: 'cid' }, '-')
+						]),
+						E('tr', {}, [
+							E('td', {}, _('TAC')),
+							E('td', { id: 'tac' }, '-')
+						]),
+						E('tr', { id: 'lacn' }, [
+							E('td', {}, _('LAC')),
+							E('td', { id: 'lac' }, '-')
+						]),
+						E('tr', {}, [
+							E('td', {}, _('Primary Band')),
+							E('td', { id: 'pband' }, '-')
+						]),
+						E('tr', {}, [
+							E('td', {}, _('CA Band (SCC1)')),
+							E('td', { id: 's1band' }, '-')
+						]),
+						E('tr', {}, [
+							E('td', {}, _('CA Band (SCC2)')),
+							E('td', { id: 's2band' }, '-')
+						]),
+						E('tr', {}, [
+							E('td', {}, _('CA Band (SCC3)')),
+							E('td', { id: 's3band' }, '-')
+						]),
+						E('tr', {}, [
+							E('td', {}, _('CA Band (SCC4)')),
+							E('td', { id: 's4band' }, '-')
+						])
 					])
 				])
 			]);
@@ -1279,57 +1341,117 @@ return view.extend({
 		s.anonymous = true;
 
 		o = s.taboption('opt1', form.Button, '_search');
-		o.title = _('Search BTS using Cell ID');
-		o.inputtitle = _('Search');
+		o.title = _('Search Cell Tower using OpenCellID');
+		o.inputtitle = _('Search Cell Tower');
+		o.description = _('Search for cell tower information using OpenCellID database. Supports MCC, MNC, LAC/TAC and Cell ID parameters.');
 		o.onclick = function() {
-			return uci.load('3ginfo').then(function() {
-				const searchsite = uci.get('3ginfo', '@3ginfo[0]', 'website');
-
-				if (searchsite.includes('btsearch')) {
-					// http://www.btsearch.pl/szukaj.php?mode=std&search=CellID
-					const id_dec = json.cid_dec;
-					const id_hex = json.cid_hex;
-					const id_dec_conv = parseInt(id_hex, 16);
-
-					if (id_dec.length > 2) {
-						window.open(searchsite + id_dec);
-					} else {
-						window.open(searchsite + id_dec_conv);
-					}
-				}
-
-				if (searchsite.includes('lteitaly')) {
-					// https://lteitaly.it/internal/map.php#bts=MCCMNC.CellIDdiv256
-					const zzmnc = json.operator_mnc;
-					const first = zzmnc.slice(0, 1);
-					const second = zzmnc.slice(1, 2);
-					const zzcid = Math.round(json.cid_dec / 256);
-					let cutmnc;
-					
-					if (zzmnc.length === 3) {
-						if (first.includes('0')) {
-							cutmnc = zzmnc.slice(1, 3);
-						}
-						if (first.includes('0') && second.includes('0')) {
-							cutmnc = zzmnc.slice(2, 3);
-						}
+			// 首先获取当前的modem数据
+			return L.resolveDefault(fs.exec_direct('/usr/share/3ginfo-lite/3ginfo.sh', ['json']))
+				.then(function(res) {
+					if (!res) {
+						ui.addNotification(null, E('p', _('Unable to get modem data for BTS search')), 'error');
+						return;
 					}
 					
-					if (zzmnc.length === 2) {
-						if (first.includes('0')) {
-							cutmnc = zzmnc.slice(1, 2);
-						} else {
-							cutmnc = zzmnc;
-						}
-					}
+					const json = JSON.parse(res);
 					
-					if (zzmnc.length < 2 || (!first.includes('0') && !second.includes('0'))) {
-						cutmnc = zzmnc;
-					}
+					return uci.load('3ginfo').then(function() {
+						let searchsite = uci.get('3ginfo', '@3ginfo[0]', 'website');
+						
+						// 如果没有配置搜索网站，默认使用 opencellid.org
+						if (!searchsite) {
+							searchsite = 'https://opencellid.org/';
+						}
 
-					window.open(searchsite + json.operator_mcc + cutmnc + '.' + zzcid);
-				}
-			});
+						// OpenCellID 搜索 (默认)
+						if (searchsite.includes('opencellid') || !searchsite.includes('btsearch') && !searchsite.includes('lteitaly')) {
+							const mcc = json.operator_mcc;
+							const mnc = json.operator_mnc;
+							const lac = json.lac_dec || json.tac_dec;
+							const cid = json.cid_dec;
+							
+							if (!mcc || !mnc || !cid) {
+								ui.addNotification(null, E('p', _('Network information (MCC/MNC/Cell ID) not available for OpenCellID search')), 'error');
+								return;
+							}
+							
+							// OpenCellID 前端搜索 - 打开网站并显示搜索信息
+							const baseUrl = 'https://opencellid.org/';
+							
+							// 创建一个包含搜索信息的通知
+							const searchInfo = lac ? 
+								`MCC: ${mcc}, MNC: ${mnc}, LAC/TAC: ${lac}, Cell ID: ${cid}` :
+								`MCC: ${mcc}, MNC: ${mnc}, Cell ID: ${cid}`;
+							
+							ui.addNotification(null, E('div', {}, [
+								E('p', {}, _('Opening OpenCellID with search parameters:')),
+								E('p', { style: 'font-family: monospace; background: #f0f0f0; padding: 8px; border-radius: 4px;' }, searchInfo),
+								E('p', { style: 'font-size: 12px; color: #666;' }, _('Use the search form on the OpenCellID website with the above parameters.'))
+							]), 'info', 8000);
+							
+							// 打开 OpenCellID 主页
+							window.open(baseUrl);
+						}
+						// BTS Search Poland
+						else if (searchsite.includes('btsearch')) {
+							// http://www.btsearch.pl/szukaj.php?mode=std&search=CellID
+							const id_dec = json.cid_dec;
+							const id_hex = json.cid_hex;
+							const id_dec_conv = parseInt(id_hex, 16);
+
+							if (id_dec && id_dec.length > 2) {
+								window.open(searchsite + id_dec);
+							} else if (id_hex) {
+								window.open(searchsite + id_dec_conv);
+							} else {
+								ui.addNotification(null, E('p', _('Cell ID not available for BTS search')), 'error');
+							}
+						}
+						// LTE Italy
+						else if (searchsite.includes('lteitaly')) {
+							// https://lteitaly.it/internal/map.php#bts=MCCMNC.CellIDdiv256
+							const zzmnc = json.operator_mnc;
+							const zzmcc = json.operator_mcc;
+							const zzcid_dec = json.cid_dec;
+							
+							if (!zzmnc || !zzmcc || !zzcid_dec) {
+								ui.addNotification(null, E('p', _('Network information not available for BTS search')), 'error');
+								return;
+							}
+							
+							const first = zzmnc.slice(0, 1);
+							const second = zzmnc.slice(1, 2);
+							const zzcid = Math.round(zzcid_dec / 256);
+							let cutmnc;
+							
+							if (zzmnc.length === 3) {
+								if (first.includes('0')) {
+									cutmnc = zzmnc.slice(1, 3);
+								}
+								if (first.includes('0') && second.includes('0')) {
+									cutmnc = zzmnc.slice(2, 3);
+								}
+							}
+							
+							if (zzmnc.length === 2) {
+								if (first.includes('0')) {
+									cutmnc = zzmnc.slice(1, 2);
+								} else {
+									cutmnc = zzmnc;
+								}
+							}
+							
+							if (zzmnc.length < 2 || (!first.includes('0') && !second.includes('0'))) {
+								cutmnc = zzmnc;
+							}
+
+							window.open(searchsite + zzmcc + cutmnc + '.' + zzcid);
+						}
+					});
+				})
+				.catch(function(err) {
+					ui.addNotification(null, E('p', _('Error getting modem data: ') + err.message), 'error');
+				});
 		};
 
 		return m.render();
