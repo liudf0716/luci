@@ -3939,6 +3939,143 @@ const UI = baseclass.extend(/** @lends LuCI.ui.prototype */ {
 	},
 
 	/**
+	 * Notification types with predefined styles and behaviors
+	 * @private
+	 */
+	_notificationTypes: {
+		success: { class: 'alert-success', icon: '✓', timeout: 3000, priority: 'polite' },
+		warning: { class: 'alert-warning', icon: '⚠', timeout: 5000, priority: 'assertive' },
+		error: { class: 'alert-danger', icon: '✗', timeout: 0, priority: 'assertive' },
+		info: { class: 'alert-info', icon: 'ℹ', timeout: 4000, priority: 'polite' },
+		loading: { class: 'alert-loading', icon: '⟳', timeout: 0, priority: 'polite' }
+	},
+
+	/**
+	 * Notification queue management
+	 * @private
+	 */
+	_notificationQueue: [],
+	_maxVisibleNotifications: 3,
+	_notificationCounter: 0,
+
+	/**
+	 * Add a typed notification banner with enhanced UX features.
+	 *
+	 * @param {string} type - Notification type: 'success', 'warning', 'error', 'info', 'loading'
+	 * @param {string} [title] - The title of the notification banner
+	 * @param {*} children - The contents to add to the notification banner
+	 * @param {Object} [options] - Additional options
+	 * @param {number} [options.timeout] - Custom timeout in milliseconds
+	 * @param {boolean} [options.dismissible=true] - Whether notification can be dismissed
+	 * @param {string} [options.id] - Unique ID to prevent duplicates
+	 * @returns {Node} Returns a DOM Node representing the notification banner element
+	 */
+	addTypedNotification(type = 'info', title, children, options = {}) {
+		const typeConfig = this._notificationTypes[type] || this._notificationTypes.info;
+		const notificationId = options.id || `notification-${++this._notificationCounter}`;
+		
+		// Prevent duplicate notifications
+		if (options.id && this._notificationQueue.find(n => n.id === options.id)) {
+			return null;
+		}
+
+		// Auto-dismiss loading notifications when adding success/error
+		if (type === 'success' || type === 'error') {
+			this._dismissNotificationsByType('loading');
+		}
+
+		const timeout = options.timeout !== undefined ? options.timeout : typeConfig.timeout;
+		const dismissible = options.dismissible !== false;
+
+		const mc = document.querySelector('#maincontent') ?? document.body;
+		const msg = E('div', {
+			'class': `alert-message fade-in ${typeConfig.class}`,
+			'style': 'display:flex; position:relative; margin-bottom:8px;',
+			'role': 'alert',
+			'aria-live': typeConfig.priority,
+			'aria-atomic': 'true',
+			'data-notification-id': notificationId,
+			'transitionend': function(ev) {
+				const node = ev.currentTarget;
+				if (node.parentNode && node.classList.contains('fade-out')) {
+					node.parentNode.removeChild(node);
+					// Remove from queue
+					const index = UI.prototype._notificationQueue.findIndex(n => n.id === notificationId);
+					if (index !== -1) {
+						UI.prototype._notificationQueue.splice(index, 1);
+					}
+				}
+			}
+		}, [
+			E('div', { 'style': 'flex:0 0 auto; margin-right:12px; font-size:18px; line-height:1.2; margin-top:2px;' }, 
+				[typeConfig.icon]),
+			E('div', { 'style': 'flex:1 1 auto; min-width:0;' }),
+			dismissible ? E('div', { 'style': 'flex:0 0 auto; margin-left:12px;' }, [
+				E('button', {
+					'class': 'btn',
+					'style': 'padding:4px 8px; font-size:12px; line-height:1; min-height:auto;',
+					'click': function(ev) {
+						const notification = dom.parent(ev.target, '.alert-message');
+						notification.classList.add('fade-out');
+					},
+					'aria-label': _('Dismiss notification')
+				}, ['×'])
+			]) : null
+		]);
+
+		if (title != null) {
+			dom.append(msg.children[1], E('h4', { 'style': 'margin:0 0 4px 0; font-size:14px; font-weight:600;' }, title));
+		}
+
+		dom.append(msg.children[1], children);
+
+		// Queue management - remove excess notifications
+		if (this._notificationQueue.length >= this._maxVisibleNotifications) {
+			const oldest = this._notificationQueue.shift();
+			const oldestElement = document.querySelector(`[data-notification-id="${oldest.id}"]`);
+			if (oldestElement) {
+				oldestElement.classList.add('fade-out');
+			}
+		}
+
+		// Add to queue
+		this._notificationQueue.push({
+			id: notificationId,
+			type: type,
+			element: msg,
+			timestamp: Date.now()
+		});
+
+		mc.insertBefore(msg, mc.firstElementChild);
+
+		// Auto-dismiss with timeout
+		if (timeout > 0) {
+			setTimeout(() => {
+				if (msg.parentNode && !msg.classList.contains('fade-out')) {
+					msg.classList.add('fade-out');
+				}
+			}, timeout);
+		}
+
+		return msg;
+	},
+
+	/**
+	 * Dismiss notifications by type
+	 * @private
+	 */
+	_dismissNotificationsByType(type) {
+		this._notificationQueue
+			.filter(n => n.type === type)
+			.forEach(n => {
+				const element = document.querySelector(`[data-notification-id="${n.id}"]`);
+				if (element && !element.classList.contains('fade-out')) {
+					element.classList.add('fade-out');
+				}
+			});
+	},
+
+	/**
 	 * Add a notification banner at the top of the current view.
 	 *
 	 * A notification banner is an alert message usually displayed at the
@@ -4039,6 +4176,7 @@ const UI = baseclass.extend(/** @lends LuCI.ui.prototype */ {
 	 *
 	 * @returns {Node}
 	 * Returns a DOM Node representing the notification banner element.
+	 * @deprecated Use addTypedNotification instead for better UX
 	 */
 	addTimeLimitedNotification(title, children, timeout, ...classes) {
 		const msg = this.addNotification(title, children, ...classes);
@@ -4051,7 +4189,7 @@ const UI = baseclass.extend(/** @lends LuCI.ui.prototype */ {
 					if (element.parentNode) {
 						element.parentNode.removeChild(element);
 					}
-				});
+				}, 250);
 			}
 		}
 
@@ -4060,6 +4198,61 @@ const UI = baseclass.extend(/** @lends LuCI.ui.prototype */ {
 		}
 
 		return msg;
+	},
+
+	/**
+	 * Show a success notification with predefined styling
+	 * @param {string} [title] - Optional title
+	 * @param {*} message - Message content
+	 * @param {Object} [options] - Additional options
+	 * @returns {Node} Notification element
+	 */
+	showSuccess(title, message, options = {}) {
+		return this.addTypedNotification('success', title, message, options);
+	},
+
+	/**
+	 * Show a warning notification with predefined styling
+	 * @param {string} [title] - Optional title
+	 * @param {*} message - Message content
+	 * @param {Object} [options] - Additional options
+	 * @returns {Node} Notification element
+	 */
+	showWarning(title, message, options = {}) {
+		return this.addTypedNotification('warning', title, message, options);
+	},
+
+	/**
+	 * Show an error notification with predefined styling
+	 * @param {string} [title] - Optional title
+	 * @param {*} message - Message content
+	 * @param {Object} [options] - Additional options
+	 * @returns {Node} Notification element
+	 */
+	showError(title, message, options = {}) {
+		return this.addTypedNotification('error', title, message, options);
+	},
+
+	/**
+	 * Show an info notification with predefined styling
+	 * @param {string} [title] - Optional title
+	 * @param {*} message - Message content
+	 * @param {Object} [options] - Additional options
+	 * @returns {Node} Notification element
+	 */
+	showInfo(title, message, options = {}) {
+		return this.addTypedNotification('info', title, message, options);
+	},
+
+	/**
+	 * Show a loading notification
+	 * @param {string} [title] - Optional title
+	 * @param {*} message - Message content
+	 * @param {Object} [options] - Additional options
+	 * @returns {Node} Notification element
+	 */
+	showLoading(title, message, options = {}) {
+		return this.addTypedNotification('loading', title, message, { dismissible: false, ...options });
 	},
 
 	/**

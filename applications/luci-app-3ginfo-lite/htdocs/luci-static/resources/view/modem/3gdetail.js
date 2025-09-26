@@ -17,6 +17,94 @@
 	Thanks to https://github.com/koshev-msk for the initial progress bar calculation for rssi/rsrp/rsrq/sinnr.
 */
 
+// 加载增强通知样式
+document.head.appendChild(E('link', {
+	rel: 'stylesheet',
+	type: 'text/css',
+	href: L.resource('enhanced-notifications.css')
+}));
+
+// 创建增强的调制解调器通知管理器
+const ModemNotifications = {
+	_loadingNotification: null,
+	
+	showLoading(message = _('Loading modem data...')) {
+		this.dismissLoading();
+		this._loadingNotification = ui.showLoading(null, message, { id: 'modem-loading' });
+		return this._loadingNotification;
+	},
+	
+	dismissLoading() {
+		if (this._loadingNotification) {
+			this._loadingNotification.classList.add('fade-out');
+			this._loadingNotification = null;
+		}
+	},
+	
+	showSuccess(message, title = null) {
+		this.dismissLoading();
+		return ui.showSuccess(title, E('p', message));
+	},
+	
+	showError(message, title = _('Modem Error'), options = {}) {
+		this.dismissLoading();
+		const notification = ui.showError(title, E('p', message), { id: 'modem-error', ...options });
+		
+		// 为调制解调器错误添加重试按钮
+		if (message.includes('modem') || message.includes('调制解调器')) {
+			const actions = E('div', { style: 'margin-top: 8px; text-align: right;' }, [
+				E('button', {
+					'class': 'btn btn-sm',
+					'style': 'margin-right: 8px; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3);',
+					'click': () => location.reload()
+				}, [_('Retry')]),
+				E('button', {
+					'class': 'btn btn-sm',
+					'style': 'background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3);',
+					'click': () => notification.classList.add('fade-out')
+				}, [_('Dismiss')])
+			]);
+			notification.querySelector('[style*="flex:1"]').appendChild(actions);
+		}
+		
+		return notification;
+	},
+	
+	showWarning(message, title = _('Warning')) {
+		return ui.showWarning(title, E('p', message));
+	},
+	
+	showInfo(message, title = _('Information')) {
+		return ui.showInfo(title, E('p', message));
+	},
+	
+	// SIM 状态特定通知
+	showSimStatus(status, message) {
+		const statusMap = {
+			'pin_required': { type: 'warning', title: _('SIM PIN Required'), icon: '🔒' },
+			'puk_required': { type: 'error', title: _('SIM PUK Required'), icon: '🚫' },
+			'failure': { type: 'error', title: _('SIM Failure'), icon: '❌' },
+			'busy': { type: 'warning', title: _('SIM Busy'), icon: '⏳' },
+			'wrong': { type: 'error', title: _('SIM Wrong'), icon: '⚠️' },
+			'network_error': { type: 'warning', title: _('Network Registration Problem'), icon: '📶' }
+		};
+		
+		const config = statusMap[status] || { type: 'info', title: _('SIM Status'), icon: 'ℹ️' };
+		const content = E('div', { style: 'display: flex; align-items: center; gap: 8px;' }, [
+			E('span', { style: 'font-size: 16px;' }, [config.icon]),
+			E('span', message)
+		]);
+		
+		if (config.type === 'error') {
+			return this.showError(content, config.title);
+		} else if (config.type === 'warning') {
+			return this.showWarning(content, config.title);
+		} else {
+			return this.showInfo(content, config.title);
+		}
+	}
+};
+
 // 添加表格样式
 document.head.append(E('style', { 'type': 'text/css' },
 	`
@@ -882,37 +970,51 @@ return view.extend({
 				const json = JSON.parse(data);
 
 				if (!json.hasOwnProperty('error')) {
+					// 使用增强的通知系统处理SIM状态
 					if (json.registration === 'SIM not inserted' || json.registration === '-') {
-						ui.addNotification(null, E('p', _('Problem with registering to the network, check the SIM card.')), 'info');
+						ModemNotifications.showSimStatus('network_error', _('Problem with registering to the network, check the SIM card.'));
 					}
-					if (json.registration === 'SIM PIN required') {
-						ui.addNotification(null, E('p', _('SIM PIN required')), 'info');
+					else if (json.registration === 'SIM PIN required') {
+						ModemNotifications.showSimStatus('pin_required', _('SIM PIN required'));
 					}
-					if (json.registration === 'SIM PUK required') {
-						ui.addNotification(null, E('p', _('SIM PUK required')), 'info');
+					else if (json.registration === 'SIM PUK required') {
+						ModemNotifications.showSimStatus('puk_required', _('SIM PUK required'));
 					}
-					if (json.registration === 'SIM failure') {
-						ui.addNotification(null, E('p', _('SIM failure')), 'info');
+					else if (json.registration === 'SIM failure') {
+						ModemNotifications.showSimStatus('failure', _('SIM failure'));
 					}
-					if (json.registration === 'SIM busy') {
-						ui.addNotification(null, E('p', _('SIM busy')), 'info');
+					else if (json.registration === 'SIM busy') {
+						ModemNotifications.showSimStatus('busy', _('SIM busy'));
 					}
-					if (json.registration === 'SIM wrong') {
-						ui.addNotification(null, E('p', _('SIM wrong')), 'info');
+					else if (json.registration === 'SIM wrong') {
+						ModemNotifications.showSimStatus('wrong', _('SIM wrong'));
 					}
-					if (json.registration === 'SIM PIN2 required') {
-						ui.addNotification(null, E('p', _('SIM PIN2 required')), 'info');
+					else if (json.registration === 'SIM PIN2 required') {
+						ModemNotifications.showSimStatus('pin_required', _('SIM PIN2 required'));
 					}
-					if (json.registration === 'SIM PUK2 required') {
-						ui.addNotification(null, E('p', _('SIM PUK2 required')), 'info');
+					else if (json.registration === 'SIM PUK2 required') {
+						ModemNotifications.showSimStatus('puk_required', _('SIM PUK2 required'));
 					}
 					
 					if (json.rsrp === '') {
-							ui.addNotification(null, E('p', _('There is a problem reading data from the modem.<br /><br /><b>Please check:</b><ul><li>1. Modem availability in the system.</li><li>2. The correct installation of the SIM card in the modem.</li><li>3. Port for communication with the modem.</li></ul>')), 'info');
+						const troubleshootingContent = E('div', [
+							E('p', _('There is a problem reading data from the modem.')),
+							E('br'),
+							E('strong', _('Please check:')),
+							E('ul', { style: 'margin: 8px 0; padding-left: 20px;' }, [
+								E('li', _('1. Modem availability in the system.')),
+								E('li', _('2. The correct installation of the SIM card in the modem.')),
+								E('li', _('3. Port for communication with the modem.'))
+							])
+						]);
+						ModemNotifications.showError(troubleshootingContent, _('Modem Communication Error'));
 					} else {
 						// 添加数据缓存来减少不必要的DOM更新
 						let lastDataCache = null;
 						let pollCounter = 0;
+						
+						// 显示初始加载通知
+						ModemNotifications.showLoading(_('Initializing modem data polling...'));
 						
 						// 设置10秒的轮询间隔
 						poll.add(function() {
@@ -1393,7 +1495,7 @@ return view.extend({
 					}
 				}
 			} catch (err) {
-				ui.addNotification(null, E('p', _('Error: ') + err.message), 'error');
+				ModemNotifications.showError(_('Error: ') + err.message, _('Data Processing Error'));
 			}
 		}
 
@@ -1686,10 +1788,12 @@ return view.extend({
 		o.description = _('Search for cell tower information using OpenCellID database. Supports MCC, MNC, LAC/TAC and Cell ID parameters.');
 		o.onclick = function() {
 			// 首先获取当前的modem数据
+			ModemNotifications.showLoading(_('Searching for cell tower information...'));
+			
 			return L.resolveDefault(fs.exec_direct('/usr/share/3ginfo-lite/3ginfo.sh', ['json']))
 				.then(function(res) {
 					if (!res) {
-						ui.addNotification(null, E('p', _('Unable to get modem data for BTS search')), 'error');
+						ModemNotifications.showError(_('Unable to get modem data for BTS search'), _('BTS Search Error'));
 						return;
 					}
 					
@@ -1711,25 +1815,26 @@ return view.extend({
 							const cid = json.cid_dec;
 							
 							if (!mcc || !mnc || !cid) {
-								ui.addNotification(null, E('p', _('Network information (MCC/MNC/Cell ID) not available for OpenCellID search')), 'error');
+								ModemNotifications.showError(_('Network information (MCC/MNC/Cell ID) not available for OpenCellID search'), _('BTS Search Error'));
 								return;
 							}
 							
-							// OpenCellID 前端搜索 - 打开网站并显示搜索信息
-							const baseUrl = 'https://opencellid.org/';
-							
-							// 创建一个包含搜索信息的通知
+							// 构建搜索信息
 							const searchInfo = lac ? 
 								`MCC: ${mcc}, MNC: ${mnc}, LAC/TAC: ${lac}, Cell ID: ${cid}` :
 								`MCC: ${mcc}, MNC: ${mnc}, Cell ID: ${cid}`;
-							
-							ui.addNotification(null, E('div', {}, [
+								
+							// OpenCellID 前端搜索 - 显示搜索成功信息
+							const searchResult = E('div', { style: 'line-height: 1.6;' }, [
 								E('p', {}, _('Opening OpenCellID with search parameters:')),
 								E('p', { style: 'font-family: monospace; background: #f0f0f0; padding: 8px; border-radius: 4px;' }, searchInfo),
 								E('p', { style: 'font-size: 12px; color: #666;' }, _('Use the search form on the OpenCellID website with the above parameters.'))
-							]), 'info', 8000);
+							]);
+							
+							ModemNotifications.showSuccess(searchResult, _('BTS Search Initiated'));
 							
 							// 打开 OpenCellID 主页
+							const baseUrl = 'https://opencellid.org/';
 							window.open(baseUrl);
 						}
 						// BTS Search Poland
@@ -1740,11 +1845,13 @@ return view.extend({
 							const id_dec_conv = parseInt(id_hex, 16);
 
 							if (id_dec && id_dec.length > 2) {
+								ModemNotifications.showSuccess(_('Opening BTS Search Poland with Cell ID: ') + id_dec, _('BTS Search Initiated'));
 								window.open(searchsite + id_dec);
 							} else if (id_hex) {
+								ModemNotifications.showSuccess(_('Opening BTS Search Poland with Cell ID: ') + id_dec_conv, _('BTS Search Initiated'));
 								window.open(searchsite + id_dec_conv);
 							} else {
-								ui.addNotification(null, E('p', _('Cell ID not available for BTS search')), 'error');
+								ModemNotifications.showError(_('Cell ID not available for BTS search'), _('BTS Search Error'));
 							}
 						}
 						// LTE Italy
@@ -1755,7 +1862,7 @@ return view.extend({
 							const zzcid_dec = json.cid_dec;
 							
 							if (!zzmnc || !zzmcc || !zzcid_dec) {
-								ui.addNotification(null, E('p', _('Network information not available for BTS search')), 'error');
+								ModemNotifications.showError(_('Network information not available for BTS search'), _('BTS Search Error'));
 								return;
 							}
 							
@@ -1785,12 +1892,14 @@ return view.extend({
 								cutmnc = zzmnc;
 							}
 
-							window.open(searchsite + zzmcc + cutmnc + '.' + zzcid);
+							const searchParams = `${zzmcc}${cutmnc}.${zzcid}`;
+							ModemNotifications.showSuccess(_('Opening LTE Italy with parameters: ') + searchParams, _('BTS Search Initiated'));
+							window.open(searchsite + searchParams);
 						}
 					});
 				})
 				.catch(function(err) {
-					ui.addNotification(null, E('p', _('Error getting modem data: ') + err.message), 'error');
+					ModemNotifications.showError(_('Error getting modem data: ') + err.message, _('Modem Data Error'));
 				});
 		};
 
