@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">
+  <defs>
+    <!-- 箭头渐变 -->
+    <linearGradient id="arrowGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#e94560" stop-opacity="0.8"/>
+      <stop offset="50%" stop-color="#9333ea" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#202124" stop-opacity="0.95"/>
+    </linearGradient>
+    
+    <!-- 玻璃效果 -->
+    <filter id="arrowGlass" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="1" stdDeviation="1" flood-color="#000" flood-opacity="0.2"/>
+      <feDropShadow dx="0" dy="0" stdDeviation="1" flood-color="#ffffff" flood-opacity="0.1"/>
+    </filter>
+  </defs>
+  
+  <!-- 箭头路径 -->
+  <g filter="url(#arrowGlass)">
+    <path fill="url(#arrowGradient)" 
+          d="M8,10.033663l-6.898535,-6.013274l-1.060688,0.972974l7.959223,6.986249l7.959223,-6.986249l-1.060688,-0.972974l-6.898535,6.013274z">
+      
+      <!-- 悬停动画效果 -->
+      <animateTransform
+        attributeName="transform"
+        type="translate"
+        values="0,0;0,1;0,0"
+        dur="1.5s"
+        repeatCount="indefinite"/>
+    </path>
+    
+    <!-- 箭头高光 -->
+    <path fill="rgba(255,255,255,0.3)" opacity="0.7"
+          d="M8,9.5l-5.5,-4.8l-0.8,0.7l6.3,5.5l6.3,-5.5l-0.8,-0.7l-5.5,4.8z"/>
+  </g>
+</svg>

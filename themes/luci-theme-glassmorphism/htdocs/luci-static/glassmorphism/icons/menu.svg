@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+  <defs>
+    <!-- 主色渐变 -->
+    <linearGradient id="menuGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.9"/>
+      <stop offset="50%" stop-color="#e94560" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#9333ea" stop-opacity="0.7"/>
+    </linearGradient>
+    
+    <!-- 玻璃效果阴影 -->
+    <filter id="menuGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="1" stdDeviation="1" flood-color="#e94560" flood-opacity="0.3"/>
+      <feDropShadow dx="0" dy="0" stdDeviation="2" flood-color="#ffffff" flood-opacity="0.1"/>
+    </filter>
+  </defs>
+  
+  <!-- 汉堡菜单三条线 -->
+  <g filter="url(#menuGlow)">
+    <!-- 顶部线条 -->
+    <rect x="2" y="5.36" width="20" height="2.23" rx="1.12" fill="url(#menuGradient)">
+      <animate attributeName="opacity" values="0.7;1;0.7" dur="2s" repeatCount="indefinite"/>
+    </rect>
+    
+    <!-- 中间线条 -->
+    <rect x="2" y="10.89" width="20" height="2.18" rx="1.09" fill="url(#menuGradient)">
+      <animate attributeName="opacity" values="1;0.7;1" dur="2s" repeatCount="indefinite"/>
+    </rect>
+    
+    <!-- 底部线条 -->
+    <rect x="2" y="16.41" width="20" height="2.23" rx="1.12" fill="url(#menuGradient)">
+      <animate attributeName="opacity" values="0.7;1;0.7" dur="2s" repeatCount="indefinite"/>
+    </rect>
+    
+    <!-- 玻璃光效覆盖层 -->
+    <rect x="2" y="5.36" width="20" height="13.28" rx="2" fill="none" 
+          stroke="rgba(255,255,255,0.2)" stroke-width="0.5" opacity="0.6"/>
+  </g>
+</svg>

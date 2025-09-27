@@ -1,0 +1,12 @@
+#!/bin/sh
+
+if [ "$PKG_UPGRADE" != 1 ]; then
+	uci get luci.themes.Glassmorphism >/dev/null 2>&1 || \
+	uci batch <<-EOF
+		set luci.themes.Glassmorphism=/luci-static/glassmorphism
+		set luci.main.mediaurlbase=/luci-static/glassmorphism
+		commit luci
+	EOF
+fi
+
+exit 0
