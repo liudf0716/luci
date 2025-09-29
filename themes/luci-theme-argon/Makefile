@@ -13,6 +13,6 @@ PKG_RELEASE:=20250207
 
 CONFIG_LUCI_CSSTIDY:=
 
-include $(TOPDIR)/feeds/luci/luci.mk
+include ../../luci.mk
 
 # call BuildPackage - OpenWrt buildroot signature
