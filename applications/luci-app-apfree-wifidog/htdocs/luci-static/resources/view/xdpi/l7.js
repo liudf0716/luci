@@ -8,8 +8,15 @@
 
 var chartRegistry = {};
 var downloadLineChart, uploadLineChart;
-var downloadLineData = { categories: [], series: [] };
-var uploadLineData = { categories: [], series: [] };
+
+// Data structures for stacked line charts
+var lineCategories = [];
+var downloadSeriesData = {};
+var uploadSeriesData = {};
+
+// Color palette for chart series
+var colorPalette = ['#5470c6', '#91cc75', '#fac858', '#ee6666', '#73c0de', '#3ba272', '#fc8452', '#9a60b4', '#ea7ccc'];
+
 var currentSortInfo = {
 	table: null,
 	column: null,
@@ -23,11 +30,16 @@ var lastSIDData = null;
 
 // Pre-fill with 60 empty points for a smooth start
 for (var i = 0; i < 60; i++) {
-	downloadLineData.categories.push('');
-	downloadLineData.series.push(0);
-	uploadLineData.categories.push('');
-	uploadLineData.series.push(0);
+	lineCategories.push('');
 }
+
+// Helper to convert hex to rgba
+function hexToRgba(hex, opacity) {
+	var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+	return result ? 
+		'rgba(' + parseInt(result[1], 16) + ', ' + parseInt(result[2], 16) + ', ' + parseInt(result[3], 16) + ', ' + opacity + ')' :
+		null;
+};
 
 return view.extend({
 	load: function() {
@@ -95,25 +107,68 @@ return view.extend({
 		return normalized;
 	},
 
-	updateLineCharts: function(download, upload) {
+	updateStackedLineCharts: function(perServiceDownload, perServiceUpload) {
 		var now = new Date().toLocaleTimeString();
-
-		downloadLineData.categories.push(now);
-		downloadLineData.categories.shift();
-		downloadLineData.series.push(download);
-		downloadLineData.series.shift();
-
-		uploadLineData.categories.push(now);
-		uploadLineData.categories.shift();
-		uploadLineData.series.push(upload);
-		uploadLineData.series.shift();
+		lineCategories.push(now);
+		lineCategories.shift();
+	
+		var processChartData = function(seriesData, perServiceData) {
+			var allServices = Object.keys(seriesData);
+			Object.keys(perServiceData).forEach(function(service) {
+				if (allServices.indexOf(service) === -1) {
+					allServices.push(service);
+				}
+			});
+	
+			allServices.forEach(function(service) {
+				if (!seriesData[service]) {
+					seriesData[service] = Array(59).fill(0);
+				}
+				var rate = perServiceData[service] || 0;
+				seriesData[service].push(rate);
+				seriesData[service].shift();
+			});
+	
+			return Object.keys(seriesData).map(function(service, index) {
+				var color = colorPalette[index % colorPalette.length];
+				return {
+					name: service,
+					type: 'line',
+					stack: 'Total',
+					smooth: true,
+					lineStyle: { width: 1, color: color },
+					showSymbol: false,
+					itemStyle: { color: color },
+					areaStyle: {
+						color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+							{ offset: 0, color: hexToRgba(color, 0.5) },
+							{ offset: 1, color: hexToRgba(color, 0) }
+						])
+					},
+					data: seriesData[service]
+				};
+			});
+		};
+	
+		var downloadChartSeries = processChartData(downloadSeriesData, perServiceDownload);
+		var uploadChartSeries = processChartData(uploadSeriesData, perServiceUpload);
+	
+		var legendData = downloadChartSeries.map(function(s) { return s.name; });
 
 		if (downloadLineChart) {
-			downloadLineChart.setOption({ series: [{ data: downloadLineData.series }], xAxis: { data: downloadLineData.categories } });
+			downloadLineChart.setOption({
+				legend: { data: legendData, type: 'scroll', top: 0, left: 'center' },
+				series: downloadChartSeries,
+				xAxis: { data: lineCategories }
+			});
 		}
-
+	
 		if (uploadLineChart) {
-			uploadLineChart.setOption({ series: [{ data: uploadLineData.series }], xAxis: { data: uploadLineData.categories } });
+			uploadLineChart.setOption({
+				legend: { data: legendData, type: 'scroll', top: 0, left: 'center' },
+				series: uploadChartSeries,
+				xAxis: { data: lineCategories }
+			});
 		}
 	},
 
@@ -205,6 +260,8 @@ return view.extend({
 		var txVolumeData = [], rxVolumeData = [];
 		var tx_rate_total = 0, rx_rate_total = 0;
 		var tx_bytes_total = 0, rx_bytes_total = 0;
+		var perServiceTxRate = {};
+		var perServiceRxRate = {};
 		var self = this;
 		var allItems = [];
 		
@@ -255,6 +312,9 @@ return view.extend({
 				rxRateData.push({ value: item.outgoing.rate, label: domainOrL7Proto });
 				txVolumeData.push({ value: item.incoming.total_bytes, label: domainOrL7Proto });
 				rxVolumeData.push({ value: item.outgoing.total_bytes, label: domainOrL7Proto });
+
+				perServiceTxRate[domainOrL7Proto] = (perServiceTxRate[domainOrL7Proto] || 0) + item.incoming.rate;
+				perServiceRxRate[domainOrL7Proto] = (perServiceRxRate[domainOrL7Proto] || 0) + item.outgoing.rate;
 			});
 
 			allItems.forEach(function(item) {
@@ -265,7 +325,7 @@ return view.extend({
 			});
 		}
 
-		this.updateLineCharts(tx_rate_total, rx_rate_total);
+		this.updateStackedLineCharts(perServiceTxRate, perServiceRxRate);
 
 		var table = document.getElementById('sid-data');
 		cbi_update_table('#sid-data', rows, E('em', _('No data recorded yet.')));
@@ -384,23 +444,34 @@ return view.extend({
 			var ulChartEl = document.getElementById('upload-speed-line-chart');
 			if (!dlChartEl || !ulChartEl) return;
 
-			downloadLineChart = echarts.init(dlChartEl);
-			downloadLineChart.setOption({
-				tooltip: { trigger: 'axis' },
-				grid: { left: '3%', right: '4%', bottom: '10%', top: '30px', containLabel: true },
-				xAxis: { type: 'category', boundaryGap: false, data: downloadLineData.categories },
+			var baseChartOption = {
+				tooltip: {
+					trigger: 'axis',
+					formatter: function (params) {
+						if (!params || params.length === 0) {
+							return null;
+						}
+						var tooltipContent = params[0].axisValueLabel + '<br/>';
+						params.sort(function(a, b) { return b.value - a.value; });
+						params.forEach(function(item) {
+							if (item.value > 0) {
+								tooltipContent += item.marker + ' ' + item.seriesName + ': ' + '%1024.2mbps'.format(item.value) + '<br/>';
+							}
+						});
+						return tooltipContent;
+					}
+				},
+				grid: { left: '3%', right: '4%', bottom: '10%', top: '50px', containLabel: true },
+				xAxis: { type: 'category', boundaryGap: false, data: lineCategories },
 				yAxis: { type: 'value', axisLabel: { formatter: function(val) { return '%1024.2mbps'.format(val); } } },
-				series: [ { name: _('Download Speed'), type: 'line', smooth: true, data: downloadLineData.series, areaStyle: {}, color: '#3771c8' } ]
-			});
+				series: []
+			};
+
+			downloadLineChart = echarts.init(dlChartEl);
+			downloadLineChart.setOption(baseChartOption);
 
 			uploadLineChart = echarts.init(ulChartEl);
-			uploadLineChart.setOption({
-				tooltip: { trigger: 'axis' },
-				grid: { left: '3%', right: '4%', bottom: '10%', top: '30px', containLabel: true },
-				xAxis: { type: 'category', boundaryGap: false, data: uploadLineData.categories },
-				yAxis: { type: 'value', axisLabel: { formatter: function(val) { return '%1024.2mbps'.format(val); } } },
-				series: [ { name: _('Upload Speed'), type: 'line', smooth: true, data: uploadLineData.series, areaStyle: {}, color: '#4CAF50' } ]
-			});
+			uploadLineChart.setOption(baseChartOption);
 
 			this.pollL7Data();
 		} else {
@@ -424,11 +495,11 @@ return view.extend({
 					E('div', { 'class': 'line-chart-row' }, [
 						E('div', { 'class': 'chart-card' }, [
 							E('h4', [_('Real-time Download Speed')]),
-							E('div', { id: 'download-speed-line-chart', style: 'width: 100%; height: 250px;' })
+							E('div', { id: 'download-speed-line-chart', style: 'width: 100%; height: 350px;' })
 						]),
 						E('div', { 'class': 'chart-card' }, [
 							E('h4', [_('Real-time Upload Speed')]),
-							E('div', { id: 'upload-speed-line-chart', style: 'width: 100%; height: 250px;' })
+							E('div', { id: 'upload-speed-line-chart', style: 'width: 100%; height: 350px;' })
 						])
 					]),
 					E('div', { 'class': 'chart-grid' }, [
@@ -531,7 +602,7 @@ return view.extend({
 			'.l7-controls { display: flex; justify-content: space-between; align-items: center; margin-top: 15px; padding: 10px; background-color: #f2f2f2; border-radius: 4px; } ' +
 			'.l7-controls-left, .l7-controls-right { display: flex; align-items: center; gap: 15px; } '
 			),
-			E('script', { 'type': 'text/javascript', 'src': L.resource('echarts.simple.min.js') }),
+			E('script', { 'type': 'text/javascript', 'src': L.resource('echarts.min.js') }),
 
 			E('h2', [ _('L7 Data Monitor') ]),
 			E('div', { 'id': 'l7-error-message' }),
