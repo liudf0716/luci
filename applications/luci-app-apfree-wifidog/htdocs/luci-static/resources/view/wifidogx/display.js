@@ -459,7 +459,7 @@ return view.extend({
 			'.chart-card h4 { margin-top: 0; margin-bottom: 15px; text-align: center; font-size: 1.1em; } '+
 			'.chart-card canvas { max-width: 100%; height: auto !important; } '
 			),
-			E('script', { 'type': 'text/javascript', 'src': L.resource('echarts.simple.min.js') }),
+			E('script', { 'type': 'text/javascript', 'src': L.resource('echarts.min.js') }),
 
 			E('h2', [ _('Auth User Speed Monitor') ]),
 
