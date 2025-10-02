@@ -84,13 +84,13 @@ return view.extend({
 		return normalized;
 	},
 
-	pie: function(id, data) {
+	pie: function(id, data, valueFormatter) {
 		var total = data.reduce(function(n, d) { return n + d.value; }, 0);
 
 		data.sort(function(a, b) { return b.value - a.value; });
 
 		if (total === 0) {
-			data = [{ value: 1, color: '#cccccc', name: 'No traffic' }];
+			data = [{ value: 1, color: '#cccccc', name: _('no traffic') }];
 		}
 
 		data.forEach(function(d, i) {
@@ -100,18 +100,22 @@ return view.extend({
 			}
 		});
 
+		var formatter = valueFormatter || function(params) {
+			return params.name + ': ' + params.value + ' (' + params.percent + '%)';
+		};
+
 		var option = {
 			tooltip: {
 				trigger: 'item',
-				formatter: '{b}: {c} ({d}%)'
+				formatter: formatter
 			},
 			series: [{
 				type: 'pie',
-				radius: ['15%', '70%'],
+				radius: ['25%', '80%'],
 				avoidLabelOverlap: false,
 				itemStyle: { borderRadius: 5, borderColor: '#fff', borderWidth: 2 },
 				label: { show: false, position: 'center' },
-				emphasis: { label: { show: true, fontSize: 12 } },
+				emphasis: { label: { show: true, fontSize: 14, fontWeight: 'bold' } },
 				labelLine: { show: false },
 				data: this.normalizeDat(data.map(function(d) {
 					return { value: d.value, name: d.label || d.name, itemStyle: { color: d.color } };
@@ -130,19 +134,6 @@ return view.extend({
 		return chartRegistry[id];
 	},
 
-	kpi: function(id, val1, val2, val3) {
-		var e = L.dom.elem(id) ? id : document.getElementById(id);
-
-		if (val1 && val2 && val3)
-			e.innerHTML = _('%s, %s and %s').format(val1, val2, val3);
-		else if (val1 && val2)
-			e.innerHTML = _('%s and %s').format(val1, val2);
-		else if (val1)
-			e.innerHTML = val1;
-
-		e.parentNode.style.display = val1 ? 'list-item' : '';
-	},
-
 	sortTable: function(table, column) {
 		var tbody = table.querySelector('tbody');
 		if (!tbody) return;
@@ -151,7 +142,6 @@ return view.extend({
 
 		table.querySelectorAll('th').forEach(function(th) {
 			th.classList.remove('th-sort-asc', 'th-sort-desc');
-			th.style.position = 'relative';
 		});
 
 		var th = table.querySelector('th:nth-child(' + (column + 1) + ')');
@@ -161,10 +151,7 @@ return view.extend({
 			var a = row1.cells[column].getAttribute('data-value') || row1.cells[column].textContent;
 			var b = row2.cells[column].getAttribute('data-value') || row2.cells[column].textContent;
 
-			if (!isNaN(a) && !isNaN(b)) {
-				a = Number(a);
-				b = Number(b);
-			}
+			if (!isNaN(a) && !isNaN(b)) { a = Number(a); b = Number(b); }
 
 			if (a < b) return reverse ? 1 : -1;
 			if (a > b) return reverse ? -1 : 1;
@@ -181,15 +168,17 @@ return view.extend({
 
 	renderSIDData: function(data) {
 		var rows = [];
-		var rxData = [], txData = [];
-		var rx_rate_total = 0, tx_rate_total = 0;
+		var txRateData = [], rxRateData = [];
+		var txVolumeData = [], rxVolumeData = [];
+		var tx_rate_total = 0, rx_rate_total = 0;
+		var tx_bytes_total = 0, rx_bytes_total = 0;
 		var self = this;
+		var allItems = [];
 		
 		if (data && data.status === 'success' && Array.isArray(data.data)) {
+			allItems = data.data;
 			var listSizeEl = document.getElementById('sid-size-select');
 			var listSize = listSizeEl ? parseInt(listSizeEl.value, 10) : 10;
-
-			var allItems = data.data;
 
 			var activeConnections = allItems.filter(function(item) { return item.incoming.rate > 0 || item.outgoing.rate > 0; });
 			var inactiveConnections = allItems.filter(function(item) { return item.incoming.rate === 0 && item.outgoing.rate === 0; });
@@ -229,11 +218,17 @@ return view.extend({
 					[ item.outgoing.total_packets, '%1000.2mP'.format(item.outgoing.total_packets) ]
 				]);
 
-				txData.push({ value: item.incoming.rate, label: domainOrL7Proto });
-				rxData.push({ value: item.outgoing.rate, label: domainOrL7Proto });
+				txRateData.push({ value: item.incoming.rate, label: domainOrL7Proto });
+				rxRateData.push({ value: item.outgoing.rate, label: domainOrL7Proto });
+				txVolumeData.push({ value: item.incoming.total_bytes, label: domainOrL7Proto });
+				rxVolumeData.push({ value: item.outgoing.total_bytes, label: domainOrL7Proto });
+			});
 
+			allItems.forEach(function(item) {
 				tx_rate_total += item.incoming.rate;
 				rx_rate_total += item.outgoing.rate;
+				tx_bytes_total += item.incoming.total_bytes;
+				rx_bytes_total += item.outgoing.total_bytes;
 			});
 		}
 
@@ -259,12 +254,25 @@ return view.extend({
 			});
 		});
 
-		this.pie('sid-tx-pie', txData);
-		this.pie('sid-rx-pie', rxData);
+		this.pie('sid-tx-rate-pie', txRateData, function(p) { return p.name + ': ' + '%1024.2mbps'.format(p.value) + ' (' + p.percent + '%)'; });
+		this.pie('sid-rx-rate-pie', rxRateData, function(p) { return p.name + ': ' + '%1024.2mbps'.format(p.value) + ' (' + p.percent + '%)'; });
+		this.pie('sid-tx-volume-pie', txVolumeData, function(p) { return p.name + ': ' + '%1024.2mB'.format(p.value) + ' (' + p.percent + '%)'; });
+		this.pie('sid-rx-volume-pie', rxVolumeData, function(p) { return p.name + ': ' + '%1024.2mB'.format(p.value) + ' (' + p.percent + '%)'; });
 
-		this.kpi('sid-total', '%u'.format(rows.length));
-		this.kpi('sid-tx-rate', '%1024.2mbps'.format(tx_rate_total));
-		this.kpi('sid-rx-rate', '%1024.2mbps'.format(rx_rate_total));
+		var sidTotalEl = document.getElementById('sid-total-val');
+		if(sidTotalEl) sidTotalEl.textContent = allItems.length;
+
+		var txRateEl = document.getElementById('sid-tx-rate-val');
+		if(txRateEl) txRateEl.textContent = '%1024.2mbps'.format(tx_rate_total);
+
+		var rxRateEl = document.getElementById('sid-rx-rate-val');
+		if(rxRateEl) rxRateEl.textContent = '%1024.2mbps'.format(rx_rate_total);
+
+		var txVolEl = document.getElementById('sid-tx-volume-val');
+		if(txVolEl) txVolEl.textContent = '%1024.2mB'.format(tx_bytes_total);
+
+		var rxVolEl = document.getElementById('sid-rx-volume-val');
+		if(rxVolEl) rxVolEl.textContent = '%1024.2mB'.format(rx_bytes_total);
 
 		lastUpdated = new Date();
 		var timestampEl = document.getElementById('last-updated');
@@ -293,8 +301,6 @@ return view.extend({
 					rows.push([ item.id, item.domain, item.sid ]);
 				});
 			}
-			
-			console.log('Built SID lookup table with', Object.keys(sidLookupTable).length, 'entries:', sidLookupTable);
 		}
 
 		var table = document.getElementById('l7proto-data');
@@ -342,20 +348,30 @@ return view.extend({
 
 		var tabContainer = E('div', {}, [
 			E('div', { 'class': 'cbi-section', 'data-tab': 'sid', 'data-tab-title': _('L7 SID Data') }, [
-				E('div', { 'class': 'head' }, [
-					E('div', { 'class': 'pie' }, [
-						E('label', [ _('Download Speed / SID') ]),
-						E('canvas', { 'id': 'sid-tx-pie', 'width': 200, 'height': 200 })
+				E('div', { 'class': 'dashboard-container' }, [
+					E('div', { 'class': 'kpi-row' }, [
+						E('div', { 'class': 'kpi-card' }, [ E('big', { id: 'sid-total-val' }, '0'), E('span', { 'class': 'kpi-card-label' }, _('Active Clients')) ]),
+						E('div', { 'class': 'kpi-card' }, [ E('big', { id: 'sid-tx-rate-val' }, '0'), E('span', { 'class': 'kpi-card-label' }, _('Download Speed')) ]),
+						E('div', { 'class': 'kpi-card' }, [ E('big', { id: 'sid-rx-rate-val' }, '0'), E('span', { 'class': 'kpi-card-label' }, _('Upload Speed')) ]),
+						E('div', { 'class': 'kpi-card' }, [ E('big', { id: 'sid-tx-volume-val' }, '0'), E('span', { 'class': 'kpi-card-label' }, _('Download Total')) ]),
+						E('div', { 'class': 'kpi-card' }, [ E('big', { id: 'sid-rx-volume-val' }, '0'), E('span', { 'class': 'kpi-card-label' }, _('Upload Total')) ])
 					]),
-					E('div', { 'class': 'pie' }, [
-						E('label', [ _('Upload Speed / SID') ]),
-						E('canvas', { 'id': 'sid-rx-pie', 'width': 200, 'height': 200 })
-					]),
-					E('div', { 'class': 'kpi' }, [
-						E('ul', [
-							E('li', _('<big id="sid-total">0</big> different SIDs')),
-							E('li', _('<big id="sid-tx-rate">0</big> download speed')),
-							E('li', _('<big id="sid-rx-rate">0</big> upload speed'))
+					E('div', { 'class': 'chart-grid' }, [
+						E('div', { 'class': 'chart-card' }, [
+							E('h4', [_('Download Speed / SID')]),
+							E('canvas', { id: 'sid-tx-rate-pie', height: '250' })
+						]),
+						E('div', { 'class': 'chart-card' }, [
+							E('h4', [_('Upload Speed / SID')]),
+							E('canvas', { id: 'sid-rx-rate-pie', height: '250' })
+						]),
+						E('div', { 'class': 'chart-card' }, [
+							E('h4', [_('Download Traffic / SID')]),
+							E('canvas', { id: 'sid-tx-volume-pie', height: '250' })
+						]),
+						E('div', { 'class': 'chart-card' }, [
+							E('h4', [_('Upload Traffic / SID')]),
+							E('canvas', { id: 'sid-rx-volume-pie', height: '250' })
 						])
 					])
 				]),
@@ -425,10 +441,20 @@ return view.extend({
 		var node = E([], [
 			E('link', { 'rel': 'stylesheet', 'href': L.resource('view/wifidogx.css') }),
 			E('style', { type: 'text/css' },
-			'.th-sort-asc::after { content: " ▲"; display: inline-block; margin-left: 5px; font-size: 14px; }' +
-			'.th-sort-desc::after { content: " ▼"; display: inline-block; margin-left: 5px; font-size: 14px; }' +
-			'.table .th { cursor: pointer; position: relative; }' +
-			'.table .th:hover { background-color: #f0f0f0; }' +
+			'.th-sort-asc::after { content: " ▲"; display: inline-block; margin-left: 5px; font-size: 14px; } '+
+			'.th-sort-desc::after { content: " ▼"; display: inline-block; margin-left: 5px; font-size: 14px; } '+
+			'.table .th { cursor: pointer; position: relative; } '+
+			'.table .th:hover { background-color: #f0f0f0; } '+
+			'#l7-error-message { color: red; background-color: #ffefef; border: 1px solid red; padding: 10px; margin-bottom: 10px; display: none; } '+
+			'.dashboard-container { display: flex; flex-direction: column; gap: 20px; margin-bottom: 20px; } '+
+			'.kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 20px; } '+
+			'.kpi-card { background-color: #f9f9f9; border-radius: 8px; padding: 15px; text-align: center; border: 1px solid #e0e0e0; } '+
+			'.kpi-card big { display: block; font-size: 1.8em; font-weight: bold; color: #3771c8; } '+
+			'.kpi-card-label { font-size: 0.9em; color: #666; } '+
+			'.chart-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; } '+
+			'.chart-card { background-color: #ffffff; border-radius: 8px; padding: 20px; border: 1px solid #e0e0e0; } '+
+			'.chart-card h4 { margin-top: 0; margin-bottom: 15px; text-align: center; font-size: 1.1em; } '+
+			'.chart-card canvas { max-width: 100%; height: auto !important; } '+
 			'.l7-controls { display: flex; justify-content: space-between; align-items: center; margin-top: 15px; padding: 10px; background-color: #f2f2f2; border-radius: 4px; } ' +
 			'.l7-controls-left, .l7-controls-right { display: flex; align-items: center; gap: 15px; } '
 			),
