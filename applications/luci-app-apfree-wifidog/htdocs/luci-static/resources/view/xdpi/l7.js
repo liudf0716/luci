@@ -298,15 +298,37 @@ return view.extend({
 					domainOrL7Proto = item.l7_proto_desc;
 				}
 				
+				// 判断连接是否活跃
+				var isActive = item.incoming.rate > 0 || item.outgoing.rate > 0;
+				var activityIcon = isActive ? '🟢' : '⚪';
+				
 				rows.push([
-					item.sid,
-					domainOrL7Proto,
-					[ item.incoming.rate, '%1024.2mbps'.format(item.incoming.rate) ],
-					[ item.incoming.total_bytes, '%1024.2mB'.format(item.incoming.total_bytes) ],
-					[ item.incoming.total_packets, '%1000.2mP'.format(item.incoming.total_packets) ],
-					[ item.outgoing.rate, '%1024.2mbps'.format(item.outgoing.rate) ],
-					[ item.outgoing.total_bytes, '%1024.2mB'.format(item.outgoing.total_bytes) ],
-					[ item.outgoing.total_packets, '%1000.2mP'.format(item.outgoing.total_packets) ]
+					E('span', { 'class': 'sid-cell' }, [
+						E('span', { 'class': 'activity-indicator', 'title': isActive ? _('Active') : _('Inactive') }, activityIcon),
+						E('span', {}, ' ' + item.sid)
+					]),
+					E('span', { 'class': 'protocol-cell' }, [
+						E('span', { 'class': 'protocol-icon' }, '🌐'),
+						E('span', {}, ' ' + domainOrL7Proto)
+					]),
+					[ item.incoming.rate, E('span', { 'class': 'speed-cell download' }, [
+						E('span', { 'class': 'data-value' }, '%1024.2mbps'.format(item.incoming.rate))
+					])],
+					[ item.incoming.total_bytes, E('span', { 'class': 'volume-cell download' }, [
+						E('span', { 'class': 'data-value' }, '%1024.2mB'.format(item.incoming.total_bytes))
+					])],
+					[ item.incoming.total_packets, E('span', { 'class': 'packet-cell download' }, [
+						E('span', { 'class': 'data-value' }, '%1000.2mP'.format(item.incoming.total_packets))
+					])],
+					[ item.outgoing.rate, E('span', { 'class': 'speed-cell upload' }, [
+						E('span', { 'class': 'data-value' }, '%1024.2mbps'.format(item.outgoing.rate))
+					])],
+					[ item.outgoing.total_bytes, E('span', { 'class': 'volume-cell upload' }, [
+						E('span', { 'class': 'data-value' }, '%1024.2mB'.format(item.outgoing.total_bytes))
+					])],
+					[ item.outgoing.total_packets, E('span', { 'class': 'packet-cell upload' }, [
+						E('span', { 'class': 'data-value' }, '%1000.2mP'.format(item.outgoing.total_packets))
+					])]
 				]);
 
 				txRateData.push({ value: item.incoming.rate, label: domainOrL7Proto });
@@ -387,14 +409,28 @@ return view.extend({
 			if (Array.isArray(data.data.protocols)) {
 				data.data.protocols.forEach(function(item) {
 					sidLookupTable[item.sid] = { type: 'protocol', name: item.protocol };
-					rows.push([ item.id, item.protocol, item.sid ]);
+					rows.push([
+						E('span', { 'class': 'id-cell' }, item.id),
+						E('span', { 'class': 'protocol-cell' }, [
+							E('span', { 'class': 'protocol-icon l7' }, '🔌'),
+							E('span', {}, ' ' + item.protocol)
+						]),
+						E('span', { 'class': 'sid-cell' }, item.sid)
+					]);
 				});
 			}
 			
 			if (Array.isArray(data.data.domains)) {
 				data.data.domains.forEach(function(item) {
 					sidLookupTable[item.sid] = { type: 'domain', name: item.domain };
-					rows.push([ item.id, item.domain, item.sid ]);
+					rows.push([
+						E('span', { 'class': 'id-cell' }, item.id),
+						E('span', { 'class': 'protocol-cell' }, [
+							E('span', { 'class': 'protocol-icon domain' }, '🌍'),
+							E('span', {}, ' ' + item.domain)
+						]),
+						E('span', { 'class': 'sid-cell' }, item.sid)
+					]);
 				});
 			}
 		}
@@ -513,30 +549,51 @@ return view.extend({
 
 		var controls = E('div', { 'class': 'l7-controls' }, [
 			E('div', { 'class': 'l7-controls-left' }, [
-				E('label', { 'for': 'sid-size-select' }, _('Show entries: ')),
-				E('select', {
-					'id': 'sid-size-select',
-					'change': ui.createHandlerFn(this, function() {
-						if (lastSIDData) {
-							self.renderSIDData(lastSIDData);
-						}
-					})
-				}, [
-					E('option', { 'value': '10' }, '10'),
-					E('option', { 'value': '15' }, '15'),
-					E('option', { 'value': '20' }, '20'),
-					E('option', { 'value': '25' }, '25')
+				E('div', { 'class': 'control-group' }, [
+					E('span', { 'class': 'control-icon' }, '📊'),
+					E('label', { 'for': 'sid-size-select', 'class': 'control-label' }, _('Show entries:')),
+					E('select', {
+						'id': 'sid-size-select',
+						'class': 'cbi-input-select',
+						'change': ui.createHandlerFn(this, function() {
+							if (lastSIDData) {
+								self.renderSIDData(lastSIDData);
+							}
+						})
+					}, [
+						E('option', { 'value': '10' }, '10'),
+						E('option', { 'value': '15' }, '15'),
+						E('option', { 'value': '20' }, '20'),
+						E('option', { 'value': '25' }, '25'),
+						E('option', { 'value': '50' }, '50')
+					])
 				])
 			]),
 			E('div', { 'class': 'l7-controls-right' }, [
-				E('span', { 'id': 'last-updated' }, _('Last updated: never')),
+				E('div', { 'class': 'control-group' }, [
+					E('span', { 'class': 'control-icon' }, '🕐'),
+					E('span', { 'id': 'last-updated', 'class': 'last-updated-text' }, _('Last updated: never'))
+				]),
 				E('button', {
-					'class': 'cbi-button cbi-button-apply',
+					'class': 'cbi-button cbi-button-action',
+					'id': 'pause-resume-btn',
 					'click': function(ev) {
 						isPaused = !isPaused;
-						ev.target.textContent = isPaused ? _('Resume') : _('Pause');
+						var btn = ev.target;
+						if (isPaused) {
+							btn.innerHTML = '<span class="btn-icon">▶️</span> ' + _('Resume');
+							btn.classList.remove('cbi-button-action');
+							btn.classList.add('cbi-button-positive');
+						} else {
+							btn.innerHTML = '<span class="btn-icon">⏸️</span> ' + _('Pause');
+							btn.classList.remove('cbi-button-positive');
+							btn.classList.add('cbi-button-action');
+						}
 					}
-				}, _('Pause'))
+				}, [
+					E('span', { 'class': 'btn-icon' }, '⏸️'),
+					E('span', {}, ' ' + _('Pause'))
+				])
 			])
 		]);
 
@@ -581,14 +638,14 @@ return view.extend({
 				]),
 				E('table', { 'class': 'table', 'id': 'sid-data' }, [
 					E('tr', { 'class': 'tr table-titles' }, [
-						E('th', { 'class': 'th left' }, [ _('SID') ]),
-						E('th', { 'class': 'th left' }, [ _('Domain&L7Protocol') ]),
-						E('th', { 'class': 'th right' }, [ _('Download Speed (Bit/s)') ]),
-						E('th', { 'class': 'th right' }, [ _('Download (Bytes)') ]),
-						E('th', { 'class': 'th right' }, [ _('Download (Packets)') ]),
-						E('th', { 'class': 'th right' }, [ _('Upload Speed (Bit/s)') ]),
-						E('th', { 'class': 'th right' }, [ _('Upload (Bytes)') ]),
-						E('th', { 'class': 'th right' }, [ _('Upload (Packets)') ])
+						E('th', { 'class': 'th left' }, [ E('span', { 'class': 'th-icon' }, '🆔'), ' ', _('SID') ]),
+						E('th', { 'class': 'th left' }, [ E('span', { 'class': 'th-icon' }, '🌐'), ' ', _('Domain&L7Protocol') ]),
+						E('th', { 'class': 'th right' }, [ E('span', { 'class': 'th-icon' }, '⬇️'), ' ', _('Download Speed (Bit/s)') ]),
+						E('th', { 'class': 'th right' }, [ E('span', { 'class': 'th-icon' }, '📦'), ' ', _('Download (Bytes)') ]),
+						E('th', { 'class': 'th right' }, [ E('span', { 'class': 'th-icon' }, '📨'), ' ', _('Download (Packets)') ]),
+						E('th', { 'class': 'th right' }, [ E('span', { 'class': 'th-icon' }, '⬆️'), ' ', _('Upload Speed (Bit/s)') ]),
+						E('th', { 'class': 'th right' }, [ E('span', { 'class': 'th-icon' }, '📦'), ' ', _('Upload (Bytes)') ]),
+						E('th', { 'class': 'th right' }, [ E('span', { 'class': 'th-icon' }, '📨'), ' ', _('Upload (Packets)') ])
 					]),
 					E('tr', { 'class': 'tr placeholder' }, [
 						E('td', { 'class': 'td', 'colspan': '8' }, [
@@ -601,9 +658,9 @@ return view.extend({
 			E('div', { 'class': 'cbi-section', 'data-tab': 'l7proto', 'data-tab-title': _('L7 Protocol Data') }, [
 				E('table', { 'class': 'table', 'id': 'l7proto-data' }, [
 					E('tr', { 'class': 'tr table-titles' }, [
-						E('th', { 'class': 'th left' }, [ _('ID') ]),
-						E('th', { 'class': 'th left' }, [ _('Domain&L7Protocol') ]),
-						E('th', { 'class': 'th right' }, [ _('SID') ])
+						E('th', { 'class': 'th left' }, [ E('span', { 'class': 'th-icon' }, '#️⃣'), ' ', _('ID') ]),
+						E('th', { 'class': 'th left' }, [ E('span', { 'class': 'th-icon' }, '🌐'), ' ', _('Domain&L7Protocol') ]),
+						E('th', { 'class': 'th right' }, [ E('span', { 'class': 'th-icon' }, '🔑'), ' ', _('SID') ])
 					]),
 					E('tr', { 'class': 'tr placeholder' }, [
 						E('td', { 'class': 'td', 'colspan': '3' }, [
