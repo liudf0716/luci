@@ -28,16 +28,16 @@ function addAlgorithms(o, algorithms) {
 function sectionNameCheck(extra_class) {
 	var el = form.GridSection.prototype.renderSectionAdd.apply(this, arguments),
 		nameEl = el.querySelector('.cbi-section-create-name');
-	ui.addValidator(nameEl, 'uciname', true, function(v) {
+	ui.addValidator(nameEl, 'uciname', true, function (v) {
 		let sections = [
 			...uci.sections('ipsec', 'remote'),
 			...uci.sections('ipsec', 'tunnel'),
 			...uci.sections('ipsec', 'crypto_proposal'),
 		];
-		if (sections.find(function(s) {
+		if (sections.find(function (s) {
 			return s['.name'] == v;
 		})) {
-			return _('Remotes, Encryption Proposals and Tunnels may not share the same names.') + ' ' + 
+			return _('Remotes, Encryption Proposals and Tunnels may not share the same names.') + ' ' +
 				_('Use combinations like tunnel1_phase1 that do not exceed 15 characters.');
 		}
 		if (v.length > 15) return _('Name length shall not exceed 15 characters');
@@ -64,9 +64,9 @@ return view.extend({
 		s.addremove = true;
 
 		o = s.option(widgets.NetworkSelect, 'listen', _('Listening Interfaces'),
-			_('Interfaces that accept VPN traffic'));
+			_('Interfaces that accept VPN traffic. Leave empty to listen on all interfaces.'));
 		o.datatype = 'interface';
-		o.placeholder = _('Select an interface or leave empty for all interfaces');
+		o.placeholder = _('wan, lan, ...');
 		o.default = 'wan';
 		o.multiple = true;
 		o.rmempty = false;
@@ -106,13 +106,15 @@ return view.extend({
 		o = s.taboption('general', form.Value, 'gateway', _('Gateway (Remote Endpoint)'),
 			_('IP address or FQDN name of the tunnel remote endpoint'));
 		o.datatype = 'or(hostname,ipaddr)';
+		o.placeholder = _('vpn.example.com or 192.168.1.1');
 		o.rmempty = false;
 
 		o = s.taboption('general', form.Value, 'local_ip', _('Local IP'),
-			_('Local address(es) to use in IKE negotiation'));
+			_('Local address(es) to use in IKE negotiation. Leave empty for auto-detection.'));
 		o.datatype = 'ipaddr';
+		o.placeholder = _('192.168.1.100');
 		o.modalonly = true;
-		
+
 		o = s.taboption('general', form.ListValue, 'gateway_type', _('Gateway Type'),
 			_('Type of the local gateway.'));
 		o.value('initiator', _('Initiator'));
@@ -451,7 +453,7 @@ return view.extend({
 			var encryptionAlgorithm = this.section.formvalue(section_id, 'encryption_algorithm');
 
 			if (strongswan_algorithms.getAuthenticatedEncryptionAlgorithms().includes(
-					encryptionAlgorithm) && !value) {
+				encryptionAlgorithm) && !value) {
 				return _('PRF Algorithm must be configured when using an Authenticated Encryption Algorithm');
 			}
 
@@ -460,7 +462,7 @@ return view.extend({
 		o.optional = true;
 		o.depends('is_esp', '0');
 		addAlgorithms(o, strongswan_algorithms.getPrfAlgorithms());
-		
+
 		// Pools Configuration
 		s = m.section(form.GridSection, 'pools', _('Pool Configuration'),
 			_('Define IP Address Pools for VPN Clients.'));
@@ -473,18 +475,103 @@ return view.extend({
 		o.placeholder = '10.10.0.0/24';
 
 		// Configuration File
-		s = m.section(form.TypedSection, 'swanctl', 
+		s = m.section(form.TypedSection, 'swanctl',
 			_('Configuration File'),
-			_('View the current strongSwan configuration file.'));
+			_('View the current strongSwan configuration file generated from the settings above. This file is read-only and automatically generated.'));
 		s.anonymous = true;
-		
-		o = s.option(form.TextValue, 'editlist', _('swanctl.conf'),
-			_('Contents of the swanctl.conf file.'));
-		o.rows = 30;
+		s.addremove = false;
+		s.cfgsections = function () {
+			return ['_config'];
+		};
+
+		o = s.option(form.TextValue, '_dummy', _('swanctl.conf'),
+			_('Auto-generated configuration file located at /var/swanctl/swanctl.conf'));
+		o.rows = 35;
 		o.readonly = true;
-		o.load = function(section_id) {
-			return L.resolveDefault(fs.read('/var/swanctl/swanctl.conf'), 'no result swanctl.conf file').then(function(content) {
-				return content;
+		o.monospace = true;
+		o.optional = false;
+		o.wrap = 'off';
+		o.cfgvalue = function (section_id) {
+			return L.resolveDefault(fs.read('/var/swanctl/swanctl.conf'), '# Configuration file not found or empty\\n# Please save your settings to generate the configuration file.');
+		};
+		o.render = function (option_index, section_id, in_table) {
+			var self = this;
+			var rendered = form.TextValue.prototype.render.apply(this, [option_index, section_id, in_table]);
+			return rendered.then(function (node) {
+				var textarea = node.querySelector('textarea');
+				if (textarea) {
+					textarea.style.width = '100%';
+					textarea.style.maxWidth = '100%';
+					textarea.style.boxSizing = 'border-box';
+
+					// Create button container
+					var buttonContainer = E('div', {
+						'style': 'margin-bottom: 10px; display: flex; gap: 10px; align-items: center;'
+					});
+
+					// Create refresh button
+					var refreshBtn = E('button', {
+						'class': 'cbi-button cbi-button-action',
+						'click': function (ev) {
+							ev.preventDefault();
+							ui.showModal(_('Refreshing...'), [
+								E('p', { 'class': 'spinning' }, _('Loading configuration file...'))
+							]);
+
+							L.resolveDefault(fs.read('/var/swanctl/swanctl.conf'), '# Configuration file not found or empty\\n# Please save your settings to generate the configuration file.').then(function (content) {
+								textarea.value = content;
+								ui.hideModal();
+								ui.addNotification(null, E('p', _('Configuration file refreshed successfully')), 'info');
+							}).catch(function (err) {
+								ui.hideModal();
+								ui.addNotification(null, E('p', _('Failed to refresh configuration file: %s').format(err.message)), 'error');
+							});
+						}
+					}, [
+						E('span', '↻ '),
+						_('Refresh')
+					]);
+
+					// Create copy button
+					var copyBtn = E('button', {
+						'class': 'cbi-button cbi-button-action',
+						'click': function (ev) {
+							ev.preventDefault();
+							if (navigator.clipboard && navigator.clipboard.writeText) {
+								navigator.clipboard.writeText(textarea.value).then(function () {
+									ui.addNotification(null, E('p', _('Configuration copied to clipboard')), 'info');
+								}).catch(function (err) {
+									ui.addNotification(null, E('p', _('Failed to copy: %s').format(err.message)), 'error');
+								});
+							} else {
+								// Fallback for older browsers
+								textarea.select();
+								try {
+									document.execCommand('copy');
+									ui.addNotification(null, E('p', _('Configuration copied to clipboard')), 'info');
+								} catch (err) {
+									ui.addNotification(null, E('p', _('Failed to copy to clipboard')), 'error');
+								}
+							}
+						}
+					}, [
+						E('span', '📋 '),
+						_('Copy')
+					]);
+
+					buttonContainer.appendChild(refreshBtn);
+					buttonContainer.appendChild(copyBtn);
+
+					// Find the correct container (cbi-value-field) and insert buttons before textarea
+					var valueField = textarea.closest('.cbi-value-field');
+					if (valueField) {
+						valueField.insertBefore(buttonContainer, valueField.firstChild);
+					} else {
+						// Fallback: insert before textarea
+						textarea.parentNode.insertBefore(buttonContainer, textarea);
+					}
+				}
+				return node;
 			});
 		};
 

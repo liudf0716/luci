@@ -396,3 +396,51 @@ msgstr "地址池"
 
 msgid "IP address assign to the remote peer from the pool."
 msgstr "从地址池分配给远程对等体的 IP 地址"
+
+msgid "Refreshing..."
+msgstr "刷新中..."
+
+msgid "Loading configuration file..."
+msgstr "正在加载配置文件..."
+
+msgid "Configuration file refreshed successfully"
+msgstr "配置文件刷新成功"
+
+msgid "Failed to refresh configuration file: %s"
+msgstr "刷新配置文件失败：%s"
+
+msgid "Configuration copied to clipboard"
+msgstr "配置已复制到剪贴板"
+
+msgid "Failed to copy: %s"
+msgstr "复制失败：%s"
+
+msgid "Failed to copy to clipboard"
+msgstr "复制到剪贴板失败"
+
+msgid "Refresh"
+msgstr "刷新"
+
+msgid "Copy"
+msgstr "复制"
+
+msgid "View the current strongSwan configuration file generated from the settings above. This file is read-only and automatically generated."
+msgstr "查看从上述设置生成的当前 strongSwan 配置文件。此文件为只读且自动生成。"
+
+msgid "Auto-generated configuration file located at /var/swanctl/swanctl.conf"
+msgstr "位于 /var/swanctl/swanctl.conf 的自动生成配置文件"
+
+msgid "Interfaces that accept VPN traffic. Leave empty to listen on all interfaces."
+msgstr "接受 VPN 流量的接口。留空则监听所有接口。"
+
+msgid "wan, lan, ..."
+msgstr "wan, lan, ..."
+
+msgid "vpn.example.com or 192.168.1.1"
+msgstr "vpn.example.com 或 192.168.1.1"
+
+msgid "Local address(es) to use in IKE negotiation. Leave empty for auto-detection."
+msgstr "在 IKE 协商中使用的本地地址。留空则自动检测。"
+
+msgid "192.168.1.100"
+msgstr "192.168.1.100"
