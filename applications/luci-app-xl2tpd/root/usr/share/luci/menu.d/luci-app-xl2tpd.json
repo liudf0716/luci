@@ -1,0 +1,28 @@
+{
+    "admin/vpn/xl2tpd": {
+        "title": "xl2tpd L2TP",
+        "order": 80,
+        "action": {
+            "type": "view",
+            "path": "xl2tpd/overview"
+        },
+        "depends": {
+            "acl": [
+                "luci-app-xl2tpd"
+            ]
+        }
+    },
+    "admin/status/xl2tpd": {
+        "title": "xl2tpd L2TP",
+        "order": 80,
+        "action": {
+            "type": "view",
+            "path": "xl2tpd/status"
+        },
+        "depends": {
+            "acl": [
+                "luci-app-xl2tpd"
+            ]
+        }
+    }
+}

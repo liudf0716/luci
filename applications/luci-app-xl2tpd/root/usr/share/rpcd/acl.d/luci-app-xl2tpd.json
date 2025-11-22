@@ -1,0 +1,32 @@
+{
+    "luci-app-xl2tpd": {
+        "description": "Grant access to xl2tpd configuration and status",
+        "read": {
+            "file": {
+                "/etc/xl2tpd/*": [
+                    "read"
+                ],
+                "/etc/ppp/options.xl2tpd": [
+                    "read"
+                ],
+                "/var/run/xl2tpd/*": [
+                    "list",
+                    "read"
+                ]
+            },
+            "uci": [
+                "network"
+            ]
+        },
+        "write": {
+            "uci": [
+                "network"
+            ]
+        },
+        "exec": {
+            "xl2tpd-control": [
+                "*"
+            ]
+        }
+    }
+}
