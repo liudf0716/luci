@@ -29,11 +29,17 @@ return view.extend({
             return uci.get('network', section_id, 'proto') === 'l2tp';
         };
         s.handleAdd = function (ev) {
-            var config = this.uciconfig || this.map.config,
-                name = this.ucivalue(this.addsection(ev));
+            var m = this.map,
+                sections = m.cfgsections(this.uciconfig || this.map.config, this.sectiontype);
 
-            uci.set(config, name, 'proto', 'l2tp');
-            return this.map.save(null, true);
+            return m.render().then(L.bind(ui.addSection, ui, m.config, this.sectiontype, this.addbtntitle || this.title))
+                .then(L.bind(function (name) {
+                    if (name) {
+                        uci.set(m.config, name, 'proto', 'l2tp');
+                        uci.set(m.config, name, 'auto', '1');
+                        return m.save();
+                    }
+                }, this));
         };
 
         s.modaltitle = function (section_id) {
@@ -52,7 +58,11 @@ return view.extend({
         o.rmempty = false;
         o.editable = true;
 
-        // Detailed options in modal
+        // Declare tabs for modal view
+        s.tab('general', _('General Settings'));
+        s.tab('advanced', _('Advanced Options'));
+
+        // Detailed options in modal - General tab
         o = s.taboption('general', form.Value, 'server', _('L2TP Server'),
             _('L2TP server address in format: host[:port]. Port defaults to 1701.'));
         o.datatype = 'host';

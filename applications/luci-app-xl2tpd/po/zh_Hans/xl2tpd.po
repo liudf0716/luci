@@ -18,6 +18,12 @@ msgstr "管理 L2TP 网络接口。每个接口代表一个 L2TP 隧道连接。
 msgid "Edit L2TP Interface"
 msgstr "编辑 L2TP 接口"
 
+msgid "General Settings"
+msgstr "基本设置"
+
+msgid "Advanced Options"
+msgstr "高级选项"
+
 msgid "Bring up on boot"
 msgstr "开机启动"
 
