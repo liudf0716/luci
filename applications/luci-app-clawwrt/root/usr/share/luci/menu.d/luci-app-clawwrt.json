@@ -1,0 +1,13 @@
+{
+    "admin/clawwrt": {
+        "title": "ClawWRT",
+        "order": 1,
+        "action": {
+            "type": "view",
+            "path": "clawwrt"
+        },
+        "depends": {
+            "acl": [ "luci-app-clawwrt" ]
+        }
+    }
+}
