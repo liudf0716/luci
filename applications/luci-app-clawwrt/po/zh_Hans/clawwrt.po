@@ -1,0 +1,86 @@
+msgid ""
+msgstr "Content-Type: text/plain; charset=UTF-8"
+
+msgid "ClawWRT"
+msgstr "龙虾管理"
+
+msgid "ClawWRT defines a lightweight remote management agent for OpenWrt."
+msgstr "ClawWRT 是一个轻量级的龙虾远程管理代理。"
+
+msgid "Service Status"
+msgstr "服务状态"
+
+msgid "Running"
+msgstr "正在运行"
+
+msgid "Not Running"
+msgstr "未运行"
+
+msgid "Base Settings"
+msgstr "基本设置"
+
+msgid "Enabled"
+msgstr "启用"
+
+msgid "Server Address"
+msgstr "服务器地址"
+
+msgid "Server Port"
+msgstr "服务器端口"
+
+msgid "WebSocket Path"
+msgstr "WebSocket 路径"
+
+msgid "Use SSL"
+msgstr "使用 SSL"
+
+msgid "Token"
+msgstr "认证令牌"
+
+msgid "Authentication token for OpenClaw."
+msgstr "用于连接 OpenClaw 平台的认证令牌。"
+
+msgid "Device ID"
+msgstr "设备 ID"
+
+msgid "Unique identifier for this device. Leave empty to auto-detect MAC."
+msgstr "设备的唯一标识符。留空则自动获取 MAC 地址作为 ID。"
+
+msgid "Advanced Settings"
+msgstr "高级设置"
+
+msgid "Heartbeat Interval"
+msgstr "心跳间隔"
+
+msgid "In seconds."
+msgstr "单位：秒。"
+
+msgid "Log Level"
+msgstr "日志级别"
+
+msgid "Debug"
+msgstr "调试 (Debug)"
+
+msgid "Info"
+msgstr "信息 (Info)"
+
+msgid "Warn"
+msgstr "警告 (Warn)"
+
+msgid "Error"
+msgstr "错误 (Error)"
+
+msgid "Configuration"
+msgstr "配置"
+
+msgid "Generate Device ID"
+msgstr "生成设备 ID"
+
+msgid "Generate"
+msgstr "立即生成"
+
+msgid "Generated Device ID: "
+msgstr "已生成设备 ID: "
+
+msgid "Failed to get WAN MAC address."
+msgstr "获取 WAN MAC 地址失败。"

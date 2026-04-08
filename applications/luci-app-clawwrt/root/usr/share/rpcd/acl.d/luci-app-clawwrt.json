@@ -1,0 +1,18 @@
+{
+    "luci-app-clawwrt": {
+        "description": "Grant access to LuCI app ClawWRT",
+        "read": {
+            "ubus": {
+                "service": [ "list" ],
+                "luci.clawwrt": [ "get_status", "get_wan_mac" ]
+            },
+            "file": {
+                "/etc/init.d/clawwrt": [ "exec" ]
+            },
+            "uci": [ "clawwrt" ]
+        },
+        "write": {
+            "uci": [ "clawwrt" ]
+        }
+    }
+}
