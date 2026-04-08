@@ -1,8 +1,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"PO-Revision-Date: 2026-01-22 09:00+0000\n"
-"Last-Translator: Максим Горпиніч <gorpinicmaksim0@gmail.com>\n"
+"PO-Revision-Date: 2025-02-13 13:09+0000\n"
+"Last-Translator: Максим Горпиніч <maksimgorpinic2005a@gmail.com>\n"
 "Language-Team: Ukrainian <https://hosted.weblate.org/projects/openwrt/"
 "luciapplicationsxfrpc/uk/>\n"
 "Language: uk\n"
@@ -11,11 +11,11 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
 "n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
-"X-Generator: Weblate 5.16-dev\n"
+"X-Generator: Weblate 5.10-dev\n"
 
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:104
 msgid "Alert"
-msgstr "'Агент"
+msgstr "Попередження"
 
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:82
 msgid "By default, this value is \"\"."
@@ -87,7 +87,7 @@ msgstr "Якщо remote_port дорівнює 0, frps призначить ва�
 
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:99
 msgid "Info"
-msgstr "Інфо"
+msgstr ""
 
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:124
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:135
@@ -188,7 +188,7 @@ msgstr "Субдомен"
 
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:79
 msgid "Token"
-msgstr "Токен"
+msgstr ""
 
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:80
 msgid ""
@@ -202,7 +202,7 @@ msgstr ""
 
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:101
 msgid "Warning"
-msgstr "Попередження"
+msgstr "Застереження"
 
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:30
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:32

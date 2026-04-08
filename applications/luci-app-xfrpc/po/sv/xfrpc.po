@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"PO-Revision-Date: 2026-03-22 17:10+0000\n"
+"PO-Revision-Date: 2024-10-23 12:34+0000\n"
 "Last-Translator: Kristoffer Grundström <swedishsailfishosuser@tutanota.com>\n"
 "Language-Team: Swedish <https://hosted.weblate.org/projects/openwrt/"
 "luciapplicationsxfrpc/sv/>\n"
@@ -10,11 +10,11 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.17-dev\n"
+"X-Generator: Weblate 5.8.2-dev\n"
 
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:104
 msgid "Alert"
-msgstr "Varning"
+msgstr ""
 
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:82
 msgid "By default, this value is \"\"."
@@ -46,7 +46,7 @@ msgstr ""
 
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:103
 msgid "Critical"
-msgstr "Kritiskt"
+msgstr ""
 
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:154
 msgid "Custom domains"
@@ -54,7 +54,7 @@ msgstr ""
 
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:98
 msgid "Debug"
-msgstr "Felsök"
+msgstr "Avlusa"
 
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:90
 msgid "Disabled xfrpc service"
@@ -66,7 +66,7 @@ msgstr ""
 
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:102
 msgid "Error"
-msgstr "Fel"
+msgstr ""
 
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:120
 msgid "General Settings"
@@ -96,7 +96,7 @@ msgstr ""
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:125
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:140
 msgid "Local port"
-msgstr "Lokal port"
+msgstr ""
 
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:136
 msgid "LocalIp specifies the IP address or host name to proxy to."
@@ -108,7 +108,7 @@ msgstr ""
 
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:94
 msgid "Log level"
-msgstr "Logg-nivå"
+msgstr ""
 
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:95
 msgid ""
@@ -127,7 +127,7 @@ msgstr ""
 
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:100
 msgid "Notice"
-msgstr "Avisering"
+msgstr ""
 
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:107
 msgid "Proxy Settings"
@@ -179,7 +179,7 @@ msgstr ""
 
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:160
 msgid "Subdomain"
-msgstr "Underdomän"
+msgstr ""
 
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:79
 msgid "Token"
@@ -194,7 +194,7 @@ msgstr ""
 
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:101
 msgid "Warning"
-msgstr "Varning"
+msgstr ""
 
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:30
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:32
@@ -203,7 +203,7 @@ msgstr ""
 
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:42
 msgid "xfrpc"
-msgstr "xfrpc"
+msgstr ""
 
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:43
 msgid "xfrpc is a c language frp client for frps."

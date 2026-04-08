@@ -1,9 +1,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"PO-Revision-Date: 2026-02-14 15:04+0000\n"
-"Last-Translator: SnIPeRSnIPeR "
-"<snipersniper@users.noreply.hosted.weblate.org>\n"
+"PO-Revision-Date: 2024-11-01 07:42+0000\n"
+"Last-Translator: lotigara <lotigara@yandex.ru>\n"
 "Language-Team: Russian <https://hosted.weblate.org/projects/openwrt/"
 "luciapplicationsxfrpc/ru/>\n"
 "Language: ru\n"
@@ -12,11 +11,11 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
 "n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
-"X-Generator: Weblate 5.16-dev\n"
+"X-Generator: Weblate 5.8.2-dev\n"
 
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:104
 msgid "Alert"
-msgstr "Тревога"
+msgstr "Оповещение"
 
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:82
 msgid "By default, this value is \"\"."
@@ -64,15 +63,15 @@ msgstr "Отключена служба xfrpc"
 
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:105
 msgid "Emergency"
-msgstr "Аварийный"
+msgstr "Аварийная ситуация"
 
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:102
 msgid "Error"
-msgstr "Ошибка"
+msgstr "Ошибки"
 
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:120
 msgid "General Settings"
-msgstr "Основные настройки"
+msgstr "Основные Настройки"
 
 #: applications/luci-app-xfrpc/root/usr/share/rpcd/acl.d/luci-app-xfrpc.json:3
 msgid "Grant access to LuCI app xfrpc"
@@ -88,7 +87,7 @@ msgstr "Если remote_port равен 0, frps назначит вам случ
 
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:99
 msgid "Info"
-msgstr "Информация"
+msgstr "Информационный"
 
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:124
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:135
@@ -110,7 +109,7 @@ msgstr "LocalPort указывает порт для прокси-сервера
 
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:94
 msgid "Log level"
-msgstr "Уровень журналирования"
+msgstr "Уровень журнала"
 
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:95
 msgid ""
@@ -157,7 +156,7 @@ msgstr "ЗАПУЩЕНО"
 
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:146
 msgid "Remote port"
-msgstr "Удалённый порт"
+msgstr "Удаленный порт"
 
 #: applications/luci-app-xfrpc/root/usr/share/luci/menu.d/luci-app-xfrpc.json:3
 msgid "Reverse proxy"

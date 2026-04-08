@@ -1,8 +1,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"PO-Revision-Date: 2026-01-20 07:03+0000\n"
-"Last-Translator: Nicolas Aigner <nicolas.aigner@gmail.com>\n"
+"PO-Revision-Date: 2024-06-24 23:51+0000\n"
+"Last-Translator: Janderson Vieira Santos <jandersonvs79@gmail.com>\n"
 "Language-Team: Portuguese (Brazil) <https://hosted.weblate.org/projects/"
 "openwrt/luciapplicationsxfrpc/pt_BR/>\n"
 "Language: pt_BR\n"
@@ -10,35 +10,35 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n > 1;\n"
-"X-Generator: Weblate 5.16-dev\n"
+"X-Generator: Weblate 5.6-rc\n"
 
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:104
 msgid "Alert"
-msgstr "Alerta"
+msgstr ""
 
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:82
 msgid "By default, this value is \"\"."
-msgstr "Por padrão, esse valor é \"\" (Vazio)."
+msgstr ""
 
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:71
 msgid "By default, this value is \"0.0.0.0\"."
-msgstr "Por padrão, esse valor é \"0.0.0.0\"."
+msgstr ""
 
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:97
 msgid "By default, this value is \"Info\"."
-msgstr "Por padrão, esse valor é \"Info\"."
+msgstr ""
 
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:129
 msgid "By default, this value is \"tcp\"."
-msgstr "Por padrão, esse valor é \"tcp\"."
+msgstr ""
 
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:76
 msgid "By default, this value is 7000."
-msgstr "Por padrão, esse valor é 7000."
+msgstr ""
 
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:58
 msgid "Collecting data ..."
-msgstr "Coletando dados..."
+msgstr ""
 
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:66
 msgid "Common Settings"
@@ -54,7 +54,7 @@ msgstr ""
 
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:98
 msgid "Debug"
-msgstr "Depuração (Debug)"
+msgstr ""
 
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:90
 msgid "Disabled xfrpc service"
@@ -66,7 +66,7 @@ msgstr ""
 
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:102
 msgid "Error"
-msgstr "Erro"
+msgstr ""
 
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:120
 msgid "General Settings"
@@ -86,7 +86,7 @@ msgstr ""
 
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:99
 msgid "Info"
-msgstr "Informação (Info)"
+msgstr ""
 
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:124
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:135
@@ -108,7 +108,7 @@ msgstr ""
 
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:94
 msgid "Log level"
-msgstr "Nível do registro"
+msgstr ""
 
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:95
 msgid ""

@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"PO-Revision-Date: 2025-08-02 07:12+0000\n"
+"PO-Revision-Date: 2024-07-09 23:09+0000\n"
 "Last-Translator: ssantos <ssantos@web.de>\n"
 "Language-Team: Portuguese <https://hosted.weblate.org/projects/openwrt/"
 "luciapplicationsxfrpc/pt/>\n"
@@ -10,31 +10,31 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.13-dev\n"
+"X-Generator: Weblate 5.7-dev\n"
 
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:104
 msgid "Alert"
-msgstr "Alerta"
+msgstr ""
 
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:82
 msgid "By default, this value is \"\"."
-msgstr "Por padrão, esse valor é \"\"."
+msgstr ""
 
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:71
 msgid "By default, this value is \"0.0.0.0\"."
-msgstr "Por padrão, esse valor é \"0.0.0.0\"."
+msgstr ""
 
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:97
 msgid "By default, this value is \"Info\"."
-msgstr "Por predefinição, este valor é \"Info\"."
+msgstr ""
 
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:129
 msgid "By default, this value is \"tcp\"."
-msgstr "Por defeito, este valor é \"tcp\"."
+msgstr ""
 
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:76
 msgid "By default, this value is 7000."
-msgstr "Por defeito, este valor é 7000."
+msgstr ""
 
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:58
 msgid "Collecting data ..."
@@ -42,7 +42,7 @@ msgstr "A coletar dados ..."
 
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:66
 msgid "Common Settings"
-msgstr "Definições comuns"
+msgstr ""
 
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:103
 msgid "Critical"
@@ -54,7 +54,7 @@ msgstr ""
 
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:98
 msgid "Debug"
-msgstr "Depuração"
+msgstr "Debug"
 
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:90
 msgid "Disabled xfrpc service"
@@ -66,7 +66,7 @@ msgstr ""
 
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:102
 msgid "Error"
-msgstr "Erro"
+msgstr "Falha"
 
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:120
 msgid "General Settings"
@@ -108,7 +108,7 @@ msgstr ""
 
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:94
 msgid "Log level"
-msgstr "Nível do registo"
+msgstr ""
 
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:95
 msgid ""
@@ -183,7 +183,7 @@ msgstr ""
 
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:79
 msgid "Token"
-msgstr "Token"
+msgstr ""
 
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:80
 msgid ""
@@ -194,7 +194,7 @@ msgstr ""
 
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:101
 msgid "Warning"
-msgstr "Alerta"
+msgstr ""
 
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:30
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:32

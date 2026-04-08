@@ -10,7 +10,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.17-dev\n"
+"X-Generator: Weblate 5.8-rc\n"
 
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:104
 msgid "Alert"
@@ -86,7 +86,7 @@ msgstr "Si el puerto remoto es 0, frps te asignará un puerto"
 
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:99
 msgid "Info"
-msgstr "Informe"
+msgstr "Info"
 
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:124
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:135
@@ -207,7 +207,7 @@ msgstr ""
 
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:101
 msgid "Warning"
-msgstr "Aviso"
+msgstr "Advertencia"
 
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:30
 #: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:32
