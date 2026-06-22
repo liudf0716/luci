@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"PO-Revision-Date: 2026-04-06 20:00+0000\n"
+"PO-Revision-Date: 2026-06-22 12:00+0000\n"
 "Last-Translator: DragonBluep <yangshiji66@outlook.com>\n"
 "Language-Team: Chinese (Simplified Han script) <https://hosted.weblate.org/"
 "projects/openwrt/luciapplicationsxfrpc/zh_Hans/>\n"
@@ -12,208 +12,598 @@ msgstr ""
 "Plural-Forms: nplurals=1; plural=0;\n"
 "X-Generator: Weblate 5.5-dev\n"
 
-#: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:104
 msgid "Alert"
 msgstr "警报"
 
-#: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:82
+msgid "Auth method"
+msgstr "认证方式"
+
 msgid "By default, this value is \"\"."
 msgstr "此值默认为 \"\""
 
-#: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:71
 msgid "By default, this value is \"0.0.0.0\"."
 msgstr "此值默认为 \"0.0.0.0\""
 
-#: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:97
 msgid "By default, this value is \"Info\"."
 msgstr "此值默认为 \"Info\""
 
-#: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:129
-msgid "By default, this value is \"tcp\"."
-msgstr "此值默认为 \"tcp\""
-
-#: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:76
 msgid "By default, this value is 7000."
 msgstr "此值默认为 7000"
 
-#: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:58
 msgid "Collecting data ..."
 msgstr "正在收集数据…"
 
-#: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:66
 msgid "Common Settings"
 msgstr "常规设置"
 
-#: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:103
 msgid "Critical"
 msgstr "严重"
 
-#: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:154
-msgid "Custom domains"
-msgstr "自定义域"
+msgid "Custom Domains"
+msgstr "自定义域名"
 
-#: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:98
+msgid "Custom domains for http or https proxy"
+msgstr "http 或 https 代理的自定义域名"
+
+msgid "Custom domains for http proxy"
+msgstr "http 代理的自定义域名"
+
+msgid "Custom domains for https proxy"
+msgstr "https 代理的自定义域名"
+
+msgid "Custom domains for TCPMux proxy."
+msgstr "TCPMux 代理的自定义域名"
+
 msgid "Debug"
 msgstr "调试"
 
-#: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:90
-msgid "Disabled xfrpc service"
-msgstr "禁用了 xfrpc 服务"
+msgid "Don't specify service type"
+msgstr "不指定具体服务"
 
-#: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:105
+msgid "Edit"
+msgstr "编辑"
+
 msgid "Emergency"
 msgstr "紧急"
 
-#: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:102
+msgid "Enable"
+msgstr "启用"
+
+msgid "Enable TLS"
+msgstr "启用 TLS"
+
+msgid "Enable this HTTP proxy."
+msgstr "启用此 HTTP 代理"
+
+msgid "Enable this HTTPS proxy."
+msgstr "启用此 HTTPS 代理"
+
+msgid "Enable this SOCKS5 proxy."
+msgstr "启用此 SOCKS5 代理"
+
+msgid "Enable this STCP proxy."
+msgstr "启用此 STCP 代理"
+
+msgid "Enable this STCP visitor."
+msgstr "启用此 STCP 访问者"
+
+msgid "Enable this TCP proxy."
+msgstr "启用此 TCP 代理"
+
+msgid "Enable this TCPMux proxy."
+msgstr "启用此 TCPMux 代理"
+
+msgid "Enable this XTCP proxy."
+msgstr "启用此 XTCP 代理"
+
+msgid "Enable this XTCP visitor."
+msgstr "启用此 XTCP 访问者"
+
+msgid "Enable this SUDP proxy."
+msgstr "启用此 SUDP 代理"
+
+msgid "Enable xfrpc service."
+msgstr "启用 xfrpc 服务"
+
+msgid "Enable iod service."
+msgstr "启用碘服务"
+
+msgid "Enable Subdomain"
+msgstr "启用子域名"
+
+msgid "Enable subdomain for http proxy"
+msgstr "为 http 代理启用子域名"
+
+msgid "Enable subdomain for https proxy"
+msgstr "为 https 代理启用子域名"
+
+msgid "Enable TCP multiplexing on the connection to frps. This reduces the number of connections."
+msgstr "启用与 frps 连接的 TCP 多路复用。这将减少连接数量。"
+
+msgid "Encryption"
+msgstr "加密"
+
+msgid "Compression"
+msgstr "压缩"
+
+msgid "End time"
+msgstr "结束时间"
+
+msgid "End time must be greater than start time"
+msgstr "结束时间必须大于开始时间"
+
+msgid "End time specifies the end time of the proxy service."
+msgstr "结束时间指定代理服务的结束时间。"
+
+msgid "End time specifies the end time of the proxy service. 0 means no restriction."
+msgstr "结束时间指定代理服务的结束时间。0 表示无限制。"
+
 msgid "Error"
 msgstr "错误"
 
-#: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:120
+msgid "Execute"
+msgstr "执行"
+
+msgid "Execute the plugin action"
+msgstr "执行插件操作"
+
+msgid "Fallback to"
+msgstr "回退到"
+
+msgid "Fallback to another visitor when the connection fails."
+msgstr "连接失败时回退到另一个访问者。"
+
+msgid "For security, you can specify the service type to proxy to."
+msgstr "出于安全考虑，您可以指定要代理的具体服务。"
+
 msgid "General Settings"
 msgstr "常规设置"
 
-#: applications/luci-app-xfrpc/root/usr/share/rpcd/acl.d/luci-app-xfrpc.json:3
-msgid "Grant access to LuCI app xfrpc"
-msgstr "授予访问 LuCI 应用 xfrpc 的权限"
+msgid "HTTP Basic Auth Password"
+msgstr "HTTP 基本身份验证密码"
 
-#: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:121
-msgid "HTTP Settings"
-msgstr "HTTP 设置"
+msgid "HTTP Basic Auth User"
+msgstr "HTTP 基本身份验证用户"
 
-#: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:147
-msgid "If remote_port is 0, frps will assign a random port for you"
-msgstr "如远程端口为 0，frps 将给你分配一个端口"
+msgid "HTTP Proxy"
+msgstr "HTTP 代理"
 
-#: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:99
+msgid "HTTPS Proxy"
+msgstr "HTTPS 代理"
+
+msgid "Host header rewrite"
+msgstr "Host 头重写"
+
+msgid "Health check type"
+msgstr "健康检查类型"
+
+msgid "Health check URL"
+msgstr "健康检查 URL"
+
+msgid "Health check interval"
+msgstr "健康检查间隔"
+
+msgid "Health check timeout"
+msgstr "健康检查超时"
+
+msgid "Health check max failed"
+msgstr "健康检查最大失败次数"
+
+msgid "Type of health check to perform. Valid values are \"tcp\" and \"http\"."
+msgstr "执行的健康检查类型。有效值为 \"tcp\" 和 \"http\"。"
+
+msgid "URL path for HTTP health check. Only used when health check type is \"http\"."
+msgstr "HTTP 健康检查的 URL 路径。仅在健康检查类型为 \"http\" 时使用。"
+
+msgid "Interval between health checks, in seconds."
+msgstr "健康检查之间的间隔，以秒为单位。"
+
+msgid "Timeout for health check, in seconds."
+msgstr "健康检查超时，以秒为单位。"
+
+msgid "Max number of consecutive failed health checks before marking the proxy as unavailable."
+msgstr "在将代理标记为不可用之前，连续失败的最大健康检查次数。"
+
+msgid "Disabled"
+msgstr "已禁用"
+
+msgid "Heartbeat interval"
+msgstr "心跳间隔"
+
+msgid "Heartbeat timeout"
+msgstr "心跳超时"
+
+msgid "Interval between sending heartbeats to the server, in seconds. By default, this value is 30."
+msgstr "向服务器发送心跳的间隔，以秒为单位。默认值为 30。"
+
+msgid "IOD Settings"
+msgstr "IOD 设置"
+
 msgid "Info"
 msgstr "信息"
 
-#: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:124
-#: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:135
 msgid "Local IP"
 msgstr "本地 IP"
 
-#: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:125
-#: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:140
+msgid "Local IP specifies the IP address to proxy to."
+msgstr "本地IP指定要代理到的 IP 地址"
+
 msgid "Local port"
 msgstr "本地端口"
 
-#: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:136
-msgid "LocalIp specifies the IP address or host name to proxy to."
-msgstr "LocalIp 指定要经代理访问的 IP 地址或主机名"
+msgid "Local port specifies the port to proxy to."
+msgstr "本地端口指定要代理到的端口"
 
-#: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:141
-msgid "LocalPort specifies the port to proxy to."
-msgstr "LocalPort 指定要经代理访问的端口"
+msgid "Locations"
+msgstr "路由路径"
 
-#: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:94
 msgid "Log level"
 msgstr "日志级别"
 
-#: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:95
-msgid ""
-"LogLevel specifies the minimum log level. Valid values are \"Debug\", "
-"\"Info\", \"Notice\", \"Warning\", \"Error\", \"Critical\", \"Alert\" and "
-"\"Emergency\"."
-msgstr "LogLevel 指定最小日志等级有效值为 \"调试\""
-"”、"信息"、"注意"、"警告"、错误"、"严重"、"警报"和"紧急""
+msgid "LogLevel specifies the minimum log level. Valid values are \"Debug\", \"Info\", \"Notice\", \"Warning\", \"Error\", \"Critical\", \"Alert\" and \"Emergency\"."
+msgstr "LogLevel 指定最小日志等级。有效值为 \"Debug\"、\"Info\"、\"Notice\"、\"Warning\"、\"Error\"、\"Critical\"、\"Alert\" 和 \"Emergency\"。"
 
-#: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:32
+msgid "Multiplexer"
+msgstr "多路复用器"
+
+msgid "Specifies the multiplexer type for TCPMux proxy."
+msgstr "指定 TCPMux 代理的多路复用器类型。"
+
 msgid "NOT RUNNING"
 msgstr "未在运行"
 
-#: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:114
-msgid "Name can not be \"common\""
-msgstr "名称不能为\"common\""
-
-#: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:100
 msgid "Notice"
 msgstr "注意"
 
-#: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:107
+msgid "OIDC Auth"
+msgstr "OIDC 认证"
+
+msgid "OIDC Audience"
+msgstr "OIDC 受众"
+
+msgid "OIDC Client ID"
+msgstr "OIDC 客户端 ID"
+
+msgid "OIDC Client Secret"
+msgstr "OIDC 客户端密钥"
+
+msgid "OIDC Insecure Skip Verify"
+msgstr "OIDC 跳过不安全验证"
+
+msgid "OIDC Scope"
+msgstr "OIDC 范围"
+
+msgid "OIDC Token Endpoint URL"
+msgstr "OIDC 令牌端点 URL"
+
+msgid "OIDC Trusted CA File"
+msgstr "OIDC 受信 CA 文件"
+
+msgid "Password for HTTP Basic Authentication on the proxy."
+msgstr "代理上 HTTP 基本身份验证的密码。"
+
+msgid "Path to the TLS client certificate file."
+msgstr "TLS 客户端证书文件路径。"
+
+msgid "Path to the TLS client key file."
+msgstr "TLS 客户端密钥文件路径。"
+
+msgid "Path to the trusted CA certificate file for OIDC token endpoint."
+msgstr "OIDC 令牌端点的受信 CA 证书文件路径。"
+
+msgid "Path to the trusted CA certificate file for verifying the server."
+msgstr "用于验证服务器的受信 CA 证书文件路径。"
+
+msgid "Plugin Action"
+msgstr "插件操作"
+
+msgid "Plugin Name"
+msgstr "插件名称"
+
+msgid "Plugin Param"
+msgstr "插件参数"
+
+msgid "Plugin Settings"
+msgstr "插件设置"
+
+msgid "Protocol"
+msgstr "协议"
+
 msgid "Proxy Settings"
 msgstr "代理设置"
 
-#: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:123
-#: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:127
-msgid "Proxy type"
-msgstr "代理类型"
+msgid "QUIC bind port"
+msgstr "QUIC 绑定端口"
 
-#: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:128
-msgid ""
-"ProxyType specifies the type of this proxy. Valid values include \"tcp\", "
-"\"http\", \"https\"."
-msgstr "ProxyType 指定代理类型有效值包括 \"tcp\"、 \"http\"、 \"https\""
-
-#: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:30
 msgid "RUNNING"
 msgstr "运行中"
 
-#: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:146
+msgid "Remote Port"
+msgstr "远程端口"
+
 msgid "Remote port"
 msgstr "远程端口"
 
-#: applications/luci-app-xfrpc/root/usr/share/luci/menu.d/luci-app-xfrpc.json:3
-msgid "Reverse proxy"
-msgstr "反向代理"
+msgid "Remote port specifies server-side port to proxy to."
+msgstr "远程端口指定要代理到的服务器端口"
 
-#: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:69
+msgid "Remote port of plugin specifies the remote port of remote xfrpc plugin."
+msgstr "插件的远程端口指定远程 xfrpc 插件的远程端口"
+
+msgid "Request Headers"
+msgstr "请求头"
+
+msgid "Additional request headers, format: key1=val1,key2=val2"
+msgstr "附加请求头，格式: key1=val1,key2=val2"
+
+msgid "Response Headers"
+msgstr "响应头"
+
+msgid "Additional response headers, format: key1=val1,key2=val2"
+msgstr "附加响应头，格式: key1=val1,key2=val2"
+
+msgid "Rewrite the HTTP Host header to the specified value."
+msgstr "将 HTTP Host 头重写为指定的值。"
+
+msgid "SOCKS5 Proxy"
+msgstr "SOCKS5 代理"
+
+msgid "STCP Proxy"
+msgstr "STCP 代理"
+
+msgid "STCP Visitor"
+msgstr "STCP 访问者"
+
+msgid "SUDP Proxy"
+msgstr "SUDP 代理"
+
 msgid "Server address"
 msgstr "服务器地址"
 
-#: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:70
 msgid "Server address specifies the address of the server to connect to."
 msgstr "Server address 指定要连接的服务器的地址"
 
-#: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:74
+msgid "Server name"
+msgstr "服务器名称"
+
 msgid "Server port"
 msgstr "服务器端口"
 
-#: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:75
 msgid "Server port specifies the port to connect to the server on."
 msgstr "Server port 指定要连接的服务器端口"
 
-#: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:67
-#: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:85
+msgid "Service Type"
+msgstr "服务类型"
+
+msgid "Specifies the subdomain for http or https proxy, only works when server support subdomain."
+msgstr "指定 http 或 https 代理的子域名，仅在服务器支持子域名时有效"
+
+msgid "Specifies the subdomain for http proxy, only works when server support subdomain."
+msgstr "指定 http 代理的子域名，仅在服务器支持子域名时有效"
+
+msgid "Specifies the subdomain for https proxy, only works when server support subdomain."
+msgstr "指定 https 代理的子域名，仅在服务器支持子域名时有效"
+
+msgid "Specifies the protocol used to connect to the server. Valid values are \"tcp\", \"kcp\" and \"quic\"."
+msgstr "指定连接服务器使用的协议。有效值为 \"tcp\"、\"kcp\" 和 \"quic\"。"
+
+msgid "Specifies the UDP port to bind for QUIC protocol. Only used when protocol is set to \"quic\"."
+msgstr "指定 QUIC 协议绑定的 UDP 端口。仅在协议设置为 \"quic\" 时使用。"
+
+msgid "Specifies the name of remote xfrpc plugin."
+msgstr "指定远程 xfrpc 插件的名称"
+
+msgid "Specifies the action sending to remote xfrpc plugin."
+msgstr "指定发送到远程 xfrpc 插件的操作"
+
+msgid "Specifies the parameter sending to remote xfrpc plugin."
+msgstr "指定发送到远程 xfrpc 插件的参数"
+
+msgid "Secret key"
+msgstr "密钥"
+
+msgid "Secret key for STCP authentication. Visitors must provide the same key to connect."
+msgstr "STCP 认证的密钥。访问者必须提供相同的密钥才能连接。"
+
+msgid "Secret key for STCP visitor authentication. Must match the STCP proxy secret key."
+msgstr "STCP 访问者认证的密钥。必须与 STCP 代理的密钥匹配。"
+
+msgid "Secret key for XTCP authentication. Visitors must provide the same key to connect."
+msgstr "XTCP 认证的密钥。访问者必须提供相同的密钥才能连接。"
+
+msgid "Secret key for XTCP visitor authentication. Must match the XTCP proxy secret key."
+msgstr "XTCP 访问者认证的密钥。必须与 XTCP 代理的密钥匹配。"
+
+msgid "Secret key for SUDP authentication."
+msgstr "SUDP 认证的密钥。"
+
 msgid "Startup Settings"
 msgstr "启动设置"
 
-#: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:160
+msgid "Start time"
+msgstr "开始时间"
+
+msgid "Start time specifies the start time of the proxy service."
+msgstr "开始时间指定代理服务的开始时间。"
+
+msgid "Start time specifies the start time of the proxy service. 0 means no restriction."
+msgstr "开始时间指定代理服务的开始时间。0 表示无限制。"
+
 msgid "Subdomain"
 msgstr "子域名"
 
-#: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:79
+msgid "TCP Mux"
+msgstr "TCP 多路复用"
+
+msgid "TCP Proxy"
+msgstr "TCP 代理"
+
+msgid "TCPMux Proxy"
+msgstr "TCPMux 代理"
+
+msgid "TLS Settings"
+msgstr "TLS 设置"
+
+msgid "TLS certificate file"
+msgstr "TLS 证书文件"
+
+msgid "TLS key file"
+msgstr "TLS 密钥文件"
+
+msgid "TLS server name"
+msgstr "TLS 服务器名称"
+
+msgid "TLS trusted CA file"
+msgstr "TLS 受信 CA 文件"
+
+msgid "The audience for the OIDC token request."
+msgstr "OIDC 令牌请求的受众。"
+
+msgid "The client ID for OIDC authentication."
+msgstr "OIDC 认证的客户端 ID。"
+
+msgid "The client secret for OIDC authentication."
+msgstr "OIDC 认证的客户端密钥。"
+
+msgid "The local address to bind for the visitor."
+msgstr "访问者绑定的本地地址。"
+
+msgid "The local port to bind for the visitor."
+msgstr "访问者绑定的本地端口。"
+
+msgid "The name of the STCP proxy on the server side to connect to."
+msgstr "要连接的服务器端 STCP 代理名称。"
+
+msgid "The name of the XTCP proxy on the server side to connect to."
+msgstr "要连接的服务器端 XTCP 代理名称。"
+
+msgid "The scope for the OIDC token request. Multiple scopes can be separated by spaces."
+msgstr "OIDC 令牌请求的范围。多个范围可以用空格分隔。"
+
+msgid "The URL of the OIDC token endpoint."
+msgstr "OIDC 令牌端点的 URL。"
+
+msgid "Timeout for heartbeat response from the server, in seconds. By default, this value is 90."
+msgstr "服务器心跳响应的超时时间，以秒为单位。默认值为 90。"
+
 msgid "Token"
 msgstr "令牌"
 
-#: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:80
-msgid ""
-"Token specifies the authorization token used to create keys to be sent to "
-"the server. The server must have a matching token for authorization to "
-"succeed."
-msgstr "Token 指定授权令牌，该令牌用于创建要发送到服务器的密钥服务器必须有相匹配的令牌，授权才能成功"
+msgid "Token specifies the authorization token used to create keys to be sent to the server. The server must have a matching token for authorization to succeed."
+msgstr "Token 指定授权令牌，该令牌用于创建要发送到服务器的密钥。服务器必须有相匹配的令牌，授权才能成功。"
 
-#: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:101
+msgid "Transport Settings"
+msgstr "传输设置"
+
+msgid "URL routing paths, multiple paths separated by commas."
+msgstr "URL 路由路径，多个路径用逗号分隔。"
+
+msgid "URL routing paths, multiple paths separated by commas. E.g. \"/,/api\""
+msgstr "URL 路由路径，多个路径用逗号分隔。例如：\"/,/api\""
+
+msgid "Use Compression"
+msgstr "使用压缩"
+
+msgid "Use Encryption"
+msgstr "使用加密"
+
+msgid "Username for HTTP Basic Authentication on the proxy."
+msgstr "代理上 HTTP 基本身份验证的用户名。"
+
 msgid "Warning"
 msgstr "警告"
 
-#: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:30
-#: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:32
+msgid "XTCP Proxy"
+msgstr "XTCP 代理"
+
+msgid "XTCP Visitor"
+msgstr "XTCP 访问者"
+
+msgid "Bind address"
+msgstr "绑定地址"
+
+msgid "Bind port"
+msgstr "绑定端口"
+
+msgid "Allow users"
+msgstr "允许用户"
+
+msgid "Comma-separated list of usernames allowed to connect. Empty means all users."
+msgstr "允许连接的用户名列表，用逗号分隔。为空表示允许所有用户。"
+
+msgid "Enable encryption for this proxy. Traffic will be encrypted between frpc and frps."
+msgstr "为此代理启用加密。frpc 和 frps 之间的流量将被加密。"
+
+msgid "Enable compression for this proxy. Traffic will be compressed between frpc and frps."
+msgstr "为此代理启用压缩。frpc 和 frps 之间的流量将被压缩。"
+
+msgid "Enable TLS encryption for the connection to the server."
+msgstr "为服务器连接启用 TLS 加密。"
+
+msgid "Authentication method. Use \"token\" for simple token auth or \"oidc\" for OpenID Connect."
+msgstr "认证方式。使用 \"token\" 进行简单令牌认证，或使用 \"oidc\" 进行 OpenID Connect 认证。"
+
+msgid "Skip TLS certificate verification for the OIDC token endpoint. Not recommended for production."
+msgstr "跳过 OIDC 令牌端点的 TLS 证书验证。不建议在生产环境中使用。"
+
+msgid "Specifies the server name for TLS SNI. Used to verify the server certificate."
+msgstr "指定 TLS SNI 的服务器名称。用于验证服务器证书。"
+
 msgid "xfprc client"
 msgstr "内网穿透客户端"
 
-#: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:42
 msgid "xfrpc"
 msgstr "内网穿透"
 
-#: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:43
 msgid "xfrpc is a c language frp client for frps."
 msgstr "xfrpc 是 frps 的 C 语言 frp 客户端"
 
-msgid "ProxyType specifies the type of this proxy. Valid values include "tcp", "http", "https".
-msgstr "ProxyType 指定代理类型有效值包括 \"tcp\", \"http\", \"https\""
+msgid "start download video"
+msgstr "开始下载视频"
 
-msgid "By default, this value is "tcp"."
+msgid "stop download video"
+msgstr "停止下载视频"
+
+msgid "stop remote plugin service"
+msgstr "停止远程插件服务"
+
+msgid "please input profile url to download"
+msgstr "请输入要下载的配置文件URL"
+
+msgid "please input video url to download"
+msgstr "请输入要下载的视频URL"
+
+msgid "download video failed"
+msgstr "下载视频失败"
+
+msgid "stop download video failed"
+msgstr "停止下载视频失败"
+
+msgid "not support plugin"
+msgstr "不支持的插件"
+
+msgid "instagram video downloader"
+msgstr "Instagram视频下载器"
+
+msgid "youtube video downloader"
+msgstr "YouTube视频下载器"
+
+msgid "Disabled xfrpc service"
+msgstr "禁用了 xfrpc 服务"
+
+msgid "Reverse proxy"
+msgstr "反向代理"
+
+msgid "Grant access to LuCI app xfrpc"
+msgstr "授予访问 LuCI 应用 xfrpc 的权限"
+
+msgid "Name can not be \"common\""
+msgstr "名称不能为\"common\""
+
+msgid "ProxyType specifies the type of this proxy. Valid values include \"tcp\", \"http\", \"https\"."
+msgstr "ProxyType 指定代理类型。有效值包括 \"tcp\"、\"http\"、\"https\"。"
+
+msgid "By default, this value is \"tcp\"."
 msgstr "此值默认为 \"tcp\""
 
 msgid "LocalIp specifies the IP address or host name to proxy to."
@@ -228,180 +618,8 @@ msgstr "如远程端口为 0，frps 将给你分配一个随机的端口"
 msgid "Custom Domain"
 msgstr "自定义域名"
 
-msgid "Subdomain"
-msgstr "子域名"
+msgid "HTTP Settings"
+msgstr "HTTP 设置"
 
-msgid "TCP Proxy"
-msgstr "TCP 代理"
-
-msgid "HTTP Proxy"
-msgstr "HTTP 代理"
-
-msgid "HTTPS Proxy"
-msgstr "HTTPS 代理"
-
-msgid "SOCKS5 Proxy"
-msgstr "SOCKS5 代理"
-
-msgid "Local IP specifies the IP address to proxy to."
-msgstr "本地IP指定要代理到的 IP 地址"
-
-msgid "Local port specifies the port to proxy to."
-msgstr "本地端口指定要代理到的端口"
-
-msgid "Remote port specifies server-side port to proxy to."
-msgstr "远程端口指定要代理到的服务器端口"
-
-msgid "Enable Subdomain"
-msgstr "启用子域名"
-
-msgid "Enable subdomain for http or https proxy"
-msgstr "为 http 或 https 代理启用子域名"
-
-msgid "Custom Domains"
-msgstr "自定义域名"
-
-msgid "Custom domains for http or https proxy"
-msgstr "http 或 https 代理的自定义域名"
-
-msgid "Subdomain"
-msgstr "子域名"
-
-msgid "Specifies the subdomain for http or https proxy, only works when server support subdomain."
-msgstr "指定 http 或 https 代理的子域名，仅在服务器支持子域名时有效"
-
-msgid "Remote port specifies server-side port to proxy to."
-msgstr "远程端口指定要代理到的服务器端口"
-
-msgid "Specifies the name of remote xfrpc plugin."
-msgstr "指定远程 xfrpc 插件的名称"
-
-msgid "Specifies the action sending to remote xfrpc plugin."
-msgstr "指定发送到远程 xfrpc 插件的操作"
-
-msgid "Specifies the args sending to remote xfrpc plugin."
-msgstr "指定发送到远程 xfrpc 插件的参数"
-
-msgid "Remote port of plugin specifies the remote port of remote xfrpc plugin."
-msgstr "插件的远程端口指定远程 xfrpc 插件的远程端口"
-
-msgid "Plugin Settings"
-msgstr "插件设置"
-
-msgid "Plugin Name"
-msgstr "插件名称"
-
-msgid "Plugin Action"
-msgstr "插件操作"
-
-msgid "Plugin Param"
-msgstr "插件参数"
-
-msgid "Remote Port"
-msgstr "远程端口"
-
-msgid "Execute"
-msgstr "执行"
-
-msgid "Execute the plugin action"
-msgstr "执行插件操作"
-
-msgid "Enable xfrpc service."
-msgstr "启用 xfrpc 服务"
-
-msgid "Enable iod service."
-msgstr "启用 iod 服务"
-
-msgid "Enable this SOCKS5 proxy."
-msgstr "启用此 SOCKS5 代理"
-
-# HTTP/HTTPS proxy
-msgid "Enable this %s proxy."
-msgstr "启用此 %s 代理"
-
-# TCP settings
-msgid "Enable this TCP proxy."
-msgstr "启用此 TCP 代理"
-
-msgid "Service Type"
-msgstr "服务类型"
-
-msgid "For security, you can specify the service type to proxy to."
-msgstr "出于安全考虑，您可以指定要代理的具体服务。"
-
-msgid "Don't specify service type"
-msgstr "不指定具体服务"
-
-msgid "IOD Settings"
-msgstr "IOD 设置"
-
-#: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:57
-msgid "please input profile url to download"
-msgstr "请输入要下载的配置文件URL"
-
-#: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:63
-msgid "start download video"
-msgstr "开始下载视频"
-
-#: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:65
-msgid "download video failed"
-msgstr "下载视频失败"
-
-#: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:73
-msgid "stop download video"
-msgstr "停止下载视频"
-
-#: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:75
-msgid "stop download video failed"
-msgstr "停止下载视频失败"
-
-#: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:82
-msgid "please input video url to download"
-msgstr "请输入要下载的视频URL"
-
-#: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:95
-msgid "not support plugin"
-msgstr "不支持的插件"
-
-#: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:295
-msgid "instagram video downloader"
-msgstr "Instagram视频下载器"
-
-#: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:296
-msgid "youtube video downloader"
-msgstr "YouTube视频下载器"
-
-#: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:300
-msgid "start download video"
-msgstr "开始下载视频"
-
-#: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:301
-msgid "stop remote plugin service"
-msgstr "停止远程插件服务"
-
-#: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:315
-msgid "Edit"
-msgstr "编辑"
-
-#: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:321
-msgid "Execute the plugin action"
-msgstr "执行插件操作"
-
-#: applications/luci-app-xfrpc/htdocs/luci-static/resources/view/xfrpc.js:322
-msgid "Execute"
-msgstr "执行"
-
-msgid "Start time"
-msgstr "开始时间"
-
-msgid "Start time specifies the start time of the proxy service."
-msgstr "开始时间指定代理服务的开始时间。"
-
-msgid "End time"
-msgstr "结束时间"
-
-msgid "End time specifies the end time of the proxy service."
-msgstr "结束时间指定代理服务的结束时间。"
-
-msgid "End time must be greater than start time"
-msgstr "结束时间必须大于开始时间"
+msgid "xfrpc client"
+msgstr "内网穿透客户端"
