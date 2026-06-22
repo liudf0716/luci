@@ -37,6 +37,11 @@
 		"action": {
 			"type": "view",
 			"path": "wifidogx/display"
+		},
+		"depends": {
+			"acl": [
+				"luci-app-apfree-wifidog"
+			]
 		}
 	},
 	"admin/QoS/wifidogx/status": {
@@ -45,6 +50,11 @@
 		"action": {
 			"type": "view",
 			"path": "wifidogx/status"
+		},
+		"depends": {
+			"acl": [
+				"luci-app-apfree-wifidog"
+			]
 		}
 	},
 	"admin/QoS/xdpi": {

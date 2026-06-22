@@ -351,7 +351,7 @@ return view.extend({
 		this.updateStackedLineCharts(perServiceTxRate, perServiceRxRate);
 
 		var table = document.getElementById('sid-data');
-		cbi_update_table('#sid-data', rows, E('em', _('No data recorded yet.')));
+		cbi_update_table(table, rows, E('em', _('No data recorded yet.')));
 
 		var headers = table.querySelectorAll('th');
 		
@@ -446,7 +446,7 @@ return view.extend({
 			table.setAttribute('data-sort-initialized', 'true');
 		}
 
-		cbi_update_table('#l7proto-data', rows, E('em', _('No data recorded yet.')));
+		cbi_update_table(table, rows, E('em', _('No data recorded yet.')));
 	},
 
 	pollL7Data: function() {
