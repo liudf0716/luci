@@ -1,0 +1,19 @@
+{
+	"luci-app-rsyslog": {
+		"description": "Grant access to LuCI app rsyslog",
+		"read": {
+			"file": {
+				"/etc/rsyslog.conf": [ "read" ],
+				"/etc/ssl/certs/*": [ "read" ]
+			},
+			"uci": [ "rsyslog" ]
+		},
+		"write": {
+			"file": {
+				"/etc/rsyslog.conf": [ "write" ],
+				"/etc/ssl/certs/*": [ "write" ]
+			},
+			"uci": [ "rsyslog" ]
+		}
+	}
+}

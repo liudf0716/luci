@@ -1,0 +1,166 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Project-Id-Version: PACKAGE VERSION\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"Language: en\n"
+"MIME-Version: 1.0\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Rsyslog Configuration"
+msgstr ""
+
+msgid "Configure rsyslog server settings, remote logging, and log selectors."
+msgstr ""
+
+msgid "General Settings"
+msgstr ""
+
+msgid "General"
+msgstr ""
+
+msgid "Network"
+msgstr ""
+
+msgid "TLS Settings"
+msgstr ""
+
+msgid "Remote Server"
+msgstr ""
+
+msgid "Modules"
+msgstr ""
+
+msgid "List of rsyslog modules to load"
+msgstr ""
+
+msgid "Default Template"
+msgstr ""
+
+msgid "Default message format template"
+msgstr ""
+
+msgid "Traditional File Format"
+msgstr ""
+
+msgid "File Format"
+msgstr ""
+
+msgid "Forward Format"
+msgstr ""
+
+msgid "Enable UDP Input"
+msgstr ""
+
+msgid "Enable UDP syslog reception"
+msgstr ""
+
+msgid "UDP Port"
+msgstr ""
+
+msgid "Port for UDP syslog reception"
+msgstr ""
+
+msgid "Enable TCP Input"
+msgstr ""
+
+msgid "Enable TCP syslog reception"
+msgstr ""
+
+msgid "TCP Port"
+msgstr ""
+
+msgid "Port for TCP syslog reception"
+msgstr ""
+
+msgid "Enable TLS"
+msgstr ""
+
+msgid "Enable TLS support for secure logging"
+msgstr ""
+
+msgid "TLS Driver"
+msgstr ""
+
+msgid "OpenSSL"
+msgstr ""
+
+msgid "GnuTLS"
+msgstr ""
+
+msgid "CA Certificate File"
+msgstr ""
+
+msgid "Path to CA certificate file"
+msgstr ""
+
+msgid "Upload CA Certificate"
+msgstr ""
+
+msgid "Upload CA certificate file (.pem, .crt, .cer)"
+msgstr ""
+
+msgid "Remote Server Settings"
+msgstr ""
+
+msgid "Enable Remote Logging"
+msgstr ""
+
+msgid "Forward logs to remote syslog server"
+msgstr ""
+
+msgid "Server IP Address"
+msgstr ""
+
+msgid "IP address of remote syslog server"
+msgstr ""
+
+msgid "Server Port"
+msgstr ""
+
+msgid "Port of remote syslog server"
+msgstr ""
+
+msgid "Protocol"
+msgstr ""
+
+msgid "TCP"
+msgstr ""
+
+msgid "UDP"
+msgstr ""
+
+msgid "Use TLS"
+msgstr ""
+
+msgid "Use TLS encryption for remote logging"
+msgstr ""
+
+msgid "Source Selector"
+msgstr ""
+
+msgid "Log selector pattern to forward to remote server"
+msgstr ""
+
+msgid "Log Selectors"
+msgstr ""
+
+msgid "Configure log routing based on facility and priority levels"
+msgstr ""
+
+msgid "Source Pattern"
+msgstr ""
+
+msgid "Syslog facility and priority pattern (e.g., *.info, mail.*, authpriv.none)"
+msgstr ""
+
+msgid "Destination"
+msgstr ""
+
+msgid "Log file path or action"
+msgstr ""
+
+msgid "Rsyslog"
+msgstr ""

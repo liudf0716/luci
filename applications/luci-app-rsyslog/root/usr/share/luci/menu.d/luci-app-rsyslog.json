@@ -1,0 +1,13 @@
+{
+	"admin/system/rsyslog": {
+		"title": "Rsyslog",
+		"action": {
+			"type": "view",
+			"path": "rsyslog"
+		},
+		"depends": {
+			"acl": [ "luci-app-rsyslog" ],
+			"uci": { "rsyslog": true }
+		}
+	}
+}
