@@ -591,8 +591,6 @@ return view.extend({
 		o.rmempty = false;
 		o.datatype = 'string';
 		o.optional = false;
-		o.depends('auth_server_mode', 'cloud');
-		o.depends('auth_server_mode', 'bypass');
 		o.placeholder = '110101100123456';
 		o.validate = function (section_id, value) {
 			if (!value || value === '')
