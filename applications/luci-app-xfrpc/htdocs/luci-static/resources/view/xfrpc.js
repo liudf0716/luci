@@ -281,19 +281,47 @@ return view.extend({
 		o.default = '0';
 
 		o = s.taboption('tls', form.Value, 'tls_cert_file', _('TLS certificate file'),
-			_('Path to the TLS client certificate file.'));
+			_('Path to the TLS client certificate file (e.g. /etc/xfrpc/client.crt). Do NOT store in /tmp.'));
 		o.rmempty = true;
 		o.depends('tls_enable', '1');
+		o.validate = function(section_id, value) {
+			if (value && value.startsWith('/tmp/')) {
+				return _('Do not store certificates in /tmp (RAM disk) as they will be lost on reboot. Use /etc/xfrpc/ instead.');
+			}
+			var keyOpt = this.map.lookupOption('tls_key_file', section_id);
+			var key = keyOpt && keyOpt[0] ? keyOpt[0].formvalue(section_id) : '';
+			if (value && (!key || key.trim() === '')) {
+				return _('TLS key file is required when TLS certificate file is specified.');
+			}
+			return true;
+		};
 
 		o = s.taboption('tls', form.Value, 'tls_key_file', _('TLS key file'),
-			_('Path to the TLS client key file.'));
+			_('Path to the TLS client key file (e.g. /etc/xfrpc/client.key). Do NOT store in /tmp.'));
 		o.rmempty = true;
 		o.depends('tls_enable', '1');
+		o.validate = function(section_id, value) {
+			if (value && value.startsWith('/tmp/')) {
+				return _('Do not store key file in /tmp (RAM disk) as it will be lost on reboot. Use /etc/xfrpc/ instead.');
+			}
+			var certOpt = this.map.lookupOption('tls_cert_file', section_id);
+			var cert = certOpt && certOpt[0] ? certOpt[0].formvalue(section_id) : '';
+			if (value && (!cert || cert.trim() === '')) {
+				return _('TLS certificate file is required when TLS key file is specified.');
+			}
+			return true;
+		};
 
 		o = s.taboption('tls', form.Value, 'tls_trusted_ca_file', _('TLS trusted CA file'),
-			_('Path to the trusted CA certificate file for verifying the server.'));
+			_('Path to the trusted CA certificate file for verifying the server (e.g. /etc/xfrpc/ca.crt). Do NOT store in /tmp.'));
 		o.rmempty = true;
 		o.depends('tls_enable', '1');
+		o.validate = function(section_id, value) {
+			if (value && value.startsWith('/tmp/')) {
+				return _('Do not store CA file in /tmp (RAM disk) as it will be lost on reboot. Use /etc/xfrpc/ instead.');
+			}
+			return true;
+		};
 
 		o = s.taboption('tls', form.Value, 'tls_server_name', _('TLS server name'),
 			_('Specifies the server name for TLS SNI. Used to verify the server certificate.'));
@@ -313,6 +341,14 @@ return view.extend({
 			_('The client ID for OIDC authentication.'));
 		o.rmempty = true;
 		o.depends('auth_method', 'oidc');
+		o.validate = function(section_id, value) {
+			var methodOpt = this.map.lookupOption('auth_method', section_id);
+			var method = methodOpt && methodOpt[0] ? methodOpt[0].formvalue(section_id) : '';
+			if (method === 'oidc' && (!value || value.trim() === '')) {
+				return _('OIDC Client ID cannot be empty when OIDC auth is enabled.');
+			}
+			return true;
+		};
 
 		o = s.taboption('oidc', form.Value, 'oidc_client_secret', _('OIDC Client Secret'),
 			_('The client secret for OIDC authentication.'));
@@ -335,11 +371,25 @@ return view.extend({
 		o.rmempty = true;
 		o.datatype = 'url';
 		o.depends('auth_method', 'oidc');
+		o.validate = function(section_id, value) {
+			var methodOpt = this.map.lookupOption('auth_method', section_id);
+			var method = methodOpt && methodOpt[0] ? methodOpt[0].formvalue(section_id) : '';
+			if (method === 'oidc' && (!value || value.trim() === '')) {
+				return _('OIDC Token Endpoint URL cannot be empty when OIDC auth is enabled.');
+			}
+			return true;
+		};
 
 		o = s.taboption('oidc', form.Value, 'oidc_trusted_ca_file', _('OIDC Trusted CA File'),
-			_('Path to the trusted CA certificate file for OIDC token endpoint.'));
+			_('Path to the trusted CA certificate file for OIDC token endpoint. Do NOT store in /tmp.'));
 		o.rmempty = true;
 		o.depends('auth_method', 'oidc');
+		o.validate = function(section_id, value) {
+			if (value && value.startsWith('/tmp/')) {
+				return _('Do not store CA file in /tmp (RAM disk) as it will be lost on reboot. Use /etc/xfrpc/ instead.');
+			}
+			return true;
+		};
 
 		o = s.taboption('oidc', form.Flag, 'oidc_insecure_skip_verify', _('OIDC Insecure Skip Verify'),
 			_('Skip TLS certificate verification for the OIDC token endpoint. Not recommended for production.'));
@@ -455,16 +505,37 @@ return view.extend({
 		o.optional = true;
 
 		o = ss.option(form.Value, 'custom_domains', _('Custom Domains'),
-			_('Custom domains for http proxy'));
-		o.datatype = 'host';
-		o.optional = false;
+			_('Custom domains for http proxy (e.g. example.com, multiple domains separated by comma).'));
+		o.rmempty = true;
 		o.depends('is_subdomain', '0');
+		o.validate = function(section_id, value) {
+			var enabledOpt = this.map.lookupOption('enabled', section_id);
+			var enabled = enabledOpt && enabledOpt[0] ? enabledOpt[0].formvalue(section_id) : '1';
+			if (enabled === '0') return true;
+			var isSubOpt = this.map.lookupOption('is_subdomain', section_id);
+			var isSub = isSubOpt && isSubOpt[0] ? isSubOpt[0].formvalue(section_id) : '0';
+			if (isSub !== '1' && (!value || value.trim() === '')) {
+				return _('Custom Domains cannot be empty when Subdomain is disabled.');
+			}
+			return true;
+		};
 
 		o = ss.option(form.Value, 'subdomain', _('Subdomain'),
 			_('Specifies the subdomain for http proxy, only works when server support subdomain.'));
 		o.datatype = 'string';
-		o.optional = false;
+		o.rmempty = true;
 		o.depends('is_subdomain', '1');
+		o.validate = function(section_id, value) {
+			var enabledOpt = this.map.lookupOption('enabled', section_id);
+			var enabled = enabledOpt && enabledOpt[0] ? enabledOpt[0].formvalue(section_id) : '1';
+			if (enabled === '0') return true;
+			var isSubOpt = this.map.lookupOption('is_subdomain', section_id);
+			var isSub = isSubOpt && isSubOpt[0] ? isSubOpt[0].formvalue(section_id) : '0';
+			if (isSub === '1' && (!value || value.trim() === '')) {
+				return _('Subdomain cannot be empty when Subdomain is enabled.');
+			}
+			return true;
+		};
 
 		o = ss.option(form.Value, 'locations', _('Locations'),
 			_('URL routing paths, multiple paths separated by commas.'));
@@ -528,16 +599,37 @@ return view.extend({
 		o.optional = true;
 
 		o = ss.option(form.Value, 'custom_domains', _('Custom Domains'),
-			_('Custom domains for https proxy'));
-		o.datatype = 'host';
-		o.optional = false;
+			_('Custom domains for https proxy (e.g. example.com, multiple domains separated by comma).'));
+		o.rmempty = true;
 		o.depends('is_subdomain', '0');
+		o.validate = function(section_id, value) {
+			var enabledOpt = this.map.lookupOption('enabled', section_id);
+			var enabled = enabledOpt && enabledOpt[0] ? enabledOpt[0].formvalue(section_id) : '1';
+			if (enabled === '0') return true;
+			var isSubOpt = this.map.lookupOption('is_subdomain', section_id);
+			var isSub = isSubOpt && isSubOpt[0] ? isSubOpt[0].formvalue(section_id) : '0';
+			if (isSub !== '1' && (!value || value.trim() === '')) {
+				return _('Custom Domains cannot be empty when Subdomain is disabled.');
+			}
+			return true;
+		};
 
 		o = ss.option(form.Value, 'subdomain', _('Subdomain'),
 			_('Specifies the subdomain for https proxy, only works when server support subdomain.'));
 		o.datatype = 'string';
-		o.optional = false;
+		o.rmempty = true;
 		o.depends('is_subdomain', '1');
+		o.validate = function(section_id, value) {
+			var enabledOpt = this.map.lookupOption('enabled', section_id);
+			var enabled = enabledOpt && enabledOpt[0] ? enabledOpt[0].formvalue(section_id) : '1';
+			if (enabled === '0') return true;
+			var isSubOpt = this.map.lookupOption('is_subdomain', section_id);
+			var isSub = isSubOpt && isSubOpt[0] ? isSubOpt[0].formvalue(section_id) : '0';
+			if (isSub === '1' && (!value || value.trim() === '')) {
+				return _('Subdomain cannot be empty when Subdomain is enabled.');
+			}
+			return true;
+		};
 
 		o = ss.option(form.Value, 'locations', _('Locations'),
 			_('URL routing paths, multiple paths separated by commas.'));
@@ -670,8 +762,17 @@ return view.extend({
 
 		o = ss.option(form.Value, 'secret_key', _('Secret key'),
 			_('Secret key for STCP authentication. Visitors must provide the same key to connect.'));
-		o.rmempty = true;
+		o.rmempty = false;
 		o.modalonly = true;
+		o.validate = function(section_id, value) {
+			var enabledOpt = this.map.lookupOption('enabled', section_id);
+			var enabled = enabledOpt && enabledOpt[0] ? enabledOpt[0].formvalue(section_id) : '1';
+			if (enabled === '0') return true;
+			if (!value || value.trim() === '') {
+				return _('Secret key is required for STCP proxy.');
+			}
+			return true;
+		};
 
 		o = ss.option(form.Value, 'allow_users', _('Allow users'),
 			_('Comma-separated list of usernames allowed to connect. Empty means all users.'));
@@ -704,8 +805,17 @@ return view.extend({
 
 		o = ss.option(form.Value, 'secret_key', _('Secret key'),
 			_('Secret key for XTCP authentication. Visitors must provide the same key to connect.'));
-		o.rmempty = true;
+		o.rmempty = false;
 		o.modalonly = true;
+		o.validate = function(section_id, value) {
+			var enabledOpt = this.map.lookupOption('enabled', section_id);
+			var enabled = enabledOpt && enabledOpt[0] ? enabledOpt[0].formvalue(section_id) : '1';
+			if (enabled === '0') return true;
+			if (!value || value.trim() === '') {
+				return _('Secret key is required for XTCP proxy.');
+			}
+			return true;
+		};
 
 		o = ss.option(form.Value, 'allow_users', _('Allow users'),
 			_('Comma-separated list of usernames allowed to connect. Empty means all users.'));
@@ -738,8 +848,17 @@ return view.extend({
 
 		o = ss.option(form.Value, 'secret_key', _('Secret key'),
 			_('Secret key for SUDP authentication.'));
-		o.rmempty = true;
+		o.rmempty = false;
 		o.modalonly = true;
+		o.validate = function(section_id, value) {
+			var enabledOpt = this.map.lookupOption('enabled', section_id);
+			var enabled = enabledOpt && enabledOpt[0] ? enabledOpt[0].formvalue(section_id) : '1';
+			if (enabled === '0') return true;
+			if (!value || value.trim() === '') {
+				return _('Secret key is required for SUDP proxy.');
+			}
+			return true;
+		};
 
 		addCommonProxyOptions(ss);
 
@@ -772,8 +891,17 @@ return view.extend({
 
 		o = ss.option(form.Value, 'secret_key', _('Secret key'),
 			_('Secret key for STCP visitor authentication. Must match the STCP proxy secret key.'));
-		o.rmempty = true;
+		o.rmempty = false;
 		o.modalonly = true;
+		o.validate = function(section_id, value) {
+			var enabledOpt = this.map.lookupOption('enabled', section_id);
+			var enabled = enabledOpt && enabledOpt[0] ? enabledOpt[0].formvalue(section_id) : '1';
+			if (enabled === '0') return true;
+			if (!value || value.trim() === '') {
+				return _('Secret key is required for STCP visitor.');
+			}
+			return true;
+		};
 
 		o = ss.option(form.Value, 'fallback_to', _('Fallback to'),
 			_('Fallback to another visitor when the connection fails.'));
@@ -811,8 +939,17 @@ return view.extend({
 
 		o = ss.option(form.Value, 'secret_key', _('Secret key'),
 			_('Secret key for XTCP visitor authentication. Must match the XTCP proxy secret key.'));
-		o.rmempty = true;
+		o.rmempty = false;
 		o.modalonly = true;
+		o.validate = function(section_id, value) {
+			var enabledOpt = this.map.lookupOption('enabled', section_id);
+			var enabled = enabledOpt && enabledOpt[0] ? enabledOpt[0].formvalue(section_id) : '1';
+			if (enabled === '0') return true;
+			if (!value || value.trim() === '') {
+				return _('Secret key is required for XTCP visitor.');
+			}
+			return true;
+		};
 
 		o = ss.option(form.Value, 'fallback_to', _('Fallback to'),
 			_('Fallback to another visitor when the connection fails.'));
