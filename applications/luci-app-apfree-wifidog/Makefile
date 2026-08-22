@@ -3,7 +3,7 @@
 include $(TOPDIR)/rules.mk
 
 LUCI_TITLE:=LuCI Support for apfree-wifidog
-LUCI_DEPENDS:=+apfree-wifidog +luci-lib-echarts
+LUCI_DEPENDS:=+apfree-wifidog
 
 PKG_LICENSE:=Apache-2.0
 PKG_MAINTAINER:=Dengfeng Liu <liudf0716@gmail.com>

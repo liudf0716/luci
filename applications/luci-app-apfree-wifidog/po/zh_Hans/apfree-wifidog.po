@@ -15,6 +15,9 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
+msgid "Settings"
+msgstr "设置"
+
 msgid "apfree-wifidog"
 msgstr "门户认证"
 
