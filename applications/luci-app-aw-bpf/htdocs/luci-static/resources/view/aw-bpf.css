@@ -77,6 +77,14 @@
 	--aw-pkt: #6c757d;
 }
 
+.aw-inner-tabs {
+	margin-top: 4px;
+}
+
+.aw-inner-tabs > .cbi-tabmenu {
+	margin-bottom: 12px;
+}
+
 .pie label {
 	font-weight: bold;
 	font-size: 14px;

@@ -83,6 +83,15 @@ function applyViewTheme() {
 	return theme;
 }
 
+function observeChartEl(chart, el) {
+	if (!chart || !el || !window.ResizeObserver || el._awRo)
+		return;
+	el._awRo = new ResizeObserver(function() {
+		chart.resize();
+	});
+	el._awRo.observe(el);
+}
+
 function chartAxisTheme(colors) {
 	return {
 		backgroundColor: colors.background,
@@ -276,6 +285,7 @@ return view.extend({
 
 		if (!chartRegistry[id]) {
 			chartRegistry[id] = echarts.init(dom);
+			observeChartEl(chartRegistry[id], dom);
 		}
 
 		chartRegistry[id].setOption(option, true);
@@ -548,6 +558,7 @@ return view.extend({
 	initializeUI: function() {
 		applyViewTheme();
 		if (window.echarts) {
+			var self = this;
 			var dlChartEl = document.getElementById('download-speed-line-chart');
 			var ulChartEl = document.getElementById('upload-speed-line-chart');
 			if (!dlChartEl || !ulChartEl) return;
@@ -595,9 +606,11 @@ return view.extend({
 
 		downloadLineChart = echarts.init(dlChartEl);
 		downloadLineChart.setOption(baseChartOption);
+		observeChartEl(downloadLineChart, dlChartEl);
 
 		uploadLineChart = echarts.init(ulChartEl);
 		uploadLineChart.setOption(baseChartOption);
+		observeChartEl(uploadLineChart, ulChartEl);
 
 		// 添加窗口大小变化监听器，使图表能够响应式调整
 		if (!resizeListenerAdded) {
@@ -608,19 +621,7 @@ return view.extend({
 					clearTimeout(resizeTimer);
 				}
 				resizeTimer = setTimeout(function() {
-					// 调整折线图大小
-					if (downloadLineChart) {
-						downloadLineChart.resize();
-					}
-					if (uploadLineChart) {
-						uploadLineChart.resize();
-					}
-					// 调整饼图大小
-					Object.keys(chartRegistry).forEach(function(chartId) {
-						if (chartRegistry[chartId]) {
-							chartRegistry[chartId].resize();
-						}
-					});
+					self.resizeAllCharts();
 				}, 200);
 			};
 			
@@ -632,7 +633,42 @@ return view.extend({
 	} else {
 		setTimeout(this.initializeUI.bind(this), 50);
 	}
-},	render: function() {
+	},
+
+	resizeAllCharts: function() {
+		if (downloadLineChart)
+			downloadLineChart.resize();
+		if (uploadLineChart)
+			uploadLineChart.resize();
+		Object.keys(chartRegistry).forEach(function(chartId) {
+			if (chartRegistry[chartId])
+				chartRegistry[chartId].resize();
+		});
+	},
+
+	bindTabChartResize: function(root) {
+		var self = this;
+		if (!root)
+			return;
+		var host = root.parentNode || root;
+		if (host._awTabResizeBound)
+			return;
+		host._awTabResizeBound = true;
+
+		var schedule = function() {
+			setTimeout(function() { self.resizeAllCharts(); }, 80);
+		};
+
+		host.addEventListener('click', function(ev) {
+			if (ev.target.closest && ev.target.closest('ul.cbi-tabmenu'))
+				schedule();
+		});
+		root.querySelectorAll('[data-tab]').forEach(function(pane) {
+			pane.addEventListener('cbi-tab-active', schedule);
+		});
+	},
+
+	render: function() {
 		var self = this;
 
 		var controls = E('div', { 'class': 'l7-controls' }, [
@@ -685,9 +721,16 @@ return view.extend({
 			])
 		]);
 
-		var tabContainer = E('div', {}, [
-			E('div', { 'class': 'cbi-section', 'data-tab': 'sid', 'data-tab-title': _('L7 SID Data') }, [
+		var sidInnerTabs = E('div', { 'class': 'aw-inner-tabs' }, [
+			E('div', { 'class': 'cbi-section', 'data-tab': 'sid-trend', 'data-tab-title': _('Speed Trend') }, [
 				E('div', { 'class': 'dashboard-container' }, [
+					E('div', { 'class': 'kpi-row' }, [
+						E('div', { 'class': 'kpi-card' }, [ E('big', { id: 'sid-total-val' }, '0'), E('span', { 'class': 'kpi-card-label' }, _('L7 Protocol Data')) ]),
+						E('div', { 'class': 'kpi-card' }, [ E('big', { id: 'sid-tx-rate-val' }, '0'), E('span', { 'class': 'kpi-card-label' }, _('Download Speed')) ]),
+						E('div', { 'class': 'kpi-card' }, [ E('big', { id: 'sid-rx-rate-val' }, '0'), E('span', { 'class': 'kpi-card-label' }, _('Upload Speed')) ]),
+						E('div', { 'class': 'kpi-card' }, [ E('big', { id: 'sid-tx-volume-val' }, '0'), E('span', { 'class': 'kpi-card-label' }, _('Download Total')) ]),
+						E('div', { 'class': 'kpi-card' }, [ E('big', { id: 'sid-rx-volume-val' }, '0'), E('span', { 'class': 'kpi-card-label' }, _('Upload Total')) ])
+					]),
 					E('div', { 'class': 'line-chart-row' }, [
 						E('div', { 'class': 'chart-card' }, [
 							E('h4', [_('Real-time Download Speed')]),
@@ -697,14 +740,11 @@ return view.extend({
 							E('h4', [_('Real-time Upload Speed')]),
 							E('div', { id: 'upload-speed-line-chart', style: 'width: 100%; height: 350px;' })
 						])
-					]),
-					E('div', { 'class': 'kpi-row' }, [
-						E('div', { 'class': 'kpi-card' }, [ E('big', { id: 'sid-total-val' }, '0'), E('span', { 'class': 'kpi-card-label' }, _('L7 Protocol Data')) ]),
-						E('div', { 'class': 'kpi-card' }, [ E('big', { id: 'sid-tx-rate-val' }, '0'), E('span', { 'class': 'kpi-card-label' }, _('Download Speed')) ]),
-						E('div', { 'class': 'kpi-card' }, [ E('big', { id: 'sid-rx-rate-val' }, '0'), E('span', { 'class': 'kpi-card-label' }, _('Upload Speed')) ]),
-						E('div', { 'class': 'kpi-card' }, [ E('big', { id: 'sid-tx-volume-val' }, '0'), E('span', { 'class': 'kpi-card-label' }, _('Download Total')) ]),
-						E('div', { 'class': 'kpi-card' }, [ E('big', { id: 'sid-rx-volume-val' }, '0'), E('span', { 'class': 'kpi-card-label' }, _('Upload Total')) ])
-					]),
+					])
+				])
+			]),
+			E('div', { 'class': 'cbi-section', 'data-tab': 'sid-share', 'data-tab-title': _('Traffic Share') }, [
+				E('div', { 'class': 'dashboard-container' }, [
 					E('div', { 'class': 'chart-grid' }, [
 						E('div', { 'class': 'chart-card' }, [
 							E('h4', [_('Download Speed / SID')]),
@@ -723,7 +763,9 @@ return view.extend({
 							E('div', { id: 'sid-rx-volume-pie', style: 'width: 100%; height: 300px;' })
 						])
 					])
-				]),
+				])
+			]),
+			E('div', { 'class': 'cbi-section', 'data-tab': 'sid-list', 'data-tab-title': _('SID List') }, [
 				E('table', { 'class': 'table', 'id': 'sid-data' }, [
 					E('tr', { 'class': 'tr table-titles' }, [
 						E('th', { 'class': 'th left' }, [ E('span', { 'class': 'th-icon' }, '🆔'), ' ', _('SID') ]),
@@ -742,6 +784,12 @@ return view.extend({
 					])
 				]),
 				controls
+			])
+		]);
+
+		var tabContainer = E('div', {}, [
+			E('div', { 'class': 'cbi-section', 'data-tab': 'sid', 'data-tab-title': _('L7 SID Data') }, [
+				sidInnerTabs
 			]),
 			E('div', { 'class': 'cbi-section', 'data-tab': 'l7proto', 'data-tab-title': _('L7 Protocol Data') }, [
 				E('table', { 'class': 'table', 'id': 'l7proto-data' }, [
@@ -770,7 +818,11 @@ return view.extend({
 		    ])
 		]);
 
+		tabContainer.querySelectorAll('.aw-inner-tabs').forEach(function(inner) {
+			ui.tabs.initTabGroup(inner.childNodes);
+		});
 		ui.tabs.initTabGroup(tabContainer.childNodes);
+		this.bindTabChartResize(tabContainer);
 
 		setTimeout(this.initializeUI.bind(this), 0);
 

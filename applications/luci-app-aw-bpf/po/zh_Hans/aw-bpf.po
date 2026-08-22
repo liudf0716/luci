@@ -445,6 +445,18 @@ msgstr "认证用户速率监控"
 msgid "Host Speed Monitor"
 msgstr "主机速率监控"
 
+msgid "Speed Trend"
+msgstr "实时趋势"
+
+msgid "Traffic Share"
+msgstr "流量分布"
+
+msgid "Host List"
+msgstr "主机列表"
+
+msgid "SID List"
+msgstr "SID 列表"
+
 msgid "aw-bpf QoS"
 msgstr "aw-bpf 流控"
 
