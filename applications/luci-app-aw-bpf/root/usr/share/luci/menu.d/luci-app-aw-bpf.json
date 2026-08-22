@@ -1,6 +1,6 @@
 {
-	"admin/network/aw-bpf": {
-		"title": "aw-bpf QoS",
+	"admin/qos": {
+		"title": "QoS",
 		"order": 60,
 		"action": {
 			"type": "firstchild",
@@ -10,7 +10,7 @@
 			"acl": [ "luci-app-aw-bpf" ]
 		}
 	},
-	"admin/network/aw-bpf/hosts": {
+	"admin/qos/hosts": {
 		"title": "Hosts",
 		"order": 10,
 		"action": {
@@ -21,7 +21,7 @@
 			"acl": [ "luci-app-aw-bpf" ]
 		}
 	},
-	"admin/network/aw-bpf/l7": {
+	"admin/qos/l7": {
 		"title": "L7 application",
 		"order": 20,
 		"action": {

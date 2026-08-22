@@ -43,6 +43,69 @@ function hexToRgba(hex, opacity) {
 		null;
 };
 
+function isDarkMode() {
+	var attr = document.documentElement.getAttribute('data-darkmode');
+	if (attr === 'true')
+		return true;
+	if (attr === 'false')
+		return false;
+
+	var bg = getComputedStyle(document.body).backgroundColor;
+	var m = bg && bg.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+	if (m) {
+		var lum = (0.299 * m[1] + 0.587 * m[2] + 0.114 * m[3]) / 255;
+		return lum < 0.5;
+	}
+
+	return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+}
+
+function getChartColors() {
+	var dark = isDarkMode();
+	return {
+		background: 'transparent',
+		text: dark ? '#cccccc' : '#333333',
+		muted: dark ? '#adb5bd' : '#666666',
+		axis: dark ? 'rgba(255,255,255,0.28)' : 'rgba(0,0,0,0.25)',
+		split: dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
+		pieBorder: dark ? '#252526' : '#ffffff',
+		tooltipBg: dark ? 'rgba(32,32,32,0.94)' : 'rgba(255,255,255,0.95)',
+		tooltipBorder: dark ? '#555555' : '#cccccc',
+		tooltipText: dark ? '#eeeeee' : '#333333'
+	};
+}
+
+function applyViewTheme() {
+	var theme = isDarkMode() ? 'dark' : 'light';
+	document.querySelectorAll('.l7-view-container, .display-view-container').forEach(function(el) {
+		el.setAttribute('data-aw-theme', theme);
+	});
+	return theme;
+}
+
+function chartAxisTheme(colors) {
+	return {
+		backgroundColor: colors.background,
+		textStyle: { color: colors.text },
+		legend: { textStyle: { color: colors.text } },
+		tooltip: {
+			backgroundColor: colors.tooltipBg,
+			borderColor: colors.tooltipBorder,
+			textStyle: { color: colors.tooltipText }
+		},
+		xAxis: {
+			axisLine: { lineStyle: { color: colors.axis } },
+			axisLabel: { color: colors.muted },
+			splitLine: { show: false }
+		},
+		yAxis: {
+			axisLine: { lineStyle: { color: colors.axis } },
+			axisLabel: { color: colors.muted },
+			splitLine: { lineStyle: { color: colors.split } }
+		}
+	};
+}
+
 return view.extend({
 	load: function() {
 		return Promise.all([
@@ -138,10 +201,11 @@ return view.extend({
 		var uploadChartSeries = processChartData(uploadSeriesData, perServiceUpload);
 	
 		var legendData = downloadChartSeries.map(function(s) { return s.name; });
+		var colors = getChartColors();
 
 		if (downloadLineChart) {
 			downloadLineChart.setOption({
-				legend: { data: legendData, type: 'scroll', top: 0, left: 'center' },
+				legend: { data: legendData, type: 'scroll', top: 0, left: 'center', textStyle: { color: colors.text } },
 				series: downloadChartSeries,
 				xAxis: { data: lineCategories }
 			});
@@ -149,7 +213,7 @@ return view.extend({
 	
 		if (uploadLineChart) {
 			uploadLineChart.setOption({
-				legend: { data: legendData, type: 'scroll', top: 0, left: 'center' },
+				legend: { data: legendData, type: 'scroll', top: 0, left: 'center', textStyle: { color: colors.text } },
 				series: uploadChartSeries,
 				xAxis: { data: lineCategories }
 			});
@@ -172,9 +236,15 @@ return view.extend({
 			}
 		});
 
+		var colors = getChartColors();
 		var option = {
+			backgroundColor: colors.background,
+			textStyle: { color: colors.text },
 			tooltip: {
 				trigger: 'item',
+				backgroundColor: colors.tooltipBg,
+				borderColor: colors.tooltipBorder,
+				textStyle: { color: colors.tooltipText },
 				formatter: function(params) {
 					if (valueFormatter) {
 						// 将 ECharts params 对象转换为自定义格式
@@ -192,9 +262,9 @@ return view.extend({
 				radius: ['25%', '80%'],
 				avoidLabelOverlap: false,
 				padAngle: 10,
-				itemStyle: { borderRadius: 10, borderColor: '#fff', borderWidth: 2 },
-				label: { show: false, position: 'center' },
-				emphasis: { label: { show: true, fontSize: 14, fontWeight: 'bold' } },
+				itemStyle: { borderRadius: 10, borderColor: colors.pieBorder, borderWidth: 2 },
+				label: { show: false, position: 'center', color: colors.text },
+				emphasis: { label: { show: true, fontSize: 14, fontWeight: 'bold', color: colors.text } },
 				labelLine: { show: false },
 				data: data.map(function(d) {
 					return { value: d.value, name: d.label || d.name, itemStyle: { color: d.color } };
@@ -476,13 +546,19 @@ return view.extend({
 	},
 
 	initializeUI: function() {
+		applyViewTheme();
 		if (window.echarts) {
 			var dlChartEl = document.getElementById('download-speed-line-chart');
 			var ulChartEl = document.getElementById('upload-speed-line-chart');
 			if (!dlChartEl || !ulChartEl) return;
 
+			var colors = getChartColors();
+			var axisTheme = chartAxisTheme(colors);
 			var baseChartOption = {
-				tooltip: {
+				backgroundColor: axisTheme.backgroundColor,
+				textStyle: axisTheme.textStyle,
+				legend: axisTheme.legend,
+				tooltip: Object.assign({
 					trigger: 'axis',
 					formatter: function (params) {
 						if (!params || params.length === 0) {
@@ -497,10 +573,22 @@ return view.extend({
 						});
 						return tooltipContent;
 					}
-				},
+				}, axisTheme.tooltip),
 				grid: { left: '3%', right: '4%', bottom: '10%', top: '50px', containLabel: true },
-				xAxis: { type: 'category', boundaryGap: false, data: lineCategories },
-				yAxis: { type: 'value', axisLabel: { formatter: function(val) { return '%1024.2mbps'.format(val); } } },
+				xAxis: {
+					type: 'category',
+					boundaryGap: false,
+					data: lineCategories,
+					axisLine: axisTheme.xAxis.axisLine,
+					axisLabel: axisTheme.xAxis.axisLabel,
+					splitLine: axisTheme.xAxis.splitLine
+				},
+				yAxis: {
+					type: 'value',
+					axisLine: axisTheme.yAxis.axisLine,
+					splitLine: axisTheme.yAxis.splitLine,
+					axisLabel: { formatter: function(val) { return '%1024.2mbps'.format(val); }, color: colors.muted }
+				},
 				series: []
 			};
 
@@ -675,7 +763,7 @@ return view.extend({
 		    E('link', { 'rel': 'stylesheet', 'href': L.resource('view/aw-bpf.css') }),
 		    E('script', { 'type': 'text/javascript', 'src': L.resource('echarts.min.js') }),
 
-		    E('div', { 'class': 'l7-view-container' }, [
+		    E('div', { 'class': 'l7-view-container', 'data-aw-theme': isDarkMode() ? 'dark' : 'light' }, [
 		        E('h2', [ _('L7 Data Monitor') ]),
 		        E('div', { 'id': 'l7-error-message' }),
 		        tabContainer
