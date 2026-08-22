@@ -1,0 +1,35 @@
+{
+	"admin/network/aw-bpf": {
+		"title": "aw-bpf QoS",
+		"order": 60,
+		"action": {
+			"type": "firstchild",
+			"recurse": true
+		},
+		"depends": {
+			"acl": [ "luci-app-aw-bpf" ]
+		}
+	},
+	"admin/network/aw-bpf/hosts": {
+		"title": "Hosts",
+		"order": 10,
+		"action": {
+			"type": "view",
+			"path": "aw-bpf/display"
+		},
+		"depends": {
+			"acl": [ "luci-app-aw-bpf" ]
+		}
+	},
+	"admin/network/aw-bpf/l7": {
+		"title": "L7 application",
+		"order": 20,
+		"action": {
+			"type": "view",
+			"path": "aw-bpf/l7"
+		},
+		"depends": {
+			"acl": [ "luci-app-aw-bpf" ]
+		}
+	}
+}
