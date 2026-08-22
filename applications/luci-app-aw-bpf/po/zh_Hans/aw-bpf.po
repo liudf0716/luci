@@ -457,6 +457,33 @@ msgstr "主机列表"
 msgid "SID List"
 msgstr "SID 列表"
 
+msgid "Protocol Library"
+msgstr "协议库"
+
+msgid "常用域名"
+msgstr "常用域名"
+
+msgid "Access Count"
+msgstr "访问次数"
+
+msgid "First Seen"
+msgstr "首次发现"
+
+msgid "Last Access"
+msgstr "最近访问"
+
+msgid "Entries:"
+msgstr "条目："
+
+msgid "Built-in L7 protocol signatures from aw-bpf."
+msgstr "aw-bpf 内置的 L7 协议特征库。"
+
+msgid "Domains discovered by xDPI DNS inspection."
+msgstr "xDPI 通过 DNS 发现的域名。"
+
+msgid "Frequently accessed domains discovered by xDPI, sorted by access count."
+msgstr "xDPI 发现的常用域名，按访问次数排序。"
+
 msgid "aw-bpf QoS"
 msgstr "aw-bpf 流控"
 

@@ -479,47 +479,14 @@ return view.extend({
 		}
 	},
 
-	renderL7ProtoData: function(data) {
-		var rows = [];
+	fillSortableTable: function(tableId, rows) {
+		var table = document.getElementById(tableId);
 		var self = this;
-		
-		sidLookupTable = {};
-		
-		if (data && data.status === 'success' && data.data) {
-			if (Array.isArray(data.data.protocols)) {
-				data.data.protocols.forEach(function(item) {
-					sidLookupTable[item.sid] = { type: 'protocol', name: item.protocol };
-					rows.push([
-						E('span', { 'class': 'id-cell' }, item.id),
-						E('span', { 'class': 'protocol-cell' }, [
-							E('span', { 'class': 'protocol-icon l7' }, '🔌'),
-							E('span', {}, ' ' + item.protocol)
-						]),
-						E('span', { 'class': 'sid-cell' }, item.sid)
-					]);
-				});
-			}
-			
-			if (Array.isArray(data.data.domains)) {
-				data.data.domains.forEach(function(item) {
-					sidLookupTable[item.sid] = { type: 'domain', name: item.domain };
-					rows.push([
-						E('span', { 'class': 'id-cell' }, item.id),
-						E('span', { 'class': 'protocol-cell' }, [
-							E('span', { 'class': 'protocol-icon domain' }, '🌍'),
-							E('span', {}, ' ' + item.domain)
-						]),
-						E('span', { 'class': 'sid-cell' }, item.sid)
-					]);
-				});
-			}
-		}
+		if (!table)
+			return;
 
-		var table = document.getElementById('l7proto-data');
-		var headers = table.querySelectorAll('th');
-		
 		if (!table.hasAttribute('data-sort-initialized')) {
-			headers.forEach(function(header, index) {
+			table.querySelectorAll('th').forEach(function(header, index) {
 				header.style.cursor = 'pointer';
 				header.addEventListener('click', function() { self.sortTable(table, index); });
 			});
@@ -527,6 +494,72 @@ return view.extend({
 		}
 
 		cbi_update_table(table, rows, E('em', _('No data recorded yet.')));
+
+		table.querySelectorAll('tr:not(.table-titles):not(.placeholder)').forEach(function(row, rowIndex) {
+			if (!rows[rowIndex])
+				return;
+			Array.from(row.cells).forEach(function(cell, cellIndex) {
+				if (Array.isArray(rows[rowIndex][cellIndex]))
+					cell.setAttribute('data-value', rows[rowIndex][cellIndex][0]);
+			});
+		});
+	},
+
+	renderL7ProtoData: function(data) {
+		var protoRows = [];
+		var domainRows = [];
+
+		sidLookupTable = {};
+
+		if (data && data.status === 'success' && data.data) {
+			if (Array.isArray(data.data.protocols)) {
+				data.data.protocols.forEach(function(item) {
+					sidLookupTable[item.sid] = { type: 'protocol', name: item.protocol };
+					protoRows.push([
+						[ item.id, E('span', { 'class': 'id-cell' }, item.id) ],
+						E('span', { 'class': 'protocol-cell' }, [
+							E('span', { 'class': 'protocol-icon l7' }, '🔌'),
+							E('span', {}, ' ' + item.protocol)
+						]),
+						[ item.sid, E('span', { 'class': 'sid-cell' }, item.sid) ]
+					]);
+				});
+			}
+
+			if (Array.isArray(data.data.domains)) {
+				var domains = data.data.domains.slice().sort(function(a, b) {
+					var ac = (b.access_count || 0) - (a.access_count || 0);
+					if (ac !== 0)
+						return ac;
+					return (b.last_access || 0) - (a.last_access || 0);
+				});
+
+				domains.forEach(function(item) {
+					sidLookupTable[item.sid] = { type: 'domain', name: item.domain };
+					domainRows.push([
+						[ item.id, E('span', { 'class': 'id-cell' }, item.id) ],
+						E('span', { 'class': 'protocol-cell' }, [
+							E('span', { 'class': 'protocol-icon domain' }, '🌍'),
+							E('span', {}, ' ' + item.domain)
+						]),
+						[ item.sid, E('span', { 'class': 'sid-cell' }, item.sid) ],
+						[ item.access_count || 0, E('span', { 'class': 'data-value' }, item.access_count || 0) ],
+						item.first_seen_str || '-',
+						item.last_access_str || '-'
+					]);
+				});
+			}
+		}
+
+		this.fillSortableTable('l7-protocol-data', protoRows);
+		this.fillSortableTable('l7-domain-data', domainRows);
+
+		var protoCountEl = document.getElementById('l7-protocol-count');
+		if (protoCountEl)
+			protoCountEl.textContent = protoRows.length;
+		var domainCountEl = document.getElementById('l7-domain-count');
+		if (domainCountEl)
+			domainCountEl.textContent = domainRows.length;
 	},
 
 	pollL7Data: function() {
@@ -792,15 +825,50 @@ return view.extend({
 				sidInnerTabs
 			]),
 			E('div', { 'class': 'cbi-section', 'data-tab': 'l7proto', 'data-tab-title': _('L7 Protocol Data') }, [
-				E('table', { 'class': 'table', 'id': 'l7proto-data' }, [
-					E('tr', { 'class': 'tr table-titles' }, [
-						E('th', { 'class': 'th left' }, [ E('span', { 'class': 'th-icon' }, '#️⃣'), ' ', _('ID') ]),
-						E('th', { 'class': 'th left' }, [ E('span', { 'class': 'th-icon' }, '🌐'), ' ', _('Domain&L7Protocol') ]),
-						E('th', { 'class': 'th right' }, [ E('span', { 'class': 'th-icon' }, '🔑'), ' ', _('SID') ])
+				E('div', { 'class': 'aw-inner-tabs' }, [
+					E('div', { 'class': 'cbi-section', 'data-tab': 'l7-protocols', 'data-tab-title': _('Protocol Library') }, [
+						E('p', { 'class': 'cbi-section-descr' }, [
+							_('Built-in L7 protocol signatures from aw-bpf.'),
+							' ',
+							_('Entries:'),
+							' ',
+							E('strong', { 'id': 'l7-protocol-count' }, '0')
+						]),
+						E('table', { 'class': 'table', 'id': 'l7-protocol-data' }, [
+							E('tr', { 'class': 'tr table-titles' }, [
+								E('th', { 'class': 'th left' }, [ E('span', { 'class': 'th-icon' }, '#️⃣'), ' ', _('ID') ]),
+								E('th', { 'class': 'th left' }, [ E('span', { 'class': 'th-icon' }, '🔌'), ' ', _('Protocol') ]),
+								E('th', { 'class': 'th right' }, [ E('span', { 'class': 'th-icon' }, '🔑'), ' ', _('SID') ])
+							]),
+							E('tr', { 'class': 'tr placeholder' }, [
+								E('td', { 'class': 'td', 'colspan': '3' }, [
+									E('em', { 'class': 'spinning' }, [ _('Collecting data...') ])
+								])
+							])
+						])
 					]),
-					E('tr', { 'class': 'tr placeholder' }, [
-						E('td', { 'class': 'td', 'colspan': '3' }, [
-							E('em', { 'class': 'spinning' }, [ _('Collecting data...') ])
+					E('div', { 'class': 'cbi-section', 'data-tab': 'l7-domains', 'data-tab-title': _('常用域名') }, [
+						E('p', { 'class': 'cbi-section-descr' }, [
+							_('Frequently accessed domains discovered by xDPI, sorted by access count.'),
+							' ',
+							_('Entries:'),
+							' ',
+							E('strong', { 'id': 'l7-domain-count' }, '0')
+						]),
+						E('table', { 'class': 'table', 'id': 'l7-domain-data' }, [
+							E('tr', { 'class': 'tr table-titles' }, [
+								E('th', { 'class': 'th left' }, [ E('span', { 'class': 'th-icon' }, '#️⃣'), ' ', _('ID') ]),
+								E('th', { 'class': 'th left' }, [ E('span', { 'class': 'th-icon' }, '🌍'), ' ', _('Domain') ]),
+								E('th', { 'class': 'th right' }, [ E('span', { 'class': 'th-icon' }, '🔑'), ' ', _('SID') ]),
+								E('th', { 'class': 'th right' }, [ E('span', { 'class': 'th-icon' }, '📊'), ' ', _('Access Count') ]),
+								E('th', { 'class': 'th left' }, [ E('span', { 'class': 'th-icon' }, '🕒'), ' ', _('First Seen') ]),
+								E('th', { 'class': 'th left' }, [ E('span', { 'class': 'th-icon' }, '🕒'), ' ', _('Last Access') ])
+							]),
+							E('tr', { 'class': 'tr placeholder' }, [
+								E('td', { 'class': 'td', 'colspan': '6' }, [
+									E('em', { 'class': 'spinning' }, [ _('Collecting data...') ])
+								])
+							])
 						])
 					])
 				])
