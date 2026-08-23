@@ -258,6 +258,18 @@ return view.extend({
 		o.rmempty = false;
 		o.default = false;
 
+		o = s.taboption('advanced', form.Flag, 'enable_privileged_ops', _('Enable Privileged Ops'),
+			_('Allow remote OTA, reboot, Wi-Fi/VPN and other control-plane changes. Off by default. Can also be toggled at runtime from AWAS with the local secret.'));
+		o.rmempty = false;
+		o.default = '0';
+
+		o = s.taboption('advanced', form.Value, 'privileged_ops_secret', _('Privileged Ops Secret'),
+			_('Local secret required to enable privileged ops from AWAS. Change this from the default on production devices.'));
+		o.password = true;
+		o.rmempty = false;
+		o.optional = false;
+		o.default = 'chawrt@2026';
+
 		o = s.taboption('advanced', form.Value, 'ttl_value', _('TTL Value'),
 			_('The TTL value of the gateway support.'));
 		o.datatype = 'string';
