@@ -8,10 +8,10 @@
 				"/tmp/dhcp.leases": [ "read" ],
 				"/proc/net/arp": [ "read" ]
 			},
-			"uci": [ "hostnames", "network" ]
+			"uci": [ "hostnames", "network", "aw-bpf" ]
 		},
 		"write": {
-			"uci": [ "hostnames" ]
+			"uci": [ "hostnames", "aw-bpf" ]
 		}
 	}
 }

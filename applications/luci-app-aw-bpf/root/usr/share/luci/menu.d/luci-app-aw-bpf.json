@@ -31,5 +31,16 @@
 		"depends": {
 			"acl": [ "luci-app-aw-bpf" ]
 		}
+	},
+	"admin/qos/settings": {
+		"title": "Settings",
+		"order": 30,
+		"action": {
+			"type": "view",
+			"path": "aw-bpf/settings"
+		},
+		"depends": {
+			"acl": [ "luci-app-aw-bpf" ]
+		}
 	}
 }

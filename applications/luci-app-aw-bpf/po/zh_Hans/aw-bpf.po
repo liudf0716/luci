@@ -1186,3 +1186,36 @@ msgstr "已将认证服务器配置从\"%s\"重命名为\"%s\"。"
 msgid "Renamed long connection profile from \"%s\" to \"%s\"."
 msgstr "已将长连接配置从\"%s\"重命名为\"%s\"。"
 
+msgid "eBPF traffic control, session logging and DNS tools. Captive portal whitelist is configured in apfree-wifidog, not here."
+msgstr "eBPF 流控、会话日志和 DNS 工具。门户白名单请在 apfree-wifidog 中配置，不要写在这里。"
+
+msgid "Enable aw-eventd"
+msgstr "启用 aw-eventd"
+
+msgid "Start the session/DNS consumer. Reads dns_ringbuf; does not consume the portal ring buffer."
+msgstr "启动会话/DNS 消费者。读取 dns_ringbuf，不消费门户专用 ringbuf。"
+
+msgid "Enable QoS defaults"
+msgstr "启用默认 QoS"
+
+msgid "Default download (Mbps)"
+msgstr "默认下行（Mbps）"
+
+msgid "Default upload (Mbps)"
+msgstr "默认上行（Mbps）"
+
+msgid "DNS trust IP timeout (seconds)"
+msgstr "DNS 信任 IP 超时（秒）"
+
+msgid "Timeout for IPs written to nftables table inet awbpf (trust4/trust6)."
+msgstr "写入 nftables 表 inet awbpf（trust4/trust6）的 IP 超时时间。"
+
+msgid "Trusted wildcard domains (inet awbpf)"
+msgstr "信任通配域名（inet awbpf）"
+
+msgid "Patterns such as *.example.com or .example.com. Matching DNS answers are added to table inet awbpf only, not inet wifidogx."
+msgstr "格式如 *.example.com 或 .example.com。匹配的 DNS 应答只写入 inet awbpf，不会写入 inet wifidogx。"
+
+msgid "Settings"
+msgstr "设置"
+
