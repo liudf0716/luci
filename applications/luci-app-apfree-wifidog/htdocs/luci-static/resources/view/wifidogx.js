@@ -947,7 +947,7 @@ return view.extend({
 
 		// rule settings
 		o = s.taboption('rule', form.DynamicList, 'trusted_wildcard_domains', _('Trusted Wildcard Domains'),
-			_('The trusted wildcard domains of the gateway'));
+			_('Requires aw-bpf DNS XDP (dns_ringbuf_portal). Patterns like .example.com; resolved IPs are added to the captive portal firewall (inet wifidogx), not inet awbpf.'));
 		o.rmempty = true;
 		o.optional = true;
 		o.datatype = 'wildcard';

@@ -168,6 +168,9 @@ msgstr "信任的通配符域名"
 msgid "The trusted wildcard domains of the gateway."
 msgstr "网关的信任通配符域名"
 
+msgid "Requires aw-bpf DNS XDP (dns_ringbuf_portal). Patterns like .example.com; resolved IPs are added to the captive portal firewall (inet wifidogx), not inet awbpf."
+msgstr "依赖 aw-bpf 的 DNS XDP（dns_ringbuf_portal）。格式如 .example.com；解析到的 IP 写入门户防火墙 inet wifidogx，不会写入 inet awbpf。"
+
 msgid "App White List"
 msgstr "应用白名单"
 
