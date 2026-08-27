@@ -234,17 +234,11 @@ msgstr "启用防NAT"
 msgid "Enable Anti NAT devices."
 msgstr "启用防NAT设备"
 
-msgid "Enable Privileged Ops"
-msgstr "启用特权管控"
-
-msgid "Allow remote OTA, reboot, Wi-Fi/VPN and other control-plane changes. Off by default. Can also be toggled at runtime from AWAS with the local secret."
-msgstr "允许远程OTA、重启、改Wi-Fi/VPN等控制面操作。默认关闭。也可在AWAS上用本地秘密运行时开关。"
-
 msgid "Privileged Ops Secret"
-msgstr "特权管控秘密"
+msgstr "特权管控秘钥"
 
-msgid "Local secret required to enable privileged ops from AWAS. Change this from the default on production devices."
-msgstr "从AWAS打开特权管控时需要的本地秘密。生产环境请修改默认值。"
+msgid "Local secret required for AWAS cloud platform to dynamically authorize remote OTA, reboot and system changes. Change this from the default on production devices."
+msgstr "AWAS云端管理平台动态授权远程OTA升级、重启及系统配置变更所需的本地安全秘钥。生产环境请修改默认值。"
 
 msgid "TTL Value"
 msgstr "TTL值"

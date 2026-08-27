@@ -258,13 +258,8 @@ return view.extend({
 		o.rmempty = false;
 		o.default = false;
 
-		o = s.taboption('advanced', form.Flag, 'enable_privileged_ops', _('Enable Privileged Ops'),
-			_('Allow remote OTA, reboot, Wi-Fi/VPN and other control-plane changes. Off by default. Can also be toggled at runtime from AWAS with the local secret.'));
-		o.rmempty = false;
-		o.default = '0';
-
 		o = s.taboption('advanced', form.Value, 'privileged_ops_secret', _('Privileged Ops Secret'),
-			_('Local secret required to enable privileged ops from AWAS. Change this from the default on production devices.'));
+			_('Local secret required for AWAS cloud platform to dynamically authorize remote OTA, reboot and system changes. Change this from the default on production devices.'));
 		o.password = true;
 		o.rmempty = false;
 		o.optional = false;
