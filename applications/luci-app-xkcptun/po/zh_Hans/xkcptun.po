@@ -348,3 +348,18 @@ msgstr "为此特定隧道覆盖预共享鉴权密钥（默认继承全局配置
 
 msgid "Pre-shared key for dynamic gateway authentication. Clients must present a valid HMAC token generated with this key."
 msgstr "用于动态网关鉴权的预共享密钥。客户端必须出示基于该密钥生成的有效 HMAC 令牌。"
+
+msgid "Protocol"
+msgstr "协议"
+
+msgid "Tunnel Protocol"
+msgstr "隧道协议"
+
+msgid "Protocol to tunnel: TCP (standard KCP stream) or UDP (direct low-latency datagram forwarding, e.g. for DNS)."
+msgstr "隧道转发协议：TCP（标准 KCP 可靠流）或 UDP（原生极低延迟报文直传，适用于 DNS 查询等场景）。"
+
+msgid "TCP (TCP-over-KCP)"
+msgstr "TCP (基于 KCP 可靠流)"
+
+msgid "UDP (Direct UDP Datagram)"
+msgstr "UDP (原生报文直传，适用于 DNS)"

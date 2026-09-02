@@ -255,6 +255,12 @@ return view.extend({
 		o.modalonly = false;
 		o.placeholder = _('(Auto)');
 
+		o = s.option(form.ListValue, 'proto', _('Protocol'));
+		o.value('tcp', 'TCP');
+		o.value('udp', 'UDP');
+		o.default = 'tcp';
+		o.modalonly = false;
+
 		o = s.option(form.Value, 'local_port', _('Local Port'));
 		o.modalonly = false;
 		o.placeholder = '9088';
@@ -281,6 +287,14 @@ return view.extend({
 		o.optional = true;
 		o.modalonly = true;
 
+		o = s.taboption('general', form.ListValue, 'proto', _('Tunnel Protocol'),
+			_('Protocol to tunnel: TCP (standard KCP stream) or UDP (direct low-latency datagram forwarding, e.g. for DNS).'));
+		o.value('tcp', 'TCP (TCP-over-KCP)');
+		o.value('udp', 'UDP (Direct UDP Datagram)');
+		o.default = 'tcp';
+		o.rmempty = false;
+		o.modalonly = true;
+
 		o = s.taboption('general', form.Value, 'local_interface', _('Local Interface'),
 			_('Network interface to bind (default: br-lan).'));
 		o.placeholder = 'br-lan';
@@ -289,21 +303,21 @@ return view.extend({
 		o.modalonly = true;
 
 		o = s.taboption('general', form.Value, 'local_port', _('Local Listen Port'),
-			_('Local TCP port to listen for incoming application traffic (e.g. 9088).'));
+			_('Local port to listen for incoming application traffic (e.g. 9088).'));
 		o.datatype = 'port';
 		o.placeholder = '9088';
 		o.rmempty = false;
 		o.modalonly = true;
 
 		o = s.taboption('general', form.Value, 'target_port', _('Dynamic Target Port'),
-			_('Target TCP port on the server to forward traffic to (e.g. 22, 80, 443).'));
+			_('Target port on the server to forward traffic to (e.g. 22, 53, 80, 443).'));
 		o.datatype = 'port';
 		o.placeholder = '22';
 		o.rmempty = false;
 		o.modalonly = true;
 
 		o = s.taboption('general', form.Value, 'target_addr', _('Dynamic Target Host'),
-			_('Target TCP host on the server to connect to (default: 127.0.0.1).'));
+			_('Target host on the server to connect/forward to (default: 127.0.0.1).'));
 		o.datatype = 'host';
 		o.placeholder = '127.0.0.1';
 		o.default = '127.0.0.1';
