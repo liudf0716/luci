@@ -217,6 +217,12 @@ return view.extend({
 		o.placeholder = '9089';
 		o.rmempty = false;
 
+		o = s.taboption('general', form.Value, 'key', _('Pre-Shared Key'),
+			_('Pre-shared key for HMAC-SHA256 dynamic target authentication. Must match the server.'));
+		o.password = true;
+		o.placeholder = "it's a secret";
+		o.optional = true;
+
 		o = s.taboption('general', form.ListValue, 'mode', _('Mode Profile'),
 			_('KCP performance tuning profile.'));
 		for (let i = 0; i < modeProfiles.length; i++) {
@@ -317,6 +323,12 @@ return view.extend({
 		o.placeholder = _('(Inherit from Global)');
 		o.optional = true;
 
+		o = s.taboption('advanced', form.Value, 'key', _('Override Pre-Shared Key'),
+			_('Override pre-shared authentication key for this specific tunnel (defaults to global).'));
+		o.password = true;
+		o.placeholder = _('(Inherit from Global)');
+		o.optional = true;
+
 		// ===== Server Global Settings (Dynamic Gateway) =====
 		s = m.section(form.NamedSection, 'server', 'global', _('Server Global Settings (Dynamic Gateway)'),
 			_('Unified xkcptun server dynamic gateway. The server listens on a single UDP port and dynamically routes each client tunnel to its requested backend target.'));
@@ -345,6 +357,12 @@ return view.extend({
 		o.placeholder = '9089';
 		o.default = '9089';
 		o.rmempty = false;
+
+		o = s.taboption('general', form.Value, 'key', _('Pre-Shared Key'),
+			_('Pre-shared key for dynamic gateway authentication. Clients must present a valid HMAC token generated with this key.'));
+		o.password = true;
+		o.placeholder = "it's a secret";
+		o.optional = true;
 
 		o = s.taboption('general', form.ListValue, 'mode', _('Mode Profile'),
 			_('KCP performance tuning profile.'));

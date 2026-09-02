@@ -333,3 +333,18 @@ msgstr "连接超时时间 (conntimeout)"
 
 msgid "Idle connection timeout in seconds (0 = disable timeout sweep). Default is 60s."
 msgstr "空闲会话超时释放时间，单位秒 (0 = 禁用超时回收)。默认为 60s。"
+
+msgid "Pre-Shared Key"
+msgstr "预共享密钥 (key)"
+
+msgid "Pre-shared key for HMAC-SHA256 dynamic target authentication. Must match the server."
+msgstr "用于动态目标 HMAC-SHA256 鉴权的预共享密钥，必须与服务端保持一致。"
+
+msgid "Override Pre-Shared Key"
+msgstr "覆盖预共享密钥"
+
+msgid "Override pre-shared authentication key for this specific tunnel (defaults to global)."
+msgstr "为此特定隧道覆盖预共享鉴权密钥（默认继承全局配置）。"
+
+msgid "Pre-shared key for dynamic gateway authentication. Clients must present a valid HMAC token generated with this key."
+msgstr "用于动态网关鉴权的预共享密钥。客户端必须出示基于该密钥生成的有效 HMAC 令牌。"
