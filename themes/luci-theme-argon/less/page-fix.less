@@ -599,15 +599,24 @@
     .nft-chain-hook {
         padding: 0.5rem 1.25rem;
     }
+}
 
-    // Fixed the issue of .alert-message not closing properly.
-    .alert-message { 
-        opacity: 1;
-    }
-    .alert-message.fade-out {
+// Global fix for LuCI alert-message dismiss animation in Argon theme
+.alert-message { 
+    opacity: 1;
+
+    &.fade-out {
         opacity: 0;
+        animation: fade-out .4s ease;
+        transition: opacity .4s ease;
     }
 }
+
+@keyframes fade-out {
+    0% { opacity: 1; }
+    100% { opacity: 0; }
+}
+
 
 // Status - Network Bandwidth Monitor
 [data-page="admin-services-nlbw-display"] {
