@@ -8,6 +8,7 @@
 				"/usr/bin/awk": [ "exec" ],
 				"/tmp/dhcp.leases": [ "read" ],
 				"/proc/net/arp": [ "read" ],
+				"/etc/xdns/proxy_domains.txt": [ "read" ],
 				"/etc/xdns/whitelist.txt": [ "read" ]
 			},
 			"uci": [ "hostnames", "network", "aw-bpf" ]

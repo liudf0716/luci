@@ -133,7 +133,9 @@ return view.extend({
 		return fs.stat('/usr/bin/xdns-ctl').then(function(stat) {
 			if (stat && stat.type === 'file') {
 				self.hasXdns = true;
-				return fs.read_direct('/etc/xdns/whitelist.txt').then(function(content) {
+				return fs.read_direct('/etc/xdns/proxy_domains.txt').catch(function() {
+					return fs.read_direct('/etc/xdns/whitelist.txt');
+				}).then(function(content) {
 					var domains = {};
 					if (content) {
 						content.split('\n').forEach(function(line) {
