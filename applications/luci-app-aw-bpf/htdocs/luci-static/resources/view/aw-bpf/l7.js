@@ -183,14 +183,25 @@ return view.extend({
 
 		fs.exec_direct('/usr/bin/xdns-ctl', ['add-domain', domain]).then(function() {
 			self.xdnsDomains[domain.toLowerCase()] = true;
-			ui.addNotification(null, E('p', _('域名「%s」已成功加入 xdns-bpf 代理名单并即刻生效！').format(domain)), 'info');
+			if (typeof ui.addTimeLimitedNotification === 'function') {
+				ui.addTimeLimitedNotification(null, E('p', _('域名「%s」已成功加入 xdns-bpf 代理名单并即刻生效！').format(domain)), 4000, 'info');
+			} else {
+				var msg = ui.addNotification(null, E('p', _('域名「%s」已成功加入 xdns-bpf 代理名单并即刻生效！').format(domain)), 'info');
+				setTimeout(function() {
+					if (msg && msg.parentNode) msg.parentNode.removeChild(msg);
+				}, 4000);
+			}
 			if (lastL7ProtoData) {
 				self.renderL7ProtoData(lastL7ProtoData);
 			}
 		}).catch(function(err) {
 			btn.disabled = false;
 			btn.textContent = origText;
-			ui.addNotification(null, E('p', _('加入代理名单失败: %s').format(err.message || err)), 'error');
+			if (typeof ui.addTimeLimitedNotification === 'function') {
+				ui.addTimeLimitedNotification(null, E('p', _('加入代理名单失败: %s').format(err.message || err)), 6000, 'error');
+			} else {
+				ui.addNotification(null, E('p', _('加入代理名单失败: %s').format(err.message || err)), 'error');
+			}
 		});
 	},
 

@@ -592,3 +592,20 @@
 	border: 1px solid rgba(46, 204, 113, 0.45);
 }
 
+/* Fix LuCI alert-message dismiss animation and modal compatibility in Argon theme */
+.alert-message.fade-out {
+	opacity: 0;
+	transition: opacity 0.3s ease;
+}
+
+@keyframes fade-out {
+	from { opacity: 1; }
+	to { opacity: 0; }
+}
+
+.alert-message .btn {
+	cursor: pointer;
+	user-select: none;
+}
+
+
