@@ -27,6 +27,7 @@ var isPaused = false;
 var lastUpdated = null;
 var pollActive = false;
 var lastSIDData = null;
+var lastL7ProtoData = null;
 var resizeListenerAdded = false;
 var resizeTimer = null;
 
@@ -116,11 +117,79 @@ function chartAxisTheme(colors) {
 }
 
 return view.extend({
+	hasXdns: false,
+	xdnsDomains: {},
+
 	load: function() {
 		return Promise.all([
 			this.loadSIDData(),
-			this.loadL7ProtoData()
+			this.loadL7ProtoData(),
+			this.checkXdnsStatus()
 		]);
+	},
+
+	checkXdnsStatus: function() {
+		var self = this;
+		return fs.stat('/usr/bin/xdns-ctl').then(function(stat) {
+			if (stat && stat.type === 'file') {
+				self.hasXdns = true;
+				return fs.read_direct('/etc/xdns/whitelist.txt').then(function(content) {
+					var domains = {};
+					if (content) {
+						content.split('\n').forEach(function(line) {
+							line = line.trim();
+							if (!line || line.charAt(0) === '#') return;
+							if (line.indexOf('*.') === 0) line = line.substring(2);
+							if (line.charAt(0) === '.') line = line.substring(1);
+							domains[line.toLowerCase()] = true;
+						});
+					}
+					self.xdnsDomains = domains;
+					return true;
+				}).catch(function() {
+					self.xdnsDomains = {};
+					return true;
+				});
+			} else {
+				self.hasXdns = false;
+				return false;
+			}
+		}).catch(function() {
+			self.hasXdns = false;
+			return false;
+		});
+	},
+
+	isDomainProxied: function(dName) {
+		if (!dName || !this.xdnsDomains) return false;
+		dName = dName.toLowerCase();
+		if (this.xdnsDomains[dName]) return true;
+		var parts = dName.split('.');
+		for (var i = 1; i < parts.length - 1; i++) {
+			var parent = parts.slice(i).join('.');
+			if (this.xdnsDomains[parent]) return true;
+		}
+		return false;
+	},
+
+	handleAddXdnsDomain: function(domain, btn) {
+		var self = this;
+		if (!domain) return;
+		btn.disabled = true;
+		var origText = btn.textContent;
+		btn.textContent = _('添加中...');
+
+		fs.exec_direct('/usr/bin/xdns-ctl', ['add-domain', domain]).then(function() {
+			self.xdnsDomains[domain.toLowerCase()] = true;
+			ui.addNotification(null, E('p', _('域名「%s」已成功加入 xdns-bpf 代理名单并即刻生效！').format(domain)), 'info');
+			if (lastL7ProtoData) {
+				self.renderL7ProtoData(lastL7ProtoData);
+			}
+		}).catch(function(err) {
+			btn.disabled = false;
+			btn.textContent = origText;
+			ui.addNotification(null, E('p', _('加入代理名单失败: %s').format(err.message || err)), 'error');
+		});
 	},
 
 	showError: function(message) {
@@ -506,9 +575,11 @@ return view.extend({
 	},
 
 	renderL7ProtoData: function(data) {
+		var self = this;
 		var protoRows = [];
 		var domainRows = [];
 
+		lastL7ProtoData = data;
 		sidLookupTable = {};
 
 		if (data && data.status === 'success' && data.data) {
@@ -536,7 +607,7 @@ return view.extend({
 
 				domains.forEach(function(item) {
 					sidLookupTable[item.sid] = { type: 'domain', name: item.domain };
-					domainRows.push([
+					var row = [
 						[ item.id, E('span', { 'class': 'id-cell' }, item.id) ],
 						E('span', { 'class': 'protocol-cell' }, [
 							E('span', { 'class': 'protocol-icon domain' }, '🌍'),
@@ -546,7 +617,28 @@ return view.extend({
 						[ item.access_count || 0, E('span', { 'class': 'data-value' }, item.access_count || 0) ],
 						item.first_seen_str || '-',
 						item.last_access_str || '-'
-					]);
+					];
+
+					if (self.hasXdns) {
+						var isProxied = self.isDomainProxied(item.domain);
+						if (isProxied) {
+							row.push(E('span', {
+								'class': 'badge success',
+								'style': 'color: #2ecc71; background: rgba(46,204,113,0.12); border: 1px solid rgba(46,204,113,0.3); padding: 2px 8px; border-radius: 4px; font-size: 85%; white-space: nowrap;'
+							}, [ '✔ ', _('已代理') ]));
+						} else {
+							row.push(E('button', {
+								'class': 'btn cbi-button cbi-button-action',
+								'style': 'padding: 2px 8px; font-size: 85%; white-space: nowrap;',
+								'click': function(ev) {
+									var b = ev.target.closest('button');
+									self.handleAddXdnsDomain(item.domain, b);
+								}
+							}, [ '➕ ', _('加入代理') ]));
+						}
+					}
+
+					domainRows.push(row);
 				});
 			}
 		}
@@ -862,10 +954,11 @@ return view.extend({
 								E('th', { 'class': 'th right' }, [ E('span', { 'class': 'th-icon' }, '🔑'), ' ', _('SID') ]),
 								E('th', { 'class': 'th right' }, [ E('span', { 'class': 'th-icon' }, '📊'), ' ', _('Access Count') ]),
 								E('th', { 'class': 'th left' }, [ E('span', { 'class': 'th-icon' }, '🕒'), ' ', _('First Seen') ]),
-								E('th', { 'class': 'th left' }, [ E('span', { 'class': 'th-icon' }, '🕒'), ' ', _('Last Access') ])
-							]),
+								E('th', { 'class': 'th left' }, [ E('span', { 'class': 'th-icon' }, '🕒'), ' ', _('Last Access') ]),
+								this.hasXdns ? E('th', { 'class': 'th center' }, [ E('span', { 'class': 'th-icon' }, '⚡'), ' ', _('xdns代理') ]) : null
+							].filter(Boolean)),
 							E('tr', { 'class': 'tr placeholder' }, [
-								E('td', { 'class': 'td', 'colspan': '6' }, [
+								E('td', { 'class': 'td', 'colspan': this.hasXdns ? '7' : '6' }, [
 									E('em', { 'class': 'spinning' }, [ _('Collecting data...') ])
 								])
 							])
