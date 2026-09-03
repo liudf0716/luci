@@ -625,8 +625,8 @@ return view.extend({
 						var isProxied = self.isDomainProxied(item.domain);
 						if (isProxied) {
 							row.push(E('span', {
-								'class': 'badge success',
-								'style': 'color: #2ecc71; background: rgba(46,204,113,0.12); border: 1px solid rgba(46,204,113,0.3); padding: 2px 8px; border-radius: 4px; font-size: 85%; white-space: nowrap;'
+								'class': 'badge success xdns-badge-proxied',
+								'style': 'color: #155724; background-color: #d4edda; border: 1px solid #c3e6cb; font-weight: 600; padding: 3px 10px; border-radius: 4px; font-size: 85%; white-space: nowrap;'
 							}, [ '✔ ', _('已代理') ]));
 						} else {
 							row.push(E('button', {

@@ -568,3 +568,27 @@
 		margin-right: 0;
 	}
 }
+
+/* xdns Proxy Status Badge */
+.xdns-badge-proxied {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	color: #155724;
+	background-color: #d4edda;
+	border: 1px solid #c3e6cb;
+	font-weight: 600;
+	padding: 3px 10px;
+	border-radius: 4px;
+	font-size: 85%;
+	white-space: nowrap;
+	line-height: 1.2;
+}
+
+[data-darkmode="true"] .xdns-badge-proxied,
+.l7-view-container[data-aw-theme="dark"] .xdns-badge-proxied {
+	color: #8ce99a;
+	background-color: rgba(46, 204, 113, 0.2);
+	border: 1px solid rgba(46, 204, 113, 0.45);
+}
+
