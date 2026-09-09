@@ -205,6 +205,13 @@ return view.extend({
 		s.tab('general', _('General Settings'));
 		s.tab('advanced', _('Advanced Settings'));
 
+		o = s.taboption('general', form.Flag, 'enabled', _('Enable Client Daemon'),
+			_('Enable unified xkcptun client daemon.'));
+		o.enabled = '1';
+		o.disabled = '0';
+		o.default = '0';
+		o.rmempty = false;
+
 		o = s.taboption('general', form.Value, 'remote_addr', _('Default Server Address'),
 			_('Remote xkcptun server IP address or domain name.'));
 		o.datatype = 'host';
