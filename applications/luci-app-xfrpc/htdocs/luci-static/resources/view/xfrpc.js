@@ -5,7 +5,6 @@
 'require rpc';
 'require dom';
 'require tools.widgets as widgets';
-'require tools.github as github';
 
 const callServiceList = rpc.declare({
 	object: 'service',
@@ -39,7 +38,7 @@ function renderStatus(isRunning) {
 	if (isRunning) {
 		renderHTML += String.format(spanTemp, 'green', _("xfrpc client"), _("running..."));
 	} else {
-		renderHTML += String.format(spanTemp, 'red', _("xfprc client"), _("not running..."));
+		renderHTML += String.format(spanTemp, 'red', _("xfrpc client"), _("not running..."));
 	}
 
 	return renderHTML;
@@ -51,52 +50,53 @@ function executePluginAction(id, ev) {
 	var pluginName = selectedRow.querySelector('td:nth-child(1)').innerText;
 	var pluginAction = selectedRow.querySelector('td:nth-child(2)').innerText;
 	var pluginParam = selectedRow.querySelector('td:nth-child(3)').innerText;
-	console.log(name + " " + pluginName + " " + pluginAction + " " + pluginParam);
 	if (pluginName == "instaloader") {
 		if (pluginParam == "") {
-			alert(_("please input profile url to download"));
+			ui.addNotification(null, E('p', _('Please input profile URL to download.')), 'warning');
 			return;
 		}
 		if (pluginAction == "download") {
-			alert(_("start download video"));
 			callInstaLoader('download', pluginParam, name).then(function (res) {
-				// parse json res
 				var jsonRes = JSON.parse(res);
 				if (jsonRes["status"] == "ok") {
-					alert("start download video");
+					ui.addNotification(null, E('p', _('Started downloading video.')), 'info');
 				} else {
-					alert("download video failed");
+					ui.addNotification(null, E('p', _('Failed to download video.')), 'error');
 				}
+			}).catch(function(e) {
+				ui.addNotification(null, E('p', _('RPC call failed: ') + (e.message || e)), 'error');
 			});
 		} else if (pluginAction == "stop") {
-			alert(_("stop download video"));
 			callInstaLoader('stop', '', name).then(function (res) {
 				var jsonRes = JSON.parse(res);
 				if (jsonRes["status"] == "ok") {
-					alert("stop download video");
+					ui.addNotification(null, E('p', _('Stopped downloading video.')), 'info');
 				} else {
-					alert("stop download video failed");
+					ui.addNotification(null, E('p', _('Failed to stop downloading video.')), 'error');
 				}
+			}).catch(function(e) {
+				ui.addNotification(null, E('p', _('RPC call failed: ') + (e.message || e)), 'error');
 			});
 		}
 	} else if (pluginName == "youtubedl") {
 		if (pluginParam == "") {
-			alert(_("please input video url to download"));
+			ui.addNotification(null, E('p', _('Please input video URL to download.')), 'warning');
 			return;
 		}
 		if (pluginAction == "download") {
-			alert(_("start download video"));
 			callInstaLoader('download', pluginParam, name).then(function (res) {
 				var jsonRes = JSON.parse(res);
 				if (jsonRes["status"] == "ok") {
-					alert("start download video");
+					ui.addNotification(null, E('p', _('Started downloading video.')), 'info');
 				} else {
-					alert("download video failed");
+					ui.addNotification(null, E('p', _('Failed to download video.')), 'error');
 				}
+			}).catch(function(e) {
+				ui.addNotification(null, E('p', _('RPC call failed: ') + (e.message || e)), 'error');
 			});
 		}
 	} else {
-		alert(_("not support plugin"));
+		ui.addNotification(null, E('p', _('Unsupported plugin.')), 'warning');
 	}
 }
 
@@ -157,8 +157,7 @@ return view.extend({
 		var m, s, o, ss;
 
 		m = new form.Map('xfrpc', _('xfrpc'));
-		m.description = github.desc(
-			'xfrpc is a c language frp client for frps.', 'liudf0716', 'xfrpc');
+		m.description = _('xfrpc is a lightweight C language frp client for frps.');
 
 		s = m.section(form.NamedSection, '_status');
 		s.anonymous = true;
