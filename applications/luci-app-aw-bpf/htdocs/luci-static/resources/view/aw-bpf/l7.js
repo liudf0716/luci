@@ -233,6 +233,252 @@ return view.extend({
 		});
 	},
 
+	handleEditSpeed: function(sid, domainOrL7Proto) {
+		var self = this;
+		fs.exec_direct('/usr/bin/aw-bpfctl', ['sid', 'json'], 'json').then(function(res) {
+			var rate_limit_dl = 0, rate_limit_ul = 0;
+			var time_rule = null;
+			if (res && res.status === 'success' && Array.isArray(res.data)) {
+				var item = res.data.find(function(d) { return d.sid === sid; });
+				if (item) {
+					rate_limit_dl = (item.incoming.incoming_rate_limit || 0) / 1024 / 1024;
+					rate_limit_ul = (item.outgoing.outgoing_rate_limit || 0) / 1024 / 1024;
+					time_rule = item.time_rule || null;
+				}
+			}
+			self.displaySpeedLimitDialog(sid, domainOrL7Proto, rate_limit_dl, rate_limit_ul, time_rule);
+		}).catch(function(e) {
+			console.error('Error getting speed limit:', e);
+			self.displaySpeedLimitDialog(sid, domainOrL7Proto, 0, 0, null);
+		});
+	},
+
+	displaySpeedLimitDialog: function(sid, domainOrL7Proto, dl, ul, time_rule) {
+		var self = this;
+		var isTimeEnabled = !!(time_rule && time_rule.enabled);
+		var daysMatch = (time_rule && time_rule.weekdays_match) ? time_rule.weekdays_match : 0x3E;
+		var dtStart = (time_rule && time_rule.daytime_start) ? time_rule.daytime_start : '09:30:00';
+		var dtStop = (time_rule && time_rule.daytime_stop) ? time_rule.daytime_stop : '18:30:00';
+		var dStart = (time_rule && time_rule.date_start) ? time_rule.date_start.split(' ')[0] : '';
+		var dStop = (time_rule && time_rule.date_stop) ? time_rule.date_stop.split(' ')[0] : '';
+
+		var weekNames = [
+			{ bit: 1, label: _('Mon'), id: 'tc-day-mon' },
+			{ bit: 2, label: _('Tue'), id: 'tc-day-tue' },
+			{ bit: 3, label: _('Wed'), id: 'tc-day-wed' },
+			{ bit: 4, label: _('Thu'), id: 'tc-day-thu' },
+			{ bit: 5, label: _('Fri'), id: 'tc-day-fri' },
+			{ bit: 6, label: _('Sat'), id: 'tc-day-sat' },
+			{ bit: 0, label: _('Sun'), id: 'tc-day-sun' }
+		];
+
+		var updatePillActiveState = function() {
+			weekNames.forEach(function(w) {
+				var input = document.getElementById(w.id);
+				var label = document.getElementById(w.id + '-label');
+				if (input && label) {
+					if (input.checked) {
+						label.classList.add('active');
+					} else {
+						label.classList.remove('active');
+					}
+				}
+			});
+		};
+
+		var weekdayCheckboxes = weekNames.map(function(w) {
+			var checked = (daysMatch & (1 << w.bit)) !== 0;
+			return E('label', {
+				id: w.id + '-label',
+				'class': checked ? 'aw-weekday-pill active' : 'aw-weekday-pill',
+				click: function(ev) {
+					setTimeout(updatePillActiveState, 10);
+				}
+			}, [
+				E('input', {
+					type: 'checkbox',
+					id: w.id,
+					value: w.bit,
+					checked: checked ? 'checked' : null,
+					change: function() { updatePillActiveState(); }
+				}),
+				w.label
+			]);
+		});
+
+		var tcContainer = E('div', {
+			id: 'tc-panel',
+			'class': 'aw-tc-panel',
+			style: isTimeEnabled ? 'margin-top: 10px;' : 'display:none; margin-top: 10px;'
+		}, [
+			E('div', { 'class': 'table aw-modal-table', style: 'margin-bottom: 0;' }, [
+				E('div', { 'class': 'tr' }, [
+					E('div', { 'class': 'td aw-modal-label' }, _('Weekdays')),
+					E('div', { 'class': 'td aw-modal-value' }, [
+						E('div', { style: 'margin-bottom: 8px;' }, [
+							E('button', {
+								type: 'button',
+								class: 'btn cbi-button cbi-button-neutral',
+								style: 'margin-right: 5px; padding: 2px 8px; font-size: 12px;',
+								click: function() {
+									weekNames.forEach(function(w) {
+										var el = document.getElementById(w.id);
+										if (el) el.checked = (w.bit >= 1 && w.bit <= 5);
+									});
+									updatePillActiveState();
+								}
+							}, _('Workdays (Mon-Fri)')),
+							E('button', {
+								type: 'button',
+								class: 'btn cbi-button cbi-button-neutral',
+								style: 'margin-right: 5px; padding: 2px 8px; font-size: 12px;',
+								click: function() {
+									weekNames.forEach(function(w) {
+										var el = document.getElementById(w.id);
+										if (el) el.checked = (w.bit === 0 || w.bit === 6);
+									});
+									updatePillActiveState();
+								}
+							}, _('Weekend (Sat-Sun)')),
+							E('button', {
+								type: 'button',
+								class: 'btn cbi-button cbi-button-neutral',
+								style: 'padding: 2px 8px; font-size: 12px;',
+								click: function() {
+									weekNames.forEach(function(w) {
+										var el = document.getElementById(w.id);
+										if (el) el.checked = true;
+									});
+									updatePillActiveState();
+								}
+							}, _('Everyday'))
+						]),
+						E('div', { style: 'display: flex; flex-wrap: wrap; align-items: center;' }, weekdayCheckboxes)
+					])
+				]),
+				E('div', { 'class': 'tr' }, [
+					E('div', { 'class': 'td aw-modal-label' }, _('Daily Time Period')),
+					E('div', { 'class': 'td aw-modal-value', style: 'display: flex; align-items: center; gap: 8px;' }, [
+						E('input', { type: 'text', id: 'tc-timestart', class: 'cbi-input-text', style: 'width: 120px;', value: dtStart, placeholder: '09:30:00' }),
+						E('span', {}, ' ~ '),
+						E('input', { type: 'text', id: 'tc-timestop', class: 'cbi-input-text', style: 'width: 120px;', value: dtStop, placeholder: '18:30:00' })
+					])
+				]),
+				E('div', { 'class': 'tr' }, [
+					E('div', { 'class': 'td aw-modal-label' }, _('Date Range (Optional)')),
+					E('div', { 'class': 'td aw-modal-value' }, [
+						E('div', { style: 'display: flex; align-items: center; gap: 8px;' }, [
+							E('input', { type: 'date', id: 'tc-datestart', class: 'cbi-input-text', value: dStart }),
+							E('span', {}, ' ~ '),
+							E('input', { type: 'date', id: 'tc-datestop', class: 'cbi-input-text', value: dStop })
+						]),
+						E('div', { 'class': 'cbi-value-description', style: 'margin-top: 4px; font-size: 12px;' }, _('Optional: Specific date range for one-time period'))
+					])
+				])
+			])
+		]);
+
+		var tcEnableCheckbox = E('input', {
+			type: 'checkbox',
+			id: 'tc-enable',
+			checked: isTimeEnabled ? 'checked' : null,
+			style: 'margin-right: 6px;',
+			change: function(ev) {
+				var panel = document.getElementById('tc-panel');
+				if (panel) panel.style.display = ev.target.checked ? '' : 'none';
+			}
+		});
+
+		ui.showModal(_('Edit Speed Limit & Time Schedule'), [
+			E('div', { 'class': 'cbi-section' }, [
+				E('div', { 'class': 'table aw-modal-table' }, [
+					E('div', { 'class': 'tr' }, [
+						E('div', { 'class': 'td aw-modal-label' }, _('SID')),
+						E('div', { 'class': 'td aw-modal-value', style: 'font-weight: bold;' }, String(sid))
+					]),
+					E('div', { 'class': 'tr' }, [
+						E('div', { 'class': 'td aw-modal-label' }, _('Domain / L7 Protocol')),
+						E('div', { 'class': 'td aw-modal-value' }, domainOrL7Proto)
+					]),
+					E('div', { 'class': 'tr' }, [
+						E('div', { 'class': 'td aw-modal-label' }, _('Download Limit')),
+						E('div', { 'class': 'td aw-modal-value', style: 'display: flex; align-items: center; gap: 6px;' }, [
+							E('input', { type: 'number', id: 'dl-rate', class: 'cbi-input-number', min: '0', value: dl, style: 'width: 120px;' }),
+							E('span', {}, " Mbps")
+						])
+					]),
+					E('div', { 'class': 'tr' }, [
+						E('div', { 'class': 'td aw-modal-label' }, _('Upload Limit')),
+						E('div', { 'class': 'td aw-modal-value', style: 'display: flex; align-items: center; gap: 6px;' }, [
+							E('input', { type: 'number', id: 'ul-rate', class: 'cbi-input-number', min: '0', value: ul, style: 'width: 120px;' }),
+							E('span', {}, " Mbps")
+						])
+					]),
+					E('div', { 'class': 'tr' }, [
+						E('div', { 'class': 'td aw-modal-label' }, _('Enable Time Control')),
+						E('div', { 'class': 'td aw-modal-value' }, [
+							E('label', { style: 'cursor: pointer; display: inline-flex; align-items: center;' }, [
+								tcEnableCheckbox,
+								_('Enable Time Control')
+							])
+						])
+					])
+				]),
+				tcContainer
+			]),
+			E('div', { 'class': 'right', style: 'margin-top: 15px;' }, [
+				E('button', { 'class': 'btn cbi-button cbi-button-neutral', 'click': ui.hideModal }, _('Cancel')),
+				E('button', { 'class': 'btn cbi-button cbi-button-positive', 'click': ui.createHandlerFn(this, async function(ev) {
+					var dl_val = document.getElementById('dl-rate').value;
+					var ul_val = document.getElementById('ul-rate').value;
+					var tcEnabled = document.getElementById('tc-enable').checked;
+
+					try {
+						var cmdArgs = ['sid', 'update', String(sid), 'downrate', String(Math.round((parseFloat(dl_val) || 0) * 1024 * 1024)), 'uprate', String(Math.round((parseFloat(ul_val) || 0) * 1024 * 1024))];
+
+						if (!tcEnabled) {
+							cmdArgs.push('--notime');
+						} else {
+							var selectedDays = [];
+							weekNames.forEach(function(w) {
+								var el = document.getElementById(w.id);
+								if (el && el.checked) selectedDays.push(w.bit);
+							});
+							if (selectedDays.length > 0 && selectedDays.length < 7) {
+								cmdArgs.push('--weekdays', selectedDays.join(','));
+							} else if (selectedDays.length === 7) {
+								cmdArgs.push('--weekdays', 'all');
+							}
+
+							var tStart = (document.getElementById('tc-timestart').value || '').trim();
+							var tStop = (document.getElementById('tc-timestop').value || '').trim();
+							if (tStart && tStop) {
+								cmdArgs.push('--timestart', tStart, '--timestop', tStop);
+							}
+
+							var dStartVal = (document.getElementById('tc-datestart').value || '').trim();
+							var dStopVal = (document.getElementById('tc-datestop').value || '').trim();
+							if (dStartVal) {
+								cmdArgs.push('--datestart', dStartVal + ' 00:00:00');
+							}
+							if (dStopVal) {
+								cmdArgs.push('--datestop', dStopVal + ' 23:59:59');
+							}
+						}
+
+						await fs.exec_direct('/usr/bin/aw-bpfctl', cmdArgs);
+						var sidData = await self.loadSIDData();
+						self.renderSIDData(sidData);
+						ui.addNotification(null, E('p', _('Speed limit and time schedule updated')));
+						ui.hideModal();
+					} catch (e) {
+						ui.addNotification(null, E('p', _('Error: ') + e.message));
+					}
+				}) }, _('Save'))
+			])
+		], 'cbi-modal');
+	},
+
 	loadL7ProtoData: function() {
 		var self = this;
 		return fs.exec_direct('/usr/bin/aw-bpfctl', ['l7', 'json'], 'json').then(function(result) {
@@ -463,7 +709,23 @@ return view.extend({
 				// 判断连接是否活跃
 				var isActive = item.incoming.rate > 0 || item.outgoing.rate > 0;
 				var activityIcon = isActive ? '🟢' : '⚪';
-				
+
+				var timeBadge;
+				if (item.time_rule && item.time_rule.enabled) {
+					timeBadge = E('span', {
+						'class': 'badge badge-info',
+						'title': item.time_rule.desc || '',
+						'style': 'background:#17a2b8;color:#fff;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:500;white-space:nowrap;display:inline-block;'
+					}, '⏱️ ' + (item.time_rule.desc || _('Scheduled')));
+				} else if ((item.incoming && item.incoming.incoming_rate_limit > 0) || (item.outgoing && item.outgoing.outgoing_rate_limit > 0)) {
+					timeBadge = E('span', {
+						'class': 'badge badge-secondary',
+						'style': 'background:#6c757d;color:#fff;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:500;white-space:nowrap;display:inline-block;'
+					}, _('All Time'));
+				} else {
+					timeBadge = E('span', { 'style': 'color:#888;' }, '-');
+				}
+
 				rows.push([
 					E('span', { 'class': 'sid-cell' }, [
 						E('span', { 'class': 'activity-indicator', 'title': isActive ? _('Active') : _('Inactive') }, activityIcon),
@@ -490,7 +752,21 @@ return view.extend({
 					])],
 					[ item.outgoing.total_packets, E('span', { 'class': 'packet-cell upload' }, [
 						E('span', { 'class': 'data-value' }, '%1000.2mP'.format(item.outgoing.total_packets))
-					])]
+					])],
+					E('span', { 'class': 'time-schedule-cell center' }, [
+						timeBadge
+					]),
+					E('div', { 'class': 'button-container' }, [
+						E('button', {
+							'class': 'btn cbi-button cbi-button-edit',
+							'click': ui.createHandlerFn(self, function() {
+								self.handleEditSpeed(item.sid, domainOrL7Proto);
+							})
+						}, [
+							E('span', { 'class': 'btn-icon' }, '✏️'),
+							E('span', {}, ' ' + _('Edit'))
+						])
+					])
 				]);
 
 				txRateData.push({ value: item.incoming.rate, label: domainOrL7Proto });
@@ -913,10 +1189,12 @@ return view.extend({
 						E('th', { 'class': 'th right' }, [ E('span', { 'class': 'th-icon' }, '📨'), ' ', _('Download (Packets)') ]),
 						E('th', { 'class': 'th right' }, [ E('span', { 'class': 'th-icon' }, '⬆️'), ' ', _('Upload Speed (Bit/s)') ]),
 						E('th', { 'class': 'th right' }, [ E('span', { 'class': 'th-icon' }, '📦'), ' ', _('Upload (Bytes)') ]),
-						E('th', { 'class': 'th right' }, [ E('span', { 'class': 'th-icon' }, '📨'), ' ', _('Upload (Packets)') ])
+						E('th', { 'class': 'th right' }, [ E('span', { 'class': 'th-icon' }, '📨'), ' ', _('Upload (Packets)') ]),
+						E('th', { 'class': 'th center' }, [ E('span', { 'class': 'th-icon' }, '⏱️'), ' ', _('Time Schedule') ]),
+						E('th', { 'class': 'th center' }, [ E('span', { 'class': 'th-icon' }, '⚙️'), ' ', _('Actions') ])
 					]),
 					E('tr', { 'class': 'tr placeholder' }, [
-						E('td', { 'class': 'td', 'colspan': '8' }, [
+						E('td', { 'class': 'td', 'colspan': '10' }, [
 							E('em', { 'class': 'spinning' }, [ _('Collecting data...') ])
 						])
 					])
