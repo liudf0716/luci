@@ -168,20 +168,6 @@
 	}
 }
 
-.form-group {
-	display: flex;
-	align-items: center;    /* 垂直居中 */
-	margin-bottom: 15px;    /* 项间距 */
-	gap: 10px;              /* Label 和 Input 间距 */
-}
-
-/* 标签固定最小宽度 + 右对齐 */
-.form-label {
-	flex: 0 0 120px;       /* 不伸缩、不收缩、基础宽度120px */
-	text-align: right;
-	font-weight: bold;
-	color: var(--aw-text, #333);
-}
 
 .th-sort-asc::after {
 	content: " ▲";
@@ -240,22 +226,36 @@
 	display: flex; 
 	justify-content: space-between; 
 	align-items: center; 
-	padding: 15px 20px; 
-	background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+	padding: 16px 20px; 
+	background: var(--aw-card-bg, #ffffff);
+	border: 1.5px solid var(--aw-card-border, #d9d9d9);
 	border-radius: 8px;
-	box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 	margin-top: 20px;
+}
+
+[data-darkmode="true"] .display-view-container .display-controls,
+.display-view-container[data-aw-theme="dark"] .display-controls {
+	background: #23272e;
+	border-color: #3e4451;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
 }
 
 /* Control Groups */
 .control-group {
 	display: flex;
 	align-items: center;
-	gap: 8px;
-	padding: 8px 12px;
-	background-color: rgba(255, 255, 255, 0.15);
+	gap: 10px;
+	padding: 6px 12px;
+	background-color: rgba(0, 0, 0, 0.03);
+	border: 1px solid rgba(0, 0, 0, 0.08);
 	border-radius: 6px;
-	backdrop-filter: blur(10px);
+}
+
+[data-darkmode="true"] .control-group,
+.display-view-container[data-aw-theme="dark"] .control-group {
+	background-color: rgba(255, 255, 255, 0.05);
+	border-color: rgba(255, 255, 255, 0.12);
 }
 
 .control-icon {
@@ -264,24 +264,33 @@
 }
 
 .control-label {
-	font-weight: 500;
-	color: white;
+	font-weight: 600;
+	color: var(--aw-text, inherit);
 	margin: 0;
 	white-space: nowrap;
 }
 
 .control-input {
 	border-radius: 4px;
-	border: 1px solid rgba(255, 255, 255, 0.3);
-	background-color: rgba(255, 255, 255, 0.9);
-	padding: 6px 12px;
-	transition: all 0.3s ease;
+	border: 1.5px solid var(--aw-card-border, #ccc);
+	background-color: var(--aw-chart-bg, #ffffff);
+	color: var(--aw-text, inherit);
+	padding: 7px 12px;
+	font-size: 14px;
+	transition: all 0.25s ease;
+}
+
+[data-darkmode="true"] .control-input,
+.display-view-container[data-aw-theme="dark"] .control-input {
+	background-color: #1e2227;
+	border-color: #4b5263;
+	color: #abb2bf;
 }
 
 .control-input:focus {
-	background-color: white;
-	border-color: #667eea;
-	box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+	background-color: var(--aw-chart-bg, #ffffff);
+	border-color: #4d78cc;
+	box-shadow: 0 0 0 3px rgba(77, 120, 204, 0.25);
 	outline: none;
 }
 
@@ -292,11 +301,12 @@
 }
 
 .status-group {
-	background-color: rgba(255, 255, 255, 0.2);
+	background-color: transparent;
+	border: none;
 }
 
 .last-updated-text {
-	color: rgba(255, 255, 255, 0.95);
+	color: var(--aw-text-muted, #888);
 	font-size: 0.9em;
 	font-weight: 500;
 }
@@ -351,14 +361,16 @@
 	box-shadow: 0 4px 8px rgba(255, 193, 7, 0.4);
 }
 
-.cbi-button-positive {
-	background: rgba(40, 167, 69, 0.9);
+.cbi-button-positive,
+.cbi-button-add {
+	background: #28a745;
 	color: white;
 	border-color: rgba(40, 167, 69, 0.3);
 }
 
-.cbi-button-positive:hover {
-	background: #28a745;
+.cbi-button-positive:hover:not(:disabled),
+.cbi-button-add:hover:not(:disabled) {
+	background: #218838;
 	transform: translateY(-2px);
 	box-shadow: 0 4px 8px rgba(40, 167, 69, 0.4);
 }
@@ -606,6 +618,136 @@
 .alert-message .btn {
 	cursor: pointer;
 	user-select: none;
+}
+
+/* Modal form layout - structured, consistent, theme-adaptive */
+.aw-modal-table {
+	width: 100%;
+	border-collapse: collapse;
+}
+
+.aw-modal-table .tr {
+	display: flex;
+	align-items: center;
+	padding: 6px 0;
+	border-bottom: 1px solid var(--border-color-low, #eee);
+}
+
+.aw-modal-table .tr:last-child {
+	border-bottom: none;
+}
+
+.aw-modal-label {
+	flex: 0 0 140px;
+	font-weight: 600;
+	padding-right: 12px;
+	text-align: right;
+	color: inherit;
+}
+
+.aw-modal-value {
+	flex: 1;
+	min-width: 0;
+	text-align: left !important;
+	display: flex;
+	align-items: center;
+}
+
+.aw-modal-value > * {
+	text-align: left;
+}
+
+.aw-tc-panel {
+	margin-top: 10px;
+	padding: 12px 14px;
+	border-radius: 6px;
+	border: 1px solid var(--border-color-medium, #e0e0e0);
+	background-color: var(--background-color-medium, rgba(0, 0, 0, 0.02));
+}
+
+/* Disable unwanted table row hover in modal */
+.modal .aw-modal-table .tr:hover {
+	background-color: transparent !important;
+}
+
+/* Weekday selection pill styles - distinct and visible in both light and dark modes */
+.aw-weekday-pill {
+	margin-right: 8px;
+	margin-bottom: 6px;
+	padding: 4px 10px;
+	border-radius: 4px;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	font-size: 12px;
+	user-select: none;
+	border: 1px solid var(--border-color-medium, #ccc);
+	background-color: var(--background-color-low, #f2f2f2);
+	color: var(--text-color-high, inherit);
+	transition: all 0.15s ease;
+}
+
+.aw-weekday-pill input[type="checkbox"] {
+	margin-right: 5px !important;
+	cursor: pointer;
+}
+
+.aw-weekday-pill:hover {
+	border-color: var(--primary, #5e72e4);
+	background-color: var(--background-color-medium, #e8e8e8);
+}
+
+.aw-weekday-pill:has(input:checked),
+.aw-weekday-pill.active {
+	border-color: var(--primary, #5e72e4);
+	background-color: rgba(94, 114, 228, 0.15);
+	color: var(--primary, #5e72e4);
+	font-weight: 600;
+}
+
+@media (prefers-color-scheme: dark) {
+	.aw-tc-panel {
+		background-color: rgba(255, 255, 255, 0.04);
+		border-color: rgba(255, 255, 255, 0.12);
+	}
+	.aw-weekday-pill {
+		border-color: #444;
+		background-color: #2b2b2b;
+		color: #ddd;
+	}
+	.aw-weekday-pill:hover {
+		border-color: #6b7fc4;
+		background-color: #353535;
+	}
+	.aw-weekday-pill:has(input:checked),
+	.aw-weekday-pill.active {
+		border-color: #8da4ef;
+		background-color: rgba(141, 164, 239, 0.22);
+		color: #ffffff;
+	}
+}
+
+[data-darkmode="true"] .aw-tc-panel {
+	background-color: rgba(255, 255, 255, 0.04);
+	border-color: rgba(255, 255, 255, 0.12);
+}
+
+[data-darkmode="true"] .aw-weekday-pill {
+	border-color: #444;
+	background-color: #2b2b2b;
+	color: #ddd;
+}
+
+[data-darkmode="true"] .aw-weekday-pill:hover {
+	border-color: #6b7fc4;
+	background-color: #353535;
+}
+
+[data-darkmode="true"] .aw-weekday-pill:has(input:checked),
+[data-darkmode="true"] .aw-weekday-pill.active {
+	border-color: #8da4ef;
+	background-color: rgba(141, 164, 239, 0.22);
+	color: #ffffff;
 }
 
 

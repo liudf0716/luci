@@ -1204,4 +1204,62 @@ msgstr "将 TCP/UDP 连接建立与销毁等会话事件以结构化 JSON 格式
 msgid "Settings"
 msgstr "设置"
 
+msgid "Edit Speed Limit & Time Schedule"
+msgstr "编辑限速与时间策略"
 
+msgid "Time Schedule"
+msgstr "时间策略"
+
+msgid "Enable Time Control"
+msgstr "启用时间控制"
+
+msgid "Weekdays"
+msgstr "生效星期"
+
+msgid "Workdays (Mon-Fri)"
+msgstr "工作日 (周一至周五)"
+
+msgid "Weekend (Sat-Sun)"
+msgstr "周末 (周六至周日)"
+
+msgid "Everyday"
+msgstr "每天"
+
+msgid "Mon"
+msgstr "周一"
+
+msgid "Tue"
+msgstr "周二"
+
+msgid "Wed"
+msgstr "周三"
+
+msgid "Thu"
+msgstr "周四"
+
+msgid "Fri"
+msgstr "周五"
+
+msgid "Sat"
+msgstr "周六"
+
+msgid "Sun"
+msgstr "周日"
+
+msgid "Daily Time Period"
+msgstr "每日生效时段"
+
+msgid "Date Range (Optional)"
+msgstr "起止日期 (可选)"
+
+msgid "Optional: Specific date range for one-time period"
+msgstr "可选：指定特定起止日期（用于一次性活动时段）"
+
+msgid "All Time"
+msgstr "全天"
+
+msgid "Scheduled"
+msgstr "定时生效"
+
+msgid "Speed limit and time schedule updated"
+msgstr "限速与时间策略已更新"
