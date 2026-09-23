@@ -11,6 +11,9 @@
 				"/etc/xdns/proxy_domains.txt": [ "read" ],
 				"/etc/xdns/whitelist.txt": [ "read" ]
 			},
+			"ubus": {
+				"service": [ "list" ]
+			},
 			"uci": [ "hostnames", "network", "aw-bpf" ]
 		},
 		"write": {

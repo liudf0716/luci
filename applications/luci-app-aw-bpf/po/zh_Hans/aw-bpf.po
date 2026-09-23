@@ -1263,3 +1263,70 @@ msgstr "定时生效"
 
 msgid "Speed limit and time schedule updated"
 msgstr "限速与时间策略已更新"
+
+msgid "eBPF Runtime Status"
+msgstr "eBPF 运行状态"
+
+msgid "Service Daemon (aw-eventd)"
+msgstr "服务守护进程 (aw-eventd)"
+
+msgid "Kernel event audit consumer & firewall manager"
+msgstr "内核事件审计消费进程及防火墙规则联动"
+
+msgid "RUNNING"
+msgstr "运行中"
+
+msgid "NOT RUNNING"
+msgstr "未运行"
+
+msgid "ACTIVE"
+msgstr "已激活"
+
+msgid "DISABLED"
+msgstr "已禁用"
+
+msgid "xDPI L7 Engine"
+msgstr "xDPI 七层协议识别引擎"
+
+msgid "Kernel L7 application & domain deep inspection is active"
+msgstr "内核 eBPF 七层应用协议与域名深度检测已激活"
+
+msgid "L7 inspection is turned off in eBPF map"
+msgstr "七层应用深度检测在 eBPF 中已关闭"
+
+msgid "FastPath Acceleration"
+msgstr "FastPath 快速转发加速"
+
+msgid "Auto-learn: "
+msgstr "自动学习: "
+
+msgid "On"
+msgstr "开启"
+
+msgid "Off"
+msgstr "关闭"
+
+msgid "Notice: WAN IP is not yet acquired. FastPath will activate automatically when WAN connects."
+msgstr "提示：WAN 口尚未获取 IP 或未连接，网络就绪后 FastPath 将通过 Hotplug 自动同步激活。"
+
+msgid "eBPF line-rate hardware/kernel forwarding acceleration is disabled"
+msgstr "eBPF 线速转发加速已禁用"
+
+msgid "Router IP Map"
+msgstr "路由器接口 IP 映射"
+
+msgid "Interface IPs recognized for FastPath NAT/routing"
+msgstr "FastPath 用于区分本机与转发流量的 IP 映射"
+
+msgid "Enable FastPath Offloading"
+msgstr "启用 FastPath 快速转发加速"
+
+msgid "Accelerate established session forwarding and NAT directly in eBPF, achieving line-rate throughput and significantly reducing CPU load."
+msgstr "在 eBPF 层直接处理已建立连接的数据包转发与 NAT，实现线速吞吐并大幅降低 CPU 负载。"
+
+msgid "Enable xDPI L7 Protocol Recognition"
+msgstr "启用 xDPI 七层应用识别"
+
+msgid "Perform deep packet inspection in eBPF to identify application protocols and domain names for traffic classification and statistics."
+msgstr "在 eBPF 层进行深度数据包检测 (DPI)，识别七层应用协议与域名，用于流量分类与统计。"
+
