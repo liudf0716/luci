@@ -5,6 +5,7 @@
 'require fs';
 'require poll';
 'require rpc';
+'require tools.widgets as widgets';
 
 var callServiceList = rpc.declare({
 	object: 'service',
@@ -48,8 +49,10 @@ function parseFastpathStatus(str) {
 	var res = {
 		enabled: false,
 		autoLearn: false,
+		lanName: null,
 		lanIfindex: null,
 		lanIp: null,
+		wanName: null,
 		wanIfindex: null,
 		wanIp: null,
 		text: _('Disabled (0)')
@@ -64,15 +67,17 @@ function parseFastpathStatus(str) {
 	if (mAuto && mAuto[1].toLowerCase() === 'on') {
 		res.autoLearn = true;
 	}
-	var mLan = str.match(/LAN Dev:\s*ifindex\s*(\d+),\s*IP\s*([0-9.]+)/i);
+	var mLan = str.match(/LAN Dev:\s*(?:([^\s(),]+)\s+)?\(?(?:ifindex\s+)?(\d+)\)?,\s*IP\s*([0-9.]+)/i);
 	if (mLan) {
-		res.lanIfindex = mLan[1];
-		res.lanIp = mLan[2];
+		res.lanName = mLan[1] || '';
+		res.lanIfindex = mLan[2];
+		res.lanIp = mLan[3];
 	}
-	var mWan = str.match(/WAN Dev:\s*ifindex\s*(\d+),\s*IP\s*([0-9.]+)/i);
+	var mWan = str.match(/WAN Dev:\s*(?:([^\s(),]+)\s+)?\(?(?:ifindex\s+)?(\d+)\)?,\s*IP\s*([0-9.]+)/i);
 	if (mWan) {
-		res.wanIfindex = mWan[1];
-		res.wanIp = mWan[2];
+		res.wanName = mWan[1] || '';
+		res.wanIfindex = mWan[2];
+		res.wanIp = mWan[3];
 	}
 	return res;
 }
@@ -122,8 +127,10 @@ function renderStatusTable(svc, xdpi, fp, rip) {
 	var fpDetails = [];
 	if (fp.enabled) {
 		var detailStr = _('Auto-learn: ') + (fp.autoLearn ? _('On') : _('Off'));
-		if (fp.lanIp) detailStr += ' | LAN (ifindex ' + fp.lanIfindex + '): ' + fp.lanIp;
-		if (fp.wanIp) detailStr += ' | WAN (ifindex ' + fp.wanIfindex + '): ' + fp.wanIp;
+		var lanDesc = fp.lanName ? (fp.lanName + ' (ifindex ' + fp.lanIfindex + ')') : ('ifindex ' + fp.lanIfindex);
+		var wanDesc = fp.wanName ? (fp.wanName + ' (ifindex ' + fp.wanIfindex + ')') : ('ifindex ' + fp.wanIfindex);
+		if (fp.lanIp) detailStr += ' | LAN: ' + lanDesc + ' [' + fp.lanIp + ']';
+		if (fp.wanIp) detailStr += ' | WAN: ' + wanDesc + ' [' + fp.wanIp + ']';
 		fpDetails.push(E('span', { 'style': 'margin-left: 10px; color: #888;' }, detailStr));
 		if (fp.wanIp === '0.0.0.0' || !fp.wanIp) {
 			fpDetails.push(E('div', { 'style': 'margin-top: 4px; color: #d9534f; font-size: 90%;' },
@@ -194,6 +201,18 @@ return view.extend({
 			_('Accelerate established session forwarding and NAT directly in eBPF, achieving line-rate throughput and significantly reducing CPU load.'));
 		o.rmempty = false;
 		o.default = '1';
+
+		o = s.option(widgets.DeviceSelect, 'lan_dev', _('LAN Interface (FastPath & eBPF)'),
+			_('Physical or bridge interface for LAN. Leave empty for automatic detection from network.lan (recommended).'));
+		o.noaliases = true;
+		o.optional = true;
+		o.rmempty = true;
+
+		o = s.option(widgets.DeviceSelect, 'wan_dev', _('WAN Interface (FastPath & eBPF)'),
+			_('Physical network interface for WAN. Leave empty for automatic detection from network.wan (recommended).'));
+		o.noaliases = true;
+		o.optional = true;
+		o.rmempty = true;
 
 		o = s.option(form.Flag, 'enable_xdpi', _('Enable xDPI L7 Protocol Recognition'),
 			_('Perform deep packet inspection in eBPF to identify application protocols and domain names for traffic classification and statistics.'));

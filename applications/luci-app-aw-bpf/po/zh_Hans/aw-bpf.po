@@ -1330,3 +1330,16 @@ msgstr "启用 xDPI 七层应用识别"
 msgid "Perform deep packet inspection in eBPF to identify application protocols and domain names for traffic classification and statistics."
 msgstr "在 eBPF 层进行深度数据包检测 (DPI)，识别七层应用协议与域名，用于流量分类与统计。"
 
+msgid "LAN Interface (FastPath & eBPF)"
+msgstr "LAN 接口 (FastPath & eBPF)"
+
+msgid "Physical or bridge interface for LAN. Leave empty for automatic detection from network.lan (recommended)."
+msgstr "用于局域网的物理网卡或网桥接口。留空则从 network.lan 自动识别（推荐）。"
+
+msgid "WAN Interface (FastPath & eBPF)"
+msgstr "WAN 接口 (FastPath & eBPF)"
+
+msgid "Physical network interface for WAN. Leave empty for automatic detection from network.wan (recommended)."
+msgstr "用于广域网外网的物理网卡接口。留空则从 network.wan 自动识别（推荐）。"
+
+
