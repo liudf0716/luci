@@ -637,6 +637,8 @@ return view.extend({
 				])
 			]);
 
+			var isBlocked = (item.incoming && item.incoming.incoming_rate_limit === 1 && item.outgoing && item.outgoing.outgoing_rate_limit === 1);
+
 			rows.push([
 				[ (deviceName + ' ' + host).toLowerCase(), deviceNode ],
 				[ item.incoming.rate, renderRateLimitCell(item.incoming.rate, item.incoming.incoming_rate_limit) ],
@@ -646,6 +648,24 @@ return view.extend({
 					timeBadge
 				]) ],
 				[ '', E('div', { 'class': 'button-container' }, [
+					E('button', {
+						'class': 'btn cbi-button cbi-button-neutral',
+						'style': 'margin-right: 5px;',
+						'title': _('View active connections & L7 details'),
+						'click': ui.createHandlerFn(this, () => this.handleDrilldownHost(host, hostname, type))
+					}, [
+						E('span', { 'class': 'btn-icon' }, '🔍'),
+						E('span', {}, ' ' + _('Detail'))
+					]),
+					E('button', {
+						'class': 'btn cbi-button ' + (isBlocked ? 'cbi-button-positive' : 'cbi-button-action'),
+						'style': 'margin-right: 5px;',
+						'title': isBlocked ? _('Restore network access') : _('Cut off network access'),
+						'click': ui.createHandlerFn(this, () => this.handleToggleBlockHost(host, type, isBlocked))
+					}, [
+						E('span', { 'class': 'btn-icon' }, isBlocked ? '✅' : '🚫'),
+						E('span', {}, ' ' + (isBlocked ? _('Unblock') : _('Block')))
+					]),
 					E('button', {
 						'class': 'btn cbi-button cbi-button-edit',
 						'style': 'margin-right: 5px;',
@@ -704,7 +724,121 @@ return view.extend({
 		if (mLim) mLim.textContent = limitedCount;
 	},
 
-	// --- Interaction Handlers from display.js ---
+	handleDrilldownHost: function(host, hostname, type) {
+		fs.exec_direct('/usr/bin/aw-bpfctl', ['fastpath', 'json'], 'json').then(L.bind(res => {
+			var sessions = [];
+			var totalPackets = 0, totalBytes = 0;
+			if (Array.isArray(res)) {
+				res.forEach(function(s) {
+					var isMatch = false;
+					if (type === 'mac') {
+						if (s.dmac && s.dmac.toLowerCase() === host.toLowerCase()) isMatch = true;
+					} else {
+						if ((s.orig_src && s.orig_src.indexOf(host + ':') === 0) ||
+						    (s.new_dst && s.new_dst.indexOf(host + ':') === 0) ||
+						    (s.new_src && s.new_src.indexOf(host + ':') === 0) ||
+						    (s.orig_dst && s.orig_dst.indexOf(host + ':') === 0)) {
+							isMatch = true;
+						}
+					}
+					if (isMatch) {
+						sessions.push(s);
+						totalPackets += (s.packets || 0);
+						totalBytes += (s.bytes || 0);
+					}
+				});
+			}
+
+			sessions.sort(function(a, b) { return (b.bytes || 0) - (a.bytes || 0); });
+
+			var sessionRows = sessions.map(function(s) {
+				var isOut = (s.orig_src && s.orig_src.indexOf(host + ':') === 0);
+				var remoteAddr = isOut ? s.orig_dst : s.orig_src;
+				var localPort = isOut ? (s.orig_src.split(':')[1] || '') : (s.new_dst.split(':')[1] || '');
+				var remotePort = remoteAddr ? remoteAddr.split(':')[1] : '';
+				
+				var appName = '';
+				if (remotePort === '443') appName = 'HTTPS';
+				else if (remotePort === '80') appName = 'HTTP';
+				else if (remotePort === '53') appName = 'DNS';
+				else if (remotePort === '22') appName = 'SSH';
+				else if (remotePort === '3389') appName = 'RDP/MSTSC';
+
+				return E('tr', { 'class': 'tr' }, [
+					E('td', { 'class': 'td' }, [
+						E('span', { 'class': 'badge ' + (s.proto === 'TCP' ? 'badge-info' : 'badge-warning') }, s.proto)
+					]),
+					E('td', { 'class': 'td' }, (isOut ? '⬆️ ' + _('Outbound') : '⬇️ ' + _('Inbound'))),
+					E('td', { 'class': 'td' }, localPort || '-'),
+					E('td', { 'class': 'td' }, [
+						E('span', {}, remoteAddr),
+						appName ? E('span', { 'class': 'badge badge-secondary', 'style': 'margin-left: 6px;' }, appName) : null
+					]),
+					E('td', { 'class': 'td right' }, formatPackets(s.packets || 0)),
+					E('td', { 'class': 'td right' }, formatBytes(s.bytes || 0))
+				]);
+			});
+
+			ui.showModal(_('Host Session & L7 Traffic Details'), [
+				E('div', { 'class': 'cbi-section' }, [
+					E('div', { 'style': 'margin-bottom: 14px; display: flex; gap: 20px; align-items: center; flex-wrap: wrap;' }, [
+						E('div', {}, [ E('strong', {}, _('Host: ')), (hostname || host) + ' (' + host + ')' ]),
+						E('div', {}, [ E('strong', {}, _('Active Flows: ')), String(sessions.length) ]),
+						E('div', {}, [ E('strong', {}, _('Flow Traffic: ')), formatBytes(totalBytes) ])
+					]),
+					E('div', { 'style': 'max-height: 400px; overflow-y: auto;' }, [
+						E('table', { 'class': 'table' }, [
+							E('tr', { 'class': 'tr table-titles' }, [
+								E('th', { 'class': 'th' }, _('Protocol')),
+								E('th', { 'class': 'th' }, _('Direction')),
+								E('th', { 'class': 'th' }, _('Local Port')),
+								E('th', { 'class': 'th' }, _('Remote Destination')),
+								E('th', { 'class': 'th right' }, _('Packets')),
+								E('th', { 'class': 'th right' }, _('Bytes'))
+							]),
+							sessionRows.length > 0 ? E([], sessionRows) : E('tr', { 'class': 'tr placeholder' }, [
+								E('td', { 'class': 'td center', 'colspan': 6 }, E('em', {}, _('No active sessions found for this host.')))
+							])
+						])
+					])
+				]),
+				E('div', { 'class': 'right', 'style': 'margin-top: 15px;' }, [
+					E('button', { 'class': 'btn cbi-button-neutral', 'click': ui.hideModal }, _('Close'))
+				])
+			], 'cbi-modal');
+		}, this)).catch(e => {
+			ui.addNotification(null, E('p', _('Error getting session details: ') + e.message));
+		});
+	},
+
+	handleToggleBlockHost: function(host, type, isCurrentlyBlocked) {
+		var confirmMsg = isCurrentlyBlocked
+			? _('Are you sure you want to unblock network access for %s?').format(host)
+			: _('Are you sure you want to block network access for %s? (Rate limit will be set to 1 bps)').format(host);
+
+		ui.showModal(isCurrentlyBlocked ? _('Unblock Host') : _('Block Host'), [
+			E('p', confirmMsg),
+			E('div', { 'class': 'right' }, [
+				E('button', { 'class': 'btn', 'click': ui.hideModal }, _('Cancel')),
+				E('button', {
+					'class': 'btn ' + (isCurrentlyBlocked ? 'cbi-button-positive' : 'cbi-button-negative'),
+					'click': ui.createHandlerFn(this, async () => {
+						try {
+							var down = isCurrentlyBlocked ? '0' : '1';
+							var up = isCurrentlyBlocked ? '0' : '1';
+							await fs.exec_direct('/usr/bin/aw-bpfctl', [type, 'update', host, 'downrate', down, 'uprate', up, '--notime']);
+							this.loadHostSpeedData();
+							ui.hideModal();
+							ui.addNotification(null, E('p', isCurrentlyBlocked ? _('Host unblocked successfully') : _('Host blocked successfully')));
+						} catch (e) {
+							ui.addNotification(null, E('p', _('Error: ') + e.message));
+							ui.hideModal();
+						}
+					})
+				}, isCurrentlyBlocked ? _('Unblock') : _('Block'))
+			])
+		]);
+	},
 
 	handleDeleteHost: function(host, type) {
 		ui.showModal(_('Delete Host'), [
@@ -911,6 +1045,58 @@ return view.extend({
 						E('div', { 'class': 'td aw-modal-value', style: 'display: flex; align-items: center; gap: 6px;' }, [
 							E('input', { type: 'number', id: 'ul-rate', class: 'cbi-input-number', min: '0', value: ul, style: 'width: 120px;' }),
 							E('span', {}, " Mbps")
+						])
+					]),
+					E('div', { 'class': 'tr' }, [
+						E('div', { 'class': 'td aw-modal-label' }, _('Quick Presets')),
+						E('div', { 'class': 'td aw-modal-value' }, [
+							E('div', { style: 'display: flex; flex-wrap: wrap; gap: 6px;' }, [
+								E('button', {
+									type: 'button',
+									class: 'btn cbi-button cbi-button-neutral',
+									style: 'padding: 2px 8px; font-size: 11px;',
+									click: function() {
+										document.getElementById('dl-rate').value = 2;
+										document.getElementById('ul-rate').value = 1;
+									}
+								}, '2M ' + _('(Light)')),
+								E('button', {
+									type: 'button',
+									class: 'btn cbi-button cbi-button-neutral',
+									style: 'padding: 2px 8px; font-size: 11px;',
+									click: function() {
+										document.getElementById('dl-rate').value = 5;
+										document.getElementById('ul-rate').value = 2;
+									}
+								}, '5M ' + _('(Office)')),
+								E('button', {
+									type: 'button',
+									class: 'btn cbi-button cbi-button-neutral',
+									style: 'padding: 2px 8px; font-size: 11px;',
+									click: function() {
+										document.getElementById('dl-rate').value = 10;
+										document.getElementById('ul-rate').value = 5;
+									}
+								}, '10M ' + _('(Standard)')),
+								E('button', {
+									type: 'button',
+									class: 'btn cbi-button cbi-button-neutral',
+									style: 'padding: 2px 8px; font-size: 11px;',
+									click: function() {
+										document.getElementById('dl-rate').value = 20;
+										document.getElementById('ul-rate').value = 10;
+									}
+								}, '20M ' + _('(Fast)')),
+								E('button', {
+									type: 'button',
+									class: 'btn cbi-button cbi-button-neutral',
+									style: 'padding: 2px 8px; font-size: 11px;',
+									click: function() {
+										document.getElementById('dl-rate').value = 0;
+										document.getElementById('ul-rate').value = 0;
+									}
+								}, _('No Limit (0M)'))
+							])
 						])
 					]),
 					E('div', { 'class': 'tr' }, [

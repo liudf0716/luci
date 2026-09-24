@@ -1393,6 +1393,103 @@ msgstr "下行总计: "
 msgid "Upload Total: "
 msgstr "上行总计: "
 
+msgid "Quick Presets"
+msgstr "快捷限速预设"
+
+msgid "(Light)"
+msgstr "(轻度限速)"
+
+msgid "(Office)"
+msgstr "(办公标准)"
+
+msgid "(Standard)"
+msgstr "(标准限速)"
+
+msgid "(Fast)"
+msgstr "(高速下载)"
+
+msgid "No Limit (0M)"
+msgstr "不限速 (0M)"
+
+msgid "Detail"
+msgstr "详情"
+
+msgid "Block"
+msgstr "阻断"
+
+msgid "Unblock"
+msgstr "解封"
+
+msgid "Restore network access"
+msgstr "恢复网络访问"
+
+msgid "Cut off network access"
+msgstr "切断网络访问"
+
+msgid "View active connections & L7 details"
+msgstr "查看活跃会话与七层协议详情"
+
+msgid "Host Session & L7 Traffic Details"
+msgstr "主机连接会话与七层流量详情"
+
+msgid "Host: "
+msgstr "主机: "
+
+msgid "Active Flows: "
+msgstr "活跃流数: "
+
+msgid "Flow Traffic: "
+msgstr "加速流量: "
+
+msgid "Protocol"
+msgstr "协议"
+
+msgid "Direction"
+msgstr "方向"
+
+msgid "Local Port"
+msgstr "本地端口"
+
+msgid "Remote Destination"
+msgstr "远端目标"
+
+msgid "Packets"
+msgstr "数据包"
+
+msgid "Bytes"
+msgstr "流量字节"
+
+msgid "No active sessions found for this host."
+msgstr "该主机暂无活跃的快速转发会话"
+
+msgid "Close"
+msgstr "关闭"
+
+msgid "Are you sure you want to unblock network access for %s?"
+msgstr "确定要恢复主机 %s 的网络访问吗？"
+
+msgid "Are you sure you want to block network access for %s? (Rate limit will be set to 1 bps)"
+msgstr "确定要阻断主机 %s 的网络访问吗？（将限制速率至 1 bps）"
+
+msgid "Unblock Host"
+msgstr "解封主机"
+
+msgid "Block Host"
+msgstr "阻断主机"
+
+msgid "Host unblocked successfully"
+msgstr "主机已成功解封"
+
+msgid "Host blocked successfully"
+msgstr "主机已成功阻断"
+
+msgid "Outbound"
+msgstr "出站"
+
+msgid "Inbound"
+msgstr "入站"
+
+
 
 
 
