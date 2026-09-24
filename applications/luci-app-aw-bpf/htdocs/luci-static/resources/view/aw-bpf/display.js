@@ -113,6 +113,90 @@ function chartAxisTheme(colors) {
 	};
 }
 
+var filterState = {
+	ipv4: { search: '', mode: 'all' },
+	ipv6: { search: '', mode: 'all' },
+	mac:  { search: '', mode: 'all' }
+};
+
+var lastRawData = {
+	ipv4: null,
+	ipv6: null,
+	mac:  null
+};
+
+function formatSpeed(bps) {
+	bps = +bps || 0;
+	if (bps <= 0) return '0 bps';
+	if (bps >= 1000000000) return (bps / 1000000000).toFixed(2) + ' Gbps';
+	if (bps >= 1000000) return (bps / 1000000).toFixed(2) + ' Mbps';
+	if (bps >= 1000) return (bps / 1000).toFixed(1) + ' Kbps';
+	return bps + ' bps';
+}
+
+function formatBytes(bytes) {
+	bytes = +bytes || 0;
+	if (bytes <= 0) return '0 B';
+	var k = 1024;
+	var sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+	var i = Math.floor(Math.log(bytes) / Math.log(k));
+	if (i < 0) i = 0;
+	if (i >= sizes.length) i = sizes.length - 1;
+	return (bytes / Math.pow(k, i)).toFixed(2) + ' ' + sizes[i];
+}
+
+function formatPackets(pkts) {
+	pkts = +pkts || 0;
+	if (pkts >= 1000000) return (pkts / 1000000).toFixed(2) + ' MP';
+	if (pkts >= 1000) return (pkts / 1000).toFixed(1) + ' KP';
+	return pkts + ' P';
+}
+
+function renderRateLimitCell(rate, limit) {
+	rate = +rate || 0;
+	limit = +limit || 0;
+
+	var rateStr = formatSpeed(rate);
+	var hasLimit = limit > 0;
+	var headerChildren = [
+		E('span', { 'class': 'rate-val' }, rateStr)
+	];
+
+	var progressNode = null;
+	if (hasLimit) {
+		var limitStr = formatSpeed(limit);
+		var pct = Math.min(100, Math.round((rate / limit) * 100));
+		headerChildren.push(E('span', {
+			'class': 'limit-val',
+			'title': _('Configured Limit: ') + limitStr
+		}, ' / ' + limitStr));
+
+		var barColor = '#28a745';
+		if (pct >= 90) {
+			barColor = '#dc3545';
+		} else if (pct >= 70) {
+			barColor = '#ffc107';
+		}
+
+		progressNode = E('div', { 'class': 'rate-progress-bar', 'title': pct + '%' }, [
+			E('div', {
+				'class': 'rate-progress-fill',
+				'style': 'width: ' + pct + '%; background-color: ' + barColor + ';'
+			})
+		]);
+	} else {
+		headerChildren.push(E('span', {
+			'class': 'limit-badge unlimited',
+			'title': _('No rate limit configured')
+		}, '∞'));
+	}
+
+	return E('div', { 'class': 'rate-limit-cell' }, [
+		E('div', { 'class': 'rate-limit-header' }, headerChildren),
+		progressNode
+	].filter(Boolean));
+}
+
 return view.extend({
 	// --- Core Data Logic from display.js ---
 
@@ -361,25 +445,152 @@ return view.extend({
 		}
 	},
 
+	applyFilter: function(type) {
+		if (lastRawData[type]) {
+			this.renderHostSpeed(lastRawData[type], type);
+		}
+	},
+
+	updateFilterPills: function(type) {
+		var parent = document.getElementById(type + '-filter-bar');
+		if (!parent) return;
+		var current = filterState[type].mode;
+		parent.querySelectorAll('.filter-pill').forEach(function(pill) {
+			if (pill.getAttribute('data-filter') === current) {
+				pill.classList.add('active');
+			} else {
+				pill.classList.remove('active');
+			}
+		});
+	},
+
+	createFilterBar: function(type) {
+		var self = this;
+		return E('div', { 'class': 'host-filter-bar', 'id': type + '-filter-bar' }, [
+			E('div', { 'class': 'search-box' }, [
+				E('span', { 'class': 'search-icon' }, '🔍'),
+				E('input', {
+					'type': 'text',
+					'class': 'cbi-input-text search-input',
+					'placeholder': _('Search IP, MAC or Hostname...'),
+					'value': filterState[type].search,
+					'input': function(ev) {
+						filterState[type].search = ev.target.value.toLowerCase().trim();
+						self.applyFilter(type);
+					}
+				})
+			]),
+			E('div', { 'class': 'filter-pills' }, [
+				E('button', {
+					'type': 'button',
+					'class': 'filter-pill' + (filterState[type].mode === 'all' ? ' active' : ''),
+					'data-filter': 'all',
+					'click': function() {
+						filterState[type].mode = 'all';
+						self.updateFilterPills(type);
+						self.applyFilter(type);
+					}
+				}, [ _('All'), E('span', { 'id': type + '-count-all', 'class': 'pill-badge' }, '0') ]),
+				E('button', {
+					'type': 'button',
+					'class': 'filter-pill' + (filterState[type].mode === 'active' ? ' active' : ''),
+					'data-filter': 'active',
+					'click': function() {
+						filterState[type].mode = 'active';
+						self.updateFilterPills(type);
+						self.applyFilter(type);
+					}
+				}, [ '🟢 ' + _('Active'), E('span', { 'id': type + '-count-active', 'class': 'pill-badge' }, '0') ]),
+				E('button', {
+					'type': 'button',
+					'class': 'filter-pill' + (filterState[type].mode === 'limited' ? ' active' : ''),
+					'data-filter': 'limited',
+					'click': function() {
+						filterState[type].mode = 'limited';
+						self.updateFilterPills(type);
+						self.applyFilter(type);
+					}
+				}, [ '⚡ ' + _('Limited'), E('span', { 'id': type + '-count-limited', 'class': 'pill-badge' }, '0') ])
+			])
+		]);
+	},
+
 	renderHostSpeed: function(data, type) {
 		if (!data || data.status !== "success" || !Array.isArray(data.data)) return;
 
-		var rows = [];
+		lastRawData[type] = data;
+
+		var allItems = data.data;
 		var txRateData = [], rxRateData = [];
 		var txVolumeData = [], rxVolumeData = [];
 		var tx_rate_total = 0, rx_rate_total = 0;
 		var tx_bytes_total = 0, rx_bytes_total = 0;
 		var perHostTxRate = {};
 		var perHostRxRate = {};
+		var activeCount = 0;
+		var limitedCount = 0;
 
-		data.data.forEach(item => {
+		allItems.forEach(item => {
 			if (!item || !item.incoming || !item.outgoing) return;
 
 			var host = item.ip || item.mac || '';
 			var hostname = item.hostname || hostNames[item.mac] || '';
 			var displayName = hostname || host;
-			
-			// 判断连接是否活跃
+
+			var isActive = item.incoming.rate > 0 || item.outgoing.rate > 0;
+			if (isActive) activeCount++;
+
+			var isLimited = (item.incoming && item.incoming.incoming_rate_limit > 0) || (item.outgoing && item.outgoing.outgoing_rate_limit > 0);
+			if (isLimited) limitedCount++;
+
+			rx_rate_total += item.outgoing.rate;
+			tx_rate_total += item.incoming.rate;
+			rx_bytes_total += item.outgoing.total_bytes;
+			tx_bytes_total += item.incoming.total_bytes;
+
+			rxRateData.push({ value: item.outgoing.rate, label: displayName });
+			txRateData.push({ value: item.incoming.rate, label: displayName });
+			rxVolumeData.push({ value: item.outgoing.total_bytes, label: displayName });
+			txVolumeData.push({ value: item.incoming.total_bytes, label: displayName });
+
+			perHostTxRate[displayName] = (perHostTxRate[displayName] || 0) + item.incoming.rate;
+			perHostRxRate[displayName] = (perHostRxRate[displayName] || 0) + item.outgoing.rate;
+		});
+
+		var cAll = document.getElementById(type + '-count-all');
+		if (cAll) cAll.textContent = allItems.length;
+		var cActive = document.getElementById(type + '-count-active');
+		if (cActive) cActive.textContent = activeCount;
+		var cLimited = document.getElementById(type + '-count-limited');
+		if (cLimited) cLimited.textContent = limitedCount;
+
+		var search = filterState[type].search;
+		var mode = filterState[type].mode;
+
+		var filteredItems = allItems.filter(item => {
+			if (!item || !item.incoming || !item.outgoing) return false;
+			var host = item.ip || item.mac || '';
+			var hostname = item.hostname || hostNames[item.mac] || '';
+
+			if (search) {
+				if (host.toLowerCase().indexOf(search) === -1 && hostname.toLowerCase().indexOf(search) === -1)
+					return false;
+			}
+
+			if (mode === 'active') {
+				if (item.incoming.rate <= 0 && item.outgoing.rate <= 0) return false;
+			} else if (mode === 'limited') {
+				var hasLimit = (item.incoming && item.incoming.incoming_rate_limit > 0) || (item.outgoing && item.outgoing.outgoing_rate_limit > 0);
+				if (!hasLimit) return false;
+			}
+
+			return true;
+		});
+
+		var rows = [];
+		filteredItems.forEach(item => {
+			var host = item.ip || item.mac || '';
+			var hostname = item.hostname || hostNames[item.mac] || '';
 			var isActive = item.incoming.rate > 0 || item.outgoing.rate > 0;
 			var activityIcon = isActive ? '🟢' : '⚪';
 
@@ -400,36 +611,32 @@ return view.extend({
 			}
 
 			rows.push([
-				E('span', { 'class': 'host-cell' }, [
+				[ host, E('span', { 'class': 'host-cell' }, [
 					E('span', { 'class': 'activity-indicator', 'title': isActive ? _('Active') : _('Inactive') }, activityIcon),
 					E('span', {}, ' ' + host)
-				]),
-				E('span', { 'class': 'hostname-cell' }, [
+				]) ],
+				[ hostname, E('span', { 'class': 'hostname-cell' }, [
 					E('span', { 'class': 'icon' }, hostname ? '👤' : '❓'),
 					E('span', {}, ' ' + (hostname || _('Unknown')))
-				]),
-				E('span', { 'class': 'speed-cell download' }, [
-					E('span', { 'class': 'data-value' }, '%1024.2mBps'.format(item.incoming.rate))
-				]),
-				E('span', { 'class': 'volume-cell download' }, [
-					E('span', { 'class': 'data-value' }, '%1024.2mB'.format(item.incoming.total_bytes))
-				]),
-				E('span', { 'class': 'packet-cell download' }, [
-					E('span', { 'class': 'data-value' }, '%1000.2mP'.format(item.incoming.total_packets))
-				]),
-				E('span', { 'class': 'speed-cell upload' }, [
-					E('span', { 'class': 'data-value' }, '%1024.2mBps'.format(item.outgoing.rate))
-				]),
-				E('span', { 'class': 'volume-cell upload' }, [
-					E('span', { 'class': 'data-value' }, '%1024.2mB'.format(item.outgoing.total_bytes))
-				]),
-				E('span', { 'class': 'packet-cell upload' }, [
-					E('span', { 'class': 'data-value' }, '%1000.2mP'.format(item.outgoing.total_packets))
-				]),
-				E('span', { 'class': 'time-schedule-cell center' }, [
+				]) ],
+				[ item.incoming.rate, renderRateLimitCell(item.incoming.rate, item.incoming.incoming_rate_limit) ],
+				[ item.incoming.total_bytes, E('span', { 'class': 'volume-cell download' }, [
+					E('span', { 'class': 'data-value' }, formatBytes(item.incoming.total_bytes))
+				]) ],
+				[ item.incoming.total_packets, E('span', { 'class': 'packet-cell download' }, [
+					E('span', { 'class': 'data-value' }, formatPackets(item.incoming.total_packets))
+				]) ],
+				[ item.outgoing.rate, renderRateLimitCell(item.outgoing.rate, item.outgoing.outgoing_rate_limit) ],
+				[ item.outgoing.total_bytes, E('span', { 'class': 'volume-cell upload' }, [
+					E('span', { 'class': 'data-value' }, formatBytes(item.outgoing.total_bytes))
+				]) ],
+				[ item.outgoing.total_packets, E('span', { 'class': 'packet-cell upload' }, [
+					E('span', { 'class': 'data-value' }, formatPackets(item.outgoing.total_packets))
+				]) ],
+				[ item.time_rule && item.time_rule.enabled ? 1 : 0, E('span', { 'class': 'time-schedule-cell center' }, [
 					timeBadge
-				]),
-				E('div', { 'class': 'button-container' }, [
+				]) ],
+				[ '', E('div', { 'class': 'button-container' }, [
 					E('button', {
 						'class': 'btn cbi-button cbi-button-edit',
 						'style': 'margin-right: 5px;',
@@ -445,46 +652,35 @@ return view.extend({
 						E('span', { 'class': 'btn-icon' }, '🗑️'),
 						E('span', {}, ' ' + _('Delete'))
 					])
-				])
+				]) ]
 			]);
-			rx_rate_total += item.outgoing.rate;
-			tx_rate_total += item.incoming.rate;
-			rx_bytes_total += item.outgoing.total_bytes;
-			tx_bytes_total += item.incoming.total_bytes;
-
-			rxRateData.push({ value: item.outgoing.rate, label: displayName });
-			txRateData.push({ value: item.incoming.rate, label: displayName });
-			rxVolumeData.push({ value: item.outgoing.total_bytes, label: displayName });
-			txVolumeData.push({ value: item.incoming.total_bytes, label: displayName });
-
-			perHostTxRate[displayName] = (perHostTxRate[displayName] || 0) + item.incoming.rate;
-			perHostRxRate[displayName] = (perHostRxRate[displayName] || 0) + item.outgoing.rate;
 		});
 
 		this.updateStackedLineCharts(type, perHostTxRate, perHostRxRate);
 
 		var table = document.getElementById(type + '-speed-data');
-		cbi_update_table(table, rows, E('em', _('No data recorded yet.')));
+		var emptyMsg = (search || mode !== 'all') ? _('No matching hosts found.') : _('No data recorded yet.');
+		cbi_update_table(table, rows, E('em', emptyMsg));
 
-		this.pie(type + '-tx-rate-pie', txRateData, (p) => `${p.name}: ${'%1024.2mBps'.format(p.value)} (${p.percent}%)`);
-		this.pie(type + '-rx-rate-pie', rxRateData, (p) => `${p.name}: ${'%1024.2mBps'.format(p.value)} (${p.percent}%)`);
-		this.pie(type + '-tx-volume-pie', txVolumeData, (p) => `${p.name}: ${'%1024.2mB'.format(p.value)} (${p.percent}%)`);
-		this.pie(type + '-rx-volume-pie', rxVolumeData, (p) => `${p.name}: ${'%1024.2mB'.format(p.value)} (${p.percent}%)`);
+		this.pie(type + '-tx-rate-pie', txRateData, (p) => `${p.name}: ${formatSpeed(p.value)} (${p.percent}%)`);
+		this.pie(type + '-rx-rate-pie', rxRateData, (p) => `${p.name}: ${formatSpeed(p.value)} (${p.percent}%)`);
+		this.pie(type + '-tx-volume-pie', txVolumeData, (p) => `${p.name}: ${formatBytes(p.value)} (${p.percent}%)`);
+		this.pie(type + '-rx-volume-pie', rxVolumeData, (p) => `${p.name}: ${formatBytes(p.value)} (${p.percent}%)`);
 
 		var hostEl = document.getElementById(type + '-host-val');
-		if (hostEl) hostEl.textContent = data.data.length;
+		if (hostEl) hostEl.textContent = allItems.length;
 
 		var txRateEl = document.getElementById(type + '-tx-rate-val');
-		if (txRateEl) txRateEl.textContent = '%1024.2mBps'.format(tx_rate_total);
+		if (txRateEl) txRateEl.textContent = formatSpeed(tx_rate_total);
 
 		var rxRateEl = document.getElementById(type + '-rx-rate-val');
-		if (rxRateEl) rxRateEl.textContent = '%1024.2mBps'.format(rx_rate_total);
+		if (rxRateEl) rxRateEl.textContent = formatSpeed(rx_rate_total);
 
 		var txVolEl = document.getElementById(type + '-tx-volume-val');
-		if (txVolEl) txVolEl.textContent = '%1024.2mB'.format(tx_bytes_total);
+		if (txVolEl) txVolEl.textContent = formatBytes(tx_bytes_total);
 
 		var rxVolEl = document.getElementById(type + '-rx-volume-val');
-		if (rxVolEl) rxVolEl.textContent = '%1024.2mB'.format(rx_bytes_total);
+		if (rxVolEl) rxVolEl.textContent = formatBytes(rx_bytes_total);
 	},
 
 	// --- Interaction Handlers from display.js ---
@@ -857,7 +1053,7 @@ return view.extend({
 							params.sort(function(a, b) { return b.value - a.value; });
 							params.forEach(function(item) {
 								if (item.value > 0) {
-									tooltipContent += item.marker + ' ' + item.seriesName + ': ' + '%1024.2mBps'.format(item.value) + '<br/>';
+									tooltipContent += item.marker + ' ' + item.seriesName + ': ' + formatSpeed(item.value) + '<br/>';
 								}
 							});
 							return tooltipContent;
@@ -876,7 +1072,7 @@ return view.extend({
 						type: 'value',
 						axisLine: axisTheme.yAxis.axisLine,
 						splitLine: axisTheme.yAxis.splitLine,
-						axisLabel: { formatter: function(val) { return '%1024.2mBps'.format(val); }, color: colors.muted }
+						axisLabel: { formatter: function(val) { return formatSpeed(val); }, color: colors.muted }
 					},
 					series: []
 				};
@@ -921,18 +1117,19 @@ return view.extend({
 		const createTab = (type, title, placeholder) => {
 			var innerTabs = E('div', { 'class': 'aw-inner-tabs' }, [
 				E('div', { 'class': 'cbi-section', 'data-tab': type + '-hosts', 'data-tab-title': _('Host List'), 'data-tab-active': 'true' }, [
+					self.createFilterBar(type),
 					E('table', { 'class': 'table', 'id': type + '-speed-data' }, [
 						E('tr', { 'class': 'tr table-titles' }, [
 							E('th', { 'class': 'th left' }, [ E('span', { 'class': 'th-icon' }, '🖥️'), ' ', _('Host') ]),
 							E('th', { 'class': 'th left' }, [ E('span', { 'class': 'th-icon' }, '👤'), ' ', _('Hostname') ]),
-							E('th', { 'class': 'th right' }, [ E('span', { 'class': 'th-icon' }, '⬇️'), ' ', _('Download Speed') ]),
+							E('th', { 'class': 'th right' }, [ E('span', { 'class': 'th-icon' }, '⬇️'), ' ', _('Download Speed / Limit') ]),
 							E('th', { 'class': 'th right' }, [ E('span', { 'class': 'th-icon' }, '📦'), ' ', _('Download Total') ]),
 							E('th', { 'class': 'th right' }, [ E('span', { 'class': 'th-icon' }, '📨'), ' ', _('Download Packets') ]),
-							E('th', { 'class': 'th right' }, [ E('span', { 'class': 'th-icon' }, '⬆️'), ' ', _('Upload Speed') ]),
+							E('th', { 'class': 'th right' }, [ E('span', { 'class': 'th-icon' }, '⬆️'), ' ', _('Upload Speed / Limit') ]),
 							E('th', { 'class': 'th right' }, [ E('span', { 'class': 'th-icon' }, '📦'), ' ', _('Upload Total') ]),
 							E('th', { 'class': 'th right' }, [ E('span', { 'class': 'th-icon' }, '📨'), ' ', _('Upload Packets') ]),
 							E('th', { 'class': 'th center' }, [ E('span', { 'class': 'th-icon' }, '⏱️'), ' ', _('Time Schedule') ]),
-							E('th', { 'class': 'th center' }, [ E('span', { 'class': 'th-icon' }, '⚙️'), ' ', _('Actions') ])
+							E('th', { 'class': 'th center cbi-section-actions' }, [ E('span', { 'class': 'th-icon' }, '⚙️'), ' ', _('Actions') ])
 						]),
 						E('tr', { 'class': 'tr placeholder' }, [ E('td', { 'class': 'td', 'colspan': '10' }, [ E('em', { 'class': 'spinning' }, [ _('Collecting data...') ]) ]) ])
 					]),

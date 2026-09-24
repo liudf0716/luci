@@ -1342,4 +1342,32 @@ msgstr "WAN 接口 (FastPath & eBPF)"
 msgid "Physical network interface for WAN. Leave empty for automatic detection from network.wan (recommended)."
 msgstr "用于广域网外网的物理网卡接口。留空则从 network.wan 自动识别（推荐）。"
 
+msgid "Search IP, MAC or Hostname..."
+msgstr "搜索 IP、MAC 或主机名..."
+
+msgid "Download Speed / Limit"
+msgstr "下载速率 / 限速"
+
+msgid "Upload Speed / Limit"
+msgstr "上传速率 / 限速"
+
+msgid "All"
+msgstr "全部"
+
+msgid "Active"
+msgstr "活跃"
+
+msgid "Limited"
+msgstr "已限速"
+
+msgid "No matching hosts found."
+msgstr "未找到匹配的主机"
+
+msgid "Configured Limit: "
+msgstr "配置限速值: "
+
+msgid "No rate limit configured"
+msgstr "未配置限速"
+
+
 
