@@ -1037,6 +1037,53 @@
 	opacity: 0.8;
 }
 
+/* Responsive Table and Action Buttons */
+.display-view-container .cbi-section[data-tab*="-hosts"] {
+	overflow-x: auto !important;
+	-webkit-overflow-scrolling: touch;
+}
+
+.display-view-container .table {
+	min-width: 680px;
+	width: 100%;
+}
+
+.display-view-container .table .th.cbi-section-actions,
+.display-view-container .table .td:last-child {
+	text-align: right;
+	white-space: nowrap;
+	width: 1%;
+}
+
+.button-container {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	white-space: nowrap;
+	justify-content: flex-end;
+}
+
+.button-container .btn {
+	display: inline-flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	gap: 3px !important;
+	padding: 2px 7px !important;
+	font-size: 11px !important;
+	height: 26px !important;
+	line-height: 20px !important;
+	margin: 0 !important;
+	border-radius: 4px !important;
+	white-space: nowrap !important;
+	box-shadow: none !important;
+}
+
+.button-container .btn-icon {
+	font-size: 11px;
+	line-height: 1;
+}
+
+
 
 
 

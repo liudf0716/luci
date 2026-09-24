@@ -650,7 +650,6 @@ return view.extend({
 				[ '', E('div', { 'class': 'button-container' }, [
 					E('button', {
 						'class': 'btn cbi-button cbi-button-neutral',
-						'style': 'margin-right: 5px;',
 						'title': _('View active connections & L7 details'),
 						'click': ui.createHandlerFn(this, () => this.handleDrilldownHost(host, hostname, type))
 					}, [
@@ -659,7 +658,6 @@ return view.extend({
 					]),
 					E('button', {
 						'class': 'btn cbi-button ' + (isBlocked ? 'cbi-button-positive' : 'cbi-button-action'),
-						'style': 'margin-right: 5px;',
 						'title': isBlocked ? _('Restore network access') : _('Cut off network access'),
 						'click': ui.createHandlerFn(this, () => this.handleToggleBlockHost(host, type, isBlocked))
 					}, [
@@ -668,7 +666,6 @@ return view.extend({
 					]),
 					E('button', {
 						'class': 'btn cbi-button cbi-button-edit',
-						'style': 'margin-right: 5px;',
 						'click': ui.createHandlerFn(this, () => this.handleEditSpeed(host, item.mac, hostname, type))
 					}, [
 						E('span', { 'class': 'btn-icon' }, '✏️'),
@@ -676,6 +673,7 @@ return view.extend({
 					]),
 					E('button', {
 						'class': 'btn cbi-button cbi-button-remove',
+						'title': _('Delete Host'),
 						'click': ui.createHandlerFn(this, () => this.handleDeleteHost(host, type))
 					}, [
 						E('span', { 'class': 'btn-icon' }, '🗑️'),
