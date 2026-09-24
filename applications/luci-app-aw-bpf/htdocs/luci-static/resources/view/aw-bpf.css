@@ -1018,8 +1018,14 @@
 .vol-row {
 	display: flex;
 	align-items: center;
+	justify-content: flex-end;
 	gap: 4px;
 	cursor: help;
+}
+
+.vol-val {
+	display: inline-block;
+	text-align: right;
 }
 
 .vol-row.dl .vol-val {
@@ -1035,6 +1041,10 @@
 .vol-icon {
 	font-size: 11px;
 	opacity: 0.8;
+	display: inline-block;
+	width: 16px;
+	text-align: center;
+	flex-shrink: 0;
 }
 
 /* Responsive Table and Action Buttons */

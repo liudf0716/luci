@@ -625,15 +625,15 @@ return view.extend({
 					'class': 'vol-row dl',
 					'title': _('Download Total: ') + formatBytes(item.incoming.total_bytes) + ' (' + formatPackets(item.incoming.total_packets) + ')'
 				}, [
-					E('span', { 'class': 'vol-icon' }, '⬇️'),
-					E('span', { 'class': 'vol-val' }, formatBytes(item.incoming.total_bytes))
+					E('span', { 'class': 'vol-val' }, formatBytes(item.incoming.total_bytes)),
+					E('span', { 'class': 'vol-icon' }, '⬇️')
 				]),
 				E('div', {
 					'class': 'vol-row ul',
 					'title': _('Upload Total: ') + formatBytes(item.outgoing.total_bytes) + ' (' + formatPackets(item.outgoing.total_packets) + ')'
 				}, [
-					E('span', { 'class': 'vol-icon' }, '⬆️'),
-					E('span', { 'class': 'vol-val' }, formatBytes(item.outgoing.total_bytes))
+					E('span', { 'class': 'vol-val' }, formatBytes(item.outgoing.total_bytes)),
+					E('span', { 'class': 'vol-icon' }, '⬆️')
 				])
 			]);
 
