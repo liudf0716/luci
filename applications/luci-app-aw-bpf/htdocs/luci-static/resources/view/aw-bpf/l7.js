@@ -1136,7 +1136,7 @@ return view.extend({
 		]);
 
 		var sidInnerTabs = E('div', { 'class': 'aw-inner-tabs' }, [
-			E('div', { 'class': 'cbi-section', 'data-tab': 'sid-list', 'data-tab-title': _('SID List') }, [
+			E('div', { 'class': 'cbi-section', 'data-tab': 'sid-list', 'data-tab-title': _('SID List'), 'data-tab-active': 'true' }, [
 				E('table', { 'class': 'table', 'id': 'sid-data' }, [
 					E('tr', { 'class': 'tr table-titles' }, [
 						E('th', { 'class': 'th left' }, [ E('span', { 'class': 'th-icon' }, '🆔'), ' ', _('SID') ]),
@@ -1204,12 +1204,12 @@ return view.extend({
 		]);
 
 		var tabContainer = E('div', {}, [
-			E('div', { 'class': 'cbi-section', 'data-tab': 'sid', 'data-tab-title': _('L7 SID Data') }, [
+			E('div', { 'class': 'cbi-section', 'data-tab': 'sid', 'data-tab-title': _('L7 SID Data'), 'data-tab-active': 'true' }, [
 				sidInnerTabs
 			]),
 			E('div', { 'class': 'cbi-section', 'data-tab': 'l7proto', 'data-tab-title': _('L7 Protocol Data') }, [
 				E('div', { 'class': 'aw-inner-tabs' }, [
-					E('div', { 'class': 'cbi-section', 'data-tab': 'l7-protocols', 'data-tab-title': _('Protocol Library') }, [
+					E('div', { 'class': 'cbi-section', 'data-tab': 'l7-protocols', 'data-tab-title': _('Protocol Library'), 'data-tab-active': 'true' }, [
 						E('p', { 'class': 'cbi-section-descr' }, [
 							_('Built-in L7 protocol signatures from aw-bpf.'),
 							' ',

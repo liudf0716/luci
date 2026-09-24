@@ -920,7 +920,7 @@ return view.extend({
 
 		const createTab = (type, title, placeholder) => {
 			var innerTabs = E('div', { 'class': 'aw-inner-tabs' }, [
-				E('div', { 'class': 'cbi-section', 'data-tab': type + '-hosts', 'data-tab-title': _('Host List') }, [
+				E('div', { 'class': 'cbi-section', 'data-tab': type + '-hosts', 'data-tab-title': _('Host List'), 'data-tab-active': 'true' }, [
 					E('table', { 'class': 'table', 'id': type + '-speed-data' }, [
 						E('tr', { 'class': 'tr table-titles' }, [
 							E('th', { 'class': 'th left' }, [ E('span', { 'class': 'th-icon' }, '🖥️'), ' ', _('Host') ]),
@@ -971,7 +971,10 @@ return view.extend({
 				])
 			]);
 
-			return E('div', { 'class': 'cbi-section', 'data-tab': type, 'data-tab-title': _(title) }, [
+			var tabProps = { 'class': 'cbi-section', 'data-tab': type, 'data-tab-title': _(title) };
+			if (type === 'ipv4')
+				tabProps['data-tab-active'] = 'true';
+			return E('div', tabProps, [
 				innerTabs
 			]);
 		};
