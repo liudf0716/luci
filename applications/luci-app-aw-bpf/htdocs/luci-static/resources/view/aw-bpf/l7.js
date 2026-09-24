@@ -1136,6 +1136,28 @@ return view.extend({
 		]);
 
 		var sidInnerTabs = E('div', { 'class': 'aw-inner-tabs' }, [
+			E('div', { 'class': 'cbi-section', 'data-tab': 'sid-list', 'data-tab-title': _('SID List') }, [
+				E('table', { 'class': 'table', 'id': 'sid-data' }, [
+					E('tr', { 'class': 'tr table-titles' }, [
+						E('th', { 'class': 'th left' }, [ E('span', { 'class': 'th-icon' }, '🆔'), ' ', _('SID') ]),
+						E('th', { 'class': 'th left' }, [ E('span', { 'class': 'th-icon' }, '🌐'), ' ', _('Domain&L7Protocol') ]),
+						E('th', { 'class': 'th right' }, [ E('span', { 'class': 'th-icon' }, '⬇️'), ' ', _('Download Speed (Bit/s)') ]),
+						E('th', { 'class': 'th right' }, [ E('span', { 'class': 'th-icon' }, '📦'), ' ', _('Download (Bytes)') ]),
+						E('th', { 'class': 'th right' }, [ E('span', { 'class': 'th-icon' }, '📨'), ' ', _('Download (Packets)') ]),
+						E('th', { 'class': 'th right' }, [ E('span', { 'class': 'th-icon' }, '⬆️'), ' ', _('Upload Speed (Bit/s)') ]),
+						E('th', { 'class': 'th right' }, [ E('span', { 'class': 'th-icon' }, '📦'), ' ', _('Upload (Bytes)') ]),
+						E('th', { 'class': 'th right' }, [ E('span', { 'class': 'th-icon' }, '📨'), ' ', _('Upload (Packets)') ]),
+						E('th', { 'class': 'th center' }, [ E('span', { 'class': 'th-icon' }, '⏱️'), ' ', _('Time Schedule') ]),
+						E('th', { 'class': 'th center' }, [ E('span', { 'class': 'th-icon' }, '⚙️'), ' ', _('Actions') ])
+					]),
+					E('tr', { 'class': 'tr placeholder' }, [
+						E('td', { 'class': 'td', 'colspan': '10' }, [
+							E('em', { 'class': 'spinning' }, [ _('Collecting data...') ])
+						])
+					])
+				]),
+				controls
+			]),
 			E('div', { 'class': 'cbi-section', 'data-tab': 'sid-trend', 'data-tab-title': _('Speed Trend') }, [
 				E('div', { 'class': 'dashboard-container' }, [
 					E('div', { 'class': 'kpi-row' }, [
@@ -1178,28 +1200,6 @@ return view.extend({
 						])
 					])
 				])
-			]),
-			E('div', { 'class': 'cbi-section', 'data-tab': 'sid-list', 'data-tab-title': _('SID List') }, [
-				E('table', { 'class': 'table', 'id': 'sid-data' }, [
-					E('tr', { 'class': 'tr table-titles' }, [
-						E('th', { 'class': 'th left' }, [ E('span', { 'class': 'th-icon' }, '🆔'), ' ', _('SID') ]),
-						E('th', { 'class': 'th left' }, [ E('span', { 'class': 'th-icon' }, '🌐'), ' ', _('Domain&L7Protocol') ]),
-						E('th', { 'class': 'th right' }, [ E('span', { 'class': 'th-icon' }, '⬇️'), ' ', _('Download Speed (Bit/s)') ]),
-						E('th', { 'class': 'th right' }, [ E('span', { 'class': 'th-icon' }, '📦'), ' ', _('Download (Bytes)') ]),
-						E('th', { 'class': 'th right' }, [ E('span', { 'class': 'th-icon' }, '📨'), ' ', _('Download (Packets)') ]),
-						E('th', { 'class': 'th right' }, [ E('span', { 'class': 'th-icon' }, '⬆️'), ' ', _('Upload Speed (Bit/s)') ]),
-						E('th', { 'class': 'th right' }, [ E('span', { 'class': 'th-icon' }, '📦'), ' ', _('Upload (Bytes)') ]),
-						E('th', { 'class': 'th right' }, [ E('span', { 'class': 'th-icon' }, '📨'), ' ', _('Upload (Packets)') ]),
-						E('th', { 'class': 'th center' }, [ E('span', { 'class': 'th-icon' }, '⏱️'), ' ', _('Time Schedule') ]),
-						E('th', { 'class': 'th center' }, [ E('span', { 'class': 'th-icon' }, '⚙️'), ' ', _('Actions') ])
-					]),
-					E('tr', { 'class': 'tr placeholder' }, [
-						E('td', { 'class': 'td', 'colspan': '10' }, [
-							E('em', { 'class': 'spinning' }, [ _('Collecting data...') ])
-						])
-					])
-				]),
-				controls
 			])
 		]);
 

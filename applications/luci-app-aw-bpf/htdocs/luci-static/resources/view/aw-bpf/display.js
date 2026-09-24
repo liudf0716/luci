@@ -920,6 +920,24 @@ return view.extend({
 
 		const createTab = (type, title, placeholder) => {
 			var innerTabs = E('div', { 'class': 'aw-inner-tabs' }, [
+				E('div', { 'class': 'cbi-section', 'data-tab': type + '-hosts', 'data-tab-title': _('Host List') }, [
+					E('table', { 'class': 'table', 'id': type + '-speed-data' }, [
+						E('tr', { 'class': 'tr table-titles' }, [
+							E('th', { 'class': 'th left' }, [ E('span', { 'class': 'th-icon' }, '🖥️'), ' ', _('Host') ]),
+							E('th', { 'class': 'th left' }, [ E('span', { 'class': 'th-icon' }, '👤'), ' ', _('Hostname') ]),
+							E('th', { 'class': 'th right' }, [ E('span', { 'class': 'th-icon' }, '⬇️'), ' ', _('Download Speed') ]),
+							E('th', { 'class': 'th right' }, [ E('span', { 'class': 'th-icon' }, '📦'), ' ', _('Download Total') ]),
+							E('th', { 'class': 'th right' }, [ E('span', { 'class': 'th-icon' }, '📨'), ' ', _('Download Packets') ]),
+							E('th', { 'class': 'th right' }, [ E('span', { 'class': 'th-icon' }, '⬆️'), ' ', _('Upload Speed') ]),
+							E('th', { 'class': 'th right' }, [ E('span', { 'class': 'th-icon' }, '📦'), ' ', _('Upload Total') ]),
+							E('th', { 'class': 'th right' }, [ E('span', { 'class': 'th-icon' }, '📨'), ' ', _('Upload Packets') ]),
+							E('th', { 'class': 'th center' }, [ E('span', { 'class': 'th-icon' }, '⏱️'), ' ', _('Time Schedule') ]),
+							E('th', { 'class': 'th center' }, [ E('span', { 'class': 'th-icon' }, '⚙️'), ' ', _('Actions') ])
+						]),
+						E('tr', { 'class': 'tr placeholder' }, [ E('td', { 'class': 'td', 'colspan': '10' }, [ E('em', { 'class': 'spinning' }, [ _('Collecting data...') ]) ]) ])
+					]),
+					self.createAddControls(type, placeholder)
+				]),
 				E('div', { 'class': 'cbi-section', 'data-tab': type + '-trend', 'data-tab-title': _('Speed Trend') }, [
 					E('div', { 'class': 'dashboard-container' }, [
 						E('div', { 'class': 'kpi-row' }, [
@@ -950,24 +968,6 @@ return view.extend({
 							E('div', { 'class': 'chart-card' }, [ E('h4', [_('Upload Total')]), E('div', { id: type + '-rx-volume-pie', style: 'width:100%; height:300px;' }) ])
 						])
 					])
-				]),
-				E('div', { 'class': 'cbi-section', 'data-tab': type + '-hosts', 'data-tab-title': _('Host List') }, [
-					E('table', { 'class': 'table', 'id': type + '-speed-data' }, [
-						E('tr', { 'class': 'tr table-titles' }, [
-							E('th', { 'class': 'th left' }, [ E('span', { 'class': 'th-icon' }, '🖥️'), ' ', _('Host') ]),
-							E('th', { 'class': 'th left' }, [ E('span', { 'class': 'th-icon' }, '👤'), ' ', _('Hostname') ]),
-							E('th', { 'class': 'th right' }, [ E('span', { 'class': 'th-icon' }, '⬇️'), ' ', _('Download Speed') ]),
-							E('th', { 'class': 'th right' }, [ E('span', { 'class': 'th-icon' }, '📦'), ' ', _('Download Total') ]),
-							E('th', { 'class': 'th right' }, [ E('span', { 'class': 'th-icon' }, '📨'), ' ', _('Download Packets') ]),
-							E('th', { 'class': 'th right' }, [ E('span', { 'class': 'th-icon' }, '⬆️'), ' ', _('Upload Speed') ]),
-							E('th', { 'class': 'th right' }, [ E('span', { 'class': 'th-icon' }, '📦'), ' ', _('Upload Total') ]),
-							E('th', { 'class': 'th right' }, [ E('span', { 'class': 'th-icon' }, '📨'), ' ', _('Upload Packets') ]),
-							E('th', { 'class': 'th center' }, [ E('span', { 'class': 'th-icon' }, '⏱️'), ' ', _('Time Schedule') ]),
-							E('th', { 'class': 'th center' }, [ E('span', { 'class': 'th-icon' }, '⚙️'), ' ', _('Actions') ])
-						]),
-						E('tr', { 'class': 'tr placeholder' }, [ E('td', { 'class': 'td', 'colspan': '10' }, [ E('em', { 'class': 'spinning' }, [ _('Collecting data...') ]) ]) ])
-					]),
-					self.createAddControls(type, placeholder)
 				])
 			]);
 
