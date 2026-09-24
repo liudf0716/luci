@@ -610,29 +610,38 @@ return view.extend({
 				timeBadge = E('span', { 'style': 'color:#888;' }, '-');
 			}
 
-			rows.push([
-				[ host, E('span', { 'class': 'host-cell' }, [
+			var deviceSub = host + (item.mac && item.mac !== host ? ' · ' + item.mac : '');
+			var deviceName = hostname || host;
+			var deviceNode = E('div', { 'class': 'device-cell' }, [
+				E('div', { 'class': 'device-main' }, [
 					E('span', { 'class': 'activity-indicator', 'title': isActive ? _('Active') : _('Inactive') }, activityIcon),
-					E('span', {}, ' ' + host)
-				]) ],
-				[ hostname, E('span', { 'class': 'hostname-cell' }, [
-					E('span', { 'class': 'icon' }, hostname ? '👤' : '❓'),
-					E('span', {}, ' ' + (hostname || _('Unknown')))
-				]) ],
+					E('span', { 'class': 'device-name' }, deviceName)
+				]),
+				E('span', { 'class': 'device-sub' }, deviceSub)
+			]);
+
+			var volNode = E('div', { 'class': 'dual-volume-cell' }, [
+				E('div', {
+					'class': 'vol-row dl',
+					'title': _('Download Total: ') + formatBytes(item.incoming.total_bytes) + ' (' + formatPackets(item.incoming.total_packets) + ')'
+				}, [
+					E('span', { 'class': 'vol-icon' }, '⬇️'),
+					E('span', { 'class': 'vol-val' }, formatBytes(item.incoming.total_bytes))
+				]),
+				E('div', {
+					'class': 'vol-row ul',
+					'title': _('Upload Total: ') + formatBytes(item.outgoing.total_bytes) + ' (' + formatPackets(item.outgoing.total_packets) + ')'
+				}, [
+					E('span', { 'class': 'vol-icon' }, '⬆️'),
+					E('span', { 'class': 'vol-val' }, formatBytes(item.outgoing.total_bytes))
+				])
+			]);
+
+			rows.push([
+				[ (deviceName + ' ' + host).toLowerCase(), deviceNode ],
 				[ item.incoming.rate, renderRateLimitCell(item.incoming.rate, item.incoming.incoming_rate_limit) ],
-				[ item.incoming.total_bytes, E('span', { 'class': 'volume-cell download' }, [
-					E('span', { 'class': 'data-value' }, formatBytes(item.incoming.total_bytes))
-				]) ],
-				[ item.incoming.total_packets, E('span', { 'class': 'packet-cell download' }, [
-					E('span', { 'class': 'data-value' }, formatPackets(item.incoming.total_packets))
-				]) ],
 				[ item.outgoing.rate, renderRateLimitCell(item.outgoing.rate, item.outgoing.outgoing_rate_limit) ],
-				[ item.outgoing.total_bytes, E('span', { 'class': 'volume-cell upload' }, [
-					E('span', { 'class': 'data-value' }, formatBytes(item.outgoing.total_bytes))
-				]) ],
-				[ item.outgoing.total_packets, E('span', { 'class': 'packet-cell upload' }, [
-					E('span', { 'class': 'data-value' }, formatPackets(item.outgoing.total_packets))
-				]) ],
+				[ (item.incoming.total_bytes || 0) + (item.outgoing.total_bytes || 0), volNode ],
 				[ item.time_rule && item.time_rule.enabled ? 1 : 0, E('span', { 'class': 'time-schedule-cell center' }, [
 					timeBadge
 				]) ],
@@ -681,6 +690,18 @@ return view.extend({
 
 		var rxVolEl = document.getElementById(type + '-rx-volume-val');
 		if (rxVolEl) rxVolEl.textContent = formatBytes(rx_bytes_total);
+
+		var mDl = document.getElementById('mini-total-dl');
+		if (mDl) mDl.textContent = formatSpeed(tx_rate_total);
+
+		var mUl = document.getElementById('mini-total-ul');
+		if (mUl) mUl.textContent = formatSpeed(rx_rate_total);
+
+		var mHosts = document.getElementById('mini-hosts-val');
+		if (mHosts) mHosts.textContent = activeCount + ' / ' + allItems.length;
+
+		var mLim = document.getElementById('mini-limited-val');
+		if (mLim) mLim.textContent = limitedCount;
 	},
 
 	// --- Interaction Handlers from display.js ---
@@ -1120,18 +1141,14 @@ return view.extend({
 					self.createFilterBar(type),
 					E('table', { 'class': 'table', 'id': type + '-speed-data' }, [
 						E('tr', { 'class': 'tr table-titles' }, [
-							E('th', { 'class': 'th left' }, [ E('span', { 'class': 'th-icon' }, '🖥️'), ' ', _('Host') ]),
-							E('th', { 'class': 'th left' }, [ E('span', { 'class': 'th-icon' }, '👤'), ' ', _('Hostname') ]),
+							E('th', { 'class': 'th left' }, [ E('span', { 'class': 'th-icon' }, '🖥️'), ' ', _('Device & Host') ]),
 							E('th', { 'class': 'th right' }, [ E('span', { 'class': 'th-icon' }, '⬇️'), ' ', _('Download Speed / Limit') ]),
-							E('th', { 'class': 'th right' }, [ E('span', { 'class': 'th-icon' }, '📦'), ' ', _('Download Total') ]),
-							E('th', { 'class': 'th right' }, [ E('span', { 'class': 'th-icon' }, '📨'), ' ', _('Download Packets') ]),
 							E('th', { 'class': 'th right' }, [ E('span', { 'class': 'th-icon' }, '⬆️'), ' ', _('Upload Speed / Limit') ]),
-							E('th', { 'class': 'th right' }, [ E('span', { 'class': 'th-icon' }, '📦'), ' ', _('Upload Total') ]),
-							E('th', { 'class': 'th right' }, [ E('span', { 'class': 'th-icon' }, '📨'), ' ', _('Upload Packets') ]),
+							E('th', { 'class': 'th right' }, [ E('span', { 'class': 'th-icon' }, '📊'), ' ', _('Total Traffic (DL / UL)') ]),
 							E('th', { 'class': 'th center' }, [ E('span', { 'class': 'th-icon' }, '⏱️'), ' ', _('Time Schedule') ]),
 							E('th', { 'class': 'th center cbi-section-actions' }, [ E('span', { 'class': 'th-icon' }, '⚙️'), ' ', _('Actions') ])
 						]),
-						E('tr', { 'class': 'tr placeholder' }, [ E('td', { 'class': 'td', 'colspan': '10' }, [ E('em', { 'class': 'spinning' }, [ _('Collecting data...') ]) ]) ])
+						E('tr', { 'class': 'tr placeholder' }, [ E('td', { 'class': 'td', 'colspan': '6' }, [ E('em', { 'class': 'spinning' }, [ _('Collecting data...') ]) ]) ])
 					]),
 					self.createAddControls(type, placeholder)
 				]),
@@ -1182,11 +1199,43 @@ return view.extend({
 			createTab('mac', 'MAC', 'Please enter a valid MAC address')
 		]);
 
+		var miniDashboard = E('div', { 'class': 'aw-mini-dashboard' }, [
+			E('div', { 'class': 'mini-kpi-card dl' }, [
+				E('div', { 'class': 'mini-kpi-icon' }, '⬇️'),
+				E('div', { 'class': 'mini-kpi-content' }, [
+					E('div', { 'class': 'mini-kpi-label' }, _('Total Download')),
+					E('div', { 'class': 'mini-kpi-val', 'id': 'mini-total-dl' }, '0 bps')
+				])
+			]),
+			E('div', { 'class': 'mini-kpi-card ul' }, [
+				E('div', { 'class': 'mini-kpi-icon' }, '⬆️'),
+				E('div', { 'class': 'mini-kpi-content' }, [
+					E('div', { 'class': 'mini-kpi-label' }, _('Total Upload')),
+					E('div', { 'class': 'mini-kpi-val', 'id': 'mini-total-ul' }, '0 bps')
+				])
+			]),
+			E('div', { 'class': 'mini-kpi-card hosts' }, [
+				E('div', { 'class': 'mini-kpi-icon' }, '🖥️'),
+				E('div', { 'class': 'mini-kpi-content' }, [
+					E('div', { 'class': 'mini-kpi-label' }, _('Active / Total Hosts')),
+					E('div', { 'class': 'mini-kpi-val', 'id': 'mini-hosts-val' }, '0 / 0')
+				])
+			]),
+			E('div', { 'class': 'mini-kpi-card limited' }, [
+				E('div', { 'class': 'mini-kpi-icon' }, '⚡'),
+				E('div', { 'class': 'mini-kpi-content' }, [
+					E('div', { 'class': 'mini-kpi-label' }, _('Limited Hosts')),
+					E('div', { 'class': 'mini-kpi-val', 'id': 'mini-limited-val' }, '0')
+				])
+			])
+		]);
+
 		var node = E([], [
 		    E('link', { 'rel': 'stylesheet', 'href': L.resource('view/aw-bpf.css') }),
 		    E('script', { 'type': 'text/javascript', 'src': L.resource('echarts.min.js') }),
 		    E('div', { 'class': 'display-view-container', 'data-aw-theme': isDarkMode() ? 'dark' : 'light' }, [
 		        E('h2', [ _('Host Speed Monitor') ]),
+		        miniDashboard,
 		        tabContainer
 		    ])
 		]);

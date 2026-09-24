@@ -1369,5 +1369,30 @@ msgstr "配置限速值: "
 msgid "No rate limit configured"
 msgstr "未配置限速"
 
+msgid "Device & Host"
+msgstr "设备与主机"
+
+msgid "Total Traffic (DL / UL)"
+msgstr "总流量 (下行 / 上行)"
+
+msgid "Total Download"
+msgstr "总下行速率"
+
+msgid "Total Upload"
+msgstr "总上行速率"
+
+msgid "Active / Total Hosts"
+msgstr "活跃 / 总主机数"
+
+msgid "Limited Hosts"
+msgstr "受控主机数"
+
+msgid "Download Total: "
+msgstr "下行总计: "
+
+msgid "Upload Total: "
+msgstr "上行总计: "
+
+
 
 

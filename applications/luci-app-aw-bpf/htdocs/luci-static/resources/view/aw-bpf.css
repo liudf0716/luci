@@ -902,5 +902,141 @@
 	color: #ffffff;
 }
 
+/* P2: Mini Dashboard */
+.aw-mini-dashboard {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+	gap: 14px;
+	margin-bottom: 22px;
+}
+
+.mini-kpi-card {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+	padding: 14px 18px;
+	background: var(--aw-card-bg, #ffffff);
+	border: 1px solid var(--aw-card-border, #e2e8f0);
+	border-radius: 10px;
+	box-shadow: 0 2px 5px rgba(0, 0, 0, 0.04);
+	transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.mini-kpi-card:hover {
+	transform: translateY(-2px);
+	box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+}
+
+.mini-kpi-card.dl { border-left: 4px solid #1890ff; }
+.mini-kpi-card.ul { border-left: 4px solid #52c41a; }
+.mini-kpi-card.hosts { border-left: 4px solid #722ed1; }
+.mini-kpi-card.limited { border-left: 4px solid #fa8c16; }
+
+.mini-kpi-icon {
+	font-size: 24px;
+	line-height: 1;
+	opacity: 0.9;
+}
+
+.mini-kpi-content {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	min-width: 0;
+}
+
+.mini-kpi-label {
+	font-size: 11px;
+	color: var(--aw-text-muted, #718096);
+	font-weight: 500;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	white-space: nowrap;
+}
+
+.mini-kpi-val {
+	font-size: 17px;
+	font-weight: 700;
+	color: var(--aw-text, #1a202c);
+	font-family: monospace, sans-serif;
+	white-space: nowrap;
+}
+
+[data-darkmode="true"] .mini-kpi-card,
+.display-view-container[data-aw-theme="dark"] .mini-kpi-card {
+	background: #23272e;
+	border-color: #3e4451;
+	box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+[data-darkmode="true"] .mini-kpi-val,
+.display-view-container[data-aw-theme="dark"] .mini-kpi-val {
+	color: #e6edf3;
+}
+
+/* P2: Merged Host & Device Cell */
+.device-cell {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	text-align: left;
+}
+
+.device-main {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.device-name {
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--aw-text, #2d3748);
+}
+
+.device-sub {
+	font-size: 11px;
+	color: var(--aw-text-muted, #718096);
+	font-family: monospace, sans-serif;
+}
+
+[data-darkmode="true"] .device-name,
+.display-view-container[data-aw-theme="dark"] .device-name {
+	color: #e2e8f0;
+}
+
+/* P2: Dual Traffic Volume Cell */
+.dual-volume-cell {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-end;
+	gap: 2px;
+	font-size: 12px;
+	font-family: monospace, sans-serif;
+}
+
+.vol-row {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	cursor: help;
+}
+
+.vol-row.dl .vol-val {
+	color: #1890ff;
+	font-weight: 500;
+}
+
+.vol-row.ul .vol-val {
+	color: #52c41a;
+	font-weight: 500;
+}
+
+.vol-icon {
+	font-size: 11px;
+	opacity: 0.8;
+}
+
+
 
 
