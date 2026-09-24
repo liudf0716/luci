@@ -825,6 +825,35 @@ return view.extend({
 							var down = isCurrentlyBlocked ? '0' : '1';
 							var up = isCurrentlyBlocked ? '0' : '1';
 							await fs.exec_direct('/usr/bin/aw-bpfctl', [type, 'update', host, 'downrate', down, 'uprate', up, '--notime']);
+							try {
+								await uci.load('aw-bpf');
+								let secName = null;
+								uci.sections('aw-bpf', 'host', function(s) {
+									if (s.type === type && s.target === host) {
+										secName = s['.name'];
+									}
+								});
+								if (isCurrentlyBlocked) {
+									if (secName) {
+										uci.remove('aw-bpf', secName);
+										await uci.save('aw-bpf');
+										await uci.apply('aw-bpf');
+									}
+								} else {
+									if (!secName) {
+										secName = uci.add('aw-bpf', 'host');
+									}
+									uci.set('aw-bpf', secName, 'type', type);
+									uci.set('aw-bpf', secName, 'target', host);
+									uci.set('aw-bpf', secName, 'downrate', '1');
+									uci.set('aw-bpf', secName, 'uprate', '1');
+									uci.set('aw-bpf', secName, 'time_enable', '0');
+									await uci.save('aw-bpf');
+									await uci.apply('aw-bpf');
+								}
+							} catch (uciErr) {
+								console.warn('Failed to sync UCI block state:', uciErr);
+							}
 							this.loadHostSpeedData();
 							ui.hideModal();
 							ui.addNotification(null, E('p', isCurrentlyBlocked ? _('Host unblocked successfully') : _('Host blocked successfully')));
@@ -846,6 +875,18 @@ return view.extend({
 				E('button', { 'class': 'btn cbi-button-negative', 'click': ui.createHandlerFn(this, async () => {
 					try {
 						await fs.exec_direct('/usr/bin/aw-bpfctl', [type, 'del', host], 'text');
+						try {
+							await uci.load('aw-bpf');
+							uci.sections('aw-bpf', 'host', function(s) {
+								if (s.type === type && s.target === host) {
+									uci.remove('aw-bpf', s['.name']);
+								}
+							});
+							await uci.save('aw-bpf');
+							await uci.apply('aw-bpf');
+						} catch (uciErr) {
+							console.warn('Failed to delete UCI host entry:', uciErr);
+						}
 						this.loadHostSpeedData();
 						ui.hideModal();
 					} catch (e) {
@@ -1158,6 +1199,52 @@ return view.extend({
 						}
 
 						await fs.exec_direct('/usr/bin/aw-bpfctl', cmdArgs);
+
+						try {
+							await uci.load('aw-bpf');
+							let secName = null;
+							uci.sections('aw-bpf', 'host', function(s) {
+								if (s.type === type && s.target === host) {
+									secName = s['.name'];
+								}
+							});
+
+							const dl_num = parseFloat(dl_val) || 0;
+							const ul_num = parseFloat(ul_val) || 0;
+							if (dl_num === 0 && ul_num === 0 && !tcEnabled) {
+								if (secName) {
+									uci.remove('aw-bpf', secName);
+									await uci.save('aw-bpf');
+									await uci.apply('aw-bpf');
+								}
+							} else {
+								if (!secName) {
+									secName = uci.add('aw-bpf', 'host');
+								}
+								uci.set('aw-bpf', secName, 'type', type);
+								uci.set('aw-bpf', secName, 'target', host);
+								uci.set('aw-bpf', secName, 'downrate', String(Math.round(dl_num * 1024 * 1024)));
+								uci.set('aw-bpf', secName, 'uprate', String(Math.round(ul_num * 1024 * 1024)));
+								uci.set('aw-bpf', secName, 'time_enable', tcEnabled ? '1' : '0');
+								if (tcEnabled) {
+									const selectedDays = [];
+									weekNames.forEach(w => {
+										const el = document.getElementById(w.id);
+										if (el && el.checked) selectedDays.push(w.bit);
+									});
+									uci.set('aw-bpf', secName, 'weekdays', (selectedDays.length === 7) ? 'all' : selectedDays.join(','));
+									const tStart = (document.getElementById('tc-timestart').value || '').trim();
+									const tStop = (document.getElementById('tc-timestop').value || '').trim();
+									uci.set('aw-bpf', secName, 'timestart', tStart);
+									uci.set('aw-bpf', secName, 'timestop', tStop);
+								}
+								await uci.save('aw-bpf');
+								await uci.apply('aw-bpf');
+							}
+						} catch (uciErr) {
+							console.warn('Failed to sync UCI aw-bpf host entry:', uciErr);
+						}
+
 						this.loadHostSpeedData();
 						ui.addNotification(null, E('p', _('Speed limit and time schedule updated')));
 						ui.hideModal();
