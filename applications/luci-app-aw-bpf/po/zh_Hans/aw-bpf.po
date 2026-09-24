@@ -1189,8 +1189,8 @@ msgstr "已将长连接配置从\"%s\"重命名为\"%s\"。"
 msgid "eBPF Traffic Control & DPI"
 msgstr "eBPF 流控与 xDPI"
 
-msgid "eBPF kernel-level bandwidth control, session audit logging and xDPI L7 application/domain recognition."
-msgstr "基于内核级 eBPF 的网络带宽控制、连接会话审计日志与 xDPI 七层应用/域名识别。"
+msgid "eBPF kernel-level bandwidth control, session audit logging, xDPI L7 classification and FastPath acceleration."
+msgstr "基于内核级 eBPF 的网络带宽控制、会话审计日志、xDPI 七层应用识别与 FastPath 快速转发加速。"
 
 msgid "General Settings"
 msgstr "常规设置"
