@@ -116,6 +116,123 @@ function chartAxisTheme(colors) {
 	};
 }
 
+var filterState = {
+	search: '',
+	mode: 'all' // 'all', 'active', 'limited'
+};
+
+function formatSpeed(bytes) {
+	bytes = +bytes || 0;
+	if (bytes === 0) return '0 bps';
+	var k = 1000;
+	var sizes = ['bps', 'Kbps', 'Mbps', 'Gbps'];
+	var i = Math.floor(Math.log(bytes) / Math.log(k));
+	if (i < 0) i = 0;
+	if (i >= sizes.length) i = sizes.length - 1;
+	return (bytes / Math.pow(k, i)).toFixed(2) + ' ' + sizes[i];
+}
+
+function formatBytes(bytes) {
+	bytes = +bytes || 0;
+	if (bytes <= 0) return '0 B';
+	var k = 1024;
+	var sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+	var i = Math.floor(Math.log(bytes) / Math.log(k));
+	if (i < 0) i = 0;
+	if (i >= sizes.length) i = sizes.length - 1;
+	return (bytes / Math.pow(k, i)).toFixed(2) + ' ' + sizes[i];
+}
+
+function formatPackets(pkts) {
+	pkts = +pkts || 0;
+	if (pkts >= 1000000) return (pkts / 1000000).toFixed(2) + ' MP';
+	if (pkts >= 1000) return (pkts / 1000).toFixed(1) + ' KP';
+	return pkts + ' P';
+}
+
+function createSpeedtestIcon(dir, size) {
+	size = size || 14;
+	var span = document.createElement('span');
+	span.className = 'speedtest-icon ' + dir;
+	var pathD = 'M12.0000033,1.5008 L12.0000028,1.5008 C17.7985528,1.5008 22.4992028,6.20145217 22.4992028,12.0000022 C22.4992028,17.7985522 17.7985528,22.4992022 12.0000028,22.4992022 C6.20145281,22.4992022 1.50080269,17.7985522 1.50080269,12.0000022 L1.50080269,12.0016 C1.50080269,6.203425 6.20022769,1.502575 11.9984027,1.5008 M12,0 L12,0 C5.372575,0 0,5.372575 0,12 C0,18.627425 5.372575,24 12,24 C18.627425,24 24,18.627425 24,12 L24,12 C24,5.37257552 18.627425,0 12,0 L12,0 Z M17.3408005,13.2752 L17.3408005,13.2752 C17.626663,12.9809425 17.619858,12.5106625 17.3256005,12.2248 C17.031343,11.9389375 16.561063,11.9457425 16.2752005,12.24 L13.1248005,15.5104 L13.1248005,7.50080001 L13.1248005,7.50080016 C13.1056689,7.08680766 12.754553,6.76671016 12.3405605,6.78584016 C11.953353,6.80373396 11.6434955,7.11359266 11.6256005,7.50080016 L11.6256005,15.6144002 L8.16000052,12.2560002 L8.16000054,12.2560002 C7.84182304,11.9904452 7.36861554,12.0331047 7.10306054,12.3512819 C6.86792779,12.6330094 6.87103279,13.0434619 7.11040047,13.3215994 L12.3456005,18.4671994 L12.7056005,18.0911994 L13.3808005,17.4159994 L17.3104005,13.3519994 L17.3408005,13.2767994 L17.3408005,13.2752 Z';
+	if (dir === 'dl') {
+		span.innerHTML = '<svg viewBox="0 0 24 24" width="' + size + '" height="' + size + '" fill="currentColor"><path d="' + pathD + '"/></svg>';
+	} else {
+		span.innerHTML = '<svg viewBox="0 0 24 24" width="' + size + '" height="' + size + '" fill="currentColor"><g transform="translate(0, 24) scale(1, -1)"><path d="' + pathD + '"/></g></svg>';
+	}
+	return span;
+}
+
+function createButtonIcon(type, size) {
+	size = size || 14;
+	var span = document.createElement('span');
+	span.className = 'btn-icon btn-icon-svg';
+	span.style.display = 'inline-flex';
+	span.style.alignItems = 'center';
+	span.style.justifyContent = 'center';
+	span.style.verticalAlign = '-2px';
+	span.style.marginRight = '5px';
+
+	if (type === 'add') {
+		span.innerHTML = '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">' +
+			'<line x1="12" y1="4" x2="12" y2="20"></line>' +
+			'<line x1="4" y1="12" x2="20" y2="12"></line>' +
+			'</svg>';
+	} else if (type === 'refresh') {
+		span.innerHTML = '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">' +
+			'<polyline points="23 4 23 10 17 10"></polyline>' +
+			'<polyline points="1 20 1 14 7 14"></polyline>' +
+			'<path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>' +
+			'</svg>';
+	}
+	return span;
+}
+
+function renderRateLimitCell(rate, limit) {
+	rate = +rate || 0;
+	limit = +limit || 0;
+
+	var rateStr = formatSpeed(rate);
+	var hasLimit = limit > 0;
+	var headerChildren = [
+		E('span', { 'class': 'rate-val' }, rateStr)
+	];
+
+	var progressNode = null;
+	if (hasLimit) {
+		var limitStr = formatSpeed(limit);
+		var pct = Math.min(100, Math.round((rate / limit) * 100));
+		headerChildren.push(E('span', {
+			'class': 'limit-val',
+			'title': _('Configured Limit: ') + limitStr
+		}, ' / ' + limitStr));
+
+		var barColor = '#28a745';
+		if (pct >= 90) {
+			barColor = '#dc3545';
+		} else if (pct >= 70) {
+			barColor = '#ffc107';
+		}
+
+		progressNode = E('div', { 'class': 'rate-progress-bar', 'title': pct + '%' }, [
+			E('div', {
+				'class': 'rate-progress-fill',
+				'style': 'width: ' + pct + '%; background-color: ' + barColor + ';'
+			})
+		]);
+	} else {
+		headerChildren.push(E('span', {
+			'class': 'limit-badge unlimited',
+			'title': _('No rate limit configured')
+		}, '∞'));
+	}
+
+	return E('div', { 'class': 'rate-limit-cell' }, [
+		E('div', { 'class': 'rate-limit-header' }, headerChildren),
+		progressNode
+	].filter(Boolean));
+}
+
 return view.extend({
 	hasXdns: false,
 	xdnsDomains: {},
@@ -230,6 +347,316 @@ return view.extend({
 			console.error('Error loading SID data:', error);
 			self.showError(_('Error loading SID data: %s').format(error.message));
 			return { status: 'error', data: [] };
+		});
+	},
+
+	createFilterBar: function() {
+		var self = this;
+		return E('div', { 'class': 'host-filter-bar', 'id': 'sid-filter-bar' }, [
+			E('div', { 'class': 'search-box' }, [
+				E('span', { 'class': 'search-icon' }, '🔍'),
+				E('input', {
+					'type': 'text',
+					'class': 'cbi-input-text search-input',
+					'placeholder': _('Search Domain, Protocol or SID...'),
+					'value': filterState.search,
+					'input': function(ev) {
+						filterState.search = ev.target.value.toLowerCase().trim();
+						self.applyFilter();
+					}
+				})
+			]),
+			E('div', { 'class': 'filter-pills' }, [
+				E('button', {
+					'type': 'button',
+					'class': 'filter-pill' + (filterState.mode === 'all' ? ' active' : ''),
+					'data-filter': 'all',
+					'click': function() {
+						filterState.mode = 'all';
+						self.updateFilterPills();
+						self.applyFilter();
+					}
+				}, [ _('All'), E('span', { 'id': 'sid-count-all', 'class': 'pill-badge' }, '0') ]),
+				E('button', {
+					'type': 'button',
+					'class': 'filter-pill' + (filterState.mode === 'active' ? ' active' : ''),
+					'data-filter': 'active',
+					'click': function() {
+						filterState.mode = 'active';
+						self.updateFilterPills();
+						self.applyFilter();
+					}
+				}, [ '🟢 ' + _('Active'), E('span', { 'id': 'sid-count-active', 'class': 'pill-badge' }, '0') ]),
+				E('button', {
+					'type': 'button',
+					'class': 'filter-pill' + (filterState.mode === 'limited' ? ' active' : ''),
+					'data-filter': 'limited',
+					'click': function() {
+						filterState.mode = 'limited';
+						self.updateFilterPills();
+						self.applyFilter();
+					}
+				}, [ '⚡ ' + _('Limited'), E('span', { 'id': 'sid-count-limited', 'class': 'pill-badge' }, '0') ])
+			])
+		]);
+	},
+
+	updateFilterPills: function() {
+		var bar = document.getElementById('sid-filter-bar');
+		if (!bar) return;
+		bar.querySelectorAll('.filter-pill').forEach(function(pill) {
+			if (pill.getAttribute('data-filter') === filterState.mode) {
+				pill.classList.add('active');
+			} else {
+				pill.classList.remove('active');
+			}
+		});
+	},
+
+	applyFilter: function() {
+		if (lastSIDData) {
+			this.renderSIDData(lastSIDData);
+		}
+	},
+
+	handleDrilldownSID: function(sid, domainOrL7Proto, itemStats) {
+		var self = this;
+		var portForProtocol = {
+			8001: 80,   // HTTP
+			8002: 443,  // HTTPS
+			8004: 22,   // SSH
+			8009: 123,  // NTP
+			8011: 53    // DNS
+		};
+
+		fs.exec_direct('/usr/bin/aw-bpfctl', ['fastpath', 'json'], 'json').then(function(res) {
+			var sessions = [];
+			var totalPackets = 0, totalBytes = 0;
+			if (Array.isArray(res)) {
+				res.forEach(function(s) {
+					if (Number(s.sid) === Number(sid)) {
+						sessions.push(s);
+						totalPackets += (s.packets || 0);
+						totalBytes += (s.bytes || 0);
+					}
+				});
+			}
+
+			// If FastPath has 0 sessions and this is a well-known service port (e.g. HTTP 80, SSH 22)
+			// check /proc/net/nf_conntrack for local or non-offloaded connections
+			var targetPort = portForProtocol[Number(sid)];
+			var isFallback = false;
+
+			var fallbackPromise = (sessions.length === 0 && targetPort) ? fs.read_direct('/proc/net/nf_conntrack').then(function(content) {
+				if (!content) return [];
+				var lines = content.split('\n');
+				var p1 = 'sport=' + targetPort + ' ';
+				var p2 = 'dport=' + targetPort + ' ';
+				var conns = [];
+				lines.forEach(function(line) {
+					line = line.trim();
+					if (!line || (line.indexOf(p1) === -1 && line.indexOf(p2) === -1)) return;
+
+					var protoMatch = line.match(/^ipv\d\s+\d+\s+(\S+)/);
+					var proto = protoMatch ? protoMatch[1].toUpperCase() : 'TCP';
+
+					var re = /(src|dst|sport|dport|packets|bytes)=([^\s]+)/g;
+					var m;
+					var orig = {}, reply = {};
+					var cur = orig;
+					while ((m = re.exec(line)) !== null) {
+						if (cur === orig && orig[m[1]] !== undefined) {
+							cur = reply;
+						}
+						cur[m[1]] = m[2];
+					}
+
+					if (orig.sport == targetPort || orig.dport == targetPort) {
+						var pkts = (parseInt(orig.packets, 10) || 0) + (parseInt(reply.packets, 10) || 0);
+						var bts = (parseInt(orig.bytes, 10) || 0) + (parseInt(reply.bytes, 10) || 0);
+						var isOut = (orig.dport == targetPort);
+						var cIp = isOut ? orig.src : orig.dst;
+						var cPort = isOut ? orig.sport : orig.dport;
+						var rIp = isOut ? orig.dst : orig.src;
+						var rPort = isOut ? orig.dport : orig.sport;
+
+						var rDesc = rIp + ':' + rPort;
+						if (rIp === '192.168.8.1' || rIp === window.location.hostname) {
+							rDesc += ' ' + _('(Local Router Web / LuCI)');
+						}
+
+						conns.push({
+							proto: proto,
+							orig_src: cIp + ':' + cPort,
+							orig_dst: rDesc,
+							packets: pkts,
+							bytes: bts,
+							isLocal: (rIp === '192.168.8.1' || rIp === window.location.hostname)
+						});
+					}
+				});
+				return conns;
+			}).catch(function() { return []; }) : Promise.resolve([]);
+
+			return fallbackPromise.then(function(fbSessions) {
+				if (sessions.length === 0 && fbSessions.length > 0) {
+					sessions = fbSessions;
+					isFallback = true;
+					totalPackets = 0;
+					totalBytes = 0;
+					sessions.forEach(function(s) {
+						totalPackets += (s.packets || 0);
+						totalBytes += (s.bytes || 0);
+					});
+				}
+
+				sessions.sort(function(a, b) { return (b.bytes || 0) - (a.bytes || 0); });
+
+				var sessionRows = sessions.map(function(s) {
+					var isOut = true;
+					var clientAddr = s.orig_src || '-';
+					var remoteAddr = s.orig_dst || '-';
+
+					if (s.new_dst && (s.new_dst.indexOf('192.168.') === 0 || s.new_dst.indexOf('10.') === 0 || s.new_dst.indexOf('172.') === 0)) {
+						clientAddr = s.new_dst;
+						remoteAddr = s.orig_src;
+						isOut = false;
+					}
+
+					var proto = (s.proto || 'UDP').toUpperCase();
+					var dirBadge = E('span', { 'class': 'aw-direction-badge ' + (isOut ? 'ul' : 'dl') }, [
+						createSpeedtestIcon(isOut ? 'ul' : 'dl', 12),
+						isOut ? _('Outbound') : _('Inbound')
+					]);
+
+					var searchIndex = (proto + ' ' + (isOut ? 'outbound' : 'inbound') + ' ' + clientAddr + ' ' + remoteAddr).toLowerCase();
+
+					return E('tr', { 'class': 'tr flow-row', 'data-search': searchIndex }, [
+						E('td', { 'class': 'td' }, [
+							E('span', { 'class': 'badge ' + (proto === 'TCP' ? 'badge-info' : 'badge-warning') }, proto)
+						]),
+						E('td', { 'class': 'td' }, [ dirBadge ]),
+						E('td', { 'class': 'td aw-addr-cell' }, clientAddr),
+						E('td', { 'class': 'td aw-addr-cell' }, remoteAddr),
+						E('td', { 'class': 'td right', 'style': 'font-family: monospace;' }, formatPackets(s.packets || 0)),
+						E('td', { 'class': 'td right', 'style': 'font-family: monospace; font-weight: 600;' }, formatBytes(s.bytes || 0))
+					]);
+				});
+
+				// Top Dashboard KPI Cards
+				var currentDl = (itemStats && itemStats.incoming) ? (itemStats.incoming.rate || 0) : 0;
+				var currentUl = (itemStats && itemStats.outgoing) ? (itemStats.outgoing.rate || 0) : 0;
+				var dlBytes = (itemStats && itemStats.incoming) ? (itemStats.incoming.total_bytes || 0) : 0;
+				var ulBytes = (itemStats && itemStats.outgoing) ? (itemStats.outgoing.total_bytes || 0) : 0;
+
+				var kpiCards = [
+					E('div', { 'class': 'aw-detail-kpi-card target' }, [
+						E('div', { 'class': 'kpi-label' }, [ '🌐 ', _('Application') ]),
+						E('div', { 'class': 'kpi-value', 'title': domainOrL7Proto }, domainOrL7Proto),
+						E('div', { 'class': 'kpi-sub' }, 'SID ' + sid)
+					]),
+					E('div', { 'class': 'aw-detail-kpi-card flows' }, [
+						E('div', { 'class': 'kpi-label' }, [
+							isFallback ? '🔄 ' + _('Active Flows (Conntrack)') : '⚡ ' + _('Active Flows (FastPath)')
+						]),
+						E('div', { 'class': 'kpi-value' }, String(sessions.length)),
+						E('div', { 'class': 'kpi-sub' }, isFallback ? _('Conntrack fallback') : _('eBPF / FastPath'))
+					]),
+					E('div', { 'class': 'aw-detail-kpi-card dl' }, [
+						E('div', { 'class': 'kpi-label' }, [ createSpeedtestIcon('dl', 12), ' ', _('Download Traffic') ]),
+						E('div', { 'class': 'kpi-value' }, formatBytes(dlBytes)),
+						E('div', { 'class': 'kpi-sub' }, currentDl > 0 ? ('⚡ ' + formatSpeed(currentDl)) : '0 B/s')
+					]),
+					E('div', { 'class': 'aw-detail-kpi-card ul' }, [
+						E('div', { 'class': 'kpi-label' }, [ createSpeedtestIcon('ul', 12), ' ', _('Upload Traffic') ]),
+						E('div', { 'class': 'kpi-value' }, formatBytes(ulBytes)),
+						E('div', { 'class': 'kpi-sub' }, currentUl > 0 ? ('⚡ ' + formatSpeed(currentUl)) : '0 B/s')
+					]),
+					E('div', { 'class': 'aw-detail-kpi-card vol' }, [
+						E('div', { 'class': 'kpi-label' }, [ '📊 ', _('Flow Session Total') ]),
+						E('div', { 'class': 'kpi-value' }, formatBytes(totalBytes)),
+						E('div', { 'class': 'kpi-sub' }, formatPackets(totalPackets) + ' ' + _('pkts'))
+					])
+				];
+
+				// Search & Filter Box
+				var searchInput = E('input', {
+					'type': 'text',
+					'placeholder': _('Filter by IP, port or protocol...'),
+					'input': function(ev) {
+						var q = ev.target.value.toLowerCase().trim();
+						var vis = 0;
+						var tBody = document.getElementById('modal-l7-session-tbody');
+						if (!tBody) return;
+						tBody.querySelectorAll('tr.flow-row').forEach(function(row) {
+							var hay = row.getAttribute('data-search') || '';
+							if (!q || hay.indexOf(q) !== -1) {
+								row.style.display = '';
+								vis++;
+							} else {
+								row.style.display = 'none';
+							}
+						});
+						var cnt = document.getElementById('modal-l7-flow-count');
+						if (cnt) cnt.textContent = q ? (vis + ' / ' + sessions.length) : String(sessions.length);
+						var emptyRow = document.getElementById('modal-l7-no-match-row');
+						if (emptyRow) emptyRow.style.display = (vis === 0 && sessions.length > 0) ? '' : 'none';
+					}
+				});
+
+				var filterBar = E('div', { 'class': 'aw-detail-filter-bar' }, [
+					E('div', { 'class': 'aw-detail-search-box' }, [
+						E('span', {}, '🔍'),
+						searchInput
+					]),
+					E('div', { 'class': 'aw-detail-status-pill' }, [
+						E('span', {}, _('Flows: ')),
+						E('strong', { 'id': 'modal-l7-flow-count' }, String(sessions.length)),
+						E('span', { 'class': 'badge ' + (isFallback ? 'badge-warning' : 'badge-positive'), 'style': 'margin-left: 8px;' }, isFallback ? 'Conntrack' : 'FastPath')
+					])
+				]);
+
+				var tRows = [
+					E('tr', { 'class': 'tr table-titles' }, [
+						E('th', { 'class': 'th' }, [ E('span', { 'class': 'th-icon' }, '🔌'), ' ', _('Protocol') ]),
+						E('th', { 'class': 'th' }, [ E('span', { 'class': 'th-icon' }, '🔄'), ' ', _('Direction') ]),
+						E('th', { 'class': 'th' }, [ E('span', { 'class': 'th-icon' }, '🖥️'), ' ', _('Client IP:Port') ]),
+						E('th', { 'class': 'th' }, [ E('span', { 'class': 'th-icon' }, '🌐'), ' ', _('Destination IP:Port') ]),
+						E('th', { 'class': 'th right' }, [ E('span', { 'class': 'th-icon' }, '📨'), ' ', _('Packets') ]),
+						E('th', { 'class': 'th right' }, [ E('span', { 'class': 'th-icon' }, '📊'), ' ', _('Bytes') ])
+					])
+				];
+
+				if (sessionRows.length > 0) {
+					sessionRows.forEach(function(r) { tRows.push(r); });
+					tRows.push(E('tr', { 'class': 'tr placeholder', 'id': 'modal-l7-no-match-row', 'style': 'display:none;' }, [
+						E('td', { 'class': 'td center', 'colspan': 6 }, E('em', {}, _('No matching connections found for filter.')))
+					]));
+				} else {
+					tRows.push(E('tr', { 'class': 'tr placeholder' }, [
+						E('td', { 'class': 'td center', 'colspan': 6 }, E('em', {}, _('No active fastpath connections currently (flows may be idle or closed).')))
+					]));
+				}
+
+				var modal = ui.showModal(_('Application Connection Details - %s (SID %d)').format(domainOrL7Proto, sid), [
+					E('div', { 'class': 'cbi-section aw-detail-modal-body', 'data-theme': isDarkMode() ? 'dark' : 'light' }, [
+						E('div', { 'class': 'aw-detail-modal-header' }, kpiCards),
+						filterBar,
+						E('div', { 'class': 'aw-detail-table-wrap' }, [
+							E('table', { 'class': 'table', 'id': 'modal-l7-session-tbody' }, tRows)
+						])
+					]),
+					E('div', { 'class': 'right', 'style': 'margin-top: 15px;' }, [
+						E('button', { 'class': 'btn cbi-button-neutral', 'click': ui.hideModal }, _('Close'))
+					])
+				], 'aw-detail-modal');
+
+				if (modal) {
+					modal.setAttribute('data-theme', isDarkMode() ? 'dark' : 'light');
+				}
+			});
+		}).catch(function(e) {
+			ui.addNotification(null, E('p', _('Error getting session details: ') + (e.message || e)));
 		});
 	},
 
@@ -401,14 +828,14 @@ return view.extend({
 						E('div', { 'class': 'td aw-modal-value' }, domainOrL7Proto)
 					]),
 					E('div', { 'class': 'tr' }, [
-						E('div', { 'class': 'td aw-modal-label' }, _('Download Limit')),
+						E('div', { 'class': 'td aw-modal-label' }, [ createSpeedtestIcon('dl', 14), ' ', _('Download Limit') ]),
 						E('div', { 'class': 'td aw-modal-value', style: 'display: flex; align-items: center; gap: 6px;' }, [
 							E('input', { type: 'number', id: 'dl-rate', class: 'cbi-input-number', min: '0', value: dl, style: 'width: 120px;' }),
 							E('span', {}, " Mbps")
 						])
 					]),
 					E('div', { 'class': 'tr' }, [
-						E('div', { 'class': 'td aw-modal-label' }, _('Upload Limit')),
+						E('div', { 'class': 'td aw-modal-label' }, [ createSpeedtestIcon('ul', 14), ' ', _('Upload Limit') ]),
 						E('div', { 'class': 'td aw-modal-value', style: 'display: flex; align-items: center; gap: 6px;' }, [
 							E('input', { type: 'number', id: 'ul-rate', class: 'cbi-input-number', min: '0', value: ul, style: 'width: 120px;' }),
 							E('span', {}, " Mbps")
@@ -673,31 +1100,17 @@ return view.extend({
 		var perServiceRxRate = {};
 		var self = this;
 		var allItems = [];
-		
+		var activeCount = 0;
+		var limitedCount = 0;
+
 		if (data && data.status === 'success' && Array.isArray(data.data)) {
 			allItems = data.data;
-			var listSizeEl = document.getElementById('sid-size-select');
-			var listSize = listSizeEl ? parseInt(listSizeEl.value, 10) : 10;
 
-			var activeConnections = allItems.filter(function(item) { return item.incoming.rate > 0 || item.outgoing.rate > 0; });
-			var inactiveConnections = allItems.filter(function(item) { return item.incoming.rate === 0 && item.outgoing.rate === 0; });
-		
-			activeConnections.sort(function(a, b) { return (b.incoming.rate + b.outgoing.rate) - (a.incoming.rate + a.outgoing.rate); });
-			inactiveConnections.sort(function(a, b) { return b.incoming.total_bytes - a.incoming.total_bytes; });
-		
-			var displayData = activeConnections;
-			if (displayData.length < listSize) {
-				displayData = displayData.concat(inactiveConnections.slice(0, listSize - displayData.length));
-			}
-			
-			if (displayData.length > listSize) {
-				displayData = displayData.slice(0, listSize);
-			}
+			allItems.forEach(function(item) {
+				if (!item || !item.incoming || !item.outgoing) return;
 
-			displayData.forEach(function(item) {
 				var domainOrL7Proto = 'unknown';
 				var lookupInfo = sidLookupTable[item.sid];
-				
 				if (lookupInfo) {
 					domainOrL7Proto = lookupInfo.name;
 				} else if (item.sid_type === 'Domain' && item.domain && item.domain !== 'unknown') {
@@ -705,10 +1118,116 @@ return view.extend({
 				} else if (item.sid_type === 'L7' && item.l7_proto_desc && item.l7_proto_desc !== 'unknown') {
 					domainOrL7Proto = item.l7_proto_desc;
 				}
-				
-				// 判断连接是否活跃
+
+				var isActive = item.incoming.rate > 0 || item.outgoing.rate > 0;
+				if (isActive) activeCount++;
+
+				var isLimited = (item.incoming && item.incoming.incoming_rate_limit > 0) || (item.outgoing && item.outgoing.outgoing_rate_limit > 0);
+				if (isLimited) limitedCount++;
+
+				tx_rate_total += item.incoming.rate;
+				rx_rate_total += item.outgoing.rate;
+				tx_bytes_total += item.incoming.total_bytes;
+				rx_bytes_total += item.outgoing.total_bytes;
+
+				txRateData.push({ value: item.incoming.rate, label: domainOrL7Proto });
+				rxRateData.push({ value: item.outgoing.rate, label: domainOrL7Proto });
+				txVolumeData.push({ value: item.incoming.total_bytes, label: domainOrL7Proto });
+				rxVolumeData.push({ value: item.outgoing.total_bytes, label: domainOrL7Proto });
+
+				perServiceTxRate[domainOrL7Proto] = (perServiceTxRate[domainOrL7Proto] || 0) + item.incoming.rate;
+				perServiceRxRate[domainOrL7Proto] = (perServiceRxRate[domainOrL7Proto] || 0) + item.outgoing.rate;
+			});
+
+			var cAll = document.getElementById('sid-count-all');
+			if (cAll) cAll.textContent = allItems.length;
+			var cActive = document.getElementById('sid-count-active');
+			if (cActive) cActive.textContent = activeCount;
+			var cLimited = document.getElementById('sid-count-limited');
+			if (cLimited) cLimited.textContent = limitedCount;
+
+			var search = filterState.search;
+			var mode = filterState.mode;
+
+			var filteredItems = allItems.filter(function(item) {
+				if (!item || !item.incoming || !item.outgoing) return false;
+
+				var domainOrL7Proto = 'unknown';
+				var lookupInfo = sidLookupTable[item.sid];
+				if (lookupInfo) {
+					domainOrL7Proto = lookupInfo.name;
+				} else if (item.sid_type === 'Domain' && item.domain && item.domain !== 'unknown') {
+					domainOrL7Proto = item.domain;
+				} else if (item.sid_type === 'L7' && item.l7_proto_desc && item.l7_proto_desc !== 'unknown') {
+					domainOrL7Proto = item.l7_proto_desc;
+				}
+
+				if (search) {
+					var matchStr = (domainOrL7Proto + ' ' + item.sid + ' ' + (item.sid_type || '')).toLowerCase();
+					if (matchStr.indexOf(search) === -1)
+						return false;
+				}
+
+				if (mode === 'active') {
+					if (item.incoming.rate <= 0 && item.outgoing.rate <= 0) return false;
+				} else if (mode === 'limited') {
+					var hasLimit = (item.incoming && item.incoming.incoming_rate_limit > 0) || (item.outgoing && item.outgoing.outgoing_rate_limit > 0);
+					if (!hasLimit) return false;
+				}
+
+				return true;
+			});
+
+			var activeFiltered = filteredItems.filter(function(item) { return item.incoming.rate > 0 || item.outgoing.rate > 0; });
+			var inactiveFiltered = filteredItems.filter(function(item) { return item.incoming.rate === 0 && item.outgoing.rate === 0; });
+			activeFiltered.sort(function(a, b) { return (b.incoming.rate + b.outgoing.rate) - (a.incoming.rate + a.outgoing.rate); });
+			inactiveFiltered.sort(function(a, b) { return b.incoming.total_bytes - a.incoming.total_bytes; });
+			var displayData = activeFiltered.concat(inactiveFiltered);
+
+			var listSizeEl = document.getElementById('sid-size-select');
+			var listSize = listSizeEl ? parseInt(listSizeEl.value, 10) : 30;
+			if (listSize > 0 && displayData.length > listSize) {
+				displayData = displayData.slice(0, listSize);
+			}
+
+			displayData.forEach(function(item) {
+				var domainOrL7Proto = 'unknown';
+				var lookupInfo = sidLookupTable[item.sid];
+				if (lookupInfo) {
+					domainOrL7Proto = lookupInfo.name;
+				} else if (item.sid_type === 'Domain' && item.domain && item.domain !== 'unknown') {
+					domainOrL7Proto = item.domain;
+				} else if (item.sid_type === 'L7' && item.l7_proto_desc && item.l7_proto_desc !== 'unknown') {
+					domainOrL7Proto = item.l7_proto_desc;
+				}
+
 				var isActive = item.incoming.rate > 0 || item.outgoing.rate > 0;
 				var activityIcon = isActive ? '🟢' : '⚪';
+
+				var serviceNode = E('div', { 'class': 'device-cell' }, [
+					E('div', { 'class': 'device-main' }, [
+						E('span', { 'class': 'activity-indicator', 'title': isActive ? _('Active') : _('Inactive') }, activityIcon),
+						E('span', { 'class': 'device-name' }, domainOrL7Proto)
+					]),
+					E('span', { 'class': 'device-sub' }, 'SID: ' + item.sid + (item.sid_type ? ' · ' + item.sid_type : ''))
+				]);
+
+				var volNode = E('div', { 'class': 'dual-volume-cell' }, [
+					E('div', {
+						'class': 'vol-row dl',
+						'title': _('Download Total: ') + formatBytes(item.incoming.total_bytes) + ' (' + formatPackets(item.incoming.total_packets) + ')'
+					}, [
+						E('span', { 'class': 'vol-val' }, formatBytes(item.incoming.total_bytes)),
+						E('span', { 'class': 'vol-icon' }, [ createSpeedtestIcon('dl', 12) ])
+					]),
+					E('div', {
+						'class': 'vol-row ul',
+						'title': _('Upload Total: ') + formatBytes(item.outgoing.total_bytes) + ' (' + formatPackets(item.outgoing.total_packets) + ')'
+					}, [
+						E('span', { 'class': 'vol-val' }, formatBytes(item.outgoing.total_bytes)),
+						E('span', { 'class': 'vol-icon' }, [ createSpeedtestIcon('ul', 12) ])
+					])
+				]);
 
 				var timeBadge;
 				if (item.time_rule && item.time_rule.enabled) {
@@ -727,36 +1246,24 @@ return view.extend({
 				}
 
 				rows.push([
-					E('span', { 'class': 'sid-cell' }, [
-						E('span', { 'class': 'activity-indicator', 'title': isActive ? _('Active') : _('Inactive') }, activityIcon),
-						E('span', {}, ' ' + item.sid)
-					]),
-					E('span', { 'class': 'protocol-cell' }, [
-						E('span', { 'class': 'protocol-icon' }, '🌐'),
-						E('span', {}, ' ' + domainOrL7Proto)
-					]),
-					[ item.incoming.rate, E('span', { 'class': 'speed-cell download' }, [
-						E('span', { 'class': 'data-value' }, '%1024.2mbps'.format(item.incoming.rate))
-					])],
-					[ item.incoming.total_bytes, E('span', { 'class': 'volume-cell download' }, [
-						E('span', { 'class': 'data-value' }, '%1024.2mB'.format(item.incoming.total_bytes))
-					])],
-					[ item.incoming.total_packets, E('span', { 'class': 'packet-cell download' }, [
-						E('span', { 'class': 'data-value' }, '%1000.2mP'.format(item.incoming.total_packets))
-					])],
-					[ item.outgoing.rate, E('span', { 'class': 'speed-cell upload' }, [
-						E('span', { 'class': 'data-value' }, '%1024.2mbps'.format(item.outgoing.rate))
-					])],
-					[ item.outgoing.total_bytes, E('span', { 'class': 'volume-cell upload' }, [
-						E('span', { 'class': 'data-value' }, '%1024.2mB'.format(item.outgoing.total_bytes))
-					])],
-					[ item.outgoing.total_packets, E('span', { 'class': 'packet-cell upload' }, [
-						E('span', { 'class': 'data-value' }, '%1000.2mP'.format(item.outgoing.total_packets))
-					])],
-					E('span', { 'class': 'time-schedule-cell center' }, [
+					[ (domainOrL7Proto + ' ' + item.sid).toLowerCase(), serviceNode ],
+					[ item.incoming.rate, renderRateLimitCell(item.incoming.rate, item.incoming.incoming_rate_limit) ],
+					[ item.outgoing.rate, renderRateLimitCell(item.outgoing.rate, item.outgoing.outgoing_rate_limit) ],
+					[ (item.incoming.total_bytes || 0) + (item.outgoing.total_bytes || 0), volNode ],
+					[ item.time_rule && item.time_rule.enabled ? 1 : 0, E('span', { 'class': 'time-schedule-cell center' }, [
 						timeBadge
-					]),
-					E('div', { 'class': 'button-container' }, [
+					]) ],
+					[ '', E('div', { 'class': 'button-container' }, [
+						E('button', {
+							'class': 'btn cbi-button cbi-button-neutral',
+							'title': _('View active connections for this application'),
+							'click': ui.createHandlerFn(self, function() {
+								self.handleDrilldownSID(item.sid, domainOrL7Proto, item);
+							})
+						}, [
+							E('span', { 'class': 'btn-icon' }, '🔍'),
+							E('span', {}, ' ' + _('Detail'))
+						]),
 						E('button', {
 							'class': 'btn cbi-button cbi-button-edit',
 							'click': ui.createHandlerFn(self, function() {
@@ -766,33 +1273,18 @@ return view.extend({
 							E('span', { 'class': 'btn-icon' }, '✏️'),
 							E('span', {}, ' ' + _('Edit'))
 						])
-					])
+					]) ]
 				]);
-
-				txRateData.push({ value: item.incoming.rate, label: domainOrL7Proto });
-				rxRateData.push({ value: item.outgoing.rate, label: domainOrL7Proto });
-				txVolumeData.push({ value: item.incoming.total_bytes, label: domainOrL7Proto });
-				rxVolumeData.push({ value: item.outgoing.total_bytes, label: domainOrL7Proto });
-
-				perServiceTxRate[domainOrL7Proto] = (perServiceTxRate[domainOrL7Proto] || 0) + item.incoming.rate;
-				perServiceRxRate[domainOrL7Proto] = (perServiceRxRate[domainOrL7Proto] || 0) + item.outgoing.rate;
-			});
-
-			allItems.forEach(function(item) {
-				tx_rate_total += item.incoming.rate;
-				rx_rate_total += item.outgoing.rate;
-				tx_bytes_total += item.incoming.total_bytes;
-				rx_bytes_total += item.outgoing.total_bytes;
 			});
 		}
 
 		this.updateStackedLineCharts(perServiceTxRate, perServiceRxRate);
 
 		var table = document.getElementById('sid-data');
-		cbi_update_table(table, rows, E('em', _('No data recorded yet.')));
+		var emptyMsg = (filterState.search || filterState.mode !== 'all') ? _('No matching applications found.') : _('No data recorded yet.');
+		cbi_update_table(table, rows, E('em', emptyMsg));
 
 		var headers = table.querySelectorAll('th');
-		
 		if (!table.hasAttribute('data-sort-initialized')) {
 			headers.forEach(function(header, index) {
 				header.style.cursor = 'pointer';
@@ -810,25 +1302,25 @@ return view.extend({
 			});
 		});
 
-		this.pie('sid-tx-rate-pie', txRateData, function(p) { return p.name + ': ' + self.formatMbps(p.value) + ' (' + p.percent + '%)'; });
-		this.pie('sid-rx-rate-pie', rxRateData, function(p) { return p.name + ': ' + self.formatMbps(p.value) + ' (' + p.percent + '%)'; });
-		this.pie('sid-tx-volume-pie', txVolumeData, function(p) { return p.name + ': ' + self.formatMB(p.value) + ' (' + p.percent + '%)'; });
-		this.pie('sid-rx-volume-pie', rxVolumeData, function(p) { return p.name + ': ' + self.formatMB(p.value) + ' (' + p.percent + '%)'; });
+		this.pie('sid-tx-rate-pie', txRateData, function(p) { return p.name + ': ' + formatSpeed(p.value) + ' (' + p.percent + '%)'; });
+		this.pie('sid-rx-rate-pie', rxRateData, function(p) { return p.name + ': ' + formatSpeed(p.value) + ' (' + p.percent + '%)'; });
+		this.pie('sid-tx-volume-pie', txVolumeData, function(p) { return p.name + ': ' + formatBytes(p.value) + ' (' + p.percent + '%)'; });
+		this.pie('sid-rx-volume-pie', rxVolumeData, function(p) { return p.name + ': ' + formatBytes(p.value) + ' (' + p.percent + '%)'; });
 
 		var sidTotalEl = document.getElementById('sid-total-val');
-		if(sidTotalEl) sidTotalEl.textContent = allItems.length;
+		if (sidTotalEl) sidTotalEl.textContent = allItems.length;
 
 		var txRateEl = document.getElementById('sid-tx-rate-val');
-		if(txRateEl) txRateEl.textContent = '%1024.2mbps'.format(tx_rate_total);
+		if (txRateEl) txRateEl.textContent = formatSpeed(tx_rate_total);
 
 		var rxRateEl = document.getElementById('sid-rx-rate-val');
-		if(rxRateEl) rxRateEl.textContent = '%1024.2mbps'.format(rx_rate_total);
+		if (rxRateEl) rxRateEl.textContent = formatSpeed(rx_rate_total);
 
 		var txVolEl = document.getElementById('sid-tx-volume-val');
-		if(txVolEl) txVolEl.textContent = '%1024.2mB'.format(tx_bytes_total);
+		if (txVolEl) txVolEl.textContent = formatBytes(tx_bytes_total);
 
 		var rxVolEl = document.getElementById('sid-rx-volume-val');
-		if(rxVolEl) rxVolEl.textContent = '%1024.2mB'.format(rx_bytes_total);
+		if (rxVolEl) rxVolEl.textContent = formatBytes(rx_bytes_total);
 
 		lastUpdated = new Date();
 		var timestampEl = document.getElementById('last-updated');
@@ -923,7 +1415,7 @@ return view.extend({
 									var b = ev.target.closest('button');
 									self.handleAddXdnsDomain(item.domain, b);
 								}
-							}, [ '➕ ', _('加入代理') ]));
+							}, [ createButtonIcon('add', 12), _('加入代理') ]));
 						}
 					}
 
@@ -1099,11 +1591,11 @@ return view.extend({
 							}
 						})
 					}, [
-						E('option', { 'value': '10' }, '10'),
 						E('option', { 'value': '15' }, '15'),
-						E('option', { 'value': '20' }, '20'),
-						E('option', { 'value': '25' }, '25'),
-						E('option', { 'value': '50' }, '50')
+						E('option', { 'value': '30', 'selected': 'selected' }, '30'),
+						E('option', { 'value': '50' }, '50'),
+						E('option', { 'value': '100' }, '100'),
+						E('option', { 'value': '0' }, _('All'))
 					])
 				])
 			]),
@@ -1137,21 +1629,18 @@ return view.extend({
 
 		var sidInnerTabs = E('div', { 'class': 'aw-inner-tabs' }, [
 			E('div', { 'class': 'cbi-section', 'data-tab': 'sid-list', 'data-tab-title': _('SID List'), 'data-tab-active': 'true' }, [
+				self.createFilterBar(),
 				E('table', { 'class': 'table', 'id': 'sid-data' }, [
 					E('tr', { 'class': 'tr table-titles' }, [
-						E('th', { 'class': 'th left' }, [ E('span', { 'class': 'th-icon' }, '🆔'), ' ', _('SID') ]),
-						E('th', { 'class': 'th left' }, [ E('span', { 'class': 'th-icon' }, '🌐'), ' ', _('Domain&L7Protocol') ]),
-						E('th', { 'class': 'th right' }, [ E('span', { 'class': 'th-icon' }, '⬇️'), ' ', _('Download Speed (Bit/s)') ]),
-						E('th', { 'class': 'th right' }, [ E('span', { 'class': 'th-icon' }, '📦'), ' ', _('Download (Bytes)') ]),
-						E('th', { 'class': 'th right' }, [ E('span', { 'class': 'th-icon' }, '📨'), ' ', _('Download (Packets)') ]),
-						E('th', { 'class': 'th right' }, [ E('span', { 'class': 'th-icon' }, '⬆️'), ' ', _('Upload Speed (Bit/s)') ]),
-						E('th', { 'class': 'th right' }, [ E('span', { 'class': 'th-icon' }, '📦'), ' ', _('Upload (Bytes)') ]),
-						E('th', { 'class': 'th right' }, [ E('span', { 'class': 'th-icon' }, '📨'), ' ', _('Upload (Packets)') ]),
+						E('th', { 'class': 'th left' }, [ E('span', { 'class': 'th-icon' }, '🌐'), ' ', _('Application & SID') ]),
+						E('th', { 'class': 'th right' }, [ createSpeedtestIcon('dl', 14), ' ', _('Download Speed / Limit') ]),
+						E('th', { 'class': 'th right' }, [ createSpeedtestIcon('ul', 14), ' ', _('Upload Speed / Limit') ]),
+						E('th', { 'class': 'th right' }, [ E('span', { 'class': 'th-icon' }, '📊'), ' ', _('Total Traffic (DL / UL)') ]),
 						E('th', { 'class': 'th center' }, [ E('span', { 'class': 'th-icon' }, '⏱️'), ' ', _('Time Schedule') ]),
-						E('th', { 'class': 'th center' }, [ E('span', { 'class': 'th-icon' }, '⚙️'), ' ', _('Actions') ])
+						E('th', { 'class': 'th center cbi-section-actions' }, [ E('span', { 'class': 'th-icon' }, '⚙️'), ' ', _('Actions') ])
 					]),
 					E('tr', { 'class': 'tr placeholder' }, [
-						E('td', { 'class': 'td', 'colspan': '10' }, [
+						E('td', { 'class': 'td', 'colspan': '6' }, [
 							E('em', { 'class': 'spinning' }, [ _('Collecting data...') ])
 						])
 					])
@@ -1162,18 +1651,18 @@ return view.extend({
 				E('div', { 'class': 'dashboard-container' }, [
 					E('div', { 'class': 'kpi-row' }, [
 						E('div', { 'class': 'kpi-card' }, [ E('big', { id: 'sid-total-val' }, '0'), E('span', { 'class': 'kpi-card-label' }, _('L7 Protocol Data')) ]),
-						E('div', { 'class': 'kpi-card' }, [ E('big', { id: 'sid-tx-rate-val' }, '0'), E('span', { 'class': 'kpi-card-label' }, _('Download Speed')) ]),
-						E('div', { 'class': 'kpi-card' }, [ E('big', { id: 'sid-rx-rate-val' }, '0'), E('span', { 'class': 'kpi-card-label' }, _('Upload Speed')) ]),
-						E('div', { 'class': 'kpi-card' }, [ E('big', { id: 'sid-tx-volume-val' }, '0'), E('span', { 'class': 'kpi-card-label' }, _('Download Total')) ]),
-						E('div', { 'class': 'kpi-card' }, [ E('big', { id: 'sid-rx-volume-val' }, '0'), E('span', { 'class': 'kpi-card-label' }, _('Upload Total')) ])
+						E('div', { 'class': 'kpi-card' }, [ E('big', { id: 'sid-tx-rate-val' }, '0'), E('span', { 'class': 'kpi-card-label' }, [ createSpeedtestIcon('dl', 12), ' ', _('Download Speed') ]) ]),
+						E('div', { 'class': 'kpi-card' }, [ E('big', { id: 'sid-rx-rate-val' }, '0'), E('span', { 'class': 'kpi-card-label' }, [ createSpeedtestIcon('ul', 12), ' ', _('Upload Speed') ]) ]),
+						E('div', { 'class': 'kpi-card' }, [ E('big', { id: 'sid-tx-volume-val' }, '0'), E('span', { 'class': 'kpi-card-label' }, [ createSpeedtestIcon('dl', 12), ' ', _('Download Total') ]) ]),
+						E('div', { 'class': 'kpi-card' }, [ E('big', { id: 'sid-rx-volume-val' }, '0'), E('span', { 'class': 'kpi-card-label' }, [ createSpeedtestIcon('ul', 12), ' ', _('Upload Total') ]) ])
 					]),
 					E('div', { 'class': 'line-chart-row' }, [
 						E('div', { 'class': 'chart-card' }, [
-							E('h4', [_('Real-time Download Speed')]),
+							E('h4', [ createSpeedtestIcon('dl', 14), ' ', _('Real-time Download Speed') ]),
 							E('div', { id: 'download-speed-line-chart', style: 'width: 100%; height: 350px;' })
 						]),
 						E('div', { 'class': 'chart-card' }, [
-							E('h4', [_('Real-time Upload Speed')]),
+							E('h4', [ createSpeedtestIcon('ul', 14), ' ', _('Real-time Upload Speed') ]),
 							E('div', { id: 'upload-speed-line-chart', style: 'width: 100%; height: 350px;' })
 						])
 					])
@@ -1183,19 +1672,19 @@ return view.extend({
 				E('div', { 'class': 'dashboard-container' }, [
 					E('div', { 'class': 'chart-grid' }, [
 						E('div', { 'class': 'chart-card' }, [
-							E('h4', [_('Download Speed / SID')]),
+							E('h4', [ createSpeedtestIcon('dl', 14), ' ', _('Download Speed / SID') ]),
 							E('div', { id: 'sid-tx-rate-pie', style: 'width: 100%; height: 300px;' })
 						]),
 						E('div', { 'class': 'chart-card' }, [
-							E('h4', [_('Upload Speed / SID')]),
+							E('h4', [ createSpeedtestIcon('ul', 14), ' ', _('Upload Speed / SID') ]),
 							E('div', { id: 'sid-rx-rate-pie', style: 'width: 100%; height: 300px;' })
 						]),
 						E('div', { 'class': 'chart-card' }, [
-							E('h4', [_('Download Total')]),
+							E('h4', [ createSpeedtestIcon('dl', 14), ' ', _('Download Total') ]),
 							E('div', { id: 'sid-tx-volume-pie', style: 'width: 100%; height: 300px;' })
 						]),
 						E('div', { 'class': 'chart-card' }, [
-							E('h4', [_('Upload Total')]),
+							E('h4', [ createSpeedtestIcon('ul', 14), ' ', _('Upload Total') ]),
 							E('div', { id: 'sid-rx-volume-pie', style: 'width: 100%; height: 300px;' })
 						])
 					])

@@ -14,6 +14,9 @@ var hostInfo = {}; // ip => mac
 var hostNameMacSectionId = "";
 var isPaused = false;
 var lastUpdated = null;
+var leaseList = []; // Array of { mac, ip, hostname }
+var ipv6LeaseList = []; // Array of { ip, hostname }
+var monitoredHosts = { ipv4: {}, ipv6: {}, mac: {} };
 
 // Line chart variables (from l7.js)
 var downloadLineChart = {}, uploadLineChart = {};
@@ -152,6 +155,44 @@ function formatPackets(pkts) {
 	return pkts + ' P';
 }
 
+function createSpeedtestIcon(dir, size) {
+	size = size || 14;
+	var span = document.createElement('span');
+	span.className = 'speedtest-icon ' + dir;
+	var pathD = 'M12.0000033,1.5008 L12.0000028,1.5008 C17.7985528,1.5008 22.4992028,6.20145217 22.4992028,12.0000022 C22.4992028,17.7985522 17.7985528,22.4992022 12.0000028,22.4992022 C6.20145281,22.4992022 1.50080269,17.7985522 1.50080269,12.0000022 L1.50080269,12.0016 C1.50080269,6.203425 6.20022769,1.502575 11.9984027,1.5008 M12,0 L12,0 C5.372575,0 0,5.372575 0,12 C0,18.627425 5.372575,24 12,24 C18.627425,24 24,18.627425 24,12 L24,12 C24,5.37257552 18.627425,0 12,0 L12,0 Z M17.3408005,13.2752 L17.3408005,13.2752 C17.626663,12.9809425 17.619858,12.5106625 17.3256005,12.2248 C17.031343,11.9389375 16.561063,11.9457425 16.2752005,12.24 L13.1248005,15.5104 L13.1248005,7.50080001 L13.1248005,7.50080016 C13.1056689,7.08680766 12.754553,6.76671016 12.3405605,6.78584016 C11.953353,6.80373396 11.6434955,7.11359266 11.6256005,7.50080016 L11.6256005,15.6144002 L8.16000052,12.2560002 L8.16000054,12.2560002 C7.84182304,11.9904452 7.36861554,12.0331047 7.10306054,12.3512819 C6.86792779,12.6330094 6.87103279,13.0434619 7.11040047,13.3215994 L12.3456005,18.4671994 L12.7056005,18.0911994 L13.3808005,17.4159994 L17.3104005,13.3519994 L17.3408005,13.2767994 L17.3408005,13.2752 Z';
+	if (dir === 'dl') {
+		span.innerHTML = '<svg viewBox="0 0 24 24" width="' + size + '" height="' + size + '" fill="currentColor"><path d="' + pathD + '"/></svg>';
+	} else {
+		span.innerHTML = '<svg viewBox="0 0 24 24" width="' + size + '" height="' + size + '" fill="currentColor"><g transform="translate(0, 24) scale(1, -1)"><path d="' + pathD + '"/></g></svg>';
+	}
+	return span;
+}
+
+function createButtonIcon(type, size) {
+	size = size || 14;
+	var span = document.createElement('span');
+	span.className = 'btn-icon btn-icon-svg';
+	span.style.display = 'inline-flex';
+	span.style.alignItems = 'center';
+	span.style.justifyContent = 'center';
+	span.style.verticalAlign = '-2px';
+	span.style.marginRight = '5px';
+
+	if (type === 'add') {
+		span.innerHTML = '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">' +
+			'<line x1="12" y1="4" x2="12" y2="20"></line>' +
+			'<line x1="4" y1="12" x2="20" y2="12"></line>' +
+			'</svg>';
+	} else if (type === 'refresh') {
+		span.innerHTML = '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">' +
+			'<polyline points="23 4 23 10 17 10"></polyline>' +
+			'<polyline points="1 20 1 14 7 14"></polyline>' +
+			'<path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>' +
+			'</svg>';
+	}
+	return span;
+}
+
 function renderRateLimitCell(rate, limit) {
 	rate = +rate || 0;
 	limit = +limit || 0;
@@ -211,24 +252,210 @@ return view.extend({
 				}
 			});
 
-			const dhcpLeases = await fs.exec_direct('/usr/bin/awk', ['-F', ' ', '{print $2, $3, $4}', '/tmp/dhcp.leases'], 'text');
-			dhcpLeases.split('\n').forEach(function(line) {
-				if (line === '') return;
-				const [mac, ip, hostname] = line.split(' ');
-				if (!hostNames.hasOwnProperty(mac)) {
-					hostNames[mac] = hostname;
-				}
-			});
+			var leaseMap = {};
+			leaseList = [];
 
-			const arp = await fs.exec_direct('/usr/bin/awk', ['-F', ' ', '{print $1, $4}', '/proc/net/arp'], 'text');
-			arp.split('\n').forEach(function(line, i) {
-				if (i === 0 || line === '') return;
-				const [ip, mac] = line.split(' ');
-				hostInfo[ip] = mac;
-			});
+			// 1. Read /tmp/dhcp.leases (fallback /var/dhcp.leases)
+			var leaseContent = await fs.read_direct('/tmp/dhcp.leases').catch(() => null);
+			if (!leaseContent) {
+				leaseContent = await fs.read_direct('/var/dhcp.leases').catch(() => null);
+			}
+			if (leaseContent) {
+				leaseContent.split('\n').forEach(function(line) {
+					line = line.trim();
+					if (!line) return;
+					var parts = line.split(/\s+/);
+					if (parts.length >= 4) {
+						var mac = parts[1].toLowerCase();
+						var ip = parts[2];
+						var hostname = (parts[3] && parts[3] !== '*') ? parts[3] : '';
+						if (!hostNames.hasOwnProperty(mac) && hostname) {
+							hostNames[mac] = hostname;
+						}
+						var resolvedName = hostNames[mac] || hostname;
+						var key = ip + '_' + mac;
+						if (!leaseMap[key]) {
+							leaseMap[key] = true;
+							leaseList.push({
+								mac: mac,
+								ip: ip,
+								hostname: resolvedName
+							});
+						}
+					}
+				});
+			}
 
+			// 2. Read /proc/net/arp
+			var arpContent = await fs.read_direct('/proc/net/arp').catch(() => null);
+			if (arpContent) {
+				arpContent.split('\n').forEach(function(line, i) {
+					if (i === 0 || !line.trim()) return;
+					var parts = line.trim().split(/\s+/);
+					if (parts.length >= 4) {
+						var ip = parts[0];
+						var mac = parts[3].toLowerCase();
+						if (mac && mac !== '00:00:00:00:00:00') {
+							hostInfo[ip] = mac;
+							var resolvedName = hostNames[mac] || '';
+							var key = ip + '_' + mac;
+							if (!leaseMap[key]) {
+								leaseMap[key] = true;
+								leaseList.push({
+									mac: mac,
+									ip: ip,
+									hostname: resolvedName
+								});
+							}
+						}
+					}
+				});
+			}
+
+			// 3. Read IPv6 leases from /tmp/odhcpd.leases
+			ipv6LeaseList = [];
+			var odhcpdContent = await fs.read_direct('/tmp/odhcpd.leases').catch(() => null);
+			if (odhcpdContent) {
+				odhcpdContent.split('\n').forEach(function(line) {
+					line = line.trim();
+					if (!line) return;
+					var parts = line.split(/\s+/);
+					var startIdx = (parts[0] === '#') ? 1 : 0;
+					var hName = (parts[startIdx + 3] && parts[startIdx + 3] !== '*' && parts[startIdx + 3] !== '-') ? parts[startIdx + 3] : '';
+					for (var idx = startIdx + 4; idx < parts.length; idx++) {
+						var token = parts[idx];
+						if (token && token.indexOf(':') !== -1) {
+							var v6 = token.split('/')[0];
+							if (v6.indexOf('fe80:') !== 0) {
+								ipv6LeaseList.push({
+									ip: v6,
+									hostname: hName
+								});
+							}
+						}
+					}
+				});
+			}
+
+			this.updateAllLeaseSuggestions();
 		} catch (e) {
-			console.error('Error getting host names:', e);
+			console.error('Error getting host names and leases:', e);
+		}
+	},
+
+	updateAllLeaseSuggestions: function() {
+		var self = this;
+		['ipv4', 'ipv6', 'mac'].forEach(function(type) {
+			self.updateLeaseSuggestions(type);
+		});
+	},
+
+	updateLeaseSuggestions: function(type) {
+		var datalist = document.getElementById('control-datalist-' + type);
+		var select = document.getElementById('control-select-' + type);
+		if (!datalist && !select) return;
+
+		var optionsData = [];
+
+		if (type === 'ipv4') {
+			leaseList.forEach(function(item) {
+				if (!item.ip || item.ip.indexOf('.') === -1) return;
+				var isMonitored = monitoredHosts.ipv4 && monitoredHosts.ipv4[item.ip.toLowerCase()];
+				var name = item.hostname || '';
+				var mac = item.mac || '';
+				var desc = name ? (name + ' (' + item.ip + (mac ? ', ' + mac : '') + ')') : (item.ip + (mac ? ' (' + mac + ')' : ''));
+				if (isMonitored) {
+					desc += ' [' + _('Added') + ']';
+				}
+				optionsData.push({
+					value: item.ip,
+					label: desc,
+					sub: name ? (name + (mac ? ' - ' + mac : '')) : mac,
+					monitored: !!isMonitored
+				});
+			});
+		} else if (type === 'mac') {
+			leaseList.forEach(function(item) {
+				if (!item.mac) return;
+				var isMonitored = monitoredHosts.mac && monitoredHosts.mac[item.mac.toLowerCase()];
+				var name = item.hostname || '';
+				var ip = item.ip || '';
+				var desc = name ? (name + ' (' + item.mac + (ip ? ', ' + ip : '') + ')') : (item.mac + (ip ? ' (' + ip + ')' : ''));
+				if (isMonitored) {
+					desc += ' [' + _('Added') + ']';
+				}
+				optionsData.push({
+					value: item.mac,
+					label: desc,
+					sub: name ? (name + (ip ? ' - ' + ip : '')) : ip,
+					monitored: !!isMonitored
+				});
+			});
+		} else if (type === 'ipv6') {
+			ipv6LeaseList.forEach(function(item) {
+				if (!item.ip) return;
+				var isMonitored = monitoredHosts.ipv6 && monitoredHosts.ipv6[item.ip.toLowerCase()];
+				var name = item.hostname || '';
+				var desc = name ? (name + ' (' + item.ip + ')') : item.ip;
+				if (isMonitored) {
+					desc += ' [' + _('Added') + ']';
+				}
+				optionsData.push({
+					value: item.ip,
+					label: desc,
+					sub: name || '',
+					monitored: !!isMonitored
+				});
+			});
+		}
+
+		// Deduplicate by value
+		var seen = {};
+		var unique = [];
+		optionsData.forEach(function(opt) {
+			var k = opt.value.toLowerCase();
+			if (!seen[k]) {
+				seen[k] = true;
+				unique.push(opt);
+			}
+		});
+
+		// Sort: unmonitored devices first, then alphabetically
+		unique.sort(function(a, b) {
+			if (a.monitored !== b.monitored) {
+				return a.monitored ? 1 : -1;
+			}
+			return a.label.localeCompare(b.label);
+		});
+
+		// Update datalist for input autocomplete
+		if (datalist) {
+			datalist.innerHTML = '';
+			unique.forEach(function(opt) {
+				datalist.appendChild(E('option', {
+					'value': opt.value,
+					'label': opt.sub || opt.label
+				}, opt.label));
+			});
+		}
+
+		// Update dropdown select
+		if (select) {
+			var currentVal = select.value;
+			select.innerHTML = '';
+			var placeholderText = unique.length > 0
+				? _('📋 Select from DHCP (%d)...').format(unique.length)
+				: _('📋 No DHCP leases found');
+			select.appendChild(E('option', { 'value': '' }, placeholderText));
+
+			unique.forEach(function(opt) {
+				var optEl = E('option', { 'value': opt.value }, (opt.monitored ? '✓ ' : '➕ ') + opt.label);
+				if (opt.monitored) {
+					optEl.style.opacity = '0.7';
+				}
+				select.appendChild(optEl);
+			});
+			if (currentVal) select.value = currentVal;
 		}
 	},
 
@@ -246,23 +473,35 @@ return view.extend({
 			const ipv6Data = results[1] || defaultData;
 			const macData  = results[2] || defaultData;
 			
+			monitoredHosts.ipv4 = {};
 			ipv4Data.data.forEach(function(item) {
 				const mac = hostInfo[item.ip];
 				if (mac) {
 					item.mac = mac;
 					item.hostname = hostNames[mac];
 				}
+				if (item.ip) monitoredHosts.ipv4[item.ip.toLowerCase()] = true;
 			});
+
+			monitoredHosts.ipv6 = {};
+			ipv6Data.data.forEach(function(item) {
+				if (item.ip) monitoredHosts.ipv6[item.ip.toLowerCase()] = true;
+			});
+
+			monitoredHosts.mac = {};
 			macData.data.forEach(function(item) {
 				const mac = item.mac;
 				if (mac) {
 					item.hostname = hostNames[mac];
 				}
+				if (item.mac) monitoredHosts.mac[item.mac.toLowerCase()] = true;
 			});
 
 			self.renderHostSpeed(ipv4Data, "ipv4");
 			self.renderHostSpeed(ipv6Data, "ipv6");
 			self.renderHostSpeed(macData, "mac");
+
+			self.updateAllLeaseSuggestions();
 
 			lastUpdated = new Date();
 			document.querySelectorAll('.display-last-updated').forEach(function(el) {
@@ -626,14 +865,14 @@ return view.extend({
 					'title': _('Download Total: ') + formatBytes(item.incoming.total_bytes) + ' (' + formatPackets(item.incoming.total_packets) + ')'
 				}, [
 					E('span', { 'class': 'vol-val' }, formatBytes(item.incoming.total_bytes)),
-					E('span', { 'class': 'vol-icon' }, '⬇️')
+					E('span', { 'class': 'vol-icon' }, [ createSpeedtestIcon('dl', 12) ])
 				]),
 				E('div', {
 					'class': 'vol-row ul',
 					'title': _('Upload Total: ') + formatBytes(item.outgoing.total_bytes) + ' (' + formatPackets(item.outgoing.total_packets) + ')'
 				}, [
 					E('span', { 'class': 'vol-val' }, formatBytes(item.outgoing.total_bytes)),
-					E('span', { 'class': 'vol-icon' }, '⬆️')
+					E('span', { 'class': 'vol-icon' }, [ createSpeedtestIcon('ul', 12) ])
 				])
 			]);
 
@@ -651,7 +890,7 @@ return view.extend({
 					E('button', {
 						'class': 'btn cbi-button cbi-button-neutral',
 						'title': _('View active connections & L7 details'),
-						'click': ui.createHandlerFn(this, () => this.handleDrilldownHost(host, hostname, type))
+						'click': ui.createHandlerFn(this, () => this.handleDrilldownHost(host, hostname, type, item))
 					}, [
 						E('span', { 'class': 'btn-icon' }, '🔍'),
 						E('span', {}, ' ' + _('Detail'))
@@ -722,7 +961,7 @@ return view.extend({
 		if (mLim) mLim.textContent = limitedCount;
 	},
 
-	handleDrilldownHost: function(host, hostname, type) {
+	handleDrilldownHost: function(host, hostname, type, itemStats) {
 		fs.exec_direct('/usr/bin/aw-bpfctl', ['fastpath', 'json'], 'json').then(L.bind(res => {
 			var sessions = [];
 			var totalPackets = 0, totalBytes = 0;
@@ -747,63 +986,234 @@ return view.extend({
 				});
 			}
 
-			sessions.sort(function(a, b) { return (b.bytes || 0) - (a.bytes || 0); });
+			var isFallback = false;
+			var fallbackPromise = (sessions.length === 0 && type !== 'mac') ? fs.read_direct('/proc/net/nf_conntrack').then(function(content) {
+				if (!content) return [];
+				var lines = content.split('\n');
+				var pSrc = 'src=' + host + ' ';
+				var pDst = 'dst=' + host + ' ';
+				var conns = [];
+				lines.forEach(function(line) {
+					line = line.trim();
+					if (!line || (line.indexOf(pSrc) === -1 && line.indexOf(pDst) === -1)) return;
 
-			var sessionRows = sessions.map(function(s) {
-				var isOut = (s.orig_src && s.orig_src.indexOf(host + ':') === 0);
-				var remoteAddr = isOut ? s.orig_dst : s.orig_src;
-				var localPort = isOut ? (s.orig_src.split(':')[1] || '') : (s.new_dst.split(':')[1] || '');
-				var remotePort = remoteAddr ? remoteAddr.split(':')[1] : '';
-				
-				var appName = '';
-				if (remotePort === '443') appName = 'HTTPS';
-				else if (remotePort === '80') appName = 'HTTP';
-				else if (remotePort === '53') appName = 'DNS';
-				else if (remotePort === '22') appName = 'SSH';
-				else if (remotePort === '3389') appName = 'RDP/MSTSC';
+					var protoMatch = line.match(/^ipv\d\s+\d+\s+(\S+)/);
+					var proto = protoMatch ? protoMatch[1].toUpperCase() : 'TCP';
 
-				return E('tr', { 'class': 'tr' }, [
-					E('td', { 'class': 'td' }, [
-						E('span', { 'class': 'badge ' + (s.proto === 'TCP' ? 'badge-info' : 'badge-warning') }, s.proto)
-					]),
-					E('td', { 'class': 'td' }, (isOut ? '⬆️ ' + _('Outbound') : '⬇️ ' + _('Inbound'))),
-					E('td', { 'class': 'td' }, localPort || '-'),
-					E('td', { 'class': 'td' }, [
-						E('span', {}, remoteAddr),
-						appName ? E('span', { 'class': 'badge badge-secondary', 'style': 'margin-left: 6px;' }, appName) : null
-					]),
-					E('td', { 'class': 'td right' }, formatPackets(s.packets || 0)),
-					E('td', { 'class': 'td right' }, formatBytes(s.bytes || 0))
-				]);
-			});
+					var re = /(src|dst|sport|dport|packets|bytes)=([^\s]+)/g;
+					var m;
+					var orig = {}, reply = {};
+					var cur = orig;
+					while ((m = re.exec(line)) !== null) {
+						if (cur === orig && orig[m[1]] !== undefined) {
+							cur = reply;
+						}
+						cur[m[1]] = m[2];
+					}
 
-			ui.showModal(_('Host Session & L7 Traffic Details'), [
-				E('div', { 'class': 'cbi-section' }, [
-					E('div', { 'style': 'margin-bottom: 14px; display: flex; gap: 20px; align-items: center; flex-wrap: wrap;' }, [
-						E('div', {}, [ E('strong', {}, _('Host: ')), (hostname || host) + ' (' + host + ')' ]),
-						E('div', {}, [ E('strong', {}, _('Active Flows: ')), String(sessions.length) ]),
-						E('div', {}, [ E('strong', {}, _('Flow Traffic: ')), formatBytes(totalBytes) ])
+					if (orig.src === host || orig.dst === host) {
+						var pkts = (parseInt(orig.packets, 10) || 0) + (parseInt(reply.packets, 10) || 0);
+						var bts = (parseInt(orig.bytes, 10) || 0) + (parseInt(reply.bytes, 10) || 0);
+						var isOut = (orig.src === host);
+						var localPort = isOut ? orig.sport : orig.dport;
+						var remoteAddr = isOut ? (orig.dst + ':' + orig.dport) : (orig.src + ':' + orig.sport);
+
+						conns.push({
+							proto: proto,
+							orig_src: isOut ? (host + ':' + localPort) : remoteAddr,
+							orig_dst: isOut ? remoteAddr : (host + ':' + localPort),
+							packets: pkts,
+							bytes: bts
+						});
+					}
+				});
+				return conns;
+			}).catch(function() { return []; }) : Promise.resolve([]);
+
+			return fallbackPromise.then(function(fbSessions) {
+				if (sessions.length === 0 && fbSessions.length > 0) {
+					sessions = fbSessions;
+					totalPackets = 0;
+					totalBytes = 0;
+					sessions.forEach(function(s) {
+						totalPackets += (s.packets || 0);
+						totalBytes += (s.bytes || 0);
+					});
+				}
+
+				sessions.sort(function(a, b) { return (b.bytes || 0) - (a.bytes || 0); });
+
+				var sidMap = {
+					8001: { name: 'HTTP', cls: 'http' },
+					8002: { name: 'HTTPS', cls: 'https' },
+					8003: { name: 'MSTSC', cls: 'ssh' },
+					8004: { name: 'SSH', cls: 'ssh' },
+					8005: { name: 'SCP', cls: 'ssh' },
+					8009: { name: 'NTP', cls: 'dns' },
+					8011: { name: 'DNS', cls: 'dns' },
+					8014: { name: 'QUIC', cls: 'quic' }
+				};
+
+				var sessionRows = sessions.map(function(s) {
+					var isOut = (s.orig_src && s.orig_src.indexOf(host + ':') === 0);
+					var localAddr = isOut ? s.orig_src : (s.new_dst || s.orig_dst || host);
+					var remoteAddr = isOut ? s.orig_dst : s.orig_src;
+					var remotePort = remoteAddr ? (remoteAddr.split(':')[1] || '') : '';
+					var proto = (s.proto || 'UDP').toUpperCase();
+
+					var appTag = null;
+					if (s.sid && sidMap[s.sid]) {
+						appTag = sidMap[s.sid];
+					} else if (remotePort === '443') {
+						appTag = (proto === 'UDP') ? { name: 'QUIC', cls: 'quic' } : { name: 'HTTPS', cls: 'https' };
+					} else if (remotePort === '80' || remotePort === '8080') {
+						appTag = { name: 'HTTP', cls: 'http' };
+					} else if (remotePort === '53' || remotePort === '5353') {
+						appTag = { name: 'DNS', cls: 'dns' };
+					} else if (remotePort === '22') {
+						appTag = { name: 'SSH', cls: 'ssh' };
+					} else if (remotePort === '123') {
+						appTag = { name: 'NTP', cls: 'dns' };
+					} else if (remotePort === '3389') {
+						appTag = { name: 'RDP', cls: 'ssh' };
+					}
+
+					var remoteChildren = [ E('span', { 'class': 'aw-addr-cell' }, remoteAddr || '-') ];
+					if (appTag) {
+						remoteChildren.push(E('span', { 'class': 'aw-app-tag ' + appTag.cls }, appTag.name));
+					}
+
+					var dirBadge = E('span', { 'class': 'aw-direction-badge ' + (isOut ? 'ul' : 'dl') }, [
+						createSpeedtestIcon(isOut ? 'ul' : 'dl', 12),
+						isOut ? _('Outbound') : _('Inbound')
+					]);
+
+					var searchIndex = (proto + ' ' + (isOut ? 'outbound' : 'inbound') + ' ' + localAddr + ' ' + remoteAddr + ' ' + (appTag ? appTag.name : '')).toLowerCase();
+
+					return E('tr', { 'class': 'tr flow-row', 'data-search': searchIndex }, [
+						E('td', { 'class': 'td' }, [
+							E('span', { 'class': 'badge ' + (proto === 'TCP' ? 'badge-info' : 'badge-warning') }, proto)
+						]),
+						E('td', { 'class': 'td' }, [ dirBadge ]),
+						E('td', { 'class': 'td aw-addr-cell' }, localAddr || '-'),
+						E('td', { 'class': 'td' }, remoteChildren),
+						E('td', { 'class': 'td right', 'style': 'font-family: monospace;' }, formatPackets(s.packets || 0)),
+						E('td', { 'class': 'td right', 'style': 'font-family: monospace; font-weight: 600;' }, formatBytes(s.bytes || 0))
+					]);
+				});
+
+				// Top Dashboard KPI Cards
+				var currentDl = (itemStats && itemStats.incoming) ? (itemStats.incoming.rate || 0) : 0;
+				var currentUl = (itemStats && itemStats.outgoing) ? (itemStats.outgoing.rate || 0) : 0;
+				var dlBytes = (itemStats && itemStats.incoming) ? (itemStats.incoming.total_bytes || 0) : 0;
+				var ulBytes = (itemStats && itemStats.outgoing) ? (itemStats.outgoing.total_bytes || 0) : 0;
+
+				var kpiCards = [
+					E('div', { 'class': 'aw-detail-kpi-card target' }, [
+						E('div', { 'class': 'kpi-label' }, [ '🖥️ ', _('Host Device') ]),
+						E('div', { 'class': 'kpi-value', 'title': hostname ? (hostname + ' (' + host + ')') : host }, (hostname || host)),
+						E('div', { 'class': 'kpi-sub', 'title': host }, hostname ? host : (type === 'mac' ? _('MAC Device') : _('IP Host')))
 					]),
-					E('div', { 'style': 'max-height: 400px; overflow-y: auto;' }, [
-						E('table', { 'class': 'table' }, [
-							E('tr', { 'class': 'tr table-titles' }, [
-								E('th', { 'class': 'th' }, _('Protocol')),
-								E('th', { 'class': 'th' }, _('Direction')),
-								E('th', { 'class': 'th' }, _('Local Port')),
-								E('th', { 'class': 'th' }, _('Remote Destination')),
-								E('th', { 'class': 'th right' }, _('Packets')),
-								E('th', { 'class': 'th right' }, _('Bytes'))
-							]),
-							sessionRows.length > 0 ? E([], sessionRows) : E('tr', { 'class': 'tr placeholder' }, [
-								E('td', { 'class': 'td center', 'colspan': 6 }, E('em', {}, _('No active sessions found for this host.')))
-							])
-						])
+					E('div', { 'class': 'aw-detail-kpi-card flows' }, [
+						E('div', { 'class': 'kpi-label' }, [
+							isFallback ? '🔄 ' + _('Active Flows (Conntrack)') : '⚡ ' + _('Active Flows (FastPath)')
+						]),
+						E('div', { 'class': 'kpi-value' }, String(sessions.length)),
+						E('div', { 'class': 'kpi-sub' }, isFallback ? _('Conntrack fallback') : _('eBPF / FastPath'))
+					]),
+					E('div', { 'class': 'aw-detail-kpi-card dl' }, [
+						E('div', { 'class': 'kpi-label' }, [ createSpeedtestIcon('dl', 12), ' ', _('Download Traffic') ]),
+						E('div', { 'class': 'kpi-value' }, formatBytes(dlBytes)),
+						E('div', { 'class': 'kpi-sub' }, currentDl > 0 ? ('⚡ ' + formatSpeed(currentDl)) : '0 B/s')
+					]),
+					E('div', { 'class': 'aw-detail-kpi-card ul' }, [
+						E('div', { 'class': 'kpi-label' }, [ createSpeedtestIcon('ul', 12), ' ', _('Upload Traffic') ]),
+						E('div', { 'class': 'kpi-value' }, formatBytes(ulBytes)),
+						E('div', { 'class': 'kpi-sub' }, currentUl > 0 ? ('⚡ ' + formatSpeed(currentUl)) : '0 B/s')
+					]),
+					E('div', { 'class': 'aw-detail-kpi-card vol' }, [
+						E('div', { 'class': 'kpi-label' }, [ '📊 ', _('Flow Session Total') ]),
+						E('div', { 'class': 'kpi-value' }, formatBytes(totalBytes)),
+						E('div', { 'class': 'kpi-sub' }, formatPackets(totalPackets) + ' ' + _('pkts'))
 					])
-				]),
-				E('div', { 'class': 'right', 'style': 'margin-top: 15px;' }, [
-					E('button', { 'class': 'btn cbi-button-neutral', 'click': ui.hideModal }, _('Close'))
-				])
-			], 'cbi-modal');
+				];
+
+				// Search & Filter Box
+				var searchInput = E('input', {
+					'type': 'text',
+					'placeholder': _('Filter by IP, port, protocol or service...'),
+					'input': function(ev) {
+						var q = ev.target.value.toLowerCase().trim();
+						var vis = 0;
+						var tBody = document.getElementById('modal-session-tbody');
+						if (!tBody) return;
+						tBody.querySelectorAll('tr.flow-row').forEach(function(row) {
+							var hay = row.getAttribute('data-search') || '';
+							if (!q || hay.indexOf(q) !== -1) {
+								row.style.display = '';
+								vis++;
+							} else {
+								row.style.display = 'none';
+							}
+						});
+						var cnt = document.getElementById('modal-flow-count');
+						if (cnt) cnt.textContent = q ? (vis + ' / ' + sessions.length) : String(sessions.length);
+						var emptyRow = document.getElementById('modal-no-match-row');
+						if (emptyRow) emptyRow.style.display = (vis === 0 && sessions.length > 0) ? '' : 'none';
+					}
+				});
+
+				var filterBar = E('div', { 'class': 'aw-detail-filter-bar' }, [
+					E('div', { 'class': 'aw-detail-search-box' }, [
+						E('span', {}, '🔍'),
+						searchInput
+					]),
+					E('div', { 'class': 'aw-detail-status-pill' }, [
+						E('span', {}, _('Flows: ')),
+						E('strong', { 'id': 'modal-flow-count' }, String(sessions.length)),
+						E('span', { 'class': 'badge ' + (isFallback ? 'badge-warning' : 'badge-positive'), 'style': 'margin-left: 8px;' }, isFallback ? 'Conntrack' : 'FastPath')
+					])
+				]);
+
+				var tRows = [
+					E('tr', { 'class': 'tr table-titles' }, [
+						E('th', { 'class': 'th' }, [ E('span', { 'class': 'th-icon' }, '🔌'), ' ', _('Protocol') ]),
+						E('th', { 'class': 'th' }, [ E('span', { 'class': 'th-icon' }, '🔄'), ' ', _('Direction') ]),
+						E('th', { 'class': 'th' }, [ E('span', { 'class': 'th-icon' }, '🖥️'), ' ', _('Client (Local)') ]),
+						E('th', { 'class': 'th' }, [ E('span', { 'class': 'th-icon' }, '🌐'), ' ', _('Destination (Remote)') ]),
+						E('th', { 'class': 'th right' }, [ E('span', { 'class': 'th-icon' }, '📨'), ' ', _('Packets') ]),
+						E('th', { 'class': 'th right' }, [ E('span', { 'class': 'th-icon' }, '📊'), ' ', _('Bytes') ])
+					])
+				];
+
+				if (sessionRows.length > 0) {
+					sessionRows.forEach(function(r) { tRows.push(r); });
+					tRows.push(E('tr', { 'class': 'tr placeholder', 'id': 'modal-no-match-row', 'style': 'display:none;' }, [
+						E('td', { 'class': 'td center', 'colspan': 6 }, E('em', {}, _('No matching connections found for filter.')))
+					]));
+				} else {
+					tRows.push(E('tr', { 'class': 'tr placeholder' }, [
+						E('td', { 'class': 'td center', 'colspan': 6 }, E('em', {}, _('No active sessions found for this host.')))
+					]));
+				}
+
+				var modal = ui.showModal(_('Host Connection Details - %s').format(hostname || host), [
+					E('div', { 'class': 'cbi-section aw-detail-modal-body', 'data-theme': isDarkMode() ? 'dark' : 'light' }, [
+						E('div', { 'class': 'aw-detail-modal-header' }, kpiCards),
+						filterBar,
+						E('div', { 'class': 'aw-detail-table-wrap' }, [
+							E('table', { 'class': 'table', 'id': 'modal-session-tbody' }, tRows)
+						])
+					]),
+					E('div', { 'class': 'right', 'style': 'margin-top: 15px;' }, [
+						E('button', { 'class': 'btn cbi-button-neutral', 'click': ui.hideModal }, _('Close'))
+					])
+				], 'aw-detail-modal');
+
+				if (modal) {
+					modal.setAttribute('data-theme', isDarkMode() ? 'dark' : 'light');
+				}
+			});
 		}, this)).catch(e => {
 			ui.addNotification(null, E('p', _('Error getting session details: ') + e.message));
 		});
@@ -1073,14 +1483,14 @@ return view.extend({
 						E('div', { 'class': 'td aw-modal-value' }, [ inputDom ])
 					]),
 					E('div', { 'class': 'tr' }, [
-						E('div', { 'class': 'td aw-modal-label' }, _('Download Limit')),
+						E('div', { 'class': 'td aw-modal-label' }, [ createSpeedtestIcon('dl', 14), ' ', _('Download Limit') ]),
 						E('div', { 'class': 'td aw-modal-value', style: 'display: flex; align-items: center; gap: 6px;' }, [
 							E('input', { type: 'number', id: 'dl-rate', class: 'cbi-input-number', min: '0', value: dl, style: 'width: 120px;' }),
 							E('span', {}, " Mbps")
 						])
 					]),
 					E('div', { 'class': 'tr' }, [
-						E('div', { 'class': 'td aw-modal-label' }, _('Upload Limit')),
+						E('div', { 'class': 'td aw-modal-label' }, [ createSpeedtestIcon('ul', 14), ' ', _('Upload Limit') ]),
 						E('div', { 'class': 'td aw-modal-value', style: 'display: flex; align-items: center; gap: 6px;' }, [
 							E('input', { type: 'number', id: 'ul-rate', class: 'cbi-input-number', min: '0', value: ul, style: 'width: 120px;' }),
 							E('span', {}, " Mbps")
@@ -1265,28 +1675,63 @@ return view.extend({
 	},
 
 	createAddControls: function(type, placeholder) {
+		const self = this;
+		const inputId = 'control-input-' + type;
+		const datalistId = 'control-datalist-' + type;
+		const selectId = 'control-select-' + type;
+
 		const input = E('input', { 
 			type: 'text', 
+			id: inputId,
+			list: datalistId,
 			class: 'cbi-input-text control-input', 
-			style: (type === 'ipv6') ? 'width:320px' : 'width:180px', 
-			placeholder: _(placeholder) 
+			style: (type === 'ipv6') ? 'width:260px' : 'width:170px', 
+			placeholder: _(placeholder),
+			autocomplete: 'off'
 		});
+
+		const datalist = E('datalist', { id: datalistId });
+
+		const select = E('select', {
+			id: selectId,
+			class: 'cbi-input-select control-lease-select',
+			title: _('Quick select from DHCP leases / known devices')
+		}, [
+			E('option', { value: '' }, _('📋 Select from DHCP...'))
+		]);
+
 		const addBtn = E('button', { 
 			class: 'btn cbi-button cbi-button-add', 
 			disabled: true 
 		}, [
-			E('span', { 'class': 'btn-icon' }, '➕'),
-			E('span', {}, ' ' + _('Add'))
+			createButtonIcon('add', 14),
+			E('span', {}, _('Add'))
 		]);
 		const refreshBtn = E('button', { 
 			class: 'btn cbi-button cbi-button-action', 
 			click: () => this.loadHostSpeedData() 
 		}, [
-			E('span', { 'class': 'btn-icon' }, '🔄'),
-			E('span', {}, ' ' + _('Refresh'))
+			createButtonIcon('refresh', 14),
+			E('span', {}, _('Refresh'))
 		]);
 
 		input.addEventListener('input', () => { addBtn.disabled = (input.value.trim() === ''); });
+		input.addEventListener('keydown', (ev) => {
+			if (ev.key === 'Enter' && !addBtn.disabled) {
+				ev.preventDefault();
+				addBtn.click();
+			}
+		});
+
+		select.addEventListener('change', function() {
+			if (this.value) {
+				input.value = this.value;
+				input.dispatchEvent(new Event('input'));
+				input.focus();
+				this.selectedIndex = 0;
+			}
+		});
+
 		addBtn.addEventListener('click', ui.createHandlerFn(this, async () => {
 			const value = input.value.trim();
 			if (!this.validateData(value, type)) {
@@ -1295,19 +1740,24 @@ return view.extend({
 			try {
 				await fs.exec_direct('/usr/bin/aw-bpfctl', [type, 'add', value]);
 				this.loadHostSpeedData();
-				ui.addNotification(null, E('p',_('Updated successfully!')));
+				ui.addNotification(null, E('p', _('Updated successfully!')));
 				input.value = '';
+				select.selectedIndex = 0;
 				addBtn.disabled = true;
 			} catch (e) {
 				ui.addNotification(null, E('p', _('Error: ') + e.message));
 			}
 		}));
 
+		setTimeout(() => self.updateLeaseSuggestions(type), 0);
+
 		return E('div', { 'class': 'display-controls' }, [
 			E('div', { 'class': 'control-group' }, [
 				E('span', { 'class': 'control-icon' }, '🖥️'),
 				E('label', { 'class': 'control-label' }, _('Add Host:')),
-				input
+				input,
+				datalist,
+				select
 			]),
 			E('div', { 'class': 'control-buttons' }, [
 				addBtn,
@@ -1395,6 +1845,7 @@ return view.extend({
 				resizeListenerAdded = true;
 			}
 
+			this.loadHostNames().then(() => this.loadHostSpeedData());
 			this.pollData();
 		} else {
 			setTimeout(this.initializeUI.bind(this), 50);
@@ -1413,8 +1864,8 @@ return view.extend({
 					E('table', { 'class': 'table', 'id': type + '-speed-data' }, [
 						E('tr', { 'class': 'tr table-titles' }, [
 							E('th', { 'class': 'th left' }, [ E('span', { 'class': 'th-icon' }, '🖥️'), ' ', _('Device & Host') ]),
-							E('th', { 'class': 'th right' }, [ E('span', { 'class': 'th-icon' }, '⬇️'), ' ', _('Download Speed / Limit') ]),
-							E('th', { 'class': 'th right' }, [ E('span', { 'class': 'th-icon' }, '⬆️'), ' ', _('Upload Speed / Limit') ]),
+							E('th', { 'class': 'th right' }, [ createSpeedtestIcon('dl', 14), ' ', _('Download Speed / Limit') ]),
+							E('th', { 'class': 'th right' }, [ createSpeedtestIcon('ul', 14), ' ', _('Upload Speed / Limit') ]),
 							E('th', { 'class': 'th right' }, [ E('span', { 'class': 'th-icon' }, '📊'), ' ', _('Total Traffic (DL / UL)') ]),
 							E('th', { 'class': 'th center' }, [ E('span', { 'class': 'th-icon' }, '⏱️'), ' ', _('Time Schedule') ]),
 							E('th', { 'class': 'th center cbi-section-actions' }, [ E('span', { 'class': 'th-icon' }, '⚙️'), ' ', _('Actions') ])
@@ -1427,18 +1878,18 @@ return view.extend({
 					E('div', { 'class': 'dashboard-container' }, [
 						E('div', { 'class': 'kpi-row' }, [
 							E('div', { 'class': 'kpi-card' }, [ E('big', { id: type + '-host-val' }, '0'), E('span', { 'class': 'kpi-card-label' }, _('Hosts')) ]),
-							E('div', { 'class': 'kpi-card' }, [ E('big', { id: type + '-tx-rate-val' }, '0'), E('span', { 'class': 'kpi-card-label' }, _('Download Speed')) ]),
-							E('div', { 'class': 'kpi-card' }, [ E('big', { id: type + '-rx-rate-val' }, '0'), E('span', { 'class': 'kpi-card-label' }, _('Upload Speed')) ]),
-							E('div', { 'class': 'kpi-card' }, [ E('big', { id: type + '-tx-volume-val' }, '0'), E('span', { 'class': 'kpi-card-label' }, _('Download Total')) ]),
-							E('div', { 'class': 'kpi-card' }, [ E('big', { id: type + '-rx-volume-val' }, '0'), E('span', { 'class': 'kpi-card-label' }, _('Upload Total')) ])
+							E('div', { 'class': 'kpi-card' }, [ E('big', { id: type + '-tx-rate-val' }, '0'), E('span', { 'class': 'kpi-card-label' }, [ createSpeedtestIcon('dl', 12), ' ', _('Download Speed') ]) ]),
+							E('div', { 'class': 'kpi-card' }, [ E('big', { id: type + '-rx-rate-val' }, '0'), E('span', { 'class': 'kpi-card-label' }, [ createSpeedtestIcon('ul', 12), ' ', _('Upload Speed') ]) ]),
+							E('div', { 'class': 'kpi-card' }, [ E('big', { id: type + '-tx-volume-val' }, '0'), E('span', { 'class': 'kpi-card-label' }, [ createSpeedtestIcon('dl', 12), ' ', _('Download Total') ]) ]),
+							E('div', { 'class': 'kpi-card' }, [ E('big', { id: type + '-rx-volume-val' }, '0'), E('span', { 'class': 'kpi-card-label' }, [ createSpeedtestIcon('ul', 12), ' ', _('Upload Total') ]) ])
 						]),
 						E('div', { 'class': 'line-chart-row' }, [
 							E('div', { 'class': 'chart-card' }, [
-								E('h4', [_('Real-time Download Speed')]),
+								E('h4', [ createSpeedtestIcon('dl', 14), ' ', _('Real-time Download Speed') ]),
 								E('div', { id: type + '-download-speed-line-chart', style: 'width: 100%; height: 350px;' })
 							]),
 							E('div', { 'class': 'chart-card' }, [
-								E('h4', [_('Real-time Upload Speed')]),
+								E('h4', [ createSpeedtestIcon('ul', 14), ' ', _('Real-time Upload Speed') ]),
 								E('div', { id: type + '-upload-speed-line-chart', style: 'width: 100%; height: 350px;' })
 							])
 						])
@@ -1447,10 +1898,10 @@ return view.extend({
 				E('div', { 'class': 'cbi-section', 'data-tab': type + '-share', 'data-tab-title': _('Traffic Share') }, [
 					E('div', { 'class': 'dashboard-container' }, [
 						E('div', { 'class': 'chart-grid' }, [
-							E('div', { 'class': 'chart-card' }, [ E('h4', [_('Download Speed / Host')]), E('div', { id: type + '-tx-rate-pie', style: 'width:100%; height:300px;' }) ]),
-							E('div', { 'class': 'chart-card' }, [ E('h4', [_('Upload Speed / Host')]), E('div', { id: type + '-rx-rate-pie', style: 'width:100%; height:300px;' }) ]),
-							E('div', { 'class': 'chart-card' }, [ E('h4', [_('Download Total')]), E('div', { id: type + '-tx-volume-pie', style: 'width:100%; height:300px;' }) ]),
-							E('div', { 'class': 'chart-card' }, [ E('h4', [_('Upload Total')]), E('div', { id: type + '-rx-volume-pie', style: 'width:100%; height:300px;' }) ])
+							E('div', { 'class': 'chart-card' }, [ E('h4', [ createSpeedtestIcon('dl', 14), ' ', _('Download Speed / Host') ]), E('div', { id: type + '-tx-rate-pie', style: 'width:100%; height:300px;' }) ]),
+							E('div', { 'class': 'chart-card' }, [ E('h4', [ createSpeedtestIcon('ul', 14), ' ', _('Upload Speed / Host') ]), E('div', { id: type + '-rx-rate-pie', style: 'width:100%; height:300px;' }) ]),
+							E('div', { 'class': 'chart-card' }, [ E('h4', [ createSpeedtestIcon('dl', 14), ' ', _('Download Total') ]), E('div', { id: type + '-tx-volume-pie', style: 'width:100%; height:300px;' }) ]),
+							E('div', { 'class': 'chart-card' }, [ E('h4', [ createSpeedtestIcon('ul', 14), ' ', _('Upload Total') ]), E('div', { id: type + '-rx-volume-pie', style: 'width:100%; height:300px;' }) ])
 						])
 					])
 				])
@@ -1472,14 +1923,14 @@ return view.extend({
 
 		var miniDashboard = E('div', { 'class': 'aw-mini-dashboard' }, [
 			E('div', { 'class': 'mini-kpi-card dl' }, [
-				E('div', { 'class': 'mini-kpi-icon' }, '⬇️'),
+				E('div', { 'class': 'mini-kpi-icon' }, [ createSpeedtestIcon('dl', 20) ]),
 				E('div', { 'class': 'mini-kpi-content' }, [
 					E('div', { 'class': 'mini-kpi-label' }, _('Total Download')),
 					E('div', { 'class': 'mini-kpi-val', 'id': 'mini-total-dl' }, '0 bps')
 				])
 			]),
 			E('div', { 'class': 'mini-kpi-card ul' }, [
-				E('div', { 'class': 'mini-kpi-icon' }, '⬆️'),
+				E('div', { 'class': 'mini-kpi-icon' }, [ createSpeedtestIcon('ul', 20) ]),
 				E('div', { 'class': 'mini-kpi-content' }, [
 					E('div', { 'class': 'mini-kpi-label' }, _('Total Upload')),
 					E('div', { 'class': 'mini-kpi-val', 'id': 'mini-total-ul' }, '0 bps')
