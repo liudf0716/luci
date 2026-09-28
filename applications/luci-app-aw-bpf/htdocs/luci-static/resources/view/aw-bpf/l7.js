@@ -322,6 +322,40 @@ return view.extend({
 		});
 	},
 
+	handleDelXdnsDomain: function(domain, btn) {
+		var self = this;
+		if (!domain) return;
+		if (!confirm(_('确定将域名「%s」从 xDNS 代理名单中移出？').format(domain)))
+			return;
+
+		btn.disabled = true;
+		var origText = btn.textContent;
+		btn.textContent = _('删除中...');
+
+		fs.exec_direct('/usr/bin/xdns-ctl', ['del-domain', domain]).then(function() {
+			delete self.xdnsDomains[domain.toLowerCase()];
+			if (typeof ui.addTimeLimitedNotification === 'function') {
+				ui.addTimeLimitedNotification(null, E('p', _('域名「%s」已成功从 xDNS 代理名单中移出！').format(domain)), 4000, 'info');
+			} else {
+				var msg = ui.addNotification(null, E('p', _('域名「%s」已成功从 xDNS 代理名单中移出！').format(domain)), 'info');
+				setTimeout(function() {
+					if (msg && msg.parentNode) msg.parentNode.removeChild(msg);
+				}, 4000);
+			}
+			if (lastL7ProtoData) {
+				self.renderL7ProtoData(lastL7ProtoData);
+			}
+		}).catch(function(err) {
+			btn.disabled = false;
+			btn.textContent = origText;
+			if (typeof ui.addTimeLimitedNotification === 'function') {
+				ui.addTimeLimitedNotification(null, E('p', _('移出代理名单失败: %s').format(err.message || err)), 6000, 'error');
+			} else {
+				ui.addNotification(null, E('p', _('移出代理名单失败: %s').format(err.message || err)), 'error');
+			}
+		});
+	},
+
 	showError: function(message) {
 		var errorEl = document.getElementById('l7-error-message');
 		if (errorEl) {
@@ -1403,10 +1437,23 @@ return view.extend({
 					if (self.hasXdns) {
 						var isProxied = self.isDomainProxied(item.domain);
 						if (isProxied) {
-							row.push(E('span', {
-								'class': 'badge success xdns-badge-proxied',
-								'style': 'color: #155724; background-color: #d4edda; border: 1px solid #c3e6cb; font-weight: 600; padding: 3px 10px; border-radius: 4px; font-size: 85%; white-space: nowrap;'
-							}, [ '✔ ', _('已代理') ]));
+							row.push(E('div', {
+								'style': 'display: inline-flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap;'
+							}, [
+								E('span', {
+									'class': 'badge success xdns-badge-proxied',
+									'style': 'color: #155724; background-color: #d4edda; border: 1px solid #c3e6cb; font-weight: 600; padding: 2px 6px; border-radius: 4px; font-size: 80%;'
+								}, [ '✔ ', _('已代理') ]),
+								E('button', {
+									'class': 'btn cbi-button cbi-button-remove',
+									'style': 'padding: 2px 6px; font-size: 80%; line-height: 1.2; border-radius: 3px;',
+									'title': _('从 xDNS 代理名单中移出'),
+									'click': function(ev) {
+										var b = ev.target.closest('button');
+										self.handleDelXdnsDomain(item.domain, b);
+									}
+								}, [ _('移出') ])
+							]));
 						} else {
 							row.push(E('button', {
 								'class': 'btn cbi-button cbi-button-action',
@@ -1720,12 +1767,60 @@ return view.extend({
 						])
 					]),
 					E('div', { 'class': 'cbi-section', 'data-tab': 'l7-domains', 'data-tab-title': _('常用域名') }, [
-						E('p', { 'class': 'cbi-section-descr' }, [
-							_('Frequently accessed domains discovered by xDPI, sorted by access count.'),
-							' ',
-							_('Entries:'),
-							' ',
-							E('strong', { 'id': 'l7-domain-count' }, '0')
+						E('div', {
+							'style': 'display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; margin-bottom: 12px; gap: 10px;'
+						}, [
+							E('p', { 'class': 'cbi-section-descr', 'style': 'margin: 0;' }, [
+								_('Frequently accessed domains discovered by xDPI, sorted by access count.'),
+								' ',
+								_('Entries:'),
+								' ',
+								E('strong', { 'id': 'l7-domain-count' }, '0')
+							]),
+							this.hasXdns ? E('div', {
+								'style': 'display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap;'
+							}, [
+								E('input', {
+									'type': 'text',
+									'id': 'xdns-quick-domain-input',
+									'class': 'cbi-input-text',
+									'placeholder': _('输入新域名 (如 github.com)'),
+									'style': 'width: 220px; font-size: 90%; padding: 4px 8px;'
+								}),
+								E('button', {
+									'class': 'btn cbi-button cbi-button-action',
+									'style': 'font-size: 90%; padding: 4px 10px;',
+									'click': function(ev) {
+										var input = document.getElementById('xdns-quick-domain-input');
+										var domain = input ? input.value.trim() : '';
+										if (!domain) {
+											ui.addNotification(null, E('p', _('请输入有效的域名')), 'warning');
+											return;
+										}
+										var b = ev.target.closest('button');
+										b.disabled = true;
+										fs.exec_direct('/usr/bin/xdns-ctl', ['add-domain', domain]).then(function() {
+											b.disabled = false;
+											if (input) input.value = '';
+											self.xdnsDomains[domain.toLowerCase()] = true;
+											if (typeof ui.addTimeLimitedNotification === 'function') {
+												ui.addTimeLimitedNotification(null, E('p', _('域名「%s」已成功加入 xDNS 代理名单并生效！').format(domain)), 4000, 'info');
+											} else {
+												ui.addNotification(null, E('p', _('域名「%s」已成功加入 xDNS 代理名单并生效！').format(domain)), 'info');
+											}
+											if (lastL7ProtoData) self.renderL7ProtoData(lastL7ProtoData);
+										}).catch(function(err) {
+											b.disabled = false;
+											ui.addNotification(null, E('p', _('添加失败: %s').format(err.message || err)), 'error');
+										});
+									}
+								}, [ createButtonIcon('add', 12), _('添加域名到 xDNS') ]),
+								E('a', {
+									'class': 'btn cbi-button',
+									'href': L.url('admin', 'services', 'xdns'),
+									'style': 'font-size: 90%; padding: 4px 10px;'
+								}, [ '⚙️ ', _('xDNS 管理中心') ])
+							]) : null
 						]),
 						E('table', { 'class': 'table', 'id': 'l7-domain-data' }, [
 							E('tr', { 'class': 'tr table-titles' }, [
