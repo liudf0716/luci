@@ -1,0 +1,21 @@
+{
+	"luci-app-xdns": {
+		"description": "Grant access to LuCI app xdns",
+		"read": {
+			"file": {
+				"/usr/bin/xdns-ctl": [ "exec" ],
+				"/etc/xdns/proxy_domains.txt": [ "read" ]
+			},
+			"ubus": {
+				"service": [ "list" ]
+			},
+			"uci": [ "xdns", "network" ]
+		},
+		"write": {
+			"file": {
+				"/etc/xdns/proxy_domains.txt": [ "write" ]
+			},
+			"uci": [ "xdns" ]
+		}
+	}
+}

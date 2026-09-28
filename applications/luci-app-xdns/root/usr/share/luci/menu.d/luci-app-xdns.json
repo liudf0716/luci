@@ -1,0 +1,13 @@
+{
+	"admin/services/xdns": {
+		"title": "xDNS",
+		"order": 65,
+		"action": {
+			"type": "view",
+			"path": "xdns"
+		},
+		"depends": {
+			"acl": [ "luci-app-xdns" ]
+		}
+	}
+}

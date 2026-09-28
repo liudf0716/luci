@@ -1,0 +1,20 @@
+msgid ""
+msgstr "Content-Type: text/plain; charset=UTF-8\n"
+
+msgid "xDNS 分流"
+msgstr "xDNS 分流"
+
+msgid "xDNS Smart Split Tunneling"
+msgstr "xDNS 智能分流"
+
+msgid "High-performance eBPF-based DNS interception and transparent traffic split tunneling."
+msgstr "基于 eBPF 的高性能 DNS 截获解析与专属流量透明智能分流系统。"
+
+msgid "Status & Statistics"
+msgstr "运行状态与统计"
+
+msgid "Domain Rules Management"
+msgstr "分流域名规则管治"
+
+msgid "General Settings"
+msgstr "基础服务设置"
