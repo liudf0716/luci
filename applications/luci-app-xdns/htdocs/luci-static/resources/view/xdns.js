@@ -150,15 +150,15 @@ return view.extend({
 			'style': 'display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 15px 0 25px 0;'
 		}, [
 			E('div', { 'class': 'cbi-value', 'style': 'background: var(--cbi-section-bg, #f8f9fa); border: 1px solid #ddd; border-radius: 8px; padding: 15px; text-align: center;' }, [
-				E('div', { 'style': 'font-size: 13px; color: #666; margin-bottom: 5px;' }, _('拦截 DNS 查询')),
+				E('div', { 'style': 'font-size: 13px; color: #666; margin-bottom: 5px;' }, _('累计拦截 DNS 查询')),
 				E('div', { 'style': 'font-size: 26px; font-weight: bold; color: #007bff;' }, String(stats.dnsIntercepted))
 			]),
 			E('div', { 'class': 'cbi-value', 'style': 'background: var(--cbi-section-bg, #f8f9fa); border: 1px solid #ddd; border-radius: 8px; padding: 15px; text-align: center;' }, [
-				E('div', { 'style': 'font-size: 13px; color: #666; margin-bottom: 5px;' }, _('命中代理域名')),
+				E('div', { 'style': 'font-size: 13px; color: #666; margin-bottom: 5px;' }, _('累计命中分流域名')),
 				E('div', { 'style': 'font-size: 26px; font-weight: bold; color: #28a745;' }, String(stats.dnsProxied))
 			]),
 			E('div', { 'class': 'cbi-value', 'style': 'background: var(--cbi-section-bg, #f8f9fa); border: 1px solid #ddd; border-radius: 8px; padding: 15px; text-align: center;' }, [
-				E('div', { 'style': 'font-size: 13px; color: #666; margin-bottom: 5px;' }, _('动态学习目标 IP')),
+				E('div', { 'style': 'font-size: 13px; color: #666; margin-bottom: 5px;' }, _('当前活跃目标 IP')),
 				E('div', { 'style': 'font-size: 26px; font-weight: bold; color: #fd7e14;' }, String(ips.length))
 			]),
 			E('div', { 'class': 'cbi-value', 'style': 'background: var(--cbi-section-bg, #f8f9fa); border: 1px solid #ddd; border-radius: 8px; padding: 15px; text-align: center;' }, [
@@ -166,7 +166,7 @@ return view.extend({
 				E('div', { 'style': 'font-size: 26px; font-weight: bold; color: #6f42c1;' }, String(domainsCount))
 			]),
 			E('div', { 'class': 'cbi-value', 'style': 'background: var(--cbi-section-bg, #f8f9fa); border: 1px solid #ddd; border-radius: 8px; padding: 15px; text-align: center;' }, [
-				E('div', { 'style': 'font-size: 13px; color: #666; margin-bottom: 5px;' }, _('代理 TCP 连接数')),
+				E('div', { 'style': 'font-size: 13px; color: #666; margin-bottom: 5px;' }, _('累计代理 TCP 连接')),
 				E('div', { 'style': 'font-size: 26px; font-weight: bold; color: #17a2b8;' }, String(stats.tcpProxied))
 			])
 		]);
@@ -181,7 +181,7 @@ return view.extend({
 
 		if (ips.length === 0) {
 			ipTableRows.push(E('tr', { 'class': 'tr placeholder' }, [
-				E('td', { 'class': 'td', 'colspan': '2' }, E('em', {}, _('当前暂无动态解析的代理目标 IP')))
+				E('td', { 'class': 'td', 'colspan': '2' }, E('em', {}, _('当前暂无活跃的动态目标 IP 缓存（访问分流域名后将自动自学习生成）')))
 			]));
 		} else {
 			ips.forEach(function(item) {
@@ -194,7 +194,7 @@ return view.extend({
 
 		var ipSection = E('div', { 'class': 'cbi-section', 'style': 'margin-top: 25px;' }, [
 			E('div', { 'style': 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;' }, [
-				E('h3', { 'style': 'margin: 0;' }, [ _('⚡ 动态劫持 IP 缓存表 (xdns_ip_set)'), ' (', String(ips.length), ')' ]),
+				E('h3', { 'style': 'margin: 0;' }, [ _('⚡ 动态自学习目标 IP 表 (xdns_ip_set)'), ' (', String(ips.length), ')' ]),
 				E('button', {
 					'class': 'btn cbi-button cbi-button-remove',
 					'click': function(ev) {
@@ -210,7 +210,7 @@ return view.extend({
 					}
 				}, [ '🧹 ', _('一键清空 IP 缓存') ])
 			]),
-			E('p', { 'class': 'cbi-section-descr' }, _('当内网发起针对分流域名的 DNS 查询后，响应的目标 IP 将由 eBPF 内核模块自动学习并注入该哈希表，驱动后续 TCP 连接直通代理隧道。')),
+			E('p', { 'class': 'cbi-section-descr' }, _('内网发起分流域名的 DNS 查询并获得响应后，真实目标 IP 将由 eBPF 自动学习并写入该内核表，并随 DNS TTL 自动老化，驱动后续 TCP 握手直通加速隧道。')),
 			E('table', { 'class': 'table', 'id': 'xdns-ips-table' }, ipTableRows)
 		]);
 
@@ -225,7 +225,7 @@ return view.extend({
 
 		if (sessions.length === 0) {
 			sessionTableRows.push(E('tr', { 'class': 'tr placeholder' }, [
-				E('td', { 'class': 'td', 'colspan': '3' }, E('em', {}, _('当前暂无活跃的透明 TCP 代理会话')))
+				E('td', { 'class': 'td', 'colspan': '3' }, E('em', {}, _('当前暂无活跃的 TCP 并发会话（短连接传输完成后已由内核自动释放）')))
 			]));
 		} else {
 			sessions.forEach(function(s) {
@@ -238,7 +238,8 @@ return view.extend({
 		}
 
 		var sessionSection = E('div', { 'class': 'cbi-section', 'style': 'margin-top: 25px;' }, [
-			E('h3', {}, [ _('🔗 活跃透明 TCP 代理会话'), ' (', String(sessions.length), ')' ]),
+			E('h3', {}, [ _('🔗 当前活跃 TCP 代理会话 (实时并发)'), ' (', String(sessions.length), ')' ]),
+			E('p', { 'class': 'cbi-section-descr' }, _('实时展示此刻正在进行数据传输的并发 TCP 代理连接。连接关闭（FIN/RST）后由内核立即释放销毁；若当前无正在通信的长连接，则显示为 0。')),
 			E('table', { 'class': 'table' }, sessionTableRows)
 		]);
 
@@ -452,13 +453,13 @@ return view.extend({
 
 		// xkcp_dns
 		o = s.option(form.Value, 'xkcp_dns', _('上游加密/防污染 DNS 监听地址'),
-			_('命中代理域名的 DNS 查询将被透明重定向到此地址进行安全解析，如 127.0.0.1:5353 或 192.168.8.1:5353'));
+			_('命中分流域名的 DNS 查询将被 eBPF 透明重定向至此地址进行安全解析（如 xkcptun 的 UDP 监听端口 192.168.8.1:5353）'));
 		o.default = '192.168.8.1:5353';
 		o.rmempty = false;
 
 		// xkcp_tcp
 		o = s.option(form.Value, 'xkcp_tcp', _('透明代理 TCP 重定向目标地址'),
-			_('匹配学习到目标 IP 的业务 TCP 流量将被重定向至此透明代理端口，如 192.168.8.1:12345'));
+			_('匹配自学习目标 IP 的业务 TCP 流量将被 eBPF 透明重定向至此地址（如 xkcptun 的 TCP 监听端口 192.168.8.1:12345）'));
 		o.default = '192.168.8.1:12345';
 		o.rmempty = false;
 
