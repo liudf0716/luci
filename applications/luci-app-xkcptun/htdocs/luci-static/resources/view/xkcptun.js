@@ -303,8 +303,8 @@ return view.extend({
 
 		o = s.taboption('general', form.ListValue, 'proto', _('Tunnel Protocol'),
 			_('Protocol to tunnel: TCP (standard KCP stream) or UDP (direct low-latency datagram forwarding, e.g. for DNS).'));
-		o.value('tcp', 'TCP (TCP-over-KCP)');
-		o.value('udp', 'UDP (Direct UDP Datagram)');
+		o.value('tcp', _('TCP (TCP-over-KCP)'));
+		o.value('udp', _('UDP (Direct UDP Datagram)'));
 		o.default = 'tcp';
 		o.rmempty = false;
 		o.modalonly = true;
