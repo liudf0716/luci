@@ -1489,7 +1489,206 @@ msgstr "出站"
 msgid "Inbound"
 msgstr "入站"
 
+msgid "(Local Router Web / LuCI)"
+msgstr "(路由器本机 Web / LuCI)"
 
+msgid "Active Flows (Conntrack)"
+msgstr "活跃流 (Conntrack)"
 
+msgid "Active Flows (FastPath)"
+msgstr "活跃流 (FastPath)"
 
+msgid "Add Host:"
+msgstr "添加主机:"
 
+msgid "Added"
+msgstr "已添加"
+
+msgid "All Directions"
+msgstr "全部方向"
+
+msgid "Application"
+msgstr "应用"
+
+msgid "Application & SID"
+msgstr "应用与 SID"
+
+msgid "Application Connection Details - %s (SID %d)"
+msgstr "应用连接详情 - %s (SID %d)"
+
+msgid "Cancel"
+msgstr "取消"
+
+msgid "Click to sort by %s"
+msgstr "点击按 %s 排序"
+
+msgid "Client (Local)"
+msgstr "客户端 (本地)"
+
+msgid "Client IP:Port"
+msgstr "客户端 IP:端口"
+
+msgid "Conntrack fallback"
+msgstr "Conntrack 回退"
+
+msgid "Delete"
+msgstr "删除"
+
+msgid "Destination (Remote)"
+msgstr "目标 (远端)"
+
+msgid "Destination IP:Port"
+msgstr "目标 IP:端口"
+
+msgid "Disabled (0)"
+msgstr "已禁用 (0)"
+
+msgid "Domain / L7 Protocol"
+msgstr "域名 / 七层协议"
+
+msgid "Download Traffic"
+msgstr "下行流量"
+
+msgid "Enabled (1)"
+msgstr "已启用 (1)"
+
+msgid "Error getting session details: "
+msgstr "获取会话详情失败: "
+
+msgid "Filter by IP, port or protocol..."
+msgstr "按 IP、端口或协议搜索..."
+
+msgid "Filter by IP, port, protocol or service..."
+msgstr "按 IP、端口、协议或应用搜索..."
+
+msgid "Flow Session Total"
+msgstr "会话总流量"
+
+msgid "Flows: "
+msgstr "流数量: "
+
+msgid "Host"
+msgstr "主机"
+
+msgid "Host Connection Details - %s"
+msgstr "主机连接详情 - %s"
+
+msgid "Host Device"
+msgstr "主机设备"
+
+msgid "Hostname"
+msgstr "主机名"
+
+msgid "IP Host"
+msgstr "IP 主机"
+
+msgid "Inactive"
+msgstr "休眠"
+
+msgid "MAC Device"
+msgstr "MAC 设备"
+
+msgid "No active fastpath connections currently (flows may be idle or closed)."
+msgstr "当前没有活跃的快速转发连接（会话可能已空闲或关闭）。"
+
+msgid "No matching applications found."
+msgstr "未找到符合条件的应用。"
+
+msgid "No matching connections found for filter."
+msgstr "未找到符合条件的连接会话。"
+
+msgid "Quick select from DHCP leases / known devices"
+msgstr "从 DHCP 租约 / 已知设备中快速选择"
+
+msgid "Ready"
+msgstr "就绪"
+
+msgid "Record TCP/UDP session connection events as structured JSON to system log / syslog."
+msgstr "将 TCP/UDP 会话连接事件以结构化 JSON 格式记录到系统日志 (syslog)。"
+
+msgid "Refresh"
+msgstr "刷新"
+
+msgid "Save"
+msgstr "保存"
+
+msgid "Search Domain, Protocol or SID..."
+msgstr "搜索域名、协议或 SID..."
+
+msgid "Show entries:"
+msgstr "显示条数:"
+
+msgid "Upload Traffic"
+msgstr "上行流量"
+
+msgid "View active connections for this application"
+msgstr "查看该应用的活跃连接"
+
+msgid "eBPF / FastPath"
+msgstr "eBPF / 快速转发"
+
+msgid "pkts"
+msgstr "包"
+
+msgid "xDNS 管理中心"
+msgstr "xDNS 管理中心"
+
+msgid "xdns代理"
+msgstr "xdns代理"
+
+msgid "从 xDNS 代理名单中移出"
+msgstr "从 xDNS 代理名单中移出"
+
+msgid "删除中..."
+msgstr "删除中..."
+
+msgid "加入代理"
+msgstr "加入代理"
+
+msgid "加入代理名单失败: %s"
+msgstr "加入代理名单失败: %s"
+
+msgid "域名「%s」已成功从 xDNS 代理名单中移出！"
+msgstr "域名「%s」已成功从 xDNS 代理名单中移出！"
+
+msgid "域名「%s」已成功加入 xDNS 代理名单并生效！"
+msgstr "域名「%s」已成功加入 xDNS 代理名单并生效！"
+
+msgid "域名「%s」已成功加入 xdns-bpf 代理名单并即刻生效！"
+msgstr "域名「%s」已成功加入 xdns-bpf 代理名单并即刻生效！"
+
+msgid "已代理"
+msgstr "已代理"
+
+msgid "添加中..."
+msgstr "添加中..."
+
+msgid "添加域名到 xDNS"
+msgstr "添加域名到 xDNS"
+
+msgid "添加失败: %s"
+msgstr "添加失败: %s"
+
+msgid "确定将域名「%s」从 xDNS 代理名单中移出？"
+msgstr "确定将域名「%s」从 xDNS 代理名单中移出？"
+
+msgid "移出"
+msgstr "移出"
+
+msgid "移出代理名单失败: %s"
+msgstr "移出代理名单失败: %s"
+
+msgid "请输入有效的域名"
+msgstr "请输入有效的域名"
+
+msgid "输入新域名 (如 github.com)"
+msgstr "输入新域名 (如 github.com)"
+
+msgid "📋 No DHCP leases found"
+msgstr "📋 未发现 DHCP 租约"
+
+msgid "📋 Select from DHCP (%d)..."
+msgstr "📋 从 DHCP 租约选择 (%d)..."
+
+msgid "📋 Select from DHCP..."
+msgstr "📋 从 DHCP 租约选择..."

@@ -544,7 +544,14 @@ return view.extend({
 					});
 				}
 
-				sessions.sort(function(a, b) { return (b.bytes || 0) - (a.bytes || 0); });
+				var outCount = 0, inCount = 0;
+				sessions.forEach(function(s) {
+					var isOut = true;
+					if (s.new_dst && (s.new_dst.indexOf('192.168.') === 0 || s.new_dst.indexOf('10.') === 0 || s.new_dst.indexOf('172.') === 0)) {
+						isOut = false;
+					}
+					if (isOut) outCount++; else inCount++;
+				});
 
 				var sessionRows = sessions.map(function(s) {
 					var isOut = true;
@@ -558,6 +565,7 @@ return view.extend({
 					}
 
 					var proto = (s.proto || 'UDP').toUpperCase();
+					var dir = isOut ? 'outbound' : 'inbound';
 					var dirBadge = E('span', { 'class': 'aw-direction-badge ' + (isOut ? 'ul' : 'dl') }, [
 						createSpeedtestIcon(isOut ? 'ul' : 'dl', 12),
 						isOut ? _('Outbound') : _('Inbound')
@@ -565,7 +573,16 @@ return view.extend({
 
 					var searchIndex = (proto + ' ' + (isOut ? 'outbound' : 'inbound') + ' ' + clientAddr + ' ' + remoteAddr).toLowerCase();
 
-					return E('tr', { 'class': 'tr flow-row', 'data-search': searchIndex }, [
+					return E('tr', {
+						'class': 'tr flow-row',
+						'data-search': searchIndex,
+						'data-proto': proto,
+						'data-direction': dir,
+						'data-client': clientAddr,
+						'data-remote': remoteAddr,
+						'data-packets': String(s.packets || 0),
+						'data-bytes': String(s.bytes || 0)
+					}, [
 						E('td', { 'class': 'td' }, [
 							E('span', { 'class': 'badge ' + (proto === 'TCP' ? 'badge-info' : 'badge-warning') }, proto)
 						]),
@@ -613,36 +630,76 @@ return view.extend({
 					])
 				];
 
-				// Search & Filter Box
+				var currentDirFilter = 'all';
+
+				var dirButtons = [
+					E('button', {
+						'type': 'button',
+						'class': 'aw-dir-btn active',
+						'data-dir': 'all',
+						'click': function(ev) { setDirFilter('all', ev.currentTarget); }
+					}, [ _('All Directions'), E('span', { 'class': 'count-badge' }, String(sessions.length)) ]),
+					E('button', {
+						'type': 'button',
+						'class': 'aw-dir-btn',
+						'data-dir': 'outbound',
+						'click': function(ev) { setDirFilter('outbound', ev.currentTarget); }
+					}, [ '⬆️ ' + _('Outbound'), E('span', { 'class': 'count-badge' }, String(outCount)) ]),
+					E('button', {
+						'type': 'button',
+						'class': 'aw-dir-btn',
+						'data-dir': 'inbound',
+						'click': function(ev) { setDirFilter('inbound', ev.currentTarget); }
+					}, [ '⬇️ ' + _('Inbound'), E('span', { 'class': 'count-badge' }, String(inCount)) ])
+				];
+
+				var dirGroup = E('div', { 'class': 'aw-detail-dir-group' }, dirButtons);
+
 				var searchInput = E('input', {
 					'type': 'text',
 					'placeholder': _('Filter by IP, port or protocol...'),
-					'input': function(ev) {
-						var q = ev.target.value.toLowerCase().trim();
-						var vis = 0;
-						var tBody = document.getElementById('modal-l7-session-tbody');
-						if (!tBody) return;
-						tBody.querySelectorAll('tr.flow-row').forEach(function(row) {
-							var hay = row.getAttribute('data-search') || '';
-							if (!q || hay.indexOf(q) !== -1) {
-								row.style.display = '';
-								vis++;
-							} else {
-								row.style.display = 'none';
-							}
-						});
-						var cnt = document.getElementById('modal-l7-flow-count');
-						if (cnt) cnt.textContent = q ? (vis + ' / ' + sessions.length) : String(sessions.length);
-						var emptyRow = document.getElementById('modal-l7-no-match-row');
-						if (emptyRow) emptyRow.style.display = (vis === 0 && sessions.length > 0) ? '' : 'none';
-					}
+					'input': function() { applyFilters(); }
 				});
+
+				function applyFilters() {
+					var q = searchInput.value.toLowerCase().trim();
+					var vis = 0;
+					var tBody = document.getElementById('modal-l7-session-tbody');
+					if (!tBody) return;
+					tBody.querySelectorAll('tr.flow-row').forEach(function(row) {
+						var rowDir = row.getAttribute('data-direction');
+						var dirMatch = (currentDirFilter === 'all' || rowDir === currentDirFilter);
+						var hay = row.getAttribute('data-search') || '';
+						var searchMatch = (!q || hay.indexOf(q) !== -1);
+						if (dirMatch && searchMatch) {
+							row.style.display = '';
+							vis++;
+						} else {
+							row.style.display = 'none';
+						}
+					});
+					var cnt = document.getElementById('modal-l7-flow-count');
+					var baseTotal = (currentDirFilter === 'outbound') ? outCount : ((currentDirFilter === 'inbound') ? inCount : sessions.length);
+					if (cnt) cnt.textContent = (q || currentDirFilter !== 'all') ? (vis + ' / ' + baseTotal) : String(sessions.length);
+					var emptyRow = document.getElementById('modal-l7-no-match-row');
+					if (emptyRow) emptyRow.style.display = (vis === 0 && sessions.length > 0) ? '' : 'none';
+				}
+
+				function setDirFilter(dir, btnEl) {
+					currentDirFilter = dir;
+					dirGroup.querySelectorAll('.aw-dir-btn').forEach(function(btn) {
+						btn.classList.remove('active');
+					});
+					btnEl.classList.add('active');
+					applyFilters();
+				}
 
 				var filterBar = E('div', { 'class': 'aw-detail-filter-bar' }, [
 					E('div', { 'class': 'aw-detail-search-box' }, [
 						E('span', {}, '🔍'),
 						searchInput
 					]),
+					dirGroup,
 					E('div', { 'class': 'aw-detail-status-pill' }, [
 						E('span', {}, _('Flows: ')),
 						E('strong', { 'id': 'modal-l7-flow-count' }, String(sessions.length)),
@@ -650,15 +707,84 @@ return view.extend({
 					])
 				]);
 
+				var currentSort = { colIndex: 5, key: 'bytes', dir: 'desc' };
+
+				var thDefs = [
+					{ label: _('Protocol'), icon: '🔌', key: 'proto', align: 'left', numeric: false },
+					{ label: _('Direction'), icon: '🔄', key: 'direction', align: 'left', numeric: false },
+					{ label: _('Client IP:Port'), icon: '🖥️', key: 'client', align: 'left', numeric: false },
+					{ label: _('Destination IP:Port'), icon: '🌐', key: 'remote', align: 'left', numeric: false },
+					{ label: _('Packets'), icon: '📨', key: 'packets', align: 'right', numeric: true },
+					{ label: _('Bytes'), icon: '📊', key: 'bytes', align: 'right', numeric: true }
+				];
+
+				function doSort(colIndex) {
+					var def = thDefs[colIndex];
+					if (currentSort.colIndex === colIndex) {
+						currentSort.dir = (currentSort.dir === 'asc') ? 'desc' : 'asc';
+					} else {
+						currentSort.colIndex = colIndex;
+						currentSort.key = def.key;
+						currentSort.dir = def.numeric ? 'desc' : 'asc';
+					}
+
+					var tBody = document.getElementById('modal-l7-session-tbody');
+					if (!tBody) return;
+
+					// Update header indicators
+					var ths = tBody.querySelectorAll('th.aw-sortable-th');
+					ths.forEach(function(th, idx) {
+						var iconSpan = th.querySelector('.sort-icon');
+						if (idx === colIndex) {
+							th.classList.add('th-sort-active');
+							if (iconSpan) iconSpan.textContent = (currentSort.dir === 'asc') ? ' ▲' : ' ▼';
+						} else {
+							th.classList.remove('th-sort-active');
+							if (iconSpan) iconSpan.textContent = ' ⇅';
+						}
+					});
+
+					var rows = Array.from(tBody.querySelectorAll('tr.flow-row'));
+					rows.sort(function(a, b) {
+						var valA = a.getAttribute('data-' + def.key) || '';
+						var valB = b.getAttribute('data-' + def.key) || '';
+						if (def.numeric) {
+							var numA = Number(valA) || 0;
+							var numB = Number(valB) || 0;
+							return currentSort.dir === 'asc' ? (numA - numB) : (numB - numA);
+						} else {
+							var cmp = valA.localeCompare(valB);
+							return currentSort.dir === 'asc' ? cmp : -cmp;
+						}
+					});
+
+					var noMatchRow = document.getElementById('modal-l7-no-match-row');
+					rows.forEach(function(row) {
+						tBody.appendChild(row);
+					});
+					if (noMatchRow) {
+						tBody.appendChild(noMatchRow);
+					}
+				}
+
+				var thElements = thDefs.map(function(def, idx) {
+					var isDefault = (idx === currentSort.colIndex);
+					var iconSpan = E('span', { 'class': 'sort-icon' }, isDefault ? (currentSort.dir === 'asc' ? ' ▲' : ' ▼') : ' ⇅');
+					var th = E('th', {
+						'class': 'th aw-sortable-th ' + (def.align === 'right' ? 'right ' : '') + (isDefault ? 'th-sort-active' : ''),
+						'title': _('Click to sort by %s').format(def.label),
+						'click': function() { doSort(idx); }
+					}, [
+						E('span', { 'class': 'th-icon' }, def.icon),
+						' ',
+						def.label,
+						iconSpan
+					]);
+					return th;
+				});
+
 				var tRows = [
-					E('tr', { 'class': 'tr table-titles' }, [
-						E('th', { 'class': 'th' }, [ E('span', { 'class': 'th-icon' }, '🔌'), ' ', _('Protocol') ]),
-						E('th', { 'class': 'th' }, [ E('span', { 'class': 'th-icon' }, '🔄'), ' ', _('Direction') ]),
-						E('th', { 'class': 'th' }, [ E('span', { 'class': 'th-icon' }, '🖥️'), ' ', _('Client IP:Port') ]),
-						E('th', { 'class': 'th' }, [ E('span', { 'class': 'th-icon' }, '🌐'), ' ', _('Destination IP:Port') ]),
-						E('th', { 'class': 'th right' }, [ E('span', { 'class': 'th-icon' }, '📨'), ' ', _('Packets') ]),
-						E('th', { 'class': 'th right' }, [ E('span', { 'class': 'th-icon' }, '📊'), ' ', _('Bytes') ])
-					])
+					E('tr', { 'class': 'tr table-titles' }, thElements)
 				];
 
 				if (sessionRows.length > 0) {
