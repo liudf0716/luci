@@ -1282,12 +1282,13 @@ return view.extend({
 						}
 					});
 
+					var container = tBody.querySelector('tbody') || tBody;
 					var noMatchRow = document.getElementById('modal-no-match-row');
 					rows.forEach(function(row) {
-						tBody.appendChild(row);
+						container.appendChild(row);
 					});
 					if (noMatchRow) {
-						tBody.appendChild(noMatchRow);
+						container.appendChild(noMatchRow);
 					}
 				}
 

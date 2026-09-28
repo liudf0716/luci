@@ -744,7 +744,8 @@ return view.extend({
 						}
 					});
 
-					var rows = Array.from(tBody.querySelectorAll('tr.flow-row'));
+					var container = tBody.querySelector('tbody') || tBody;
+					var rows = Array.from(container.querySelectorAll('tr.flow-row'));
 					rows.sort(function(a, b) {
 						var valA = a.getAttribute('data-' + def.key) || '';
 						var valB = b.getAttribute('data-' + def.key) || '';
@@ -760,10 +761,10 @@ return view.extend({
 
 					var noMatchRow = document.getElementById('modal-l7-no-match-row');
 					rows.forEach(function(row) {
-						tBody.appendChild(row);
+						container.appendChild(row);
 					});
 					if (noMatchRow) {
-						tBody.appendChild(noMatchRow);
+						container.appendChild(noMatchRow);
 					}
 				}
 
@@ -1208,24 +1209,29 @@ return view.extend({
 		return chartRegistry[id];
 	},
 
-	sortTable: function(table, column) {
-		var tbody = table.querySelector('tbody');
-		if (!tbody) return;
+	sortTable: function(table, column, keepDir) {
+		var tbody = table.querySelector('tbody') || table;
 		var rows = Array.from(tbody.querySelectorAll('tr:not(.table-titles):not(.placeholder)'));
-		var reverse = (currentSortInfo.table === table && currentSortInfo.column === column) ? !currentSortInfo.reverse : false;
+		if (rows.length === 0) return;
+
+		var reverse = keepDir ? (currentSortInfo.reverse || false) : ((currentSortInfo.table === table && currentSortInfo.column === column) ? !currentSortInfo.reverse : false);
 
 		table.querySelectorAll('th').forEach(function(th) {
 			th.classList.remove('th-sort-asc', 'th-sort-desc');
 		});
 
-		var th = table.querySelector('th:nth-child(' + (column + 1) + ')');
-		th.classList.add(reverse ? 'th-sort-desc' : 'th-sort-asc');
+		var allTh = table.querySelectorAll('th');
+		var th = allTh[column];
+		if (th)
+			th.classList.add(reverse ? 'th-sort-desc' : 'th-sort-asc');
 
 		rows.sort(function(row1, row2) {
-			var a = row1.cells[column].getAttribute('data-value') || row1.cells[column].textContent;
-			var b = row2.cells[column].getAttribute('data-value') || row2.cells[column].textContent;
+			var cellA = row1.cells[column];
+			var cellB = row2.cells[column];
+			var a = (cellA ? (cellA.getAttribute('data-value') || cellA.textContent) : '').trim();
+			var b = (cellB ? (cellB.getAttribute('data-value') || cellB.textContent) : '').trim();
 
-			if (!isNaN(a) && !isNaN(b)) { a = Number(a); b = Number(b); }
+			if (!isNaN(a) && !isNaN(b) && a !== '' && b !== '') { a = Number(a); b = Number(b); }
 
 			if (a < b) return reverse ? 1 : -1;
 			if (a > b) return reverse ? -1 : 1;
@@ -1236,7 +1242,6 @@ return view.extend({
 		currentSortInfo.column = column;
 		currentSortInfo.reverse = reverse;
 
-		rows.forEach(function(row) { tbody.removeChild(row); });
 		rows.forEach(function(row) { tbody.appendChild(row); });
 	},
 
@@ -1462,6 +1467,10 @@ return view.extend({
 			});
 		});
 
+		if (currentSortInfo.table === table && currentSortInfo.column !== null) {
+			self.sortTable(table, currentSortInfo.column, true);
+		}
+
 		this.pie('sid-tx-rate-pie', txRateData, function(p) { return p.name + ': ' + formatSpeed(p.value) + ' (' + p.percent + '%)'; });
 		this.pie('sid-rx-rate-pie', rxRateData, function(p) { return p.name + ': ' + formatSpeed(p.value) + ' (' + p.percent + '%)'; });
 		this.pie('sid-tx-volume-pie', txVolumeData, function(p) { return p.name + ': ' + formatBytes(p.value) + ' (' + p.percent + '%)'; });
@@ -1513,6 +1522,10 @@ return view.extend({
 					cell.setAttribute('data-value', rows[rowIndex][cellIndex][0]);
 			});
 		});
+
+		if (currentSortInfo.table === table && currentSortInfo.column !== null) {
+			self.sortTable(table, currentSortInfo.column, true);
+		}
 	},
 
 	renderL7ProtoData: function(data) {
@@ -1805,11 +1818,11 @@ return view.extend({
 				self.createFilterBar(),
 				E('table', { 'class': 'table', 'id': 'sid-data' }, [
 					E('tr', { 'class': 'tr table-titles' }, [
-						E('th', { 'class': 'th left' }, [ E('span', { 'class': 'th-icon' }, '🌐'), ' ', _('Application & SID') ]),
-						E('th', { 'class': 'th right' }, [ createSpeedtestIcon('dl', 14), ' ', _('Download Speed / Limit') ]),
-						E('th', { 'class': 'th right' }, [ createSpeedtestIcon('ul', 14), ' ', _('Upload Speed / Limit') ]),
-						E('th', { 'class': 'th right' }, [ E('span', { 'class': 'th-icon' }, '📊'), ' ', _('Total Traffic (DL / UL)') ]),
-						E('th', { 'class': 'th center' }, [ E('span', { 'class': 'th-icon' }, '⏱️'), ' ', _('Time Schedule') ]),
+						E('th', { 'class': 'th left', 'data-sortable-row': 'true' }, [ E('span', { 'class': 'th-icon' }, '🌐'), ' ', _('Application & SID') ]),
+						E('th', { 'class': 'th right', 'data-sortable-row': 'true' }, [ createSpeedtestIcon('dl', 14), ' ', _('Download Speed / Limit') ]),
+						E('th', { 'class': 'th right', 'data-sortable-row': 'true' }, [ createSpeedtestIcon('ul', 14), ' ', _('Upload Speed / Limit') ]),
+						E('th', { 'class': 'th right', 'data-sortable-row': 'true' }, [ E('span', { 'class': 'th-icon' }, '📊'), ' ', _('Total Traffic (DL / UL)') ]),
+						E('th', { 'class': 'th center', 'data-sortable-row': 'true' }, [ E('span', { 'class': 'th-icon' }, '⏱️'), ' ', _('Time Schedule') ]),
 						E('th', { 'class': 'th center cbi-section-actions' }, [ E('span', { 'class': 'th-icon' }, '⚙️'), ' ', _('Actions') ])
 					]),
 					E('tr', { 'class': 'tr placeholder' }, [
@@ -1881,9 +1894,9 @@ return view.extend({
 						]),
 						E('table', { 'class': 'table', 'id': 'l7-protocol-data' }, [
 							E('tr', { 'class': 'tr table-titles' }, [
-								E('th', { 'class': 'th left' }, [ E('span', { 'class': 'th-icon' }, '#️⃣'), ' ', _('ID') ]),
-								E('th', { 'class': 'th left' }, [ E('span', { 'class': 'th-icon' }, '🔌'), ' ', _('Protocol') ]),
-								E('th', { 'class': 'th right' }, [ E('span', { 'class': 'th-icon' }, '🔑'), ' ', _('SID') ])
+								E('th', { 'class': 'th left', 'data-sortable-row': 'true' }, [ E('span', { 'class': 'th-icon' }, '#️⃣'), ' ', _('ID') ]),
+								E('th', { 'class': 'th left', 'data-sortable-row': 'true' }, [ E('span', { 'class': 'th-icon' }, '🔌'), ' ', _('Protocol') ]),
+								E('th', { 'class': 'th right', 'data-sortable-row': 'true' }, [ E('span', { 'class': 'th-icon' }, '🔑'), ' ', _('SID') ])
 							]),
 							E('tr', { 'class': 'tr placeholder' }, [
 								E('td', { 'class': 'td', 'colspan': '3' }, [
@@ -1950,12 +1963,12 @@ return view.extend({
 						]),
 						E('table', { 'class': 'table', 'id': 'l7-domain-data' }, [
 							E('tr', { 'class': 'tr table-titles' }, [
-								E('th', { 'class': 'th left' }, [ E('span', { 'class': 'th-icon' }, '#️⃣'), ' ', _('ID') ]),
-								E('th', { 'class': 'th left' }, [ E('span', { 'class': 'th-icon' }, '🌍'), ' ', _('Domain') ]),
-								E('th', { 'class': 'th right' }, [ E('span', { 'class': 'th-icon' }, '🔑'), ' ', _('SID') ]),
-								E('th', { 'class': 'th right' }, [ E('span', { 'class': 'th-icon' }, '📊'), ' ', _('Access Count') ]),
-								E('th', { 'class': 'th left' }, [ E('span', { 'class': 'th-icon' }, '🕒'), ' ', _('First Seen') ]),
-								E('th', { 'class': 'th left' }, [ E('span', { 'class': 'th-icon' }, '🕒'), ' ', _('Last Access') ]),
+								E('th', { 'class': 'th left', 'data-sortable-row': 'true' }, [ E('span', { 'class': 'th-icon' }, '#️⃣'), ' ', _('ID') ]),
+								E('th', { 'class': 'th left', 'data-sortable-row': 'true' }, [ E('span', { 'class': 'th-icon' }, '🌍'), ' ', _('Domain') ]),
+								E('th', { 'class': 'th right', 'data-sortable-row': 'true' }, [ E('span', { 'class': 'th-icon' }, '🔑'), ' ', _('SID') ]),
+								E('th', { 'class': 'th right', 'data-sortable-row': 'true' }, [ E('span', { 'class': 'th-icon' }, '📊'), ' ', _('Access Count') ]),
+								E('th', { 'class': 'th left', 'data-sortable-row': 'true' }, [ E('span', { 'class': 'th-icon' }, '🕒'), ' ', _('First Seen') ]),
+								E('th', { 'class': 'th left', 'data-sortable-row': 'true' }, [ E('span', { 'class': 'th-icon' }, '🕒'), ' ', _('Last Access') ]),
 								this.hasXdns ? E('th', { 'class': 'th center' }, [ E('span', { 'class': 'th-icon' }, '⚡'), ' ', _('xdns代理') ]) : null
 							].filter(Boolean)),
 							E('tr', { 'class': 'tr placeholder' }, [
