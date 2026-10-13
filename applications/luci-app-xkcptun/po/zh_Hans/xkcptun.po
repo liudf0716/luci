@@ -11,7 +11,7 @@ msgstr ""
 "Plural-Forms: nplurals=1; plural=0;\n"
 
 msgid "xkcptun"
-msgstr "xkcptun"
+msgstr "网络加速"
 
 msgid "xkcptun is a high-performance C implementation of kcptun with dynamic destination multi-tunnel unified daemon architecture."
 msgstr "xkcptun 是采用动态目标多隧道统一守护进程架构的高性能 C 语言版 kcptun 实现。"

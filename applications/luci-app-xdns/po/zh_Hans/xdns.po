@@ -1,8 +1,11 @@
 msgid ""
 msgstr "Content-Type: text/plain; charset=UTF-8\n"
 
+msgid "xDNS"
+msgstr "智能分流"
+
 msgid "xDNS 分流"
-msgstr "xDNS 分流"
+msgstr "智能分流"
 
 msgid "xDNS Smart Split Tunneling"
 msgstr "xDNS 智能分流"
