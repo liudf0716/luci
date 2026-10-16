@@ -459,6 +459,9 @@ return view.extend({
 			}
 			return val;
 		};
+		o.write = function(section_id, formvalue) {
+			return uci.set('xkcptun', section_id, 'proxy_type', formvalue || 'redir');
+		};
 
 		// --- Modal Option: Proxy Type for UDP (Port Forward only) ---
 		o = s.taboption('general', form.ListValue, '_proxy_type_udp', _('Proxy Type'),
