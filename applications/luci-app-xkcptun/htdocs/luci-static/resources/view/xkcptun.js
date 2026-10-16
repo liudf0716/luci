@@ -357,6 +357,13 @@ return view.extend({
 		s.nodescriptions = true;
 		s.addbtntitle = _('Add Client Tunnel');
 
+		s.create = function(section_id) {
+			let res = form.GridSection.prototype.create.apply(this, [section_id]);
+			uci.set('xkcptun', section_id, 'proto', 'tcp');
+			uci.set('xkcptun', section_id, 'proxy_type', 'redir');
+			return res;
+		};
+
 		s.tab('general', _('General Settings'));
 
 		// --- Table Overview Columns (modalonly = false) ---
@@ -368,21 +375,15 @@ return view.extend({
 		o.editable = true;
 		o.modalonly = false;
 
-		o = s.option(form.ListValue, 'proxy_type', _('Proxy Type'));
-		o.value('redir', _('Transparent Proxy (redir)'));
-		o.value('forward', _('Port Forward'));
-		o.value('socks5', _('SOCKS5'));
+		o = s.option(form.DummyValue, '_proxy_type', _('Proxy Type'));
 		o.modalonly = false;
-		o.rmempty = false;
-		o.cfgvalue = function(section_id) {
+		o.textvalue = function(section_id) {
 			let proto = uci.get('xkcptun', section_id, 'proto') || 'tcp';
-			if (proto === 'udp') return 'forward';
-			let val = uci.get('xkcptun', section_id, 'proxy_type');
-			if (!val) {
-				let target = uci.get('xkcptun', section_id, 'target_addr') || uci.get('xkcptun', section_id, 'target_port');
-				return target ? 'forward' : 'redir';
-			}
-			return val;
+			if (proto === 'udp') return _('Port Forward');
+			let val = uci.get('xkcptun', section_id, 'proxy_type') || 'redir';
+			if (val === 'redir') return _('Transparent Proxy (redir)');
+			if (val === 'socks5') return _('SOCKS5');
+			return _('Port Forward');
 		};
 
 		o = s.option(form.ListValue, 'proto', _('Protocol'));
