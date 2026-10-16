@@ -35,7 +35,7 @@ msgid "Server Daemon"
 msgstr "服务端守护进程"
 
 msgid "Client Global Settings"
-msgstr "客户端全局默认设置"
+msgstr "客户端全局配置"
 
 msgid "Common connection parameters and KCP profile inherited by all client tunnels."
 msgstr "所有客户端隧道共享继承的公共连接参数及 KCP 性能配置。"
@@ -47,7 +47,7 @@ msgid "Default Server Port"
 msgstr "默认服务器端口"
 
 msgid "Client Tunnels"
-msgstr "客户端隧道"
+msgstr "客户端隧道配置"
 
 msgid "Configure local client listening ports and dynamic backend target ports. All tunnels share the single unified client daemon."
 msgstr "配置客户端本地监听端口与远端动态后端目标端口。所有隧道共享单一统一守护进程。"
@@ -426,4 +426,112 @@ msgstr "UDP 套接字接收与发送缓冲区大小，单位字节。默认为 1
 
 msgid "Unified xkcptun server dynamic gateway. The server listens on a single UDP port and dynamically routes each client tunnel to its requested backend target."
 msgstr "统一 xkcptun 服务端动态网关。服务端在单个 UDP 端口上监听，并动态将每个客户端隧道路由到其请求的后端目标。"
+
+msgid "Proxy Type"
+msgstr "代理类型"
+
+msgid "Transparent Proxy (redir)"
+msgstr "透明代理 (redir)"
+
+msgid "Port Forward"
+msgstr "端口转发"
+
+msgid "SOCKS5"
+msgstr "SOCKS5 代理"
+
+msgid "(Dynamic/Auto)"
+msgstr "(动态识别/自动)"
+
+msgid "Configure local client listening ports and proxy modes. Transparent proxy (redir) handles smart split-routing automatically."
+msgstr "配置客户端本地监听端口和代理模式。透明代理 (redir) 会自动配合智能分流进行流量转发。"
+
+msgid "Proxy mode: Transparent Proxy (redir) automatically routes traffic from iptables/nftables; Port Forward forwards local port to fixed server port; SOCKS5 provides local SOCKS5 proxy."
+msgstr "代理模式：透明代理 (redir) 自动处理来自 iptables/nftables 智能分流的流量；端口转发将本地端口转至固定服务器端口；SOCKS5 提供本地 SOCKS5 代理。"
+
+msgid "Protocol to tunnel: TCP (accelerated KCP stream) or UDP (low-latency datagram forwarding, e.g. DNS)."
+msgstr "加速协议：TCP（高速 KCP 流式加速）或 UDP（低延迟直发数据报文，如 DNS）。"
+
+msgid "Local Listen Port"
+msgstr "本地监听端口"
+
+msgid "Local port on router to listen for traffic (e.g. 12345 for redir, 5353 for DNS)."
+msgstr "路由器上监听流量的本地端口（例如 redir 透明代理使用 12345，DNS 加速使用 5353）。"
+
+msgid "Target Host (Port Forward only)"
+msgstr "目标主机（仅限端口转发）"
+
+msgid "Destination host on the server side (default: 127.0.0.1). Leave empty for Transparent Proxy."
+msgstr "远端服务器侧的目标主机（默认：127.0.0.1）。透明代理模式下留空。"
+
+msgid "Target Port (Port Forward only)"
+msgstr "目标端口（仅限端口转发）"
+
+msgid "Destination port on the server side. Leave empty for Transparent Proxy."
+msgstr "远端服务器侧的目标端口。透明代理模式下留空。"
+
+msgid "Pre-shared key for authentication. Must match the server."
+msgstr "预共享身份验证密钥。必须与服务器一致。"
+
+msgid "Server Deployment AI Prompt"
+msgstr "服务端 AI 部署指令（Prompt）"
+
+msgid "Chawrt only functions as the client. Copy this prompt directly to an AI assistant to automatically build and deploy the xkcptun dynamic gateway on your remote VPS."
+msgstr "Chawrt 仅作为加速客户端运行。复制此指令直接发送给 AI 助手（Claude/ChatGPT/DeepSeek 等），即可在远端 Linux VPS 上自动编译并运行 xkcptun 动态加速网关。"
+
+msgid "📋 Copy Prompt for AI Deployment"
+msgstr "📋 一键复制 AI 部署指令"
+
+msgid "Copied to Clipboard!"
+msgstr "已成功复制到剪贴板！"
+
+msgid "Server deployment prompt copied to clipboard!"
+msgstr "服务端部署指令已成功复制到剪贴板！"
+
+msgid "Paste this prompt to AI (Claude/ChatGPT/DeepSeek) on your VPS terminal."
+msgstr "在远端 VPS 或 AI 终端中粘贴此指令，让 AI 自主完成编译部署。"
+
+msgid "Server AI Deployment"
+msgstr "服务端 AI 部署指令"
+
+msgid "Server Configuration"
+msgstr "服务端配置"
+
+msgid "Service Status"
+msgstr "服务运行状态"
+
+msgid "Dynamic / Smart Route"
+msgstr "动态智能分流"
+
+msgid "Target / Destination"
+msgstr "目标后端"
+
+msgid "Enable or disable this client tunnel."
+msgstr "启用或禁用此客户端隧道。"
+
+msgid "Local network interface to listen on (default: any)."
+msgstr "本地监听的网络接口（默认：any 全部网络接口）。"
+
+msgid "Port Forward (UDP only)"
+msgstr "端口转发 (仅支持 UDP)"
+
+msgid "UDP protocol in xkcptun only supports fixed-destination Port Forwarding (e.g. DNS tunnel)."
+msgstr "xkcptun 的 UDP 协议仅支持固定目标的端口转发模式（如 DNS 隧道加速）。"
+
+msgid "Descriptive name for this tunnel (e.g. redir_tunnel, dns_tunnel)."
+msgstr "此隧道的可选描述名称（例如 redir_tunnel、dns_tunnel）。"
+
+msgid "Protocol to tunnel: TCP (supports Transparent Proxy, Port Forward, SOCKS5) or UDP (Port Forward only, e.g. DNS)."
+msgstr "隧道传输协议：TCP（支持透明代理、端口转发、SOCKS5）或 UDP（仅支持端口转发，如 DNS 加速）。"
+
+msgid "Proxy mode: Transparent Proxy (redir) automatically routes traffic from iptables/nftables/eBPF; Port Forward forwards local port to fixed server port; SOCKS5 provides local SOCKS5 proxy."
+msgstr "代理类型：透明代理（redir）通过 iptables/nftables/eBPF 自动分流；端口转发将本地端口直接映射到远端固定服务；SOCKS5 提供标准本地 SOCKS5 代理。"
+
+msgid "Receive window size (number of packets). Default is 4096."
+msgstr "接收窗口大小（数据包数量）。默认值为 4096。"
+
+msgid "Send window size (number of packets). Default is 4096."
+msgstr "发送窗口大小（数据包数量）。默认值为 4096。"
+
+msgid "SOCKS5 Proxy"
+msgstr "SOCKS5 代理"
 
