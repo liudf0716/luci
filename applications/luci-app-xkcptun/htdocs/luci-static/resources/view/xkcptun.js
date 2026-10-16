@@ -357,11 +357,15 @@ return view.extend({
 		s.nodescriptions = true;
 		s.addbtntitle = _('Add Client Tunnel');
 
-		s.create = function(section_id) {
-			let res = form.GridSection.prototype.create.apply(this, [section_id]);
-			uci.set('xkcptun', section_id, 'proto', 'tcp');
-			uci.set('xkcptun', section_id, 'proxy_type', 'redir');
-			return res;
+		s.handleAdd = function(ev, name) {
+			let config_name = this.uciconfig || this.map.config;
+			let section_id = this.map.data.add(config_name, this.sectiontype, name);
+			this.map.data.set(config_name, section_id, 'proto', 'tcp');
+			this.map.data.set(config_name, section_id, 'proxy_type', 'redir');
+			let mapNode = this.getPreviousModalMap();
+			let prevMap = mapNode ? dom.findClassInstance(mapNode) : this.map;
+			prevMap.addedSection = section_id;
+			return this.renderMoreOptionsModal(section_id);
 		};
 
 		s.tab('general', _('General Settings'));
@@ -440,6 +444,7 @@ return view.extend({
 		o.value('udp', 'UDP');
 		o.default = 'tcp';
 		o.rmempty = false;
+		o.forcewrite = true;
 		o.modalonly = true;
 
 		// --- Modal Option: Proxy Type for TCP (3 modes available) ---
@@ -451,15 +456,8 @@ return view.extend({
 		o.value('socks5', _('SOCKS5'));
 		o.default = 'redir';
 		o.rmempty = false;
+		o.forcewrite = true;
 		o.modalonly = true;
-		o.cfgvalue = function(section_id) {
-			let val = uci.get('xkcptun', section_id, 'proxy_type');
-			if (!val) {
-				let target = uci.get('xkcptun', section_id, 'target_addr') || uci.get('xkcptun', section_id, 'target_port');
-				return target ? 'forward' : 'redir';
-			}
-			return val;
-		};
 		o.write = function(section_id, formvalue) {
 			return uci.set('xkcptun', section_id, 'proxy_type', formvalue || 'redir');
 		};
@@ -470,10 +468,9 @@ return view.extend({
 		o.depends('proto', 'udp');
 		o.value('forward', _('Port Forward (UDP only)'));
 		o.default = 'forward';
+		o.rmempty = false;
+		o.forcewrite = true;
 		o.modalonly = true;
-		o.cfgvalue = function(section_id) {
-			return 'forward';
-		};
 		o.write = function(section_id, formvalue) {
 			return uci.set('xkcptun', section_id, 'proxy_type', 'forward');
 		};
