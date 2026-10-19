@@ -1,18 +1,51 @@
 {
     "luci-app-clawwrt": {
-        "description": "Grant access to LuCI app ClawWRT",
+        "description": "Grant access to LuCI app ClawWRT Copilot",
         "read": {
             "ubus": {
-                "service": [ "list" ],
-                "luci.clawwrt": [ "get_status", "get_wan_mac" ]
+                "service": [
+                    "list"
+                ],
+                "luci.clawwrt": [
+                    "*"
+                ]
             },
             "file": {
-                "/etc/init.d/clawwrt": [ "exec" ]
+                "/etc/init.d/*": [
+                    "exec"
+                ],
+                "/usr/bin/aw-bpfctl": [
+                    "exec"
+                ]
             },
-            "uci": [ "clawwrt" ]
+            "uci": [
+                "clawwrt",
+                "xkcptun",
+                "xfrpc",
+                "xdns",
+                "network",
+                "firewall",
+                "wireless",
+                "dhcp",
+                "wifidogx",
+                "ipsec",
+                "aw-bpf"
+            ]
         },
         "write": {
-            "uci": [ "clawwrt" ]
+            "uci": [
+                "clawwrt",
+                "xkcptun",
+                "xfrpc",
+                "xdns",
+                "network",
+                "firewall",
+                "wireless",
+                "dhcp",
+                "wifidogx",
+                "ipsec",
+                "aw-bpf"
+            ]
         }
     }
 }

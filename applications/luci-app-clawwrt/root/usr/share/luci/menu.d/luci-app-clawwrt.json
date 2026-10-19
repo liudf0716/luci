@@ -1,13 +1,15 @@
 {
     "admin/clawwrt": {
-        "title": "ClawWRT",
+        "title": "小茶助手",
         "order": 1,
         "action": {
             "type": "view",
             "path": "clawwrt"
         },
         "depends": {
-            "acl": [ "luci-app-clawwrt" ]
+            "acl": [
+                "luci-app-clawwrt"
+            ]
         }
     }
 }

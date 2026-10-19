@@ -9,18 +9,154 @@ case "$1" in
         json_close_object
         json_add_object "get_wan_mac"
         json_close_object
+        json_add_object "get_router_summary"
+        json_close_object
+        json_add_object "list_clients"
+        json_close_object
+        json_add_object "get_services_status"
+        json_close_object
+        json_add_object "run_diagnostics"
+            json_add_string "action"
+            json_add_string "target"
+        json_close_object
+        json_add_object "uci_read"
+            json_add_string "package"
+        json_close_object
+        json_add_object "uci_apply"
+            json_add_string "package"
+            json_add_string "section"
+            json_add_string "option"
+            json_add_string "value"
+            json_add_string "reload_service"
+        json_close_object
+        json_add_object "get_ai_settings"
+        json_close_object
+        json_add_object "save_ai_settings"
+            json_add_string "api_key"
+            json_add_string "model"
+            json_add_string "api_url"
+            json_add_string "temperature"
+        json_close_object
+                                json_add_object "get_qos_status"
+        json_close_object
+        json_add_object "set_qos_limit"
+            json_add_string "target"
+            json_add_int "dl_mbps"
+            json_add_int "ul_mbps"
+            json_add_string "weekdays"
+            json_add_string "timestart"
+            json_add_string "timestop"
+        json_close_object
+        json_add_object "get_l7_top"
+        json_close_object
+        json_add_object "get_service_detail"
+            json_add_string "service"
+        json_close_object
+        json_add_object "set_service_detail"
+            json_add_string "service"
+            json_add_string "enabled"
+            json_add_string "server_addr"
+            json_add_string "server_port"
+            json_add_string "key"
+            json_add_string "token"
+            json_add_string "mode"
+            json_add_string "gateway"
+            json_add_string "disable_portal_auth"
+            json_add_string "wired_passed"
+            json_add_string "auth_server_mode"
+            json_add_string "fec"
+            json_add_string "sndwnd"
+            json_add_string "rcvwnd"
+            json_add_string "datashard"
+            json_add_string "parityshard"
+            json_add_string "xkcp_dns"
+            json_add_string "xkcp_tcp"
+            json_add_string "ifname"
+        json_close_object
+        json_add_object "get_wifi_info"
+        json_close_object
+        json_add_object "set_wifi_config"
+            json_add_string "band"
+            json_add_string "ssid"
+            json_add_string "key"
+            json_add_string "enabled"
+        json_close_object
+        json_add_object "call_deepseek"
+            json_add_string "messages_json"
+            json_add_string "tools_json"
+        json_close_object
+        json_add_object "get_hw_offload_status"
+        json_close_object
+        json_add_object "set_hw_offload"
+            json_add_string "enabled"
+            json_add_string "mode"
+        json_close_object
+        json_add_object "get_router_ssh_key"
+        json_close_object
+        json_add_object "test_vps_ssh"
+            json_add_string "vps_ip"
+            json_add_string "vps_port"
+            json_add_string "vps_user"
+        json_close_object
+        json_add_object "deploy_vps_frps"
+            json_add_string "vps_ip"
+            json_add_string "vps_port"
+            json_add_string "vps_user"
+            json_add_string "bind_port"
+            json_add_string "token"
+            json_add_string "remote_web_port"
+        json_close_object
+        json_add_object "get_penetration_status"
+        json_close_object
+        json_add_object "manage_xdns_domain"
+            json_add_string "action"
+            json_add_string "domain"
+        json_close_object
+        json_add_object "manage_portal_access"
+            json_add_string "action"
+            json_add_string "mac"
+            json_add_string "domain"
+            json_add_string "target"
+            json_add_string "feature"
+            json_add_string "value"
+        json_close_object
+        json_add_object "manage_portal_whitelist"
+            json_add_string "action"
+            json_add_string "mac"
+        json_close_object
+        json_add_object "manage_penetration_proxy"
+            json_add_string "action"
+            json_add_string "rule_name"
+            json_add_string "proxy_type"
+            json_add_string "local_ip"
+            json_add_string "local_port"
+            json_add_string "remote_port"
+            json_add_string "subdomain"
+            json_add_string "custom_domains"
+            json_add_string "use_encryption"
+            json_add_string "use_compression"
+        json_close_object
+        json_add_object "manage_xkcptun_tunnel"
+            json_add_string "action"
+            json_add_string "tunnel_name"
+            json_add_string "proto"
+            json_add_string "proxy_type"
+            json_add_string "local_port"
+            json_add_string "local_interface"
+            json_add_string "target_addr"
+            json_add_string "target_port"
+            json_add_string "enabled"
+        json_close_object
         json_dump
         ;;
     call)
         get_status() {
             local running=0
             local pid=""
-            
             if pidof clawwrt >/dev/null 2>&1; then
                 running=1
                 pid=$(pidof clawwrt)
             fi
-            
             json_init
             json_add_object "result"
             json_add_boolean "running" "$running"
@@ -32,12 +168,10 @@ case "$1" in
         get_wan_mac() {
             local wan_device=$(uci get network.wan.device 2>/dev/null)
             [ -z "$wan_device" ] && wan_device=$(uci get network.wan.ifname 2>/dev/null)
-            
             if [ -z "$wan_device" ]; then
                 wan_device=$(ubus call network.interface.wan status 2>/dev/null | jsonfilter -e '@.l3_device' 2>/dev/null)
                 [ -z "$wan_device" ] && wan_device=$(ubus call network.interface.wan status 2>/dev/null | jsonfilter -e '@.device' 2>/dev/null)
             fi
-            
             [ -z "$wan_device" ] && wan_device=$(ip route | grep default | awk '{print $5}' | head -n1)
             
             if [ -n "$wan_device" ] && [ -e "/sys/class/net/$wan_device" ]; then
@@ -62,9 +196,2829 @@ case "$1" in
             json_dump
         }
 
+        get_router_summary() {
+            local hostname=$(cat /proc/sys/kernel/hostname 2>/dev/null)
+            local uptime_sec=$(cut -d. -f1 /proc/uptime 2>/dev/null)
+            local mem_total=$(awk '/MemTotal/ {print $2}' /proc/meminfo 2>/dev/null)
+            local mem_free=$(awk '/MemAvailable/ {print $2}' /proc/meminfo 2>/dev/null)
+            local cpu_load=$(cut -d' ' -f1-3 /proc/loadavg 2>/dev/null)
+            local board_model=$(cat /tmp/sysinfo/model 2>/dev/null || cat /proc/cpuinfo | grep 'model name' | head -n1 | cut -d: -f2 | xargs)
+            local kernel_ver=$(uname -r 2>/dev/null)
+            local wan_ip=$(ubus call network.interface.wan status 2>/dev/null | jsonfilter -e '@["ipv4-address"][0].address' 2>/dev/null)
+            local lan_ip=$(uci get network.lan.ipaddr 2>/dev/null || echo "192.168.8.1")
+            
+            # Real-time Internet Connectivity Probe
+            local online=0
+            local latency=""
+            local dns_ok=0
+            local ping_out=$(ping -c 1 -W 1 223.5.5.5 2>/dev/null)
+            if [ $? -eq 0 ]; then
+                online=1
+                latency=$(echo "$ping_out" | awk -F'/' 'END {print $5}')
+            else
+                ping_out=$(ping -c 1 -W 1 119.29.29.29 2>/dev/null)
+                if [ $? -eq 0 ]; then
+                    online=1
+                    latency=$(echo "$ping_out" | awk -F'/' 'END {print $5}')
+                fi
+            fi
+            
+            if nslookup baidu.com 127.0.0.1 >/dev/null 2>&1 || nslookup baidu.com >/dev/null 2>&1; then
+                dns_ok=1
+            fi
+            
+            local client_count=0
+            [ -f /tmp/dhcp.leases ] && client_count=$(wc -l < /tmp/dhcp.leases)
+
+            local hw_offload=$(uci -q get firewall.@defaults[0].flow_offloading_hw || echo "0")
+            local sw_offload=$(uci -q get firewall.@defaults[0].flow_offloading || echo "0")
+            local hw_accel=0
+            [ "$sw_offload" = "1" ] && [ "$hw_offload" = "1" ] && hw_accel=1
+            
+            json_init
+            json_add_object "result"
+            json_add_string "hostname" "$hostname"
+            json_add_int "uptime_seconds" "${uptime_sec:-0}"
+            json_add_int "mem_total_kb" "${mem_total:-0}"
+            json_add_int "mem_free_kb" "${mem_free:-0}"
+            json_add_string "cpu_load" "$cpu_load"
+            json_add_string "board_model" "$board_model"
+            json_add_string "kernel_version" "$kernel_ver"
+            json_add_string "wan_ip" "${wan_ip:-Disconnected}"
+            json_add_string "lan_ip" "$lan_ip"
+            json_add_boolean "online" "$online"
+            json_add_boolean "dns_ok" "$dns_ok"
+            json_add_string "latency" "$latency"
+            json_add_int "client_count" "${client_count:-0}"
+            json_add_boolean "hw_accel" "$hw_accel"
+            json_close_object
+            json_dump
+        }
+
+        list_clients() {
+            json_init
+            json_add_object "result"
+            json_add_array "clients"
+            
+            if [ -f /tmp/dhcp.leases ]; then
+                while read -r ts mac ip name client_id; do
+                    [ -z "$ip" ] && continue
+                    json_add_object
+                    json_add_string "ip" "$ip"
+                    json_add_string "mac" "$mac"
+                    json_add_string "hostname" "${name:-unknown}"
+                    json_add_int "expires_at" "$ts"
+                    json_close_object
+                done < /tmp/dhcp.leases
+            fi
+            
+            json_close_array
+            json_close_object
+            json_dump
+        }
+
+        get_services_status() {
+            local wifidogx_run=0
+            local wifidogx_cloud=0
+            local xkcptun_run=0
+            local xkcptun_conns=0
+            local xfrpc_run=0
+            local xfrpc_connected=0
+            local xdns_run=0
+            local xdns_bpf=0
+            local xdns_tcp_proxied=0
+            local firewall_run=0
+
+            # 1. wifidogx (Captive Portal)
+            if pidof wifidogx >/dev/null 2>&1; then
+                wifidogx_run=1
+                local wd_json=$(/usr/bin/wdctlx status wifidogx 2>/dev/null)
+                if [ -n "$wd_json" ]; then
+                    local is_ws=$(echo "$wd_json" | jsonfilter -e '@.is_websocket_connected' 2>/dev/null)
+                    [ "$is_ws" = "1" ] && wifidogx_cloud=1
+                elif /etc/init.d/wifidogx status 2>/dev/null | grep -A 6 "WebSocket Server:" | grep -qi "Connected: yes"; then
+                    wifidogx_cloud=1
+                fi
+            fi
+
+            # 2. xkcptun (Network Acceleration)
+            /etc/init.d/xkcptun status 2>/dev/null | grep -E -q "running|active" && xkcptun_run=1
+            if [ "$xkcptun_run" -eq 1 ]; then
+                local mon_raw=$(wget -qO- -T 1 http://127.0.0.1:9086 2>/dev/null)
+                if [ -n "$mon_raw" ]; then
+                    xkcptun_conns=$(echo "$mon_raw" | grep "redir_tunnel" | sed -n 's/.*conns: \([0-9]*\).*/\1/p')
+                fi
+                local redir_port=$(uci -q get xkcptun.redir_tunnel.local_port || echo 12345)
+                local est_conns=$(netstat -nt 2>/dev/null | grep ":${redir_port} " | grep -c "ESTABLISHED" || echo 0)
+                [ "${est_conns:-0}" -gt "${xkcptun_conns:-0}" ] && xkcptun_conns="$est_conns"
+            fi
+
+            # 3. xfrpc (Intranet Penetration)
+            /etc/init.d/xfrpc status 2>/dev/null | grep -E -q "running|active" && xfrpc_run=1
+            if [ "$xfrpc_run" -eq 1 ]; then
+                netstat -ntp 2>/dev/null | grep "[0-9]*/xfrpc" | grep -q "ESTABLISHED" && xfrpc_connected=1
+            fi
+
+            # 4. xdns (Smart Traffic Diversion & eBPF DNS interception)
+            if tc filter show dev br-lan ingress 2>/dev/null | grep -q "xdns_bpf"; then
+                xdns_bpf=1
+                xdns_run=1
+            elif /etc/init.d/xdns status 2>/dev/null | grep -E -q "running|active"; then
+                xdns_run=1
+            fi
+            if command -v /usr/bin/xdns-ctl >/dev/null 2>&1; then
+                xdns_tcp_proxied=$(/usr/bin/xdns-ctl stats 2>/dev/null | grep "TCP Connections Proxied" | awk '{print $NF}')
+            fi
+
+            # 5. firewall (Linux nftables fw4)
+            if /etc/init.d/firewall status 2>/dev/null | grep -E -q "running|active" || \
+               nft list table inet fw4 >/dev/null 2>&1; then
+                firewall_run=1
+            fi
+
+            json_init
+            json_add_object "result"
+            json_add_boolean "wifidogx" "$wifidogx_run"
+            json_add_boolean "wifidogx_cloud_connected" "$wifidogx_cloud"
+            json_add_boolean "xkcptun" "$xkcptun_run"
+            json_add_int "xkcptun_active_connections" "${xkcptun_conns:-0}"
+            json_add_boolean "xfrpc" "$xfrpc_run"
+            json_add_boolean "xfrpc_connected" "$xfrpc_connected"
+            json_add_boolean "xdns" "$xdns_run"
+            json_add_boolean "xdns_bpf_attached" "$xdns_bpf"
+            json_add_int "xdns_proxied_connections" "${xdns_tcp_proxied:-0}"
+            json_add_boolean "firewall" "$firewall_run"
+            json_close_object
+            json_dump
+        }
+
+        run_diagnostics() {
+            read -r input
+            json_load "$input"
+            json_get_var action "action"
+            json_get_var target "target"
+            
+            local out=""
+            case "$action" in
+                ping)
+                    [ -z "$target" ] && target="223.5.5.5"
+                    out=$(ping -c 3 -W 2 "$target" 2>&1)
+                    ;;
+                nslookup)
+                    [ -z "$target" ] && target="github.com"
+                    out=$(nslookup "$target" 2>&1)
+                    ;;
+                route)
+                    out=$(ip route 2>&1)
+                    ;;
+                *)
+                    out="Unknown action: $action"
+                    ;;
+            esac
+            
+            json_init
+            json_add_object "result"
+            json_add_string "action" "$action"
+            json_add_string "target" "$target"
+            json_add_string "output" "$out"
+            json_close_object
+            json_dump
+        }
+
+        uci_read() {
+            read -r input
+            json_load "$input"
+            json_get_var package "package"
+            
+            local out=""
+            if [ -n "$package" ]; then
+                out=$(uci -q show "$package" 2>&1)
+            fi
+            
+            json_init
+            json_add_object "result"
+            json_add_string "package" "$package"
+            json_add_string "config" "$out"
+            json_close_object
+            json_dump
+        }
+
+        uci_apply() {
+            read -r input
+            json_load "$input"
+            json_get_var package "package"
+            json_get_var section "section"
+            json_get_var option "option"
+            json_get_var value "value"
+            json_get_var reload_service "reload_service"
+            
+            local success=0
+            local msg="OK"
+            
+            if [ -n "$package" ] && [ -n "$section" ] && [ -n "$option" ]; then
+                uci set "${package}.${section}.${option}=${value}" 2>/dev/null && \
+                uci commit "${package}" 2>/dev/null && success=1
+                
+                if [ $success -eq 1 ] && [ -n "$reload_service" ]; then
+                    if [ -x "/etc/init.d/$reload_service" ]; then
+                        /etc/init.d/"$reload_service" reload >/dev/null 2>&1 || \
+                        /etc/init.d/"$reload_service" restart >/dev/null 2>&1
+                    fi
+                fi
+            else
+                msg="Missing parameters: package, section, option required"
+            fi
+            
+            json_init
+            json_add_object "result"
+            json_add_boolean "success" "$success"
+            json_add_string "message" "$msg"
+            json_close_object
+            json_dump
+        }
+
+        get_ai_settings() {
+            local key=$(uci -q get clawwrt.ai.api_key)
+            local model=$(uci -q get clawwrt.ai.model || echo "deepseek-flash")
+            local api_url=$(uci -q get clawwrt.ai.api_url || echo "https://api.deepseek.com/chat/completions")
+            local temp=$(uci -q get clawwrt.ai.temperature || echo "0.3")
+            
+            local masked_key=""
+            if [ -n "$key" ]; then
+                local len=${#key}
+                if [ $len -gt 8 ]; then
+                    masked_key="$(echo "$key" | cut -c1-4)...$(echo "$key" | cut -c$((len-3))-$len)"
+                else
+                    masked_key="********"
+                fi
+            fi
+            
+            json_init
+            json_add_object "result"
+            json_add_string "model" "$model"
+            json_add_string "api_url" "$api_url"
+            json_add_string "temperature" "$temp"
+            json_add_string "api_key_masked" "$masked_key"
+            json_add_boolean "has_key" "$([ -n "$key" ] && echo 1 || echo 0)"
+            json_close_object
+            json_dump
+        }
+
+        save_ai_settings() {
+            read -r input
+            json_load "$input"
+            json_get_var api_key "api_key"
+            json_get_var model "model"
+            json_get_var api_url "api_url"
+            json_get_var temperature "temperature"
+            
+            local old_key=$(uci -q get clawwrt.ai.api_key)
+            [ -z "$api_key" ] && api_key="$old_key"
+            
+            uci -q delete clawwrt.ai
+            uci -q set clawwrt.ai=ai
+            [ -n "$api_key" ] && uci -q set clawwrt.ai.api_key="$api_key"
+            [ -n "$model" ] && uci -q set clawwrt.ai.model="$model" || uci -q set clawwrt.ai.model="deepseek-flash"
+            [ -n "$api_url" ] && uci -q set clawwrt.ai.api_url="$api_url" || uci -q set clawwrt.ai.api_url="https://api.deepseek.com/chat/completions"
+            [ -n "$temperature" ] && uci -q set clawwrt.ai.temperature="$temperature" || uci -q set clawwrt.ai.temperature="0.3"
+            uci -q commit clawwrt
+            
+            json_init
+            json_add_object "result"
+            json_add_boolean "success" "1"
+            json_close_object
+            json_dump
+        }
+
+        call_deepseek() {
+            read -r input
+            json_load "$input"
+            json_get_var messages_json "messages_json"
+            json_get_var tools_json "tools_json"
+            
+            local key=$(uci -q get clawwrt.ai.api_key)
+            local model=$(uci -q get clawwrt.ai.model || echo "deepseek-flash")
+            local api_url=$(uci -q get clawwrt.ai.api_url || echo "https://api.deepseek.com/chat/completions")
+            local temp=$(uci -q get clawwrt.ai.temperature || echo "0.3")
+            
+            if [ -z "$key" ]; then
+                json_init
+                json_add_object "result"
+                json_add_boolean "error" "1"
+                json_add_string "message" "DeepSeek API key is not configured in settings."
+                json_close_object
+                json_dump
+                return
+            fi
+            
+            local req_body="/tmp/deepseek_req_$$.json"
+            local resp_body="/tmp/deepseek_resp_$$.json"
+            
+            if [ -n "$tools_json" ] && [ "$tools_json" != "null" ]; then
+                printf '{"model":"%s","messages":%s,"tools":%s,"temperature":%s,"stream":false}' \
+                    "$model" "$messages_json" "$tools_json" "$temp" > "$req_body"
+            else
+                printf '{"model":"%s","messages":%s,"temperature":%s,"stream":false}' \
+                    "$model" "$messages_json" "$temp" > "$req_body"
+            fi
+            
+            local http_code=$(curl -s -m 60 -o "$resp_body" -w "%{http_code}" -X POST "$api_url" \
+                -H "Content-Type: application/json" \
+                -H "Authorization: Bearer $key" \
+                --data-binary @"$req_body" 2>/dev/null)
+                
+            local resp_content=$(cat "$resp_body" 2>/dev/null)
+            rm -f "$req_body" "$resp_body"
+            
+            json_init
+            json_add_object "result"
+            json_add_int "http_code" "${http_code:-0}"
+            json_add_string "response" "$resp_content"
+            json_close_object
+            json_dump
+        }
+
+        
+        get_wifi_info() {
+            json_init
+            json_add_object "result"
+            json_add_array "radios"
+            
+            for rad in radio0 radio1; do
+                local band=$(uci -q get wireless.${rad}.band)
+                local channel=$(uci -q get wireless.${rad}.channel)
+                [ -z "$band" ] && continue
+                
+                for iface in $(uci -q show wireless | grep '=wifi-iface' | cut -d. -f2 | cut -d= -f1); do
+                    local dev=$(uci -q get wireless.${iface}.device)
+                    local mode=$(uci -q get wireless.${iface}.mode)
+                    if [ "$dev" = "$rad" ] && [ "$mode" = "ap" ]; then
+                        local ssid=$(uci -q get wireless.${iface}.ssid)
+                        local key=$(uci -q get wireless.${iface}.key)
+                        local enc=$(uci -q get wireless.${iface}.encryption || echo 'psk2')
+                        local dis=$(uci -q get wireless.${iface}.disabled || echo '0')
+                        
+                        json_add_object
+                        json_add_string "radio" "$rad"
+                        json_add_string "section" "$iface"
+                        json_add_string "band" "$band"
+                        json_add_string "ssid" "$ssid"
+                        json_add_string "key" "$key"
+                        json_add_string "encryption" "$enc"
+                        json_add_string "channel" "$channel"
+                        json_add_boolean "enabled" "$([ "$dis" = "0" ] && echo 1 || echo 0)"
+                        json_close_object
+                    fi
+                done
+            done
+            
+            json_close_array
+            json_close_object
+            json_dump
+        }
+
+        set_wifi_config() {
+            read -r input
+            json_load "$input"
+            json_get_var band "band"
+            json_get_var ssid "ssid"
+            json_get_var key "key"
+            json_get_var enabled "enabled"
+            
+            [ -z "$band" ] && band="all"
+            
+            if [ -n "$key" ]; then
+                local klen=${#key}
+                if [ "$klen" -lt 8 ]; then
+                    json_init
+                    json_add_object "result"
+                    json_add_boolean "success" "0"
+                    json_add_string "message" "WiFi 密码长度不能少于 8 位！"
+                    json_close_object
+                    json_dump
+                    return
+                fi
+            fi
+            
+            local modified=0
+            for rad in radio0 radio1; do
+                local rband=$(uci -q get wireless.${rad}.band)
+                local match=0
+                if [ "$band" = "all" ]; then
+                    match=1
+                elif [ "$band" = "$rband" ] || [ "$band" = "${rband}g" ] || [ "$band" = "${rband%g}G" ] || [ "$band" = "2.4G" -a "$rband" = "2g" ] || [ "$band" = "5G" -a "$rband" = "5g" ]; then
+                    match=1
+                fi
+                
+                if [ $match -eq 1 ]; then
+                    for iface in $(uci -q show wireless | grep '=wifi-iface' | cut -d. -f2 | cut -d= -f1); do
+                        local dev=$(uci -q get wireless.${iface}.device)
+                        local mode=$(uci -q get wireless.${iface}.mode)
+                        if [ "$dev" = "$rad" ] && [ "$mode" = "ap" ]; then
+                            [ -n "$ssid" ] && uci set wireless.${iface}.ssid="$ssid"
+                            [ -n "$key" ] && uci set wireless.${iface}.key="$key"
+                            if [ -n "$enabled" ]; then
+                                if [ "$enabled" = "1" ] || [ "$enabled" = "true" ]; then
+                                    uci set wireless.${iface}.disabled='0'
+                                else
+                                    uci set wireless.${iface}.disabled='1'
+                                fi
+                            fi
+                            modified=$((modified + 1))
+                        fi
+                    done
+                fi
+            done
+            
+            if [ "$modified" -gt 0 ]; then
+                uci commit wireless
+                /sbin/wifi reload >/dev/null 2>&1
+                json_init
+                json_add_object "result"
+                json_add_boolean "success" "1"
+                json_add_int "modified_count" "$modified"
+                json_add_string "message" "WiFi 配置已成功应用并生效！"
+                json_close_object
+                json_dump
+            else
+                json_init
+                json_add_object "result"
+                json_add_boolean "success" "0"
+                json_add_string "message" "未找到匹配的无线 AP 接口"
+                json_close_object
+                json_dump
+            fi
+        }
+
+        
+        get_service_detail() {
+            read -r input
+            json_load "$input"
+            json_get_var service "service"
+            
+            json_init
+            json_add_object "result"
+            json_add_string "service" "$service"
+            
+            case "$service" in
+                wifidogx)
+                    local run=0
+                    if pidof wifidogx >/dev/null 2>&1; then
+                        run=1
+                    fi
+                    local wd_status=$(/usr/bin/wdctlx status wifidogx 2>/dev/null)
+                    local auth_status=$(/usr/bin/wdctlx status auth 2>/dev/null)
+                    local user_list_json=$(/usr/bin/wdctlx apfree user_list 2>/dev/null)
+
+                    local version=$(echo "$wd_status" | jsonfilter -e '@.wifidogx_version' 2>/dev/null)
+                    [ -z "$version" ] && version=$(echo "$user_list_json" | jsonfilter -e '@["apfree version"]' 2>/dev/null)
+                    local uptime_sec=$(echo "$wd_status" | jsonfilter -e '@.uptime' 2>/dev/null)
+                    local is_ws=$(echo "$wd_status" | jsonfilter -e '@.is_websocket_connected' 2>/dev/null)
+                    local is_auth=$(echo "$wd_status" | jsonfilter -e '@.is_auth_server_connected' 2>/dev/null)
+                    local is_net=$(echo "$wd_status" | jsonfilter -e '@.is_internet_connected' 2>/dev/null)
+                    local ws_host=$(echo "$auth_status" | jsonfilter -e '@.auth_servers[0].host' 2>/dev/null)
+                    [ -z "$ws_host" ] && ws_host=$(uci -q get wifidogx.kswifi_conn.ws_server_hostname || echo "kswifi.com")
+
+                    local ws_connected=0
+                    [ "$is_ws" = "1" ] && ws_connected=1
+
+                    json_add_boolean "running" "$run"
+                    json_add_string "enabled" "$(uci -q get wifidogx.common.enabled || echo 0)"
+                    json_add_string "auth_server_mode" "$(uci -q get wifidogx.common.auth_server_mode || echo cloud)"
+                    json_add_string "disable_portal_auth" "$(uci -q get wifidogx.common.disable_portal_auth || echo 0)"
+                    json_add_string "wired_passed" "$(uci -q get wifidogx.common.wired_passed || echo 0)"
+                    json_add_string "enable_anti_nat" "$(uci -q get wifidogx.common.enable_anti_nat || echo 0)"
+                    json_add_string "version" "${version:-9.10}"
+                    json_add_string "uptime" "${uptime_sec:-0}s"
+                    json_add_boolean "internet_connected" "$([ "$is_net" = "1" ] && echo 1 || echo 0)"
+                    json_add_boolean "auth_server_connected" "$([ "$is_auth" = "1" ] && echo 1 || echo 0)"
+                    json_add_boolean "websocket_connected" "$ws_connected"
+                    json_add_string "auth_server_host" "${ws_host:-kswifi.com}"
+
+                    # 1. 信任免认证 MAC 白名单
+                    json_add_array "trusted_macs"
+                    for mac in $(uci -q get wifidogx.common.trusted_macs); do
+                        json_add_string "" "$mac"
+                    done
+                    json_close_array
+
+                    # 2. 拦截黑名单 MAC
+                    json_add_array "untrusted_macs"
+                    for mac in $(uci -q get wifidogx.common.untrust_macs); do
+                        json_add_string "" "$mac"
+                    done
+                    json_close_array
+
+                    # 3. 免认证放行域名
+                    json_add_array "trusted_domains"
+                    for d in $(uci -q get wifidogx.common.trusted_domains); do
+                        json_add_string "" "$d"
+                    done
+                    json_close_array
+
+                    # 4. 免认证放行通配符域名
+                    json_add_array "trusted_wildcard_domains"
+                    for wd in $(uci -q get wifidogx.common.trusted_wildcard_domains); do
+                        json_add_string "" "$wd"
+                    done
+                    json_close_array
+
+                    # 5. 实时在线认证用户列表 (从 apfree user_list 解析)
+                    json_add_array "online_users"
+                    local online_count=0
+                    if [ -n "$user_list_json" ]; then
+                        local users_raw=$(echo "$user_list_json" | jsonfilter -e '@["online user"][*]' 2>/dev/null)
+                        while read -r uline; do
+                            [ -z "$uline" ] && continue
+                            local umac=$(echo "$uline" | jsonfilter -e '@.mac' 2>/dev/null)
+                            local rem=$(echo "$uline" | jsonfilter -e '@["remaining time"]' 2>/dev/null)
+                            [ -z "$umac" ] && continue
+                            online_count=$((online_count + 1))
+                            [ -z "$rem" ] && rem=0
+
+                            local uip=""
+                            local uhost=""
+                            if [ -f /tmp/dhcp.leases ]; then
+                                local lease_line=$(grep -i "$umac" /tmp/dhcp.leases | head -n1)
+                                uip=$(echo "$lease_line" | awk '{print $3}')
+                                uhost=$(echo "$lease_line" | awk '{print $4}')
+                                [ "$uhost" = "*" ] && uhost=""
+                            fi
+
+                            local rem_str=""
+                            if [ "$rem" -ge 3600 ]; then
+                                rem_str="$((rem / 3600))小时$(( (rem % 3600) / 60 ))分"
+                            elif [ "$rem" -ge 60 ]; then
+                                rem_str="$((rem / 60))分钟"
+                            else
+                                rem_str="${rem}秒"
+                            fi
+
+                            json_add_object ""
+                            json_add_string "mac" "$umac"
+                            json_add_string "ip" "${uip:-未知}"
+                            json_add_string "hostname" "${uhost:-未知设备}"
+                            json_add_int "remaining_seconds" "$rem"
+                            json_add_string "remaining_time" "$rem_str"
+                            json_close_object
+                        done <<EOF
+$users_raw
+EOF
+                    fi
+                    json_close_array
+                    json_add_int "active_clients" "$online_count"
+
+                    local diag="wifidogx 门户认证已关闭"
+                    if [ "$run" -eq 1 ]; then
+                        local auth_mode_desc="云端认证模式"
+                        local cur_mode=$(uci -q get wifidogx.common.auth_server_mode || echo cloud)
+                        [ "$cur_mode" = "local" ] && auth_mode_desc="本地认证模式"
+                        [ "$cur_mode" = "bypass" ] && auth_mode_desc="旁路放行模式"
+
+                        if [ "$(uci -q get wifidogx.common.disable_portal_auth)" = "1" ]; then
+                            diag="wifidogx 门户服务运行中，但当前处于【免认证直通模式】（所有设备无需网页登录即可自由上网）。"
+                        elif [ "$ws_connected" -eq 1 ]; then
+                            diag="wifidogx 门户认证运行正常 ($auth_mode_desc)，已连通云端 WebSocket (${ws_host})，当前有 $online_count 位在线认证用户，放行白名单终端 $(uci -q get wifidogx.common.trusted_macs | wc -w) 台，黑名单拦截 $(uci -q get wifidogx.common.untrust_macs | wc -w) 台。"
+                        else
+                            diag="wifidogx 进程运行中，但云端 WebSocket 尚未连通 (${ws_host})，请检查外网连接或认证服务地址。"
+                        fi
+                    fi
+                    json_add_string "diagnosis" "$diag"
+                    ;;
+                xfrpc)
+                    local run=0
+                    /etc/init.d/xfrpc status 2>/dev/null | grep -E -q 'running|active' && run=1
+                    local sock_state=$(netstat -ntp 2>/dev/null | grep "[0-9]*/xfrpc" | head -n1 | awk '{print $6}')
+                    local conn=0
+                    [ "$sock_state" = "ESTABLISHED" ] && conn=1
+                    json_add_boolean "running" "$run"
+                    json_add_boolean "connected_to_frps" "$conn"
+                    json_add_string "socket_state" "${sock_state:-NONE}"
+                    json_add_string "enabled" "$(uci -q get xfrpc.common.enabled || echo 0)"
+                    json_add_string "server_addr" "$(uci -q get xfrpc.common.server_addr)"
+                    json_add_string "server_port" "$(uci -q get xfrpc.common.server_port)"
+                    json_add_string "protocol" "$(uci -q get xfrpc.common.protocol || echo tcp)"
+                    json_add_string "token" "$(uci -q get xfrpc.common.token)"
+
+                    local diag="xfrpc 内网穿透已停用"
+                    if [ "$run" -eq 1 ]; then
+                        if [ "$conn" -eq 1 ]; then
+                            diag="xfrpc 客户端运行正常，且已成功连接远端 frps 服务端 (ESTABLISHED)。"
+                        elif [ "$sock_state" = "SYN_SENT" ]; then
+                            diag="xfrpc 客户端正在运行，但与远端 frps 服务端处于握手超时状态 (SYN_SENT)，请检查 VPS 防火墙或端口。"
+                        else
+                            diag="xfrpc 客户端正在运行，但尚未连接远端 frps (套接字: ${sock_state:-NONE})。"
+                        fi
+                    fi
+                    json_add_string "diagnosis" "$diag"
+
+                    local p_total=0
+                    local p_active=0
+                    json_add_array "proxies"
+                    for sec in $(uci -q show xfrpc | grep -E "=(tcp|http|https|udp|socks5|stcp|xtcp|sudp|tcpmux)" | cut -d. -f2 | cut -d= -f1); do
+                        local type=$(uci -q get xfrpc.${sec})
+                        local penabled=$(uci -q get xfrpc.${sec}.enabled || echo 1)
+                        local lip=$(uci -q get xfrpc.${sec}.local_ip)
+                        local lport=$(uci -q get xfrpc.${sec}.local_port)
+                        local rport=$(uci -q get xfrpc.${sec}.remote_port)
+                        local subdomain=$(uci -q get xfrpc.${sec}.subdomain)
+                        local custom_domains=$(uci -q get xfrpc.${sec}.custom_domains)
+                        local is_p_en=0
+                        [ "$penabled" = "1" ] && is_p_en=1
+                        p_total=$((p_total + 1))
+                        [ "$is_p_en" -eq 1 ] && p_active=$((p_active + 1))
+
+                        json_add_object
+                        json_add_string "name" "$sec"
+                        json_add_string "type" "$type"
+                        json_add_boolean "enabled" "$is_p_en"
+                        json_add_string "local_target" "${lip:+${lip}:}${lport}"
+                        json_add_string "remote_port" "$rport"
+                        json_add_string "subdomain" "$subdomain"
+                        json_add_string "custom_domains" "$custom_domains"
+                        json_close_object
+                    done
+                    json_close_array
+                    json_add_int "proxies_total" "$p_total"
+                    json_add_int "proxies_enabled" "$p_active"
+                    ;;
+                xkcptun)
+                    local run=0
+                    /etc/init.d/xkcptun status 2>/dev/null | grep -E -q 'running|active' && run=1
+                    local remote_addr=$(uci -q get xkcptun.client.remote_addr)
+                    local remote_port=$(uci -q get xkcptun.client.remote_port)
+                    local mode=$(uci -q get xkcptun.client.mode || echo fast3)
+                    local key=$(uci -q get xkcptun.client.key)
+                    local enabled=$(uci -q get xkcptun.client.enabled || echo 0)
+                    local fec=$(uci -q get xkcptun.client.fec || echo 1)
+                    local sndwnd=$(uci -q get xkcptun.client.sndwnd || echo 4096)
+                    local rcvwnd=$(uci -q get xkcptun.client.rcvwnd || echo 4096)
+                    local datashard=$(uci -q get xkcptun.client.datashard || echo 10)
+                    local parityshard=$(uci -q get xkcptun.client.parityshard || echo 3)
+                    local nodelay=$(uci -q get xkcptun.client.nodelay || echo 1)
+                    local nc=$(uci -q get xkcptun.client.nc || echo 1)
+
+                    local ping_ms=""
+                    if [ -n "$remote_addr" ]; then
+                        ping_ms=$(ping -c 1 -W 1 "$remote_addr" 2>/dev/null | sed -n 's/.*time=\([0-9.]*\) ms/\1/p')
+                    fi
+
+                    local mon_raw=$(wget -qO- -T 1 http://127.0.0.1:9086 2>/dev/null)
+                    local active=0
+                    [ -n "$mon_raw" ] && active=1
+
+                    json_add_boolean "running" "$run"
+                    json_add_boolean "active" "$active"
+                    json_add_string "enabled" "$enabled"
+                    json_add_string "remote_addr" "$remote_addr"
+                    json_add_string "remote_port" "$remote_port"
+                    json_add_string "mode" "$mode"
+                    json_add_string "key" "$key"
+                    json_add_string "ping_ms" "$ping_ms"
+                    json_add_string "fec" "$fec"
+                    json_add_string "sndwnd" "$sndwnd"
+                    json_add_string "rcvwnd" "$rcvwnd"
+                    json_add_string "datashard" "$datashard"
+                    json_add_string "parityshard" "$parityshard"
+                    json_add_string "nodelay" "$nodelay"
+                    json_add_string "nc" "$nc"
+
+                    json_add_array "tunnels"
+                    local total_conns=0
+                    for sec in $(uci -q show xkcptun | grep '=client$' | cut -d. -f2 | cut -d= -f1); do
+                        local t_name="$sec"
+                        local t_en=$(uci -q get xkcptun.${sec}.enabled || echo 1)
+                        local t_proto=$(uci -q get xkcptun.${sec}.proto || echo tcp)
+                        local t_type=$(uci -q get xkcptun.${sec}.proxy_type)
+                        [ -z "$t_type" ] && { [ "$t_proto" = "udp" ] && t_type="forward" || t_type="redir"; }
+                        local t_lport=$(uci -q get xkcptun.${sec}.local_port)
+                        local t_lif=$(uci -q get xkcptun.${sec}.local_interface || echo any)
+                        local t_target_addr=$(uci -q get xkcptun.${sec}.target_addr)
+                        local t_target_port=$(uci -q get xkcptun.${sec}.target_port)
+                        local t_conns=0
+                        if [ -n "$mon_raw" ]; then
+                            t_conns=$(echo "$mon_raw" | grep "\[${t_name}\]" | sed -n 's/.*conns: \([0-9]*\).*/\1/p' | head -n1)
+                            [ -z "$t_conns" ] && t_conns=0
+                        fi
+                        if [ "$t_type" = "redir" ] && [ -n "$t_lport" ]; then
+                            local est=$(netstat -nt 2>/dev/null | grep ":${t_lport} " | grep -c "ESTABLISHED" || echo 0)
+                            [ "${est:-0}" -gt "${t_conns:-0}" ] && t_conns="$est"
+                        fi
+                        total_conns=$((total_conns + t_conns))
+                        json_add_object ""
+                        json_add_string "name" "$t_name"
+                        json_add_boolean "enabled" "$([ "$t_en" = "1" ] && echo 1 || echo 0)"
+                        json_add_string "proto" "$t_proto"
+                        json_add_string "proxy_type" "$t_type"
+                        json_add_string "local_port" "$t_lport"
+                        json_add_string "local_interface" "$t_lif"
+                        json_add_string "target_addr" "$t_target_addr"
+                        json_add_string "target_port" "$t_target_port"
+                        json_add_int "active_connections" "${t_conns:-0}"
+                        json_close_object
+                    done
+                    json_close_array
+
+                    json_add_int "active_connections" "${total_conns:-0}"
+
+                    json_add_array "sample_connections"
+                    if [ "$active" -eq 1 ]; then
+                        local status_raw=$(echo "status" | nc 127.0.0.1 9086 2>/dev/null)
+                        if [ -n "$status_raw" ]; then
+                            local s_lines=$(echo "$status_raw" | grep "conv \[" | head -n 8)
+                            while read -r sline; do
+                                [ -z "$sline" ] && continue
+                                local conv_id=$(echo "$sline" | sed -n 's/.*conv \[\([0-9]*\)\].*/\1/p')
+                                local dest=$(echo "$sline" | sed -n 's/.*-> \[\([^]]*\)\]:\[\([^]]*\)\].*/\1:\2/p')
+                                [ -n "$dest" ] && {
+                                    json_add_object ""
+                                    json_add_string "conv" "$conv_id"
+                                    json_add_string "target" "$dest"
+                                    json_close_object
+                                }
+                            done <<EOF
+$s_lines
+EOF
+                        fi
+                    fi
+                    json_close_array
+
+                    local diag="xkcptun 网络加速已停用"
+                    if [ "$run" -eq 1 ]; then
+                        if [ "$active" -eq 1 ]; then
+                            local rtt_desc=""
+                            [ -n "$ping_ms" ] && rtt_desc=", 节点往返延迟: ${ping_ms}ms"
+                            local fec_desc="未开启"
+                            [ "$fec" = "1" ] && fec_desc="开启 (${datashard}+${parityshard})"
+                            diag="xkcptun 网络加速运行正常，KCP 传输引擎已建立，正在对加速节点 ($remote_addr:$remote_port, 模式: $mode, FEC抗丢包: $fec_desc$rtt_desc) 进行双向加速，当前总活跃加速连接数: ${total_conns:-0}。"
+                        else
+                            diag="xkcptun 客户端进程运行中，但监控端口尚未就绪，可能正在建立连接至节点 $remote_addr:$remote_port。"
+                        fi
+                    fi
+                    json_add_string "diagnosis" "$diag"
+                    ;;
+                xdns)
+                    local run=0
+                    local bpf_attached=0
+                    if tc filter show dev br-lan ingress 2>/dev/null | grep -q 'xdns_bpf'; then
+                        bpf_attached=1
+                        run=1
+                    elif /etc/init.d/xdns status 2>/dev/null | grep -E -q 'running|active'; then
+                        run=1
+                    fi
+
+                    local ctl_stats=$(/usr/bin/xdns-ctl stats 2>/dev/null)
+                    local dns_intercepted=0
+                    local dns_proxied=0
+                    local dns_learned=0
+                    local tcp_proxied=0
+                    if [ -n "$ctl_stats" ]; then
+                        dns_intercepted=$(echo "$ctl_stats" | grep "DNS Queries Intercepted" | awk '{print $NF}')
+                        dns_proxied=$(echo "$ctl_stats" | grep "DNS Queries Proxied" | awk '{print $NF}')
+                        dns_learned=$(echo "$ctl_stats" | grep "DNS Responses Learned" | awk '{print $NF}')
+                        tcp_proxied=$(echo "$ctl_stats" | grep "TCP Connections Proxied" | awk '{print $NF}')
+                    fi
+
+                    local domains_file=$(uci -q get xdns.global.proxy_domains_file || echo "/etc/xdns/proxy_domains.txt")
+                    local total_domains=0
+                    if [ -f "$domains_file" ]; then
+                        total_domains=$(grep -v '^[[:space:]]*#' "$domains_file" | grep -v '^[[:space:]]*$' | wc -l)
+                    fi
+
+                    local total_sessions=0
+                    if command -v /usr/bin/xdns-ctl >/dev/null 2>&1; then
+                        total_sessions=$(/usr/bin/xdns-ctl list-sessions 2>/dev/null | grep -E '^[0-9]' | wc -l)
+                    fi
+
+                    local total_ips=0
+                    if command -v /usr/bin/xdns-ctl >/dev/null 2>&1; then
+                        total_ips=$(/usr/bin/xdns-ctl list-ips 2>/dev/null | grep -E '^[0-9]' | wc -l)
+                    fi
+
+                    json_add_boolean "running" "$run"
+                    json_add_boolean "bpf_attached" "$bpf_attached"
+                    json_add_string "enabled" "$(uci -q get xdns.global.enabled || echo 0)"
+                    json_add_string "ifname" "$(uci -q get xdns.global.ifname || echo br-lan)"
+                    json_add_string "xkcp_dns" "$(uci -q get xdns.global.xkcp_dns)"
+                    json_add_string "xkcp_tcp" "$(uci -q get xdns.global.xkcp_tcp)"
+                    json_add_int "dns_queries_intercepted" "${dns_intercepted:-0}"
+                    json_add_int "dns_queries_proxied" "${dns_proxied:-0}"
+                    json_add_int "dns_responses_learned" "${dns_learned:-0}"
+                    json_add_int "tcp_connections_proxied" "${tcp_proxied:-0}"
+                    json_add_int "total_proxy_domains" "${total_domains:-0}"
+                    json_add_int "total_hijacked_ips" "${total_ips:-0}"
+                    json_add_int "active_sessions" "${total_sessions:-0}"
+
+                    json_add_array "domains"
+                    if command -v /usr/bin/xdns-ctl >/dev/null 2>&1; then
+                        local ctl_domains=$(/usr/bin/xdns-ctl list-domains 2>/dev/null | grep -E '\s+Active\s*$' || true)
+                        while read -r dline; do
+                            [ -z "$dline" ] && continue
+                            local dname=$(echo "$dline" | awk '{print $1}')
+                            local dhash=$(echo "$dline" | awk '{print $2}')
+                            local dstate=$(echo "$dline" | awk '{print $3}')
+                            [ -z "$dname" ] || [ "$dname" = "Domain" ] && continue
+                            json_add_object ""
+                            json_add_string "domain" "$dname"
+                            json_add_string "hash" "$dhash"
+                            json_add_string "state" "$dstate"
+                            json_close_object
+                        done <<EOF
+$ctl_domains
+EOF
+                    elif [ -f "$domains_file" ]; then
+                        for d in $(grep -v '^[[:space:]]*#' "$domains_file" | grep -v '^[[:space:]]*$'); do
+                            json_add_object ""
+                            json_add_string "domain" "$d"
+                            json_add_string "state" "Configured"
+                            json_close_object
+                        done
+                    fi
+                    json_close_array
+
+                    json_add_array "sample_ips"
+                    if command -v /usr/bin/xdns-ctl >/dev/null 2>&1; then
+                        local ctl_ips=$(/usr/bin/xdns-ctl list-ips 2>/dev/null | grep -E '^[0-9]' | head -n 10)
+                        while read -r ipline; do
+                            [ -z "$ipline" ] && continue
+                            local ip_addr=$(echo "$ipline" | awk '{print $1}')
+                            local exp_time=$(echo "$ipline" | awk '{print $2}')
+                            json_add_object ""
+                            json_add_string "ip" "$ip_addr"
+                            json_add_string "expires_in" "$exp_time"
+                            json_close_object
+                        done <<EOF
+$ctl_ips
+EOF
+                    fi
+                    json_close_array
+
+                    json_add_array "sample_sessions"
+                    if command -v /usr/bin/xdns-ctl >/dev/null 2>&1; then
+                        local ctl_sessions=$(/usr/bin/xdns-ctl list-sessions 2>/dev/null | grep -E '^[0-9]' | head -n 8)
+                        while read -r sline; do
+                            [ -z "$sline" ] && continue
+                            local client_ep=$(echo "$sline" | awk '{print $1}')
+                            local target_ep=$(echo "$sline" | awk '{print $2}')
+                            local last_seen=$(echo "$sline" | awk '{$1=""; $2=""; print $0}' | sed 's/^[[:space:]]*//')
+                            json_add_object ""
+                            json_add_string "client" "$client_ep"
+                            json_add_string "target" "$target_ep"
+                            json_add_string "last_seen" "$last_seen"
+                            json_close_object
+                        done <<EOF
+$ctl_sessions
+EOF
+                    fi
+                    json_close_array
+
+                    local diag="xdns 智能分流已关闭"
+                    if [ "$run" -eq 1 ]; then
+                        if [ "$bpf_attached" -eq 1 ]; then
+                            diag="xdns-bpf 智能分流在内核 TC ingress/egress 挂载正常！已管理 $total_domains 个加速域名，当前内核维护 $total_ips 个动态劫持加速 IP，累计拦截 DNS 解析 $dns_intercepted 次，动态分流 TCP 加速连接 $tcp_proxied 次，当前活跃加速会话 $total_sessions 个。"
+                        else
+                            diag="xdns 服务正在运行，但内核 TC eBPF 探针未挂载，请检查 br-lan 网络接口。"
+                        fi
+                    fi
+                    json_add_string "diagnosis" "$diag"
+                    ;;
+                ipsec)
+                    local run=0
+                    /etc/init.d/swanctl status 2>/dev/null | grep -E -q 'running|active' && run=1
+                    json_add_boolean "running" "$run"
+                    local remote_sec=$(uci -q show ipsec | grep '=remote' | cut -d. -f2 | cut -d= -f1 | head -n1)
+                    [ -z "$remote_sec" ] && remote_sec="dhcs"
+                    json_add_string "enabled" "$(uci -q get ipsec.${remote_sec}.enabled || echo 0)"
+                    json_add_string "gateway" "$(uci -q get ipsec.${remote_sec}.gateway)"
+                    json_add_string "keyexchange" "$(uci -q get ipsec.${remote_sec}.keyexchange || echo ikev2)"
+                    ;;
+                *)
+                    json_add_string "error" "Unknown service: $service"
+                    ;;
+            esac
+            
+            json_close_object
+            json_dump
+        }
+
+        set_service_detail() {
+            read -r input
+            json_load "$input"
+            json_get_var service "service"
+            json_get_var enabled "enabled"
+            json_get_var server_addr "server_addr"
+            json_get_var server_port "server_port"
+            json_get_var key "key"
+            json_get_var token "token"
+            json_get_var mode "mode"
+            json_get_var gateway "gateway"
+            json_get_var disable_portal_auth "disable_portal_auth"
+            json_get_var wired_passed "wired_passed"
+            json_get_var auth_server_mode "auth_server_mode"
+            json_get_var enable_anti_nat "enable_anti_nat"
+            json_get_var fec "fec"
+            json_get_var sndwnd "sndwnd"
+            json_get_var rcvwnd "rcvwnd"
+            json_get_var datashard "datashard"
+            json_get_var parityshard "parityshard"
+            json_get_var xkcp_dns "xkcp_dns"
+            json_get_var xkcp_tcp "xkcp_tcp"
+            json_get_var ifname "ifname"
+            
+            local success=1
+            local msg="配置已成功应用并重启服务生效"
+            
+            case "$service" in
+                wifidogx)
+                    [ -n "$enabled" ] && uci set wifidogx.common.enabled="$enabled"
+                    [ -n "$disable_portal_auth" ] && uci set wifidogx.common.disable_portal_auth="$disable_portal_auth"
+                    [ -n "$wired_passed" ] && uci set wifidogx.common.wired_passed="$wired_passed"
+                    [ -n "$auth_server_mode" ] && uci set wifidogx.common.auth_server_mode="$auth_server_mode"
+                    [ -n "$enable_anti_nat" ] && uci set wifidogx.common.enable_anti_nat="$enable_anti_nat"
+                    uci commit wifidogx
+                    if [ "$enabled" = "0" ]; then
+                        /etc/init.d/wifidogx stop >/dev/null 2>&1
+                    else
+                        /etc/init.d/wifidogx restart >/dev/null 2>&1
+                    fi
+                    ;;
+                xfrpc)
+                    [ -n "$enabled" ] && uci set xfrpc.common.enabled="$enabled"
+                    [ -n "$server_addr" ] && uci set xfrpc.common.server_addr="$server_addr"
+                    [ -n "$server_port" ] && uci set xfrpc.common.server_port="$server_port"
+                    [ -n "$token" ] && uci set xfrpc.common.token="$token"
+                    uci commit xfrpc
+                    if [ "$enabled" = "0" ]; then
+                        /etc/init.d/xfrpc stop >/dev/null 2>&1
+                    else
+                        /etc/init.d/xfrpc restart >/dev/null 2>&1
+                    fi
+                    ;;
+                xkcptun)
+                    [ -n "$enabled" ] && uci set xkcptun.client.enabled="$enabled"
+                    [ -n "$server_addr" ] && uci set xkcptun.client.remote_addr="$server_addr"
+                    [ -n "$server_port" ] && uci set xkcptun.client.remote_port="$server_port"
+                    [ -n "$key" ] && uci set xkcptun.client.key="$key"
+                    [ -n "$mode" ] && uci set xkcptun.client.mode="$mode"
+                    [ -n "$fec" ] && uci set xkcptun.client.fec="$fec"
+                    [ -n "$sndwnd" ] && uci set xkcptun.client.sndwnd="$sndwnd"
+                    [ -n "$rcvwnd" ] && uci set xkcptun.client.rcvwnd="$rcvwnd"
+                    [ -n "$datashard" ] && uci set xkcptun.client.datashard="$datashard"
+                    [ -n "$parityshard" ] && uci set xkcptun.client.parityshard="$parityshard"
+                    uci commit xkcptun
+                    if [ "$enabled" = "0" ]; then
+                        /etc/init.d/xkcptun stop >/dev/null 2>&1
+                    else
+                        /etc/init.d/xkcptun restart >/dev/null 2>&1
+                    fi
+                    ;;
+                xdns)
+                    [ -n "$enabled" ] && uci set xdns.global.enabled="$enabled"
+                    [ -n "$xkcp_dns" ] && uci set xdns.global.xkcp_dns="$xkcp_dns"
+                    [ -n "$xkcp_tcp" ] && uci set xdns.global.xkcp_tcp="$xkcp_tcp"
+                    [ -n "$ifname" ] && uci set xdns.global.ifname="$ifname"
+                    uci commit xdns
+                    if [ "$enabled" = "0" ]; then
+                        /etc/init.d/xdns stop >/dev/null 2>&1
+                    else
+                        /etc/init.d/xdns restart >/dev/null 2>&1
+                    fi
+                    ;;
+                ipsec)
+                    local remote_sec=$(uci -q show ipsec | grep '=remote' | cut -d. -f2 | cut -d= -f1 | head -n1)
+                    [ -z "$remote_sec" ] && remote_sec="dhcs"
+                    [ -n "$enabled" ] && uci set ipsec.${remote_sec}.enabled="$enabled"
+                    [ -n "$gateway" ] && uci set ipsec.${remote_sec}.gateway="$gateway"
+                    [ -n "$key" ] && uci set ipsec.${remote_sec}.pre_shared_key="$key"
+                    uci commit ipsec
+                    if [ "$enabled" = "0" ]; then
+                        /etc/init.d/swanctl stop >/dev/null 2>&1
+                    else
+                        /etc/init.d/swanctl restart >/dev/null 2>&1
+                    fi
+                    ;;
+                *)
+                    success=0
+                    msg="Unknown service: $service"
+                    ;;
+            esac
+            
+            json_init
+            json_add_object "result"
+            json_add_boolean "success" "$success"
+            json_add_string "service" "$service"
+            json_add_string "message" "$msg"
+            json_close_object
+            json_dump
+        }
+
+        
+        get_qos_status() {
+            lua -e '
+local json = require "luci.jsonc"
+
+local function format_bytes(bytes)
+    bytes = tonumber(bytes) or 0
+    if bytes >= 1073741824 then
+        return string.format("%.2f GB", bytes / 1073741824)
+    elseif bytes >= 1048576 then
+        return string.format("%.2f MB", bytes / 1048576)
+    elseif bytes >= 1024 then
+        return string.format("%.1f KB", bytes / 1024)
+    else
+        return bytes .. " B"
+    end
+end
+
+local function format_rate(rate_bps)
+    rate_bps = tonumber(rate_bps) or 0
+    local rate_bytes = rate_bps / 8
+    local s_bytes = ""
+    if rate_bytes >= 1048576 then
+        s_bytes = string.format("%.2f MB/s", rate_bytes / 1048576)
+    elseif rate_bytes >= 1024 then
+        s_bytes = string.format("%.1f KB/s", rate_bytes / 1024)
+    else
+        s_bytes = string.format("%d B/s", math.floor(rate_bytes))
+    end
+    local s_bps = ""
+    if rate_bps >= 1000000 then
+        s_bps = string.format("%.2f Mbps", rate_bps / 1000000)
+    elseif rate_bps >= 1000 then
+        s_bps = string.format("%.1f Kbps", rate_bps / 1000)
+    else
+        s_bps = string.format("%d bps", rate_bps)
+    end
+    return string.format("%s (%s)", s_bytes, s_bps)
+end
+
+local bpf_run = os.execute("/etc/init.d/aw-bpf status 2>/dev/null | grep -q running") == 0
+
+local ppe_status = "disabled"
+local ppe_f = io.popen("/usr/bin/aw-bpfctl ppe status 2>/dev/null")
+if ppe_f then
+    local s = ppe_f:read("*a")
+    ppe_f:close()
+    if s:find("ready") or s:find("enabled:%s*1") then ppe_status = "ready" end
+end
+
+local fp_enabled = false
+local fp_f = io.popen("/usr/bin/aw-bpfctl fastpath status 2>/dev/null")
+if fp_f then
+    local s = fp_f:read("*a")
+    fp_f:close()
+    if s:find("Enabled %(1%)") then fp_enabled = true end
+end
+
+local xdpi_enabled = false
+local xdpi_f = io.popen("/usr/bin/aw-bpfctl xdpi status 2>/dev/null")
+if xdpi_f then
+    local s = xdpi_f:read("*a")
+    xdpi_f:close()
+    if s:find("Enabled %(1%)") then xdpi_enabled = true end
+end
+
+local devs = {}
+local total_dl_bps = 0
+local total_ul_bps = 0
+local limited_count = 0
+
+if bpf_run then
+    local arp_mac = {}
+    local f_arp = io.open("/proc/net/arp", "r")
+    if f_arp then
+        for line in f_arp:lines() do
+            local ip, hw, flags, mac, mask, dev = line:match("(%S+)%s+(%S+)%s+(%S+)%s+(%S+)%s+(%S+)%s+(%S+)")
+            if ip and mac and mac ~= "00:00:00:00:00:00" then
+                arp_mac[ip] = mac:lower()
+            end
+        end
+        f_arp:close()
+    end
+
+    local lease_hosts = {}
+    local lease_macs = {}
+    local lf = io.open("/tmp/dhcp.leases", "r")
+    if lf then
+        for line in lf:lines() do
+            local parts = {}
+            for w in line:gmatch("%S+") do table.insert(parts, w) end
+            if #parts >= 4 then
+                local mac = parts[2]:lower()
+                local ip = parts[3]
+                local host = parts[4]
+                lease_hosts[ip] = host
+                lease_macs[ip] = mac
+            end
+        end
+        lf:close()
+    end
+
+    local f = io.popen("/usr/bin/aw-bpfctl ipv4 json all 2>/dev/null")
+    if f then
+        local s = f:read("*a")
+        f:close()
+        local obj = json.parse(s)
+        if obj and obj.data then
+            for _, item in ipairs(obj.data) do
+                local ip = item.ip or ""
+                local dl_rate = (item.incoming and item.incoming.rate) or 0
+                local ul_rate = (item.outgoing and item.outgoing.rate) or 0
+                local dl_bytes = (item.incoming and item.incoming.total_bytes) or 0
+                local ul_bytes = (item.outgoing and item.outgoing.total_bytes) or 0
+                local dl_limit = (item.incoming and item.incoming.incoming_rate_limit) or 0
+                local ul_limit = (item.outgoing and item.outgoing.outgoing_rate_limit) or 0
+                local is_lim = (dl_limit > 0 or ul_limit > 0)
+                if is_lim then limited_count = limited_count + 1 end
+                total_dl_bps = total_dl_bps + dl_rate
+                total_ul_bps = total_ul_bps + ul_rate
+
+                local mac = arp_mac[ip] or lease_macs[ip] or ""
+                local host = lease_hosts[ip] or "unknown"
+                if host == "*" or host == "" then host = "unknown" end
+
+                local tr = item.time_rule or {}
+
+                table.insert(devs, {
+                    ip = ip,
+                    mac = mac,
+                    hostname = host,
+                    dl_rate_bps = dl_rate,
+                    ul_rate_bps = ul_rate,
+                    dl_rate_human = format_rate(dl_rate),
+                    ul_rate_human = format_rate(ul_rate),
+                    total_dl_bytes = dl_bytes,
+                    total_ul_bytes = ul_bytes,
+                    total_bytes_human = format_bytes(dl_bytes + ul_bytes),
+                    dl_limit_mbps = math.floor(dl_limit / 1048576),
+                    ul_limit_mbps = math.floor(ul_limit / 1048576),
+                    is_limited = is_lim,
+                    time_rule = (tr and tr.enabled) and {
+                        enabled = true,
+                        desc = tr.desc or "生效中",
+                        weekdays = tr.weekdays,
+                        daytime_start = tr.daytime_start,
+                        daytime_stop = tr.daytime_stop
+                    } or { enabled = false }
+                })
+            end
+        end
+    end
+end
+
+table.sort(devs, function(a, b)
+    local ra = (a.dl_rate_bps or 0) + (a.ul_rate_bps or 0)
+    local rb = (b.dl_rate_bps or 0) + (b.ul_rate_bps or 0)
+    if ra ~= rb then return ra > rb end
+    local ta = (a.total_dl_bytes or 0) + (a.total_ul_bytes or 0)
+    local tb = (b.total_dl_bytes or 0) + (b.total_ul_bytes or 0)
+    return ta > tb
+end)
+
+print(json.stringify({
+    result = {
+        running = bpf_run,
+        fastpath_enabled = fp_enabled,
+        xdpi_enabled = xdpi_enabled,
+        ppe_status = ppe_status,
+        total_devices = #devs,
+        limited_devices = limited_count,
+        total_dl_rate_bps = total_dl_bps,
+        total_ul_rate_bps = total_ul_bps,
+        total_dl_rate_human = format_rate(total_dl_bps),
+        total_ul_rate_human = format_rate(total_ul_bps),
+        devices = devs
+    }
+}))
+'
+        }
+
+        set_qos_limit() {
+            read -r input
+            json_load "$input"
+            json_get_var target "target"
+            json_get_var dl_mbps "dl_mbps"
+            json_get_var ul_mbps "ul_mbps"
+            json_get_var weekdays "weekdays"
+            json_get_var timestart "timestart"
+            json_get_var timestop "timestop"
+            
+            [ -z "$target" ] && {
+                json_init
+                json_add_object "result"
+                json_add_boolean "success" "0"
+                json_add_string "message" "目标设备 (IP、MAC 或 'all') 不能为空"
+                json_close_object
+                json_dump
+                return
+            }
+            
+            [ -z "$dl_mbps" ] && dl_mbps=0
+            [ -z "$ul_mbps" ] && ul_mbps=0
+            
+            local dl_bps=0
+            local ul_bps=0
+            [ "$dl_mbps" -gt 0 ] 2>/dev/null && dl_bps=$((dl_mbps * 1048576))
+            [ "$ul_mbps" -gt 0 ] 2>/dev/null && ul_bps=$((ul_mbps * 1048576))
+            
+            local time_opts=""
+            if [ "$dl_mbps" -gt 0 ] || [ "$ul_mbps" -gt 0 ]; then
+                [ -n "$weekdays" ] && time_opts="$time_opts --weekdays $weekdays"
+                [ -n "$timestart" ] && time_opts="$time_opts --timestart $timestart"
+                [ -n "$timestop" ] && time_opts="$time_opts --timestop $timestop"
+            fi
+            [ -z "$time_opts" ] && time_opts="--notime"
+            
+            local success=0
+            local msg=""
+            
+            if [ "$target" = "all" ]; then
+                if [ -x "/usr/bin/aw-bpfctl" ]; then
+                    if [ "$dl_mbps" -eq 0 ] && [ "$ul_mbps" -eq 0 ]; then
+                        /usr/bin/aw-bpfctl ipv4 update_all downrate 0 uprate 0 --notime >/dev/null 2>&1
+                        /usr/bin/aw-bpfctl mac update_all downrate 0 uprate 0 --notime >/dev/null 2>&1
+                        msg="已成功解除局域网所有在线设备的流控限速限制（恢复全速不限速）"
+                    else
+                        /usr/bin/aw-bpfctl ipv4 update_all downrate "$dl_bps" uprate "$ul_bps" $time_opts >/dev/null 2>&1
+                        msg="已成功将局域网所有设备全局限速为：下行 ${dl_mbps} Mbps / 上行 ${ul_mbps} Mbps${weekdays:+ [生效星期: $weekdays]}${timestart:+ [生效时间: $timestart~$timestop]}"
+                    fi
+                    success=1
+                fi
+            elif echo "$target" | grep -q -E "^([0-9a-fA-F]{2}:){5}[0-9a-fA-F]{2}$"; then
+                # MAC address
+                local target_mac=$(echo "$target" | tr 'A-F' 'a-f')
+                local matched_ip=$(grep -i "$target_mac" /proc/net/arp 2>/dev/null | awk '{print $1}' | head -n1)
+                [ -z "$matched_ip" ] && matched_ip=$(grep -i "$target_mac" /tmp/dhcp.leases 2>/dev/null | awk '{print $3}' | head -n1)
+                
+                if [ -x "/usr/bin/aw-bpfctl" ]; then
+                    if [ "$dl_mbps" -eq 0 ] && [ "$ul_mbps" -eq 0 ]; then
+                        /usr/bin/aw-bpfctl mac update "$target_mac" downrate 0 uprate 0 --notime >/dev/null 2>&1
+                        [ -n "$matched_ip" ] && /usr/bin/aw-bpfctl ipv4 update "$matched_ip" downrate 0 uprate 0 --notime >/dev/null 2>&1
+                        msg="已成功解除设备 (MAC: $target_mac${matched_ip:+, IP: $matched_ip}) 的限速规则（恢复不限速）"
+                    else
+                        /usr/bin/aw-bpfctl mac update "$target_mac" downrate "$dl_bps" uprate "$ul_bps" $time_opts >/dev/null 2>&1
+                        [ -n "$matched_ip" ] && /usr/bin/aw-bpfctl ipv4 update "$matched_ip" downrate "$dl_bps" uprate "$ul_bps" $time_opts >/dev/null 2>&1
+                        msg="已成功将设备 (MAC: $target_mac${matched_ip:+, IP: $matched_ip}) 限速为：下行 ${dl_mbps} Mbps / 上行 ${ul_mbps} Mbps${weekdays:+ [生效星期: $weekdays]}${timestart:+ [生效时间: $timestart~$timestop]}（内核 eBPF 实时生效）"
+                    fi
+                    success=1
+                fi
+            else
+                # IPv4 address
+                local target_ip="$target"
+                local matched_mac=$(grep -w "$target_ip" /proc/net/arp 2>/dev/null | awk '{print $4}' | tr 'A-F' 'a-f' | head -n1)
+                [ -z "$matched_mac" -o "$matched_mac" = "00:00:00:00:00:00" ] && matched_mac=$(grep -w "$target_ip" /tmp/dhcp.leases 2>/dev/null | awk '{print $2}' | tr 'A-F' 'a-f' | head -n1)
+                
+                if [ -x "/usr/bin/aw-bpfctl" ]; then
+                    if [ "$dl_mbps" -eq 0 ] && [ "$ul_mbps" -eq 0 ]; then
+                        /usr/bin/aw-bpfctl ipv4 update "$target_ip" downrate 0 uprate 0 --notime >/dev/null 2>&1
+                        [ -n "$matched_mac" ] && /usr/bin/aw-bpfctl mac update "$matched_mac" downrate 0 uprate 0 --notime >/dev/null 2>&1
+                        msg="已成功解除设备 $target_ip${matched_mac:+ (MAC: $matched_mac)} 的限速规则（恢复不限速）"
+                    else
+                        /usr/bin/aw-bpfctl ipv4 update "$target_ip" downrate "$dl_bps" uprate "$ul_bps" $time_opts >/dev/null 2>&1
+                        [ -n "$matched_mac" ] && /usr/bin/aw-bpfctl mac update "$matched_mac" downrate "$dl_bps" uprate "$ul_bps" $time_opts >/dev/null 2>&1
+                        msg="已成功将设备 $target_ip${matched_mac:+ (MAC: $matched_mac)} 限速为：下行 ${dl_mbps} Mbps / 上行 ${ul_mbps} Mbps${weekdays:+ [生效星期: $weekdays]}${timestart:+ [生效时间: $timestart~$timestop]}（内核 eBPF 实时生效）"
+                    fi
+                    success=1
+                fi
+            fi
+
+            json_init
+            json_add_object "result"
+            json_add_boolean "success" "$success"
+            json_add_string "target" "$target"
+            json_add_int "dl_mbps" "$dl_mbps"
+            json_add_int "ul_mbps" "$ul_mbps"
+            json_add_string "weekdays" "${weekdays:-}"
+            json_add_string "timestart" "${timestart:-}"
+            json_add_string "timestop" "${timestop:-}"
+            json_add_string "message" "$msg"
+            json_close_object
+            json_dump
+        }
+
+        get_l7_top() {
+            lua -e '
+local json = require "luci.jsonc"
+
+local function format_bytes(bytes)
+    bytes = tonumber(bytes) or 0
+    if bytes >= 1073741824 then
+        return string.format("%.2f GB", bytes / 1073741824)
+    elseif bytes >= 1048576 then
+        return string.format("%.2f MB", bytes / 1048576)
+    elseif bytes >= 1024 then
+        return string.format("%.1f KB", bytes / 1024)
+    else
+        return bytes .. " B"
+    end
+end
+
+local function format_rate(rate)
+    rate = tonumber(rate) or 0
+    if rate >= 1048576 then
+        return string.format("%.2f MB/s", rate / 1048576)
+    elseif rate >= 1024 then
+        return string.format("%.1f KB/s", rate / 1024)
+    else
+        return rate .. " B/s"
+    end
+end
+
+local function get_domain_cn(domain)
+    if not domain then return "" end
+    domain = string.lower(domain)
+    
+    local map = {
+        ["google.com"] = "谷歌搜索 (Google)",
+        ["google.cn"] = "谷歌中国 (Google)",
+        ["googleapis.com"] = "谷歌服务与API (Google APIs)",
+        ["gstatic.com"] = "谷歌静态资源 (GStatic)",
+        ["googlevideo.com"] = "YouTube 视频流媒体",
+        ["googleusercontent.com"] = "谷歌用户存储内容",
+        ["googleadservices.com"] = "谷歌搜索推广服务",
+        ["googletagmanager.com"] = "谷歌代码管理工具",
+        ["googlezip.net"] = "谷歌网络加速缓存",
+        ["ggpht.com"] = "谷歌头像/相册服务",
+        ["gvt1.com"] = "谷歌软件与更新分发",
+        ["gvt2.com"] = "谷歌网络分发服务",
+        ["gvt3.com"] = "谷歌网络分发服务",
+        ["nel.goog"] = "谷歌网络错误日志",
+        ["antigravity-unleash.goog"] = "谷歌内部服务",
+        ["android.com"] = "安卓官方 (Android)",
+        ["youtube.com"] = "YouTube 视频平台",
+        ["ytimg.com"] = "YouTube 视频封面与图片",
+        ["x.com"] = "X (原 Twitter 推特)",
+        ["x.ai"] = "xAI 人工智能",
+        ["grok.com"] = "xAI Grok 对话助手",
+        ["twimg.com"] = "X/Twitter 多媒体图片分发",
+        ["bilibili.com"] = "哔哩哔哩 (B站)",
+        ["biliapi.net"] = "哔哩哔哩 API 服务",
+        ["bilivideo.com"] = "哔哩哔哩 视频主CDN",
+        ["bilivideo.cn"] = "哔哩哔哩 国内视频流",
+        ["bilicdn1.com"] = "哔哩哔哩 CDN 节点",
+        ["bilicdn2.com"] = "哔哩哔哩 CDN 节点",
+        ["biliimg.com"] = "哔哩哔哩 图片静态资源",
+        ["biligame.com"] = "哔哩哔哩 游戏中心",
+        ["hdslb.com"] = "哔哩哔哩 静态多媒体资源",
+        ["chatgpt.com"] = "ChatGPT (OpenAI 对话模型)",
+        ["openai.com"] = "OpenAI 官方服务",
+        ["deepseek.com"] = "深度求索 (DeepSeek AI)",
+        ["volces.com"] = "火山引擎 (字节跳动云服务)",
+        ["volccdn.com"] = "火山引擎 CDN 内容分发",
+        ["cloudflare.com"] = "Cloudflare 国际网络安全与加速",
+        ["cloudflare.net"] = "Cloudflare 全球骨干网络",
+        ["qq.com"] = "腾讯 QQ / 腾讯门户",
+        ["qq.com.cn"] = "腾讯中国",
+        ["tencent.com"] = "腾讯官方",
+        ["tencent-cloud.net"] = "腾讯云服务节点",
+        ["gtimg.cn"] = "腾讯静态资源与图片",
+        ["qpic.cn"] = "腾讯图片存储分发",
+        ["qlogo.cn"] = "微信/QQ 用户头像服务器",
+        ["weixinbridge.com"] = "微信网页交互服务",
+        ["wechatpay.cn"] = "微信支付安全网关",
+        ["baidu.com"] = "百度搜索",
+        ["sogou.com"] = "搜狗输入法与搜索",
+        ["github.com"] = "GitHub 全球开源代码托管",
+        ["ubuntu.com"] = "Ubuntu 官方系统与软件源",
+        ["launchpadcontent.net"] = "Ubuntu Launchpad 软件打包",
+        ["linuxmint.com"] = "Linux Mint 操作系统源",
+        ["fwupd.org"] = "Linux 固件与驱动更新服务",
+        ["pypi.org"] = "Python 官方包仓库",
+        ["fastly.net"] = "Fastly 全球 CDN",
+        ["p2cdn.com"] = "P2P 边缘加速分发",
+        ["xycdn.com"] = "星域云 CDN",
+        ["onethingpcs.com"] = "网心云 PCDN 边缘网络",
+        ["apple.com"] = "苹果官方 (Apple)",
+        ["cdn-apple.com"] = "苹果设备固件与服务 CDN",
+        ["bing.com"] = "微软必应搜索 (Bing)",
+        ["aliyuncs.com"] = "阿里云计算服务",
+        ["taobao.com"] = "淘宝网 (阿里巴巴)",
+        ["tmall.com"] = "天猫商城",
+        ["jd.com"] = "京东商城",
+        ["alipay.com"] = "支付宝在线支付",
+        ["douyin.com"] = "抖音 (字节跳动)",
+        ["bytedance.com"] = "字节跳动官方",
+        ["zhihu.com"] = "知乎",
+        ["xiaomi.com"] = "小米科技官方",
+        ["xiaomi.net"] = "小米设备连接网关",
+        ["mi.com"] = "小米官方商城",
+        ["mi-img.com"] = "小米静态图片资源",
+        ["miui.com"] = "小米澎湃OS / MIUI 升级服务",
+        ["migames.com"] = "小米游戏服务",
+        ["quickapp.cn"] = "快应用生态联盟",
+        ["fengkongcloud.cn"] = "数美科技智能风控",
+        ["geetest.com"] = "极验智能人机验证",
+        ["shuzilm.cn"] = "数盟设备安全指纹",
+        ["portal101.cn"] = "路由器热点门户认证",
+        ["esheep.com"] = "ESheep 开发者社区",
+        ["aikobo.cn"] = "爱扣博云服务",
+        ["ntp.org"] = "国际标准网络时间 (NTP)",
+        ["nist.gov"] = "美国国家标准时间授时",
+        ["mixpanel.com"] = "Mixpanel 数据统计与分析",
+        ["irs03.com"] = "艾瑞市场网络数据调研",
+        ["ugcimg.cn"] = "网络用户内容多媒体托管",
+        ["gshdw.cyou"] = "网络应用连接节点"
+    }
+
+    if map[domain] then return map[domain] end
+
+    for k, v in pairs(map) do
+        if domain == k or domain:sub(-#k - 1) == "." .. k then
+            return v
+        end
+    end
+
+    if domain:find("bili") then return "哔哩哔哩 (B站相关服务)" end
+    if domain:find("google") then return "谷歌服务 (Google相关)" end
+    if domain:find("apple") then return "苹果服务 (Apple相关)" end
+    if domain:find("tencent") or domain:find("wechat") or domain:find("weixin") then return "腾讯/微信服务" end
+    if domain:find("xiaomi") or domain:find("miui") then return "小米生态服务" end
+    if domain:find("byted") or domain:find("douyin") or domain:find("volc") then return "字节跳动/抖音服务" end
+    if domain:find("ali") or domain:find("taobao") then return "阿里/淘宝服务" end
+    if domain:find("jd%.") or domain:find("jdcache") then return "京东商城服务" end
+
+    return "互联网网站/服务"
+end
+
+local function get_l7_proto_cn(proto)
+    local l7_map = {
+        ["SSH"] = "SSH 远程终端管理",
+        ["HTTP"] = "HTTP 基础网页传输",
+        ["HTTPS"] = "HTTPS 加密网页与API",
+        ["WebRTC"] = "WebRTC 音视频通话/直播",
+        ["WeChat"] = "微信业务与聊天数据",
+        ["DNS"] = "DNS 域名解析服务",
+        ["QUIC"] = "QUIC / HTTP3 高速传输",
+        ["NTP"] = "NTP 网络时钟授时",
+        ["DHCP"] = "DHCP 局域网地址分配",
+        ["RTP"] = "RTP 实时音视频传输",
+        ["Unknown"] = "其他未识别特征流量"
+    }
+    return l7_map[proto] or (proto .. " 协议")
+end
+
+local f_l7 = io.popen("/usr/bin/aw-bpfctl l7 json all 2>/dev/null")
+local s_l7 = f_l7 and f_l7:read("*a") or ""
+if f_l7 then f_l7:close() end
+local obj_l7 = json.parse(s_l7)
+local domains_list = (obj_l7 and obj_l7.data and obj_l7.data.domains) or {}
+table.sort(domains_list, function(a,b) return (a.access_count or 0) > (b.access_count or 0) end)
+local top_domains = {}
+for i = 1, math.min(10, #domains_list) do
+    local d = domains_list[i].domain or ""
+    table.insert(top_domains, {
+        domain = d,
+        cn_name = get_domain_cn(d),
+        access_count = domains_list[i].access_count
+    })
+end
+
+local f_sid = io.popen("/usr/bin/aw-bpfctl sid json all 2>/dev/null")
+local s_sid = f_sid and f_sid:read("*a") or ""
+if f_sid then f_sid:close() end
+local obj_sid = json.parse(s_sid)
+
+local all_rate_list = {}
+local l7_app_list = {}
+
+if obj_sid and obj_sid.data then
+    for _, item in ipairs(obj_sid.data) do
+        local name = ""
+        local cn_name = ""
+        local itype = item.sid_type or ""
+        if itype == "L7" then
+            name = item.l7_proto_desc or "Unknown"
+            cn_name = get_l7_proto_cn(name)
+        elseif itype == "Domain" then
+            name = item.domain or "Unknown"
+            cn_name = get_domain_cn(name)
+        end
+        local in_rate = item.incoming and item.incoming.rate or 0
+        local out_rate = item.outgoing and item.outgoing.rate or 0
+        local in_bytes = item.incoming and item.incoming.total_bytes or 0
+        local out_bytes = item.outgoing and item.outgoing.total_bytes or 0
+        local total_rate = in_rate + out_rate
+        local total_bytes = in_bytes + out_bytes
+
+        local entry = {
+            name = name,
+            cn_name = cn_name,
+            type = (itype == "L7") and "L7应用协议" or "域名访问",
+            rate_bytes = total_rate,
+            rate_human = format_rate(total_rate),
+            dl_rate_bytes = in_rate,
+            ul_rate_bytes = out_rate,
+            dl_rate_human = format_rate(in_rate),
+            ul_rate_human = format_rate(out_rate),
+            total_bytes = total_bytes,
+            total_bytes_human = format_bytes(total_bytes)
+        }
+        table.insert(all_rate_list, entry)
+        if itype == "L7" and name ~= "Unknown" then
+            table.insert(l7_app_list, {
+                app = name,
+                cn_name = cn_name,
+                rate_bytes = total_rate,
+                rate_human = format_rate(total_rate),
+                dl_rate_bytes = in_rate,
+                ul_rate_bytes = out_rate,
+                dl_rate_human = format_rate(in_rate),
+                ul_rate_human = format_rate(out_rate),
+                total_bytes = total_bytes,
+                total_bytes_human = format_bytes(total_bytes)
+            })
+        end
+    end
+end
+
+table.sort(all_rate_list, function(a, b)
+    if a.rate_bytes ~= b.rate_bytes then return a.rate_bytes > b.rate_bytes end
+    if a.total_bytes ~= b.total_bytes then return a.total_bytes > b.total_bytes end
+    return a.name > b.name
+end)
+
+table.sort(l7_app_list, function(a, b)
+    if a.rate_bytes ~= b.rate_bytes then return a.rate_bytes > b.rate_bytes end
+    if a.total_bytes ~= b.total_bytes then return a.total_bytes > b.total_bytes end
+    return a.app > b.app
+end)
+
+local top_all_rates = {}
+for i = 1, math.min(10, #all_rate_list) do
+    table.insert(top_all_rates, all_rate_list[i])
+end
+
+local top_l7_apps = {}
+for i = 1, math.min(10, #l7_app_list) do
+    table.insert(top_l7_apps, l7_app_list[i])
+end
+
+local output = {
+    result = {
+        top_l7_apps = top_l7_apps,
+        top_services_by_rate = top_all_rates,
+        top_domains = top_domains
+    }
+}
+print(json.stringify(output))
+'
+        }
+
+        get_hw_offload_status() {
+            local sw_offload=$(uci -q get firewall.@defaults[0].flow_offloading || echo "0")
+            local hw_offload=$(uci -q get firewall.@defaults[0].flow_offloading_hw || echo "0")
+            local nft_hw_active=0
+            local ppe_supported=0
+            local ppe_entries=0
+            local selective_ppe=0
+            local mode="off"
+            local mode_text="硬件加速已关闭"
+
+            if [ "$sw_offload" = "1" ] && [ "$hw_offload" = "1" ]; then
+                mode="hw"
+                mode_text="硬件加速已开启 (MediaTek PPE 硬件流表分流)"
+            elif [ "$sw_offload" = "1" ]; then
+                mode="sw"
+                mode_text="软件加速已开启 (CPU flowtable)"
+            fi
+
+            if command -v nft >/dev/null 2>&1; then
+                if nft list table inet fw4 2>/dev/null | grep -q 'flags offload'; then
+                    nft_hw_active=1
+                fi
+            fi
+
+            if [ -d /sys/kernel/debug/ppe0 ]; then
+                ppe_supported=1
+                if [ -f /sys/kernel/debug/ppe0/entries ]; then
+                    ppe_entries=$(wc -l < /sys/kernel/debug/ppe0/entries 2>/dev/null || echo 0)
+                fi
+            fi
+
+            if [ -x /usr/libexec/aw-bpf/aw-ppe-offload.sh ]; then
+                selective_ppe=1
+            fi
+
+            local enabled=0
+            [ "$mode" = "hw" ] && enabled=1
+
+            json_init
+            json_add_object "result"
+            json_add_boolean "enabled" "$enabled"
+            json_add_string "mode" "$mode"
+            json_add_string "mode_text" "$mode_text"
+            json_add_string "flow_offloading" "$sw_offload"
+            json_add_string "flow_offloading_hw" "$hw_offload"
+            json_add_boolean "nft_hw_active" "$nft_hw_active"
+            json_add_boolean "ppe_supported" "$ppe_supported"
+            json_add_int "ppe_entries" "$ppe_entries"
+            json_add_boolean "selective_ppe" "$selective_ppe"
+            json_close_object
+            json_dump
+        }
+
+        set_hw_offload() {
+            read -r input
+            json_load "$input"
+            json_get_var enabled "enabled"
+            json_get_var mode "mode"
+
+            if [ -n "$mode" ]; then
+                case "$mode" in
+                    hw) enabled="1" ;;
+                    sw) enabled="sw" ;;
+                    off) enabled="0" ;;
+                esac
+            fi
+
+            local success=0
+            local msg=""
+
+            if [ "$enabled" = "1" ] || [ "$enabled" = "true" ]; then
+                uci -q set firewall.@defaults[0].flow_offloading='1'
+                uci -q set firewall.@defaults[0].flow_offloading_hw='1'
+                uci commit firewall
+                /etc/init.d/firewall reload >/dev/null 2>&1
+                success=1
+                msg="硬件加速已成功开启！MediaTek PPE 芯片级硬件 NAT 流表分流已生效，千兆转发吞吐显著提升并大幅降低 CPU 占用。"
+            elif [ "$enabled" = "sw" ]; then
+                uci -q set firewall.@defaults[0].flow_offloading='1'
+                uci -q set firewall.@defaults[0].flow_offloading_hw='0'
+                uci commit firewall
+                /etc/init.d/firewall reload >/dev/null 2>&1
+                success=1
+                msg="已切换为纯软件加速模式（关闭 PPE 硬件分流，保留内核软件流表）。"
+            else
+                uci -q set firewall.@defaults[0].flow_offloading='0'
+                uci -q set firewall.@defaults[0].flow_offloading_hw='0'
+                uci commit firewall
+                /etc/init.d/firewall reload >/dev/null 2>&1
+                success=1
+                msg="硬件加速已关闭！所有数据包将通过 Linux 标准网络协议栈与 eBPF 过滤链路处理。"
+            fi
+
+            json_init
+            json_add_object "result"
+            json_add_boolean "success" "$success"
+            json_add_string "message" "$msg"
+            json_close_object
+            json_dump
+        }
+
+        run_with_timeout() {
+            local timeout=$1
+            shift
+            "$@" &
+            local pid=$!
+            ( sleep "$timeout" && kill -9 "$pid" 2>/dev/null ) &
+            local watcher=$!
+            wait "$pid" 2>/dev/null
+            local ret=$?
+            kill -9 "$watcher" 2>/dev/null
+            wait "$watcher" 2>/dev/null
+            return $ret
+        }
+
+        get_router_ssh_key() {
+            local key_file="/etc/clawwrt/id_dropbear"
+            if [ ! -f "$key_file" ]; then
+                mkdir -p /etc/clawwrt
+                dropbearkey -t ed25519 -f "$key_file" >/dev/null 2>&1
+            fi
+
+            local pubkey=$(dropbearkey -y -f "$key_file" 2>/dev/null | grep '^ssh-')
+            local auth_cmd="mkdir -p ~/.ssh && chmod 700 ~/.ssh && echo '${pubkey}' >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys"
+
+            json_init
+            json_add_object "result"
+            json_add_string "pubkey" "$pubkey"
+            json_add_string "auth_cmd" "$auth_cmd"
+            json_close_object
+            json_dump
+        }
+
+        test_vps_ssh() {
+            read -r input
+            json_load "$input"
+            json_get_var vps_ip "vps_ip"
+            json_get_var vps_port "vps_port"
+            json_get_var vps_user "vps_user"
+
+            [ -z "$vps_ip" ] && {
+                json_init
+                json_add_object "result"
+                json_add_boolean "connected" 0
+                json_add_string "message" "缺少 VPS IP 地址"
+                json_close_object
+                json_dump
+                return
+            }
+
+            vps_port="${vps_port:-22}"
+            vps_user="${vps_user:-root}"
+            local key_file="/etc/clawwrt/id_dropbear"
+
+            if [ ! -f "$key_file" ]; then
+                mkdir -p /etc/clawwrt
+                dropbearkey -t ed25519 -f "$key_file" >/dev/null 2>&1
+            fi
+
+            local out=""
+            local ret=1
+            # Probe SSH connectivity and check whether user has root privilege or passwordless sudo
+            local probe_cmd="echo CHAW_SSH_OK; if [ \$(id -u) -eq 0 ] || sudo -n true 2>/dev/null; then echo CHAW_PRIV_OK; else echo CHAW_NEED_SUDO; fi"
+            out=$(run_with_timeout 10 dbclient -y -o BatchMode=yes -i "$key_file" -p "$vps_port" "${vps_user}@${vps_ip}" "$probe_cmd" 2>&1)
+            ret=$?
+
+            local connected=0
+            local sudo_ok=1
+            local msg=""
+            if [ $ret -eq 0 ] && echo "$out" | grep -q "CHAW_SSH_OK"; then
+                connected=1
+                if echo "$out" | grep -q "CHAW_NEED_SUDO"; then
+                    sudo_ok=0
+                    msg="免密 SSH 连接成功（用户: ${vps_user}），但检测到该用户执行 sudo 需要密码！为确保全自动部署，建议在 VPS 终端执行: echo '\$USER ALL=(ALL) NOPASSWD:ALL' | sudo tee /etc/sudoers.d/\$USER 或改用 root 用户。"
+                else
+                    msg="免密 SSH 连接成功！已成功握手 VPS (用户: ${vps_user})，具备管理员权限。"
+                fi
+            else
+                if echo "$out" | grep -qi "auth.*fail\|permission denied\|no auth methods"; then
+                    msg="SSH 认证被拒绝（用户: ${vps_user}）：公钥尚未生效，请确认在 VPS 执行授权命令时的登录用户是否与此处一致。"
+                elif echo "$out" | grep -qi "connection refused"; then
+                    msg="连接被拒绝：VPS 上的 SSH 端口 (${vps_port}) 未开启或端口填写错误。"
+                elif echo "$out" | grep -qi "timed out"; then
+                    msg="连接超时：无法访问 VPS (${vps_ip}:${vps_port})，请检查安全组或防火墙。"
+                else
+                    msg="SSH 连接失败: ${out:-未知网络错误或连接超时}"
+                fi
+            fi
+
+            json_init
+            json_add_object "result"
+            json_add_boolean "connected" "$connected"
+            json_add_boolean "sudo_ok" "$sudo_ok"
+            json_add_string "vps_user" "$vps_user"
+            json_add_string "message" "$msg"
+            json_close_object
+            json_dump
+        }
+
+        deploy_vps_frps() {
+            read -r input
+            json_load "$input"
+            json_get_var vps_ip "vps_ip"
+            json_get_var vps_port "vps_port"
+            json_get_var vps_user "vps_user"
+            json_get_var bind_port "bind_port"
+            json_get_var token "token"
+            json_get_var remote_web_port "remote_web_port"
+
+            [ -z "$vps_ip" ] && {
+                json_init
+                json_add_object "result"
+                json_add_boolean "success" 0
+                json_add_string "message" "缺少 VPS IP 地址"
+                json_close_object
+                json_dump
+                return
+            }
+
+            vps_port="${vps_port:-22}"
+            vps_user="${vps_user:-root}"
+            bind_port="${bind_port:-7001}"
+            remote_web_port="${remote_web_port:-18000}"
+
+            if [ -z "$token" ]; then
+                token=$(hexdump -vn 16 -e '16/1 "%02x"' /dev/urandom 2>/dev/null || tr -dc 'a-zA-Z0-9' </dev/urandom | head -c 24)
+            fi
+
+            local key_file="/etc/clawwrt/id_dropbear"
+            if [ ! -f "$key_file" ]; then
+                mkdir -p /etc/clawwrt
+                dropbearkey -t ed25519 -f "$key_file" >/dev/null 2>&1
+            fi
+
+            local remote_cmd="
+set -e
+
+# Detect privilege level: root or sudo
+SUDO=''
+if [ \"\$(id -u)\" -ne 0 ]; then
+    if sudo -n true 2>/dev/null; then
+        SUDO='sudo '
+    else
+        echo 'ERR_SUDO_PASSWORD_REQUIRED'
+        exit 1
+    fi
+fi
+
+ARCH=\$(uname -m 2>/dev/null || echo 'x86_64')
+case \"\$ARCH\" in
+    x86_64) FRP_ARCH='amd64' ;;
+    aarch64|arm64) FRP_ARCH='arm64' ;;
+    armv7l|armhf) FRP_ARCH='arm' ;;
+    i386|i686) FRP_ARCH='386' ;;
+    *) echo 'ERR_UNSUPPORTED_ARCH' && exit 1 ;;
+esac
+
+FRP_VER='0.61.1'
+\$SUDO mkdir -p /etc/frps /opt/frps
+
+if ! command -v frps >/dev/null 2>&1 && [ ! -x /usr/local/bin/frps ]; then
+    TAR="frp_\${FRP_VER}_linux_\${FRP_ARCH}.tar.gz"
+    ORIGIN="https://github.com/fatedier/frp/releases/download/v\${FRP_VER}/\${TAR}"
+    DOWNLOADED=0
+    for URL in \
+        "https://ghproxy.cn/\${ORIGIN}" \
+        "https://gh-proxy.com/\${ORIGIN}" \
+        "https://gh-proxy.net/\${ORIGIN}" \
+        "https://ghfast.top/\${ORIGIN}" \
+        "https://github.boki.moe/\${ORIGIN}" \
+        "\${ORIGIN}"
+    do
+        rm -f /tmp/frp.tar.gz
+        if curl -fsSL --connect-timeout 6 -m 40 "\$URL" -o /tmp/frp.tar.gz 2>/dev/null || \
+           wget -q --timeout=6 -T 40 -O /tmp/frp.tar.gz "\$URL" 2>/dev/null; then
+            if tar -ztvf /tmp/frp.tar.gz >/dev/null 2>&1; then
+                DOWNLOADED=1
+                break
+            else
+                rm -f /tmp/frp.tar.gz
+            fi
+        fi
+    done
+    if [ \"\$DOWNLOADED\" -ne 1 ]; then
+        echo 'ERR_DOWNLOAD_FAILED'
+        exit 1
+    fi
+    tar -zxvf /tmp/frp.tar.gz -C /tmp/ >/dev/null 2>&1
+    \$SUDO cp /tmp/frp_\${FRP_VER}_linux_\${FRP_ARCH}/frps /usr/local/bin/frps
+    \$SUDO chmod +x /usr/local/bin/frps
+    rm -rf /tmp/frp*
+fi
+
+[ -f /usr/local/bin/frps ] && [ ! -f /usr/bin/frps ] && \$SUDO ln -sf /usr/local/bin/frps /usr/bin/frps
+
+\$SUDO tee /etc/frps/frps.toml >/dev/null << TOML
+bindPort = ${bind_port}
+auth.token = \"${token}\"
+allowPorts = [
+    { start = 10000, end = 30000 }
+]
+TOML
+
+if [ -d /etc/systemd/system ]; then
+    \$SUDO tee /etc/systemd/system/frps.service >/dev/null << SERVICE
+[Unit]
+Description=FRP Server Service
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/frps -c /etc/frps/frps.toml
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target
+SERVICE
+
+    \$SUDO systemctl daemon-reload >/dev/null 2>&1 || true
+    \$SUDO systemctl enable frps >/dev/null 2>&1 || true
+    \$SUDO systemctl restart frps >/dev/null 2>&1 || true
+else
+    \$SUDO pkill -x frps 2>/dev/null || true
+    nohup \$SUDO /usr/local/bin/frps -c /etc/frps/frps.toml >/var/log/frps.log 2>&1 &
+fi
+
+if command -v ufw >/dev/null 2>&1 && \$SUDO ufw status 2>/dev/null | grep -q 'active'; then
+    \$SUDO ufw allow ${bind_port}/tcp >/dev/null 2>&1 || true
+    \$SUDO ufw allow ${remote_web_port}/tcp >/dev/null 2>&1 || true
+elif command -v firewall-cmd >/dev/null 2>&1 && systemctl is-active --quiet firewalld 2>/dev/null; then
+    \$SUDO firewall-cmd --add-port=${bind_port}/tcp --permanent >/dev/null 2>&1 || true
+    \$SUDO firewall-cmd --add-port=${remote_web_port}/tcp --permanent >/dev/null 2>&1 || true
+    \$SUDO firewall-cmd --reload >/dev/null 2>&1 || true
+elif command -v iptables >/dev/null 2>&1; then
+    \$SUDO iptables -I INPUT -p tcp --dport ${bind_port} -j ACCEPT 2>/dev/null || true
+    \$SUDO iptables -I INPUT -p tcp --dport ${remote_web_port} -j ACCEPT 2>/dev/null || true
+fi
+
+sleep 1
+if pgrep -x frps >/dev/null 2>&1; then
+    echo 'FRPS_DEPLOY_SUCCESS'
+else
+    echo 'FRPS_START_FAILED'
+    exit 1
+fi
+"
+
+            local out=""
+            local ret=1
+            out=$(run_with_timeout 150 dbclient -y -o BatchMode=yes -i "$key_file" -p "$vps_port" "${vps_user}@${vps_ip}" "$remote_cmd" 2>&1)
+            ret=$?
+
+            local success=0
+            local msg=""
+            local web_url="http://${vps_ip}:${remote_web_port}"
+
+            if [ $ret -eq 0 ] && echo "$out" | grep -q "FRPS_DEPLOY_SUCCESS"; then
+                uci -q set xfrpc.common.enabled='1'
+                uci -q set xfrpc.common.server_addr="$vps_ip"
+                uci -q set xfrpc.common.server_port="$bind_port"
+                uci -q set xfrpc.common.token="$token"
+                uci -q set xfrpc.common.auth_method='token'
+                uci -q set xfrpc.common.protocol='tcp'
+                uci -q set xfrpc.common.tcp_mux='1'
+
+                if ! uci -q get xfrpc.aw_web_tcp >/dev/null; then
+                    uci -q set xfrpc.aw_web_tcp='tcp'
+                fi
+                uci -q set xfrpc.aw_web_tcp.enabled='1'
+                uci -q set xfrpc.aw_web_tcp.local_ip='127.0.0.1'
+                uci -q set xfrpc.aw_web_tcp.local_port='80'
+                uci -q set xfrpc.aw_web_tcp.remote_port="$remote_web_port"
+
+                uci commit xfrpc
+                /etc/init.d/xfrpc restart >/dev/null 2>&1
+
+                success=1
+                msg="VPS 服务端 frps 部署成功，路由器客户端已自动拉通！"
+            else
+                success=0
+                if echo "$out" | grep -q "ERR_SUDO_PASSWORD_REQUIRED"; then
+                    msg="VPS 当前登录用户 (${vps_user}) 执行 sudo 需要密码，无法免交互部署服务。请在 VPS 终端执行免密提权: echo '\$USER ALL=(ALL) NOPASSWD:ALL' | sudo tee /etc/sudoers.d/\$USER 或改用 root 用户。"
+                elif echo "$out" | grep -q "ERR_DOWNLOAD_FAILED"; then
+                    msg="远程 VPS 下载 frps 安装包失败或超时。提示：若 VPS 处于极端无外网隔离环境，可在 VPS 手动下载 frps 放入 /usr/local/bin/frps，系统将自动检测并跳过下载直接部署。"
+                elif echo "$out" | grep -q "ERR_UNSUPPORTED_ARCH"; then
+                    msg="VPS 体系架构不受支持。"
+                elif echo "$out" | grep -qi "permission denied\|auth.*fail\|no auth methods"; then
+                    msg="SSH 免密登录失败（用户: ${vps_user}）：公钥尚未在该用户的 ~/.ssh/authorized_keys 中生效。"
+                elif echo "$out" | grep -q "FRPS_START_FAILED"; then
+                    msg="frps 服务在 VPS 上启动失败，可能是端口 ${bind_port} 已被占用。"
+                else
+                    msg="远程部署失败: $(echo "$out" | tail -n 2 | tr '\n' ' ')"
+                fi
+            fi
+
+            json_init
+            json_add_object "result"
+            json_add_boolean "success" "$success"
+            json_add_string "vps_ip" "$vps_ip"
+            json_add_string "vps_user" "$vps_user"
+            json_add_string "server_port" "$bind_port"
+            json_add_string "remote_web_port" "$remote_web_port"
+            json_add_string "token" "$token"
+            json_add_string "web_url" "$web_url"
+            json_add_string "message" "$msg"
+            json_close_object
+            json_dump
+        }
+
+        get_penetration_status() {
+            local enabled=$(uci -q get xfrpc.common.enabled || echo 0)
+            local server_addr=$(uci -q get xfrpc.common.server_addr)
+            local server_port=$(uci -q get xfrpc.common.server_port || echo 7001)
+            local protocol=$(uci -q get xfrpc.common.protocol || echo tcp)
+            local pid=$(pidof xfrpc 2>/dev/null)
+            local run=0
+            [ -n "$pid" ] && run=1
+
+            local sock_line=$(netstat -ntp 2>/dev/null | grep "[0-9]*/xfrpc" | grep ":${server_port} " | head -n1)
+            [ -z "$sock_line" ] && sock_line=$(netstat -ntp 2>/dev/null | grep "[0-9]*/xfrpc" | head -n1)
+
+            local sock_state="NONE"
+            local local_ep=""
+            local remote_ep=""
+            if [ -n "$sock_line" ]; then
+                local_ep=$(echo "$sock_line" | awk '{print $4}')
+                remote_ep=$(echo "$sock_line" | awk '{print $5}')
+                sock_state=$(echo "$sock_line" | awk '{print $6}')
+            fi
+
+            local connected=0
+            [ "$sock_state" = "ESTABLISHED" ] && connected=1
+
+            local last_err=""
+            local recent_logs=""
+            if command -v logread >/dev/null 2>&1; then
+                recent_logs=$(logread 2>/dev/null | grep -i "xfrpc" | tail -n 8)
+                if echo "$recent_logs" | grep -qi "failed\|timed out\|refused\|disconnect\|error"; then
+                    last_err=$(echo "$recent_logs" | grep -Ei "failed|timed out|refused|disconnect|error" | tail -n1 | sed "s/.*xfrpc\[[0-9]*\]: //")
+                fi
+            fi
+
+            local status="stopped"
+            local diagnosis=""
+            if [ "$run" -eq 1 ]; then
+                if [ "$connected" -eq 1 ]; then
+                    status="connected"
+                    diagnosis="xfrpc 客户端运行正常，且已成功与远端 frps 服务端 ($server_addr:$server_port) 建立稳定连接 (ESTABLISHED)，内网穿透隧道生效中。"
+                elif [ "$sock_state" = "SYN_SENT" ]; then
+                    status="connecting_timeout"
+                    diagnosis="xfrpc 客户端正在运行，但与远端 frps 服务端 ($server_addr:$server_port) 处于握手连接超时状态 (SYN_SENT)。可能原因：1. VPS 上的 frps 未启动；2. VPS 防火墙或云控制台安全组未放行端口 $server_port；3. VPS IP 地址填写错误。"
+                elif echo "$last_err" | grep -qi "refused"; then
+                    status="connection_refused"
+                    diagnosis="xfrpc 客户端正在运行，但连接被 VPS 拒绝（Connection refused）。VPS 上的端口未被监听，请检查 frps 服务是否正常运行。"
+                elif echo "$last_err" | grep -qi "token\|auth"; then
+                    status="auth_failed"
+                    diagnosis="xfrpc 客户端正在运行，但认证失败。请检查路由器与 VPS 服务端的认证 Token 是否一致。"
+                else
+                    status="disconnected"
+                    diagnosis="xfrpc 客户端正在运行，但尚未与远端 frps 建立连接 (当前套接字: ${sock_state:-无活跃连接})。${last_err:+最新日志: $last_err}"
+                fi
+            else
+                status="stopped"
+                diagnosis="xfrpc 客户端未运行。请先开启内网穿透服务。"
+            fi
+
+            local is_enabled=0
+            [ "$enabled" = "1" ] && is_enabled=1
+
+            json_init
+            json_add_object "result"
+            json_add_string "service" "xfrpc"
+            json_add_boolean "enabled" "$is_enabled"
+            json_add_boolean "running" "$run"
+            json_add_boolean "connected_to_frps" "$connected"
+            json_add_string "status" "$status"
+            json_add_string "server_addr" "$server_addr"
+            json_add_string "server_port" "$server_port"
+            json_add_string "protocol" "$protocol"
+            json_add_string "pid" "${pid:-none}"
+            json_add_string "socket_state" "$sock_state"
+            json_add_string "local_endpoint" "$local_ep"
+            json_add_string "remote_endpoint" "$remote_ep"
+            json_add_string "last_error" "$last_err"
+            json_add_string "diagnosis" "$diagnosis"
+
+            json_add_array "proxies"
+            for sec in $(uci -q show xfrpc | grep -E "=(tcp|http|https|udp|socks5|stcp|xtcp|sudp|tcpmux)" | cut -d. -f2 | cut -d= -f1); do
+                local type=$(uci -q get xfrpc.${sec})
+                local penabled=$(uci -q get xfrpc.${sec}.enabled || echo 1)
+                local lip=$(uci -q get xfrpc.${sec}.local_ip)
+                local lport=$(uci -q get xfrpc.${sec}.local_port)
+                local rport=$(uci -q get xfrpc.${sec}.remote_port)
+                local subdomain=$(uci -q get xfrpc.${sec}.subdomain)
+                local custom_domains=$(uci -q get xfrpc.${sec}.custom_domains)
+                local use_enc=$(uci -q get xfrpc.${sec}.use_encryption || echo 0)
+                local use_comp=$(uci -q get xfrpc.${sec}.use_compression || echo 0)
+                local is_p_en=0
+                [ "$penabled" = "1" ] && is_p_en=1
+
+                local access_url=""
+                if [ "$type" = "tcp" ] && [ -n "$rport" ] && [ -n "$server_addr" ]; then
+                    access_url="tcp://${server_addr}:${rport}"
+                elif [ "$type" = "udp" ] && [ -n "$rport" ] && [ -n "$server_addr" ]; then
+                    access_url="udp://${server_addr}:${rport}"
+                elif [ "$type" = "socks5" ] && [ -n "$rport" ] && [ -n "$server_addr" ]; then
+                    access_url="socks5://${server_addr}:${rport}"
+                elif [ "$type" = "http" ] || [ "$type" = "https" ]; then
+                    if [ -n "$custom_domains" ]; then
+                        access_url="${type}://${custom_domains%% *}"
+                    elif [ -n "$subdomain" ]; then
+                        access_url="${type}://${subdomain}.${server_addr}"
+                    fi
+                fi
+
+                json_add_object
+                json_add_string "name" "$sec"
+                json_add_string "type" "$type"
+                json_add_boolean "enabled" "$is_p_en"
+                json_add_string "local_target" "${lip:+${lip}:}${lport}"
+                json_add_string "remote_port" "$rport"
+                json_add_string "subdomain" "$subdomain"
+                json_add_string "custom_domains" "$custom_domains"
+                json_add_boolean "use_encryption" "$([ "$use_enc" = "1" ] && echo 1 || echo 0)"
+                json_add_boolean "use_compression" "$([ "$use_comp" = "1" ] && echo 1 || echo 0)"
+                json_add_string "access_url" "$access_url"
+                json_close_object
+            done
+            json_close_array
+
+            json_close_object
+            json_dump
+        }
+
+        manage_xdns_domain() {
+            read -r input
+            json_load "$input"
+            json_get_var action "action"
+            json_get_var domain "domain"
+
+            local domains_file=$(uci -q get xdns.global.proxy_domains_file || echo "/etc/xdns/proxy_domains.txt")
+            local success=0
+            local msg=""
+
+            case "$action" in
+                list)
+                    json_init
+                    json_add_object "result"
+                    json_add_string "status" "success"
+                    json_add_boolean "success" "1"
+                    json_add_string "action" "list"
+                    json_add_array "domains"
+                    if command -v /usr/bin/xdns-ctl >/dev/null 2>&1; then
+                        local ctl_domains=$(/usr/bin/xdns-ctl list-domains 2>/dev/null | grep -E '\s+Active\s*$' || true)
+                        while read -r dline; do
+                            [ -z "$dline" ] && continue
+                            local dname=$(echo "$dline" | awk '{print $1}')
+                            local dhash=$(echo "$dline" | awk '{print $2}')
+                            local dstate=$(echo "$dline" | awk '{print $3}')
+                            [ -z "$dname" ] || [ "$dname" = "Domain" ] && continue
+                            json_add_object ""
+                            json_add_string "domain" "$dname"
+                            json_add_string "hash" "$dhash"
+                            json_add_string "state" "$dstate"
+                            json_close_object
+                        done <<EOF
+$ctl_domains
+EOF
+                    elif [ -f "$domains_file" ]; then
+                        for d in $(grep -v '^[[:space:]]*#' "$domains_file" | grep -v '^[[:space:]]*$'); do
+                            json_add_object ""
+                            json_add_string "domain" "$d"
+                            json_add_string "state" "Configured"
+                            json_close_object
+                        done
+                    fi
+                    json_close_array
+                    local total=$(grep -v '^[[:space:]]*#' "$domains_file" 2>/dev/null | grep -v '^[[:space:]]*$' | wc -l)
+                    json_add_int "total_count" "${total:-0}"
+                    json_close_object
+                    json_dump
+                    return
+                    ;;
+                add)
+                    if [ -z "$domain" ]; then
+                        msg="域名不能为空"
+                    elif command -v /usr/bin/xdns-ctl >/dev/null 2>&1; then
+                        local out=$(/usr/bin/xdns-ctl add-domain "$domain" 2>&1)
+                        success=1
+                        msg="已成功将域名 [$domain] 添加至内核 eBPF 智能分流加速表及持久化配置文件，已立即生效"
+                    else
+                        [ -f "$domains_file" ] && echo "$domain" >> "$domains_file"
+                        success=1
+                        msg="已将域名 [$domain] 追加至分流列表"
+                    fi
+                    ;;
+                remove|del)
+                    if [ -z "$domain" ]; then
+                        msg="域名不能为空"
+                    elif command -v /usr/bin/xdns-ctl >/dev/null 2>&1; then
+                        local out=$(/usr/bin/xdns-ctl del-domain "$domain" 2>&1)
+                        success=1
+                        msg="已成功从内核 eBPF 智能分流表中移除域名 [$domain]，已立即生效"
+                    else
+                        [ -f "$domains_file" ] && sed -i "/^${domain}$/d" "$domains_file"
+                        success=1
+                        msg="已从分流列表中删除域名 [$domain]"
+                    fi
+                    ;;
+                clear_ips|flush)
+                    if command -v /usr/bin/xdns-ctl >/dev/null 2>&1; then
+                        local out=$(/usr/bin/xdns-ctl clear-ips 2>&1)
+                        success=1
+                        msg="已成功清空内核 eBPF 动态劫持加速 IP 集合缓存 ($out)"
+                    else
+                        msg="未找到 xdns-ctl 管理命令"
+                    fi
+                    ;;
+                reload)
+                    if command -v /usr/bin/xdns-ctl >/dev/null 2>&1; then
+                        local out=$(/usr/bin/xdns-ctl reload-domains 2>&1)
+                        success=1
+                        msg="已成功将持久化域名规则全量重载至内核，并清空历史 IP 缓存 ($out)"
+                    else
+                        msg="未找到 xdns-ctl 管理命令"
+                    fi
+                    ;;
+                list_ips)
+                    json_init
+                    json_add_object "result"
+                    json_add_string "status" "success"
+                    json_add_boolean "success" "1"
+                    json_add_string "action" "list_ips"
+                    json_add_array "ips"
+                    if command -v /usr/bin/xdns-ctl >/dev/null 2>&1; then
+                        local ctl_ips=$(/usr/bin/xdns-ctl list-ips 2>/dev/null | grep -E '^[0-9]')
+                        while read -r ipline; do
+                            [ -z "$ipline" ] && continue
+                            local ip_addr=$(echo "$ipline" | awk '{print $1}')
+                            local exp_time=$(echo "$ipline" | awk '{print $2}')
+                            json_add_object ""
+                            json_add_string "ip" "$ip_addr"
+                            json_add_string "expires_in" "$exp_time"
+                            json_close_object
+                        done <<EOF
+$ctl_ips
+EOF
+                    fi
+                    json_close_array
+                    local total_ips=$(/usr/bin/xdns-ctl list-ips 2>/dev/null | grep -E '^[0-9]' | wc -l)
+                    json_add_int "total_ips" "${total_ips:-0}"
+                    json_close_object
+                    json_dump
+                    return
+                    ;;
+                list_sessions)
+                    json_init
+                    json_add_object "result"
+                    json_add_string "status" "success"
+                    json_add_boolean "success" "1"
+                    json_add_string "action" "list_sessions"
+                    json_add_array "sessions"
+                    if command -v /usr/bin/xdns-ctl >/dev/null 2>&1; then
+                        local ctl_sessions=$(/usr/bin/xdns-ctl list-sessions 2>/dev/null | grep -E '^[0-9]')
+                        while read -r sline; do
+                            [ -z "$sline" ] && continue
+                            local client_ep=$(echo "$sline" | awk '{print $1}')
+                            local target_ep=$(echo "$sline" | awk '{print $2}')
+                            local last_seen=$(echo "$sline" | awk '{$1=""; $2=""; print $0}' | sed 's/^[[:space:]]*//')
+                            json_add_object ""
+                            json_add_string "client" "$client_ep"
+                            json_add_string "target" "$target_ep"
+                            json_add_string "last_seen" "$last_seen"
+                            json_close_object
+                        done <<EOF
+$ctl_sessions
+EOF
+                    fi
+                    json_close_array
+                    local total_sessions=$(/usr/bin/xdns-ctl list-sessions 2>/dev/null | grep -E '^[0-9]' | wc -l)
+                    json_add_int "total_sessions" "${total_sessions:-0}"
+                    json_close_object
+                    json_dump
+                    return
+                    ;;
+                stats)
+                    local ctl_stats=$(/usr/bin/xdns-ctl stats 2>/dev/null)
+                    json_init
+                    json_add_object "result"
+                    json_add_string "status" "success"
+                    json_add_boolean "success" "1"
+                    json_add_string "action" "stats"
+                    json_add_int "dns_queries_intercepted" "$(echo "$ctl_stats" | grep "DNS Queries Intercepted" | awk '{print $NF}' || echo 0)"
+                    json_add_int "dns_queries_proxied" "$(echo "$ctl_stats" | grep "DNS Queries Proxied" | awk '{print $NF}' || echo 0)"
+                    json_add_int "dns_responses_learned" "$(echo "$ctl_stats" | grep "DNS Responses Learned" | awk '{print $NF}' || echo 0)"
+                    json_add_int "tcp_connections_proxied" "$(echo "$ctl_stats" | grep "TCP Connections Proxied" | awk '{print $NF}' || echo 0)"
+                    json_close_object
+                    json_dump
+                    return
+                    ;;
+                *)
+                    msg="未知的操作动作: $action (支持: list, add, remove, clear_ips, reload, list_ips, list_sessions, stats)"
+                    ;;
+            esac
+
+            local total=$(grep -v '^[[:space:]]*#' "$domains_file" 2>/dev/null | grep -v '^[[:space:]]*$' | wc -l)
+            json_init
+            json_add_object "result"
+            json_add_boolean "success" "$success"
+            json_add_string "action" "$action"
+            json_add_string "domain" "$domain"
+            json_add_string "message" "$msg"
+            json_add_int "total_domains" "${total:-0}"
+            json_close_object
+            json_dump
+        }
+
+        manage_portal_access() {
+            read -r input
+            json_load "$input"
+            json_get_var action "action"
+            json_get_var mac "mac"
+            json_get_var domain "domain"
+            json_get_var target "target"
+            json_get_var feature "feature"
+            json_get_var value "value"
+
+            # 智能映射与规范化
+            [ -z "$mac" ] && [ -n "$target" ] && echo "$target" | grep -E -q '^([0-9a-fA-F]{2}[:-]){5}[0-9a-fA-F]{2}$' && mac="$target"
+            [ -n "$mac" ] && mac=$(echo "$mac" | tr 'A-Z' 'a-z' | tr '-' ':')
+            [ -z "$domain" ] && [ -n "$target" ] && echo "$target" | grep -v ':' | grep -q '\.' && domain="$target"
+            [ -n "$domain" ] && domain=$(echo "$domain" | tr 'A-Z' 'a-z' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+
+            local success=0
+            local msg=""
+
+            case "$action" in
+                list)
+                    json_init
+                    json_add_object "result"
+                    json_add_boolean "success" "1"
+                    json_add_string "action" "list"
+                    json_add_string "status" "success"
+
+                    json_add_array "trusted_macs"
+                    for m in $(uci -q get wifidogx.common.trusted_macs); do
+                        json_add_string "" "$m"
+                    done
+                    json_close_array
+
+                    json_add_array "untrusted_macs"
+                    for m in $(uci -q get wifidogx.common.untrust_macs); do
+                        json_add_string "" "$m"
+                    done
+                    json_close_array
+
+                    json_add_array "trusted_domains"
+                    for d in $(uci -q get wifidogx.common.trusted_domains); do
+                        json_add_string "" "$d"
+                    done
+                    json_close_array
+
+                    json_add_array "trusted_wildcard_domains"
+                    for wd in $(uci -q get wifidogx.common.trusted_wildcard_domains); do
+                        json_add_string "" "$wd"
+                    done
+                    json_close_array
+
+                    json_add_array "online_users"
+                    local ujson=$(/usr/bin/wdctlx apfree user_list 2>/dev/null)
+                    if [ -n "$ujson" ]; then
+                        local users_raw=$(echo "$ujson" | jsonfilter -e '@["online user"][*]' 2>/dev/null)
+                        while read -r uline; do
+                            [ -z "$uline" ] && continue
+                            local um=$(echo "$uline" | jsonfilter -e '@.mac' 2>/dev/null)
+                            local rem=$(echo "$uline" | jsonfilter -e '@["remaining time"]' 2>/dev/null)
+                            [ -z "$um" ] && continue
+                            [ -z "$rem" ] && rem=0
+                            local uip=""
+                            local uhost=""
+                            if [ -f /tmp/dhcp.leases ]; then
+                                local lease_line=$(grep -i "$um" /tmp/dhcp.leases | head -n1)
+                                uip=$(echo "$lease_line" | awk '{print $3}')
+                                uhost=$(echo "$lease_line" | awk '{print $4}')
+                                [ "$uhost" = "*" ] && uhost=""
+                            fi
+                            json_add_object ""
+                            json_add_string "mac" "$um"
+                            json_add_string "ip" "${uip:-未知}"
+                            json_add_string "hostname" "${uhost:-未知设备}"
+                            json_add_int "remaining_seconds" "$rem"
+                            json_close_object
+                        done <<EOF
+$users_raw
+EOF
+                    fi
+                    json_close_array
+
+                    json_add_string "disable_portal_auth" "$(uci -q get wifidogx.common.disable_portal_auth || echo 0)"
+                    json_add_string "wired_passed" "$(uci -q get wifidogx.common.wired_passed || echo 0)"
+                    json_add_string "enable_anti_nat" "$(uci -q get wifidogx.common.enable_anti_nat || echo 0)"
+                    json_close_object
+                    json_dump
+                    return
+                    ;;
+
+                add_whitelist|add_white|add)
+                    if [ -z "$mac" ]; then
+                        msg="MAC 地址不能为空"
+                    elif ! echo "$mac" | grep -E -q '^([0-9a-f]{2}:){5}[0-9a-f]{2}$'; then
+                        msg="MAC 地址格式不正确 (应形如: aa:bb:cc:dd:ee:ff)"
+                    else
+                        uci del_list wifidogx.common.untrust_macs="$mac" 2>/dev/null
+                        /usr/bin/wdctlx blacklist mac del "$mac" >/dev/null 2>&1
+
+                        if ! uci -q get wifidogx.common.trusted_macs | grep -qi "$mac"; then
+                            uci add_list wifidogx.common.trusted_macs="$mac"
+                            uci commit wifidogx
+                        fi
+                        /usr/bin/wdctlx add mac "$mac" >/dev/null 2>&1
+                        success=1
+                        msg="已成功将终端 MAC [$mac] 加入免认证白名单，该设备现在无需登录即可直接上网"
+                    fi
+                    ;;
+
+                del_whitelist|del_white|remove_white|remove|del)
+                    if [ -z "$mac" ]; then
+                        msg="MAC 地址不能为空"
+                    else
+                        uci del_list wifidogx.common.trusted_macs="$mac"
+                        uci commit wifidogx
+                        /usr/bin/wdctlx del mac "$mac" >/dev/null 2>&1
+                        success=1
+                        msg="已成功将终端 MAC [$mac] 从免认证白名单中移除"
+                    fi
+                    ;;
+
+                add_blacklist|add_black)
+                    if [ -z "$mac" ]; then
+                        msg="MAC 地址不能为空"
+                    elif ! echo "$mac" | grep -E -q '^([0-9a-f]{2}:){5}[0-9a-f]{2}$'; then
+                        msg="MAC 地址格式不正确 (应形如: aa:bb:cc:dd:ee:ff)"
+                    else
+                        uci del_list wifidogx.common.trusted_macs="$mac" 2>/dev/null
+                        /usr/bin/wdctlx del mac "$mac" >/dev/null 2>&1
+
+                        if ! uci -q get wifidogx.common.untrust_macs | grep -qi "$mac"; then
+                            uci add_list wifidogx.common.untrust_macs="$mac"
+                            uci commit wifidogx
+                        fi
+                        /usr/bin/wdctlx blacklist mac add "$mac" >/dev/null 2>&1
+                        /usr/bin/wdctlx reset "$mac" >/dev/null 2>&1
+                        success=1
+                        msg="已成功将终端 MAC [$mac] 加入门户黑名单并即时强制踢下线，该终端已被防火墙阻断！"
+                    fi
+                    ;;
+
+                del_blacklist|del_black|remove_black)
+                    if [ -z "$mac" ]; then
+                        msg="MAC 地址不能为空"
+                    else
+                        uci del_list wifidogx.common.untrust_macs="$mac"
+                        uci commit wifidogx
+                        /usr/bin/wdctlx blacklist mac del "$mac" >/dev/null 2>&1
+                        success=1
+                        msg="已成功将终端 MAC [$mac] 从黑名单中移除"
+                    fi
+                    ;;
+
+                kick_client|kick|reset)
+                    local kick_target="${target:-$mac}"
+                    if [ -z "$kick_target" ]; then
+                        msg="踢下线目标不能为空 (请输入终端 MAC 或 IP 地址)"
+                    else
+                        local res=$(/usr/bin/wdctlx reset "$kick_target" 2>/dev/null)
+                        success=1
+                        msg="已成功强制将终端 [$kick_target] 踢下线并清除认证会话，该设备已被防火墙即时阻断，需重新完成网页认证方可上网。"
+                    fi
+                    ;;
+
+                add_domain)
+                    if [ -z "$domain" ]; then
+                        msg="域名不能为空"
+                    else
+                        if echo "$domain" | grep -q '^\*\.'; then
+                            if ! uci -q get wifidogx.common.trusted_wildcard_domains | grep -qi "$domain"; then
+                                uci add_list wifidogx.common.trusted_wildcard_domains="$domain"
+                                uci commit wifidogx
+                            fi
+                            /usr/bin/wdctlx add wildcard_domain "$domain" >/dev/null 2>&1
+                            success=1
+                            msg="已成功将通配符域名 [$domain] 加入门户免认证信任名单，所有该主域下的网站无需登录即可免认证访问"
+                        else
+                            if ! uci -q get wifidogx.common.trusted_domains | grep -qi "$domain"; then
+                                uci add_list wifidogx.common.trusted_domains="$domain"
+                                uci commit wifidogx
+                            fi
+                            /usr/bin/wdctlx add domain "$domain" >/dev/null 2>&1
+                            success=1
+                            msg="已成功将域名 [$domain] 加入门户免认证信任名单，该网站无需登录即可免认证访问"
+                        fi
+                    fi
+                    ;;
+
+                del_domain|remove_domain)
+                    if [ -z "$domain" ]; then
+                        msg="域名不能为空"
+                    else
+                        if echo "$domain" | grep -q '^\*\.'; then
+                            uci del_list wifidogx.common.trusted_wildcard_domains="$domain"
+                            uci commit wifidogx
+                            /usr/bin/wdctlx del wildcard_domain "$domain" >/dev/null 2>&1
+                            success=1
+                            msg="已成功从免认证名单中移除通配符域名 [$domain]"
+                        else
+                            uci del_list wifidogx.common.trusted_domains="$domain"
+                            uci commit wifidogx
+                            /usr/bin/wdctlx del domain "$domain" >/dev/null 2>&1
+                            success=1
+                            msg="已成功从免认证名单中移除域名 [$domain]"
+                        fi
+                    fi
+                    ;;
+
+                set_feature)
+                    if [ "$feature" = "disable_portal_auth" ] || [ "$feature" = "wired_passed" ] || [ "$feature" = "enable_anti_nat" ]; then
+                        uci set "wifidogx.common.${feature}=${value}"
+                        uci commit wifidogx
+                        /etc/init.d/wifidogx restart >/dev/null 2>&1
+                        success=1
+                        msg="已成功更新门户功能参数 [${feature} = ${value}] 并重启生效"
+                    else
+                        msg="未知的功能参数: $feature"
+                    fi
+                    ;;
+
+                *)
+                    msg="未知的门户操作动作: $action"
+                    ;;
+            esac
+
+            json_init
+            json_add_object "result"
+            json_add_boolean "success" "$success"
+            json_add_string "action" "$action"
+            json_add_string "message" "$msg"
+            json_add_array "current_whitelist"
+            for m in $(uci -q get wifidogx.common.trusted_macs); do
+                json_add_string "" "$m"
+            done
+            json_close_array
+            json_add_array "current_blacklist"
+            for m in $(uci -q get wifidogx.common.untrust_macs); do
+                json_add_string "" "$m"
+            done
+            json_close_array
+            json_close_object
+            json_dump
+        }
+
+        manage_portal_whitelist() {
+            manage_portal_access
+        }
+
+        manage_penetration_proxy() {
+            read -r input
+            json_load "$input"
+            json_get_var action "action"
+            json_get_var rule_name "rule_name"
+            json_get_var proxy_type "proxy_type"
+            json_get_var local_ip "local_ip"
+            json_get_var local_port "local_port"
+            json_get_var remote_port "remote_port"
+            json_get_var subdomain "subdomain"
+            json_get_var custom_domains "custom_domains"
+            json_get_var use_encryption "use_encryption"
+            json_get_var use_compression "use_compression"
+
+            local success=0
+            local msg=""
+
+            case "$action" in
+                list)
+                    get_penetration_status
+                    return
+                    ;;
+                add|set)
+                    if [ -z "$rule_name" ]; then
+                        msg="规则名称 (rule_name) 不能为空"
+                    elif [ -z "$local_port" ] && [ "$proxy_type" != "socks5" ]; then
+                        msg="本地端口 (local_port) 不能为空"
+                    else
+                        [ -z "$proxy_type" ] && proxy_type="tcp"
+                        [ -z "$local_ip" ] && local_ip="127.0.0.1"
+
+                        uci -q set xfrpc.${rule_name}="${proxy_type}"
+                        uci -q set xfrpc.${rule_name}.enabled="1"
+                        [ -n "$local_ip" ] && uci -q set xfrpc.${rule_name}.local_ip="${local_ip}"
+                        [ -n "$local_port" ] && uci -q set xfrpc.${rule_name}.local_port="${local_port}"
+                        [ -n "$remote_port" ] && uci -q set xfrpc.${rule_name}.remote_port="${remote_port}"
+                        [ -n "$subdomain" ] && uci -q set xfrpc.${rule_name}.subdomain="${subdomain}"
+                        [ -n "$custom_domains" ] && uci -q set xfrpc.${rule_name}.custom_domains="${custom_domains}"
+                        if [ -n "$use_encryption" ]; then
+                            uci -q set xfrpc.${rule_name}.use_encryption="$([ "$use_encryption" = "1" -o "$use_encryption" = "true" ] && echo 1 || echo 0)"
+                        fi
+                        if [ -n "$use_compression" ]; then
+                            uci -q set xfrpc.${rule_name}.use_compression="$([ "$use_compression" = "1" -o "$use_compression" = "true" ] && echo 1 || echo 0)"
+                        fi
+                        uci commit xfrpc
+                        /etc/init.d/xfrpc restart >/dev/null 2>&1
+                        success=1
+                        local target_desc="${remote_port:+远程端口 $remote_port}${subdomain:+子域名 $subdomain}${custom_domains:+自定义域名 $custom_domains}"
+                        msg="已成功创建/更新内网穿透规则 [${rule_name}] (${proxy_type}: ${local_ip}:${local_port} -> ${target_desc:-目标已设定})，服务已重启生效"
+                    fi
+                    ;;
+                enable)
+                    if [ -z "$rule_name" ]; then
+                        msg="规则名称 (rule_name) 不能为空"
+                    elif [ -z "$(uci -q get xfrpc.${rule_name})" ]; then
+                        msg="未找到名称为 [${rule_name}] 的穿透规则"
+                    else
+                        uci -q set xfrpc.${rule_name}.enabled="1"
+                        uci commit xfrpc
+                        /etc/init.d/xfrpc restart >/dev/null 2>&1
+                        success=1
+                        msg="已成功启用内网穿透规则 [${rule_name}]，服务已重启生效"
+                    fi
+                    ;;
+                disable)
+                    if [ -z "$rule_name" ]; then
+                        msg="规则名称 (rule_name) 不能为空"
+                    elif [ -z "$(uci -q get xfrpc.${rule_name})" ]; then
+                        msg="未找到名称为 [${rule_name}] 的穿透规则"
+                    else
+                        uci -q set xfrpc.${rule_name}.enabled="0"
+                        uci commit xfrpc
+                        /etc/init.d/xfrpc restart >/dev/null 2>&1
+                        success=1
+                        msg="已成功停用/禁用内网穿透规则 [${rule_name}]，服务已重启生效"
+                    fi
+                    ;;
+                remove|del|delete)
+                    if [ -z "$rule_name" ]; then
+                        msg="规则名称 (rule_name) 不能为空"
+                    elif [ -z "$(uci -q get xfrpc.${rule_name})" ]; then
+                        msg="未找到名称为 [${rule_name}] 的穿透规则"
+                    else
+                        uci -q delete xfrpc.${rule_name}
+                        uci commit xfrpc
+                        /etc/init.d/xfrpc restart >/dev/null 2>&1
+                        success=1
+                        msg="已成功删除内网穿透规则 [${rule_name}]，服务已重启生效"
+                    fi
+                    ;;
+                *)
+                    msg="未知的操作动作: $action (支持: list, add, remove, enable, disable)"
+                    ;;
+            esac
+
+            json_init
+            json_add_object "result"
+            json_add_boolean "success" "$success"
+            json_add_string "action" "$action"
+            json_add_string "rule_name" "$rule_name"
+            json_add_string "message" "$msg"
+            json_close_object
+            json_dump
+        }
+
+        manage_xkcptun_tunnel() {
+            read -r input
+            json_load "$input"
+            json_get_var action "action"
+            json_get_var tunnel_name "tunnel_name"
+            json_get_var proto "proto"
+            json_get_var proxy_type "proxy_type"
+            json_get_var local_port "local_port"
+            json_get_var local_interface "local_interface"
+            json_get_var target_addr "target_addr"
+            json_get_var target_port "target_port"
+            json_get_var enabled "enabled"
+
+            local success=0
+            local msg=""
+
+            case "$action" in
+                list)
+                    local mon_raw=$(wget -qO- -T 1 http://127.0.0.1:9086 2>/dev/null)
+                    json_init
+                    json_add_object "result"
+                    json_add_string "status" "success"
+                    json_add_boolean "success" "1"
+                    json_add_string "action" "list"
+                    json_add_array "tunnels"
+                    local total_t=0
+                    local active_t=0
+                    for sec in $(uci -q show xkcptun | grep '=client$' | cut -d. -f2 | cut -d= -f1); do
+                        local t_name="$sec"
+                        local t_en=$(uci -q get xkcptun.${sec}.enabled || echo 1)
+                        local t_proto=$(uci -q get xkcptun.${sec}.proto || echo tcp)
+                        local t_type=$(uci -q get xkcptun.${sec}.proxy_type)
+                        [ -z "$t_type" ] && { [ "$t_proto" = "udp" ] && t_type="forward" || t_type="redir"; }
+                        local t_lport=$(uci -q get xkcptun.${sec}.local_port)
+                        local t_lif=$(uci -q get xkcptun.${sec}.local_interface || echo any)
+                        local t_target_addr=$(uci -q get xkcptun.${sec}.target_addr)
+                        local t_target_port=$(uci -q get xkcptun.${sec}.target_port)
+                        local t_conns=0
+                        if [ -n "$mon_raw" ]; then
+                            t_conns=$(echo "$mon_raw" | grep "\[${t_name}\]" | sed -n 's/.*conns: \([0-9]*\).*/\1/p' | head -n1)
+                            [ -z "$t_conns" ] && t_conns=0
+                        fi
+                        if [ "$t_type" = "redir" ] && [ -n "$t_lport" ]; then
+                            local est=$(netstat -nt 2>/dev/null | grep ":${t_lport} " | grep -c "ESTABLISHED" || echo 0)
+                            [ "${est:-0}" -gt "${t_conns:-0}" ] && t_conns="$est"
+                        fi
+                        total_t=$((total_t + 1))
+                        [ "$t_en" = "1" ] && active_t=$((active_t + 1))
+
+                        json_add_object ""
+                        json_add_string "name" "$t_name"
+                        json_add_boolean "enabled" "$([ "$t_en" = "1" ] && echo 1 || echo 0)"
+                        json_add_string "proto" "$t_proto"
+                        json_add_string "proxy_type" "$t_type"
+                        json_add_string "local_port" "$t_lport"
+                        json_add_string "local_interface" "$t_lif"
+                        json_add_string "target_addr" "$t_target_addr"
+                        json_add_string "target_port" "$t_target_port"
+                        json_add_int "active_connections" "${t_conns:-0}"
+                        json_close_object
+                    done
+                    json_close_array
+                    json_add_int "total_tunnels" "$total_t"
+                    json_add_int "enabled_tunnels" "$active_t"
+                    json_close_object
+                    json_dump
+                    return
+                    ;;
+                add|set)
+                    if [ -z "$tunnel_name" ]; then
+                        msg="隧道名称 (tunnel_name) 不能为空"
+                    elif [ -z "$local_port" ]; then
+                        msg="本地监听端口 (local_port) 不能为空"
+                    else
+                        [ -z "$proto" ] && proto="tcp"
+                        [ -z "$local_interface" ] && local_interface="any"
+                        if [ -z "$proxy_type" ]; then
+                            if [ "$proto" = "udp" ]; then
+                                proxy_type="forward"
+                            elif [ -n "$target_port" ]; then
+                                proxy_type="forward"
+                            else
+                                proxy_type="redir"
+                            fi
+                        fi
+
+                        uci set xkcptun.${tunnel_name}=client
+                        uci set xkcptun.${tunnel_name}.enabled="${enabled:-1}"
+                        uci set xkcptun.${tunnel_name}.proto="$proto"
+                        uci set xkcptun.${tunnel_name}.proxy_type="$proxy_type"
+                        uci set xkcptun.${tunnel_name}.local_port="$local_port"
+                        uci set xkcptun.${tunnel_name}.local_interface="$local_interface"
+                        [ -n "$target_addr" ] && uci set xkcptun.${tunnel_name}.target_addr="$target_addr"
+                        [ -n "$target_port" ] && uci set xkcptun.${tunnel_name}.target_port="$target_port"
+                        uci commit xkcptun
+                        /etc/init.d/xkcptun restart >/dev/null 2>&1
+                        success=1
+                        local target_desc="${target_addr:+ 转发至 $target_addr:$target_port}"
+                        msg="已成功创建/更新网络加速隧道 [${tunnel_name}] (${proto} 端口 ${local_port}${target_desc})，服务已重启生效"
+                    fi
+                    ;;
+                enable)
+                    if [ -z "$tunnel_name" ]; then
+                        msg="隧道名称 (tunnel_name) 不能为空"
+                    elif [ -z "$(uci -q get xkcptun.${tunnel_name})" ]; then
+                        msg="未找到名称为 [${tunnel_name}] 的加速隧道"
+                    else
+                        uci set xkcptun.${tunnel_name}.enabled="1"
+                        uci commit xkcptun
+                        /etc/init.d/xkcptun restart >/dev/null 2>&1
+                        success=1
+                        msg="已成功启用加速隧道 [${tunnel_name}]，服务已重启生效"
+                    fi
+                    ;;
+                disable)
+                    if [ -z "$tunnel_name" ]; then
+                        msg="隧道名称 (tunnel_name) 不能为空"
+                    elif [ -z "$(uci -q get xkcptun.${tunnel_name})" ]; then
+                        msg="未找到名称为 [${tunnel_name}] 的加速隧道"
+                    else
+                        uci set xkcptun.${tunnel_name}.enabled="0"
+                        uci commit xkcptun
+                        /etc/init.d/xkcptun restart >/dev/null 2>&1
+                        success=1
+                        msg="已成功停用/禁用加速隧道 [${tunnel_name}]，服务已重启生效"
+                    fi
+                    ;;
+                remove|del|delete)
+                    if [ -z "$tunnel_name" ]; then
+                        msg="隧道名称 (tunnel_name) 不能为空"
+                    elif [ -z "$(uci -q get xkcptun.${tunnel_name})" ]; then
+                        msg="未找到名称为 [${tunnel_name}] 的加速隧道"
+                    else
+                        uci delete xkcptun.${tunnel_name}
+                        uci commit xkcptun
+                        /etc/init.d/xkcptun restart >/dev/null 2>&1
+                        success=1
+                        msg="已成功删除加速隧道 [${tunnel_name}]，服务已重启生效"
+                    fi
+                    ;;
+                *)
+                    msg="未知的操作动作: $action (支持: list, add, remove, enable, disable)"
+                    ;;
+            esac
+
+            json_init
+            json_add_object "result"
+            json_add_boolean "success" "$success"
+            json_add_string "action" "$action"
+            json_add_string "tunnel_name" "$tunnel_name"
+            json_add_string "message" "$msg"
+            json_close_object
+            json_dump
+        }
+
         case "$2" in
             get_status) get_status ;;
             get_wan_mac) get_wan_mac ;;
+            get_router_summary) get_router_summary ;;
+            list_clients) list_clients ;;
+            get_services_status) get_services_status ;;
+            run_diagnostics) run_diagnostics ;;
+            uci_read) uci_read ;;
+            uci_apply) uci_apply ;;
+            get_ai_settings) get_ai_settings ;;
+            save_ai_settings) save_ai_settings ;;
+            call_deepseek) call_deepseek ;;
+            get_qos_status) get_qos_status ;;
+            set_qos_limit) set_qos_limit ;;
+            get_l7_top) get_l7_top ;;
+            get_service_detail) get_service_detail ;;
+            set_service_detail) set_service_detail ;;
+            get_wifi_info) get_wifi_info ;;
+            set_wifi_config) set_wifi_config ;;
+            get_hw_offload_status) get_hw_offload_status ;;
+            set_hw_offload) set_hw_offload ;;
+            get_router_ssh_key) get_router_ssh_key ;;
+            test_vps_ssh) test_vps_ssh ;;
+            deploy_vps_frps) deploy_vps_frps ;;
+            get_penetration_status) get_penetration_status ;;
+            manage_xdns_domain) manage_xdns_domain ;;
+            manage_portal_access) manage_portal_access ;;
+            manage_portal_whitelist) manage_portal_whitelist ;;
+            manage_penetration_proxy) manage_penetration_proxy ;;
+            manage_xkcptun_tunnel) manage_xkcptun_tunnel ;;
         esac
         ;;
 esac
