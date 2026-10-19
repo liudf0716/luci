@@ -47,6 +47,7 @@ return view.extend({
 
     render: function(data) {
         const keyInfo = data[0] || {};
+        let currentKeyInfo = keyInfo;
         const serversData = data[1] || {};
         let serverList = serversData.servers || [];
 
@@ -236,20 +237,40 @@ return view.extend({
             ),
             E('div', { 'style': 'display: flex; flex-direction: column; gap: 10px;' }, [
                 E('div', {}, [
-                    E('div', { 'style': 'font-size: 12px; font-weight: 600; color: var(--cws-text-muted); margin-bottom: 4px;' }, '🚀 推荐：一键授权命令（直接在 VPS 终端粘贴回车执行）:'),
-                    E('div', { 'class': 'cws-code-box', 'id': 'auth-cmd-text' }, keyInfo.auth_cmd || '正在生成凭证...')
+                    E('div', { 'style': 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;' }, [
+                        E('div', { 'style': 'font-size: 12px; font-weight: 600; color: var(--cws-text-muted);' }, '🚀 推荐：一键授权命令（直接在 VPS 终端粘贴回车执行）:'),
+                        E('span', { 'style': 'font-size: 11px; color: #3b82f6;' }, '指纹: ' + (keyInfo.fingerprint || 'Ed25519'))
+                    ]),
+                    E('div', {
+                        'class': 'cws-code-box',
+                        'id': 'auth-cmd-text',
+                        'style': 'user-select: all; -webkit-user-select: all; cursor: text;',
+                        'title': '点击可全选文本',
+                        'click': function() {
+                            var sel = window.getSelection();
+                            var range = document.createRange();
+                            range.selectNodeContents(this);
+                            sel.removeAllRanges();
+                            sel.addRange(range);
+                        }
+                    }, keyInfo.auth_cmd || '正在生成凭证...')
                 ]),
-                E('div', { 'style': 'display: flex; gap: 10px; align-items: center;' }, [
+                E('div', { 'style': 'display: flex; gap: 10px; align-items: center; flex-wrap: wrap;' }, [
                     E('button', {
                         'class': 'cws-btn cws-btn-primary',
+                        'id': 'btn-copy-auth-cmd',
                         'click': function(e) {
-                            copyText(keyInfo.auth_cmd, e.target, '已复制一键授权命令！');
+                            var cmdEl = document.getElementById('auth-cmd-text');
+                            var text = (currentKeyInfo && currentKeyInfo.auth_cmd) || (cmdEl ? cmdEl.innerText : '');
+                            copyText(text, e.currentTarget || e.target, '已复制一键授权命令！');
                         }
                     }, '📋 复制一键授权命令'),
                     E('button', {
                         'class': 'cws-btn cws-btn-secondary',
+                        'id': 'btn-copy-pubkey',
                         'click': function(e) {
-                            copyText(keyInfo.pubkey, e.target, '已复制 Ed25519 公钥！');
+                            var text = (currentKeyInfo && currentKeyInfo.pubkey) || '';
+                            copyText(text, e.currentTarget || e.target, '已复制 Ed25519 公钥！');
                         }
                     }, '📋 仅复制公钥文本')
                 ])
@@ -351,20 +372,85 @@ return view.extend({
         ]);
         container.appendChild(guideCard);
 
-        // Helper: Copy Text
+        // Helper: Robust Copy Text (Supports both Secure HTTPS and Insecure HTTP context)
         function copyText(text, btnElement, successMsg) {
-            if (!text) return;
-            navigator.clipboard.writeText(text).then(() => {
-                const orig = btnElement.innerText;
-                btnElement.innerText = '✅ ' + (successMsg || '复制成功！');
-                btnElement.style.background = '#10b981';
-                setTimeout(() => {
-                    btnElement.innerText = orig;
-                    btnElement.style.background = '';
-                }, 2000);
-            }).catch(() => {
-                ui.addNotification(null, E('p', '复制失败，请手动选取文本复制。'));
-            });
+            if (!text || text.indexOf('正在生成') !== -1) {
+                ui.addNotification(null, E('p', '公钥凭证尚未就绪，请稍候再试。'), 'warning');
+                return;
+            }
+
+            var btn = (btnElement && btnElement.nodeType === 1) ? btnElement : null;
+            if (btn && btn.tagName !== 'BUTTON' && btn.closest) {
+                btn = btn.closest('button') || btn;
+            }
+            var origText = btn ? btn.innerText : '';
+
+            var onCopySuccess = function() {
+                if (btn) {
+                    btn.innerText = '✅ ' + (successMsg || '复制成功！');
+                    btn.style.setProperty('background', '#10b981', 'important');
+                    btn.style.setProperty('color', '#ffffff', 'important');
+                    btn.style.setProperty('border-color', '#10b981', 'important');
+                    setTimeout(function() {
+                        btn.innerText = origText;
+                        btn.style.background = '';
+                        btn.style.color = '';
+                        btn.style.borderColor = '';
+                    }, 2500);
+                }
+                ui.addNotification(null, E('p', successMsg || '已成功复制到剪贴板！'), 'info');
+            };
+
+            var execFallback = function() {
+                var textArea = document.createElement('textarea');
+                textArea.value = text;
+                textArea.setAttribute('readonly', '');
+                textArea.style.position = 'fixed';
+                textArea.style.left = '-9999px';
+                textArea.style.top = '0';
+                textArea.style.opacity = '0';
+                textArea.style.pointerEvents = 'none';
+                textArea.style.zIndex = '-1';
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+                textArea.setSelectionRange(0, textArea.value.length);
+                var success = false;
+                try {
+                    success = document.execCommand('copy');
+                } catch (e) {
+                    success = false;
+                }
+                document.body.removeChild(textArea);
+
+                if (success) {
+                    onCopySuccess();
+                } else {
+                    ui.showModal('复制授权命令', [
+                        E('p', '因浏览器 HTTP 环境限制自动写入，请直接全选并复制下方文本：'),
+                        E('textarea', {
+                            'class': 'cbi-input-textarea',
+                            'style': 'width: 100%; height: 110px; font-family: monospace; font-size: 12px; margin-top: 8px;',
+                            'readonly': 'readonly',
+                            'click': function(ev) { ev.target.select(); }
+                        }, text),
+                        E('div', { 'class': 'right', 'style': 'margin-top: 12px;' }, [
+                            E('button', {
+                                'class': 'btn cbi-button-primary',
+                                'click': ui.hideModal
+                            }, '关闭')
+                        ])
+                    ]);
+                }
+            };
+
+            if (window.isSecureContext && navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+                navigator.clipboard.writeText(text).then(onCopySuccess).catch(function() {
+                    execFallback();
+                });
+            } else {
+                execFallback();
+            }
         }
 
         // Helper: Render Table
@@ -635,6 +721,7 @@ return view.extend({
         // Helper: Refresh All
         function refreshAll() {
             callGetRouterSshKey().then(k => {
+                currentKeyInfo = k || {};
                 const cmdEl = document.getElementById('auth-cmd-text');
                 if (cmdEl && k && k.auth_cmd) cmdEl.innerText = k.auth_cmd;
             });
