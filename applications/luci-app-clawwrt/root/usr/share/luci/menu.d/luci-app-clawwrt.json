@@ -3,13 +3,28 @@
         "title": "小茶助手",
         "order": 1,
         "action": {
-            "type": "view",
-            "path": "clawwrt"
+            "type": "firstchild"
         },
         "depends": {
             "acl": [
                 "luci-app-clawwrt"
             ]
+        }
+    },
+    "admin/clawwrt/chat": {
+        "title": "AI 对话助手",
+        "order": 1,
+        "action": {
+            "type": "view",
+            "path": "clawwrt"
+        }
+    },
+    "admin/clawwrt/servers": {
+        "title": "远程免密服务器",
+        "order": 2,
+        "action": {
+            "type": "view",
+            "path": "clawwrt_servers"
         }
     }
 }

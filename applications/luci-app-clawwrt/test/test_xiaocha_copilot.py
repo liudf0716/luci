@@ -148,6 +148,45 @@ class XiaochaTester:
             self.call_ubus("manage_xdns_domain", {"action": "del", "domain": "pytest.openwrt.org"})
         self.test("网络加速与域名智能分流闭环测试", s5_accel)
 
+        # 场景 6: 用户要求“配置管理能让 AI 在路由器上免密登录的远程 Linux 服务器 (VPS)”
+        print("\n【场景 6：远端免密服务器（VPS）密钥与服务器池生命周期】")
+        def s6_ssh_key():
+            res = self.call_ubus("get_router_ssh_key")
+            assert "pubkey" in res
+            assert "ssh-ed25519" in res["pubkey"] or "ssh-rsa" in res["pubkey"]
+            assert "auth_cmd" in res and "authorized_keys" in res["auth_cmd"]
+        self.test("路由器专属 Ed25519 SSH 密钥与一键授权命令", s6_ssh_key)
+
+        def s6_vps_lifecycle():
+            # 1. 添加测试服务器
+            res_add = self.call_ubus("manage_vps_server", {
+                "action": "add",
+                "name": "自动化测试VPS",
+                "host": "192.168.8.253",
+                "port": "22",
+                "user": "root"
+            })
+            assert res_add.get("success") is True
+            vps_id = res_add.get("id")
+            assert vps_id is not None
+
+            # 2. 获取列表校验
+            res_list = self.call_ubus("get_vps_servers")
+            servers = res_list.get("servers", [])
+            target = next((s for s in servers if s.get("id") == vps_id), None)
+            assert target is not None
+            assert target.get("name") == "自动化测试VPS"
+            assert target.get("host") == "192.168.8.253"
+
+            # 3. 移除测试服务器并清理
+            res_del = self.call_ubus("manage_vps_server", {"action": "delete", "id": vps_id})
+            assert res_del.get("success") is True
+
+            # 4. 再次确认清理干净
+            res_list_after = self.call_ubus("get_vps_servers")
+            assert not any(s.get("id") == vps_id for s in res_list_after.get("servers", []))
+        self.test("远程 VPS 服务器池 CRUD 与生命周期回滚", s6_vps_lifecycle)
+
         print("\n" + "=" * 65)
         print(f"自动化测试完成: 共 {self.passed + self.failed} 项, 通过 {self.passed} 项, 失败 {self.failed} 项")
         print("=" * 65)

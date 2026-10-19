@@ -1,6 +1,7 @@
 #!/bin/sh
 
 . /usr/share/libubox/jshn.sh
+[ -f /lib/functions.sh ] && . /lib/functions.sh
 
 case "$1" in
     list)
@@ -92,6 +93,22 @@ case "$1" in
             json_add_string "mode"
         json_close_object
         json_add_object "get_router_ssh_key"
+        json_close_object
+        json_add_object "get_vps_servers"
+        json_close_object
+        json_add_object "manage_vps_server"
+            json_add_string "action"
+            json_add_string "id"
+            json_add_string "name"
+            json_add_string "host"
+            json_add_string "port"
+            json_add_string "user"
+        json_close_object
+        json_add_object "test_vps_server"
+            json_add_string "id"
+            json_add_string "host"
+            json_add_string "port"
+            json_add_string "user"
         json_close_object
         json_add_object "test_vps_ssh"
             json_add_string "vps_ip"
@@ -1888,11 +1905,274 @@ print(json.stringify(output))
 
             local pubkey=$(dropbearkey -y -f "$key_file" 2>/dev/null | grep '^ssh-')
             local auth_cmd="mkdir -p ~/.ssh && chmod 700 ~/.ssh && echo '${pubkey}' >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys"
+            local fingerprint=$(dropbearkey -y -f "$key_file" 2>/dev/null | grep -i 'fingerprint' | head -n1 | sed -e 's/.*Fingerprint: //' -e 's/.*fingerprint: //')
 
             json_init
             json_add_object "result"
             json_add_string "pubkey" "$pubkey"
             json_add_string "auth_cmd" "$auth_cmd"
+            json_add_string "key_type" "ed25519"
+            json_add_string "fingerprint" "$fingerprint"
+            json_close_object
+            json_dump
+        }
+
+        get_vps_servers() {
+            json_init
+            json_add_object "result"
+            json_add_array "servers"
+
+            [ -f /etc/config/clawwrt ] && config_load clawwrt
+            local count=0
+            handle_vps() {
+                local s="$1"
+                local name host port user status last_check frps_status xkcptun_status has_sudo message rtt_ms
+                config_get name "$s" name "$s"
+                config_get host "$s" host ""
+                config_get port "$s" port "22"
+                config_get user "$s" user "root"
+                config_get status "$s" status "unknown"
+                config_get last_check "$s" last_check ""
+                config_get frps_status "$s" frps_status "uninstalled"
+                config_get xkcptun_status "$s" xkcptun_status "uninstalled"
+                config_get has_sudo "$s" has_sudo "1"
+                config_get message "$s" message ""
+                config_get rtt_ms "$s" rtt_ms ""
+
+                [ -z "$host" ] && return
+
+                count=$((count + 1))
+                json_add_object
+                json_add_string "id" "$s"
+                json_add_string "name" "$name"
+                json_add_string "host" "$host"
+                json_add_string "port" "$port"
+                json_add_string "user" "$user"
+                json_add_string "status" "$status"
+                json_add_string "last_check" "$last_check"
+                json_add_string "frps_status" "$frps_status"
+                json_add_string "xkcptun_status" "$xkcptun_status"
+                json_add_string "has_sudo" "$has_sudo"
+                json_add_string "message" "$message"
+                json_add_string "rtt_ms" "$rtt_ms"
+                json_close_object
+            }
+            config_foreach handle_vps vps 2>/dev/null
+
+            json_close_array
+            json_add_int "total" "$count"
+            json_close_object
+            json_dump
+        }
+
+        manage_vps_server() {
+            read -r input
+            json_load "$input"
+            json_get_var action "action"
+            json_get_var id "id"
+            json_get_var name "name"
+            json_get_var host "host"
+            json_get_var port "port"
+            json_get_var user "user"
+
+            port="${port:-22}"
+            user="${user:-root}"
+
+            case "$action" in
+                add)
+                    [ -z "$host" ] && {
+                        json_init
+                        json_add_object "result"
+                        json_add_boolean "success" 0
+                        json_add_string "message" "缺少服务器 IP 或域名"
+                        json_close_object
+                        json_dump
+                        return
+                    }
+                    local sid="vps_$(date +%s)_$((RANDOM % 1000))"
+                    [ -z "$name" ] && name="$host"
+
+                    uci set clawwrt."$sid"=vps
+                    uci set clawwrt."$sid".name="$name"
+                    uci set clawwrt."$sid".host="$host"
+                    uci set clawwrt."$sid".port="$port"
+                    uci set clawwrt."$sid".user="$user"
+                    uci set clawwrt."$sid".status="unknown"
+                    uci set clawwrt."$sid".frps_status="uninstalled"
+                    uci set clawwrt."$sid".xkcptun_status="uninstalled"
+                    uci set clawwrt."$sid".has_sudo="1"
+                    uci commit clawwrt
+
+                    json_init
+                    json_add_object "result"
+                    json_add_boolean "success" 1
+                    json_add_string "id" "$sid"
+                    json_add_string "message" "已成功添加服务器 [$name] ($host)"
+                    json_close_object
+                    json_dump
+                    ;;
+                update)
+                    [ -z "$id" ] && {
+                        json_init
+                        json_add_object "result"
+                        json_add_boolean "success" 0
+                        json_add_string "message" "缺少服务器 ID"
+                        json_close_object
+                        json_dump
+                        return
+                    }
+                    [ -n "$name" ] && uci set clawwrt."$id".name="$name"
+                    [ -n "$host" ] && uci set clawwrt."$id".host="$host"
+                    [ -n "$port" ] && uci set clawwrt."$id".port="$port"
+                    [ -n "$user" ] && uci set clawwrt."$id".user="$user"
+                    uci commit clawwrt
+
+                    json_init
+                    json_add_object "result"
+                    json_add_boolean "success" 1
+                    json_add_string "message" "已成功更新服务器配置"
+                    json_close_object
+                    json_dump
+                    ;;
+                delete)
+                    [ -z "$id" ] && {
+                        json_init
+                        json_add_object "result"
+                        json_add_boolean "success" 0
+                        json_add_string "message" "缺少服务器 ID"
+                        json_close_object
+                        json_dump
+                        return
+                    }
+                    uci delete clawwrt."$id" 2>/dev/null
+                    uci commit clawwrt
+
+                    json_init
+                    json_add_object "result"
+                    json_add_boolean "success" 1
+                    json_add_string "message" "已成功从服务器池中移除该节点"
+                    json_close_object
+                    json_dump
+                    ;;
+                *)
+                    json_init
+                    json_add_object "result"
+                    json_add_boolean "success" 0
+                    json_add_string "message" "未知的管理动作: $action"
+                    json_close_object
+                    json_dump
+                    ;;
+            esac
+        }
+
+        test_vps_server() {
+            read -r input
+            json_load "$input"
+            json_get_var id "id"
+            json_get_var host "host"
+            json_get_var port "port"
+            json_get_var user "user"
+
+            if [ -n "$id" ]; then
+                config_load clawwrt
+                config_get cfg_host "$id" host ""
+                config_get cfg_port "$id" port "22"
+                config_get cfg_user "$id" user "root"
+                [ -n "$cfg_host" ] && host="$cfg_host"
+                [ -n "$cfg_port" ] && port="$cfg_port"
+                [ -n "$cfg_user" ] && user="$cfg_user"
+            fi
+
+            [ -z "$host" ] && {
+                json_init
+                json_add_object "result"
+                json_add_boolean "connected" 0
+                json_add_string "message" "缺少 VPS 主机地址"
+                json_close_object
+                json_dump
+                return
+            }
+
+            port="${port:-22}"
+            user="${user:-root}"
+            local key_file="/etc/clawwrt/id_dropbear"
+            if [ ! -f "$key_file" ]; then
+                mkdir -p /etc/clawwrt
+                dropbearkey -t ed25519 -f "$key_file" >/dev/null 2>&1
+            fi
+
+            local t_start=$(date +%s%3N 2>/dev/null || date +%s)
+            local probe_cmd="echo CHAW_SSH_OK; if [ \$(id -u) -eq 0 ] || sudo -n true 2>/dev/null; then echo CHAW_PRIV_OK; else echo CHAW_NEED_SUDO; fi; if pgrep -x frps >/dev/null 2>&1; then echo CHAW_FRPS_RUNNING; elif which frps >/dev/null 2>&1 || [ -x /usr/local/bin/frps ]; then echo CHAW_FRPS_INSTALLED; fi; if pgrep -f 'server_linux' >/dev/null 2>&1; then echo CHAW_XKCP_RUNNING; elif which server_linux_arm64 >/dev/null 2>&1 || which server_linux_amd64 >/dev/null 2>&1 || [ -x /usr/local/bin/server_linux_amd64 ] || [ -x /usr/local/bin/server_linux_arm64 ]; then echo CHAW_XKCP_INSTALLED; fi"
+            local out
+            out=$(run_with_timeout 10 dbclient -y -o BatchMode=yes -i "$key_file" -p "$port" "${user}@${host}" "$probe_cmd" 2>&1)
+            local ret=$?
+            local t_end=$(date +%s%3N 2>/dev/null || date +%s)
+            local rtt_ms=$((t_end - t_start))
+            [ "$rtt_ms" -le 0 ] && rtt_ms=10
+
+            local connected=0
+            local sudo_ok=1
+            local frps_stat="uninstalled"
+            local xkcp_stat="uninstalled"
+            local msg=""
+
+            if [ $ret -eq 0 ] && echo "$out" | grep -q "CHAW_SSH_OK"; then
+                connected=1
+                if echo "$out" | grep -q "CHAW_NEED_SUDO"; then
+                    sudo_ok=0
+                    msg="免密连接成功（用户: ${user}），但需要密码执行 sudo。建议在服务器上执行: echo '\$USER ALL=(ALL) NOPASSWD:ALL' | sudo tee /etc/sudoers.d/\$USER"
+                else
+                    msg="免密握手成功！已成功直连远程服务器，具备管理员执行权限。"
+                fi
+
+                if echo "$out" | grep -q "CHAW_FRPS_RUNNING"; then
+                    frps_stat="running"
+                elif echo "$out" | grep -q "CHAW_FRPS_INSTALLED"; then
+                    frps_stat="installed"
+                fi
+
+                if echo "$out" | grep -q "CHAW_XKCP_RUNNING"; then
+                    xkcp_stat="running"
+                elif echo "$out" | grep -q "CHAW_XKCP_INSTALLED"; then
+                    xkcp_stat="installed"
+                fi
+            else
+                if echo "$out" | grep -qi "auth.*fail\|permission denied\|no auth methods"; then
+                    msg="SSH 认证拒绝：公钥尚未生效，请确认公钥已正确追加至远程服务器对应用户的 ~/.ssh/authorized_keys 中。"
+                elif echo "$out" | grep -qi "connection refused"; then
+                    msg="连接被拒绝：目标 SSH 端口 (${port}) 未开放或端口错误。"
+                elif echo "$out" | grep -qi "timed out"; then
+                    msg="连接超时：无法连通 VPS (${host}:${port})，请检查云厂商安全组及防火墙。"
+                else
+                    msg="连接失败: ${out:-未知网络或路由错误}"
+                fi
+            fi
+
+            # Update UCI if ID was specified
+            if [ -n "$id" ] && uci get clawwrt."$id" >/dev/null 2>&1; then
+                local now_ts=$(date "+%Y-%m-%d %H:%M:%S")
+                uci set clawwrt."$id".last_check="$now_ts"
+                uci set clawwrt."$id".has_sudo="$sudo_ok"
+                uci set clawwrt."$id".frps_status="$frps_stat"
+                uci set clawwrt."$id".xkcptun_status="$xkcp_stat"
+                uci set clawwrt."$id".rtt_ms="${rtt_ms}ms"
+                if [ $connected -eq 1 ]; then
+                    uci set clawwrt."$id".status="connected"
+                else
+                    uci set clawwrt."$id".status="failed"
+                fi
+                uci set clawwrt."$id".message="$msg"
+                uci commit clawwrt
+            fi
+
+            json_init
+            json_add_object "result"
+            json_add_boolean "connected" "$connected"
+            json_add_boolean "sudo_ok" "$sudo_ok"
+            json_add_string "frps_status" "$frps_stat"
+            json_add_string "xkcptun_status" "$xkcp_stat"
+            json_add_string "rtt_ms" "${rtt_ms}ms"
+            json_add_string "message" "$msg"
             json_close_object
             json_dump
         }
@@ -3011,6 +3291,9 @@ EOF
             get_hw_offload_status) get_hw_offload_status ;;
             set_hw_offload) set_hw_offload ;;
             get_router_ssh_key) get_router_ssh_key ;;
+            get_vps_servers) get_vps_servers ;;
+            manage_vps_server) manage_vps_server ;;
+            test_vps_server) test_vps_server ;;
             test_vps_ssh) test_vps_ssh ;;
             deploy_vps_frps) deploy_vps_frps ;;
             get_penetration_status) get_penetration_status ;;
