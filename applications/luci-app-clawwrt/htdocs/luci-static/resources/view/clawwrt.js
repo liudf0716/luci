@@ -154,6 +154,13 @@ const callDeployVpsFrps = rpc.declare({
     expect: { result: {} }
 });
 
+const callDeployVpsXkcptun = rpc.declare({
+    object: 'luci.clawwrt',
+    method: 'deploy_vps_xkcptun',
+    params: [ 'vps_ip', 'vps_port', 'vps_user', 'listen_port', 'key', 'mode', 'fec' ],
+    expect: { result: {} }
+});
+
 const callGetPenetrationStatus = rpc.declare({
     object: 'luci.clawwrt',
     method: 'get_penetration_status',
@@ -537,6 +544,25 @@ const routerTools = [
                 required: ['explanation']
             }
         }
+    },
+    {
+        type: 'function',
+        function: {
+            name: 'propose_vps_xkcptun',
+            description: '向用户提议使用 SSH 免密登录自动在用户自有的 Linux VPS 上通过官方 deb 软件包安装部署 xkcptun 服务端 (xkcp_server)，并自动配置路由器客户端 xkcptun 建立弱网加速。前端将渲染免密授权与部署卡片供用户确认，不可私自直接修改',
+            parameters: {
+                type: 'object',
+                properties: {
+                    vps_ip: { type: 'string', description: '用户提供的云服务器 (VPS) 公网 IP 地址' },
+                    vps_user: { type: 'string', description: 'VPS 的登录用户名，如 root, ubuntu, debian 等，默认为 root' },
+                    vps_port: { type: 'string', description: 'VPS 的 SSH 端口，默认为 22' },
+                    listen_port: { type: 'string', description: 'xkcptun 服务端监听的 UDP 端口，默认 9089' },
+                    mode: { type: 'string', description: '加速模式 (fast3 / fast2 / fast / normal)，默认 fast3' },
+                    explanation: { type: 'string', description: '部署方案与影响说明' }
+                },
+                required: ['explanation']
+            }
+        }
     }
 
 ];
@@ -564,6 +590,7 @@ const systemPrompt = `你是一个专业的 OpenWrt / chaWrt 路由器专属 AI 
    - 当用户提出对设备进行限速、调整限速或解除限速时，主动调用 propose_qos_limit 生成流控确认卡片（支持 target 为 IP、MAC 或 "all"，支持限制下行/上行带宽 dl_mbps/ul_mbps，支持定时时段）；
    - 当用户询问内网穿透状态、穿透是否正常、xfrpc 是否连上了服务端、测试穿透等问题时，主动调用 get_penetration_status 获取全量事实数据，严禁仅看进程存在就草率得出正常结论！必须向用户详细汇报：1. xfrpc 客户端进程运行状态；2. 与远端 frps 服务端的真实套接字连接状态 (ESTABLISHED / SYN_SENT 握手超时 / 断开)；3. 最新日志中的异常或诊断建议；4. 各映射规则的外网访问直达链接；
    - 当用户提出希望在自己的 VPS 上配置/部署内网穿透服务端时，主动调用 propose_vps_penetration 生成免密向导卡片（参数包含 vps_ip, vps_user, vps_port, remote_web_port），引导用户在 VPS 终端执行一行授权命令后全自动一键部署；
+   - 当用户提出希望在自己的 VPS 上配置/安装/部署网络加速服务端（xkcptun server）时，主动调用 propose_vps_xkcptun 生成免密向导卡片（参数包含 vps_ip, vps_user, vps_port, listen_port, mode），引导用户在 VPS 终端执行授权后全自动通过 deb 包一键安装并自动配置路由器客户端连通；
    - 当用户询问网络加速状态、节点延迟、KCP 连接或加速隧道时，调用 get_service_detail('xkcptun') 或 manage_xkcptun_tunnel('list')；
    - 当用户询问或需要管理加速隧道时，调用 manage_xkcptun_tunnel（支持 list, add, remove, enable, disable）；
    - 当用户询问智能分流、拦截统计、分流域名、动态劫持 IP 或活跃代理会话时，调用 get_service_detail('xdns') 或 manage_xdns_domain；
@@ -788,6 +815,7 @@ return view.extend({
                 name: '⚡ 网络加速与分流',
                 cards: [
                     { label: '⚡ 网络加速与隧道', query: '查看网络加速 xkcptun 当前连接的加速节点、模式、往返延迟以及所有活跃加速隧道与连接' },
+                    { label: '🚀 VPS 安装 xkcptun 服务端 (deb)', query: '我想在我的远程 Linux VPS 上通过官方 deb 包自动安装并部署 xkcptun 加速服务端，并建立网络加速' },
                     { label: '🔀 智能分流与加速域名', query: '查看智能分流 xdns 的运行状态、eBPF 拦截统计、动态劫持 IP 以及当前分流加速的域名列表' },
                     { label: '➕ 分流添加域名', query: '帮我把 claude.ai 添加到智能分流加速域名名单中' },
                     { label: '🔄 刷新分流与重载', query: '帮我清空内核 eBPF 动态分流 IP 缓存并重新加载分流域名规则' },
@@ -2407,6 +2435,271 @@ return view.extend({
             chatWindow.scrollTop = chatWindow.scrollHeight;
         }
 
+        // Append VPS xkcptun Deployment Card (SSH Passwordless deb Package Automation)
+        function appendVpsXkcptunCard(param) {
+            const vpsIp = param.vps_ip || '';
+            const vpsUser = param.vps_user || 'root';
+            const vpsPort = param.vps_port || '22';
+            const listenPort = param.listen_port || '9089';
+            const mode = param.mode || 'fast3';
+
+            const card = E('div', {
+                'class': 'vps-xkcptun-card',
+                'style': 'background: var(--cw-bg-card); border: 2px solid #3b82f6; border-radius: 12px; padding: 18px 20px; margin: 12px 0; box-shadow: var(--cw-card-shadow);'
+            }, [
+                E('div', { 'style': 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid var(--cw-border); padding-bottom: 8px;' }, [
+                    E('div', { 'style': 'font-weight: 700; font-size: 15px; color: var(--cw-text-main); display: flex; align-items: center; gap: 8px;' }, [
+                        E('span', { 'style': 'font-size: 18px;' }, '⚡'),
+                        E('span', {}, 'VPS 网络加速服务端一键安装 (xkcptun deb 自动化)')
+                    ]),
+                    E('span', { 'style': 'background: rgba(59,130,246,0.15); color: #3b82f6; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 700; border: 1px solid rgba(59,130,246,0.3);' }, '📦 官方 deb 包 · systemd 守护')
+                ]),
+                E('div', { 'style': 'font-size: 13px; color: var(--cw-text-sub); margin-bottom: 14px; line-height: 1.5;' }, param.explanation || '通过 SSH 免密在远端 Debian/Ubuntu VPS 上自动拉取官方 xkcptun-server deb 安装包，全自动部署服务端并同步配置路由器加速客户端。'),
+
+                // Step 1: VPS Authorization Command
+                E('div', { 'style': 'background: var(--cw-bg-subtle); border: 1px solid var(--cw-border); border-radius: 8px; padding: 12px 14px; margin-bottom: 14px;' }, [
+                    E('div', { 'style': 'font-weight: 700; font-size: 13px; color: var(--cw-text-main); margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between;' }, [
+                        E('span', {}, '第 1 步：在 VPS 终端执行免密授权命令 (如已授权可直接跳过)'),
+                        E('span', { 'id': 'xkcp-vps-key-loading', 'style': 'font-size: 11px; color: var(--cw-text-muted); font-weight: normal;' }, '正在获取路由器公钥...')
+                    ]),
+                    E('div', { 'style': 'font-size: 12px; color: var(--cw-text-muted); margin-bottom: 6px;' }, '说明：请先通过 SSH 登录您的 VPS 终端，粘贴并执行下方一行授权命令：'),
+                    E('div', { 'style': 'display: flex; gap: 8px; align-items: center;' }, [
+                        E('textarea', {
+                            'id': 'xkcp-vps-auth-cmd',
+                            'readonly': 'readonly',
+                            'style': 'flex: 1; height: 52px; font-family: monospace; font-size: 11px; background: var(--cw-input-bg); color: var(--cw-input-text); border: 1px solid var(--cw-border); border-radius: 6px; padding: 6px 10px; resize: none; outline: none;',
+                            'value': '正在生成路由器专属 Ed25519 密钥...'
+                        }),
+                        E('button', {
+                            'type': 'button',
+                            'id': 'btn-xkcp-copy-auth-cmd',
+                            'class': 'btn cbi-button',
+                            'style': 'background: #3b82f6; color: #fff; border: none; padding: 8px 14px; border-radius: 6px; font-size: 12px; cursor: pointer; white-space: nowrap; font-weight: 600;',
+                            'click': function(ev) {
+                                const ta = card.querySelector('#xkcp-vps-auth-cmd');
+                                if (ta && ta.value) {
+                                    if (window.isSecureContext && navigator.clipboard && navigator.clipboard.writeText) {
+                                        navigator.clipboard.writeText(ta.value);
+                                    } else {
+                                        ta.select();
+                                        document.execCommand('copy');
+                                    }
+                                    ev.target.innerText = '✅ 已复制授权命令！';
+                                    setTimeout(() => { ev.target.innerText = '📋 复制授权命令'; }, 2000);
+                                }
+                            }
+                        }, '📋 复制授权命令')
+                    ])
+                ]),
+
+                // Step 2: VPS Server Connection Parameters
+                E('div', { 'style': 'background: var(--cw-bg-subtle); border: 1px solid var(--cw-border); border-radius: 8px; padding: 12px 14px; margin-bottom: 14px;' }, [
+                    E('div', { 'style': 'font-weight: 700; font-size: 13px; color: var(--cw-text-main); margin-bottom: 10px;' }, '第 2 步：核对远端服务器与加速配置'),
+                    E('div', { 'style': 'display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px;' }, [
+                        E('div', {}, [
+                            E('label', { 'style': 'display: block; font-size: 11.5px; color: var(--cw-text-muted); margin-bottom: 3px;' }, 'VPS 公网 IP:'),
+                            E('input', {
+                                'id': 'xkcp-vps-input-ip',
+                                'type': 'text',
+                                'value': vpsIp,
+                                'placeholder': '如 43.159.xx.xx',
+                                'style': 'width: 100%; padding: 6px 10px; font-size: 12px; border-radius: 5px; border: 1px solid var(--cw-border); background: var(--cw-input-bg); color: var(--cw-input-text);'
+                            })
+                        ]),
+                        E('div', {}, [
+                            E('label', { 'style': 'display: block; font-size: 11.5px; color: var(--cw-text-muted); margin-bottom: 3px;' }, 'SSH 用户名:'),
+                            E('input', {
+                                'id': 'xkcp-vps-input-user',
+                                'type': 'text',
+                                'value': vpsUser,
+                                'style': 'width: 100%; padding: 6px 10px; font-size: 12px; border-radius: 5px; border: 1px solid var(--cw-border); background: var(--cw-input-bg); color: var(--cw-input-text);'
+                            })
+                        ]),
+                        E('div', {}, [
+                            E('label', { 'style': 'display: block; font-size: 11.5px; color: var(--cw-text-muted); margin-bottom: 3px;' }, 'SSH 端口:'),
+                            E('input', {
+                                'id': 'xkcp-vps-input-port',
+                                'type': 'number',
+                                'value': vpsPort,
+                                'style': 'width: 100%; padding: 6px 10px; font-size: 12px; border-radius: 5px; border: 1px solid var(--cw-border); background: var(--cw-input-bg); color: var(--cw-input-text);'
+                            })
+                        ]),
+                        E('div', {}, [
+                            E('label', { 'style': 'display: block; font-size: 11.5px; color: var(--cw-text-muted); margin-bottom: 3px;' }, 'KCP 服务端 UDP 端口:'),
+                            E('input', {
+                                'id': 'xkcp-vps-input-lport',
+                                'type': 'number',
+                                'value': listenPort,
+                                'style': 'width: 100%; padding: 6px 10px; font-size: 12px; border-radius: 5px; border: 1px solid var(--cw-border); background: var(--cw-input-bg); color: var(--cw-input-text);'
+                            })
+                        ]),
+                        E('div', {}, [
+                            E('label', { 'style': 'display: block; font-size: 11.5px; color: var(--cw-text-muted); margin-bottom: 3px;' }, '加速模式:'),
+                            E('select', {
+                                'id': 'xkcp-vps-input-mode',
+                                'style': 'width: 100%; padding: 6px 10px; font-size: 12px; border-radius: 5px; border: 1px solid var(--cw-border); background: var(--cw-input-bg); color: var(--cw-input-text);'
+                            }, [
+                                E('option', { 'value': 'fast3', 'selected': mode === 'fast3' ? 'selected' : undefined }, 'fast3 (极速抗高丢包)'),
+                                E('option', { 'value': 'fast2', 'selected': mode === 'fast2' ? 'selected' : undefined }, 'fast2 (进阶模式)'),
+                                E('option', { 'value': 'fast', 'selected': mode === 'fast' ? 'selected' : undefined }, 'fast (快速模式)')
+                            ])
+                        ]),
+                        E('div', {}, [
+                            E('label', { 'style': 'display: block; font-size: 11.5px; color: var(--cw-text-muted); margin-bottom: 3px;' }, '预共享认证密钥 (Key):'),
+                            E('input', {
+                                'id': 'xkcp-vps-input-key',
+                                'type': 'text',
+                                'value': '7f7ac683d720e1437019692eadb0b811',
+                                'style': 'width: 100%; padding: 6px 10px; font-size: 12px; border-radius: 5px; border: 1px solid var(--cw-border); background: var(--cw-input-bg); color: var(--cw-input-text); font-family: monospace;'
+                            })
+                        ])
+                    ])
+                ]),
+
+                // Status message div
+                E('div', {
+                    'id': 'xkcp-vps-status-div',
+                    'style': 'display: none; padding: 10px 14px; border-radius: 8px; margin-bottom: 12px; font-size: 12.5px; line-height: 1.5;'
+                }),
+
+                // Actions buttons
+                E('div', { 'style': 'display: flex; gap: 10px; align-items: center; justify-content: flex-end;' }, [
+                    E('button', {
+                        'id': 'btn-xkcp-vps-test',
+                        'type': 'button',
+                        'class': 'btn cbi-button',
+                        'style': 'background: var(--cw-bg-secondary); color: var(--cw-text-main); border: 1px solid var(--cw-border); padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 13px;',
+                        'click': function(ev) {
+                            const btn = ev.target;
+                            const ip = (card.querySelector('#xkcp-vps-input-ip').value || '').trim();
+                            const user = (card.querySelector('#xkcp-vps-input-user').value || 'root').trim();
+                            const port = (card.querySelector('#xkcp-vps-input-port').value || '22').trim();
+                            const statusDiv = card.querySelector('#xkcp-vps-status-div');
+
+                            if (!ip) {
+                                alert('请先输入 VPS 公网 IP 地址！');
+                                return;
+                            }
+
+                            btn.disabled = true;
+                            btn.innerText = '正在握手探测...';
+                            statusDiv.style.display = 'block';
+                            statusDiv.style.background = '#eff6ff';
+                            statusDiv.style.border = '1px solid #bfdbfe';
+                            statusDiv.style.color = '#1e40af';
+                            statusDiv.innerHTML = `正在尝试通过 Ed25519 密钥连接 ${user}@${ip}:${port} 并探测权限与环境...`;
+
+                            callTestVpsSsh(ip, port, user).then(res => {
+                                btn.disabled = false;
+                                btn.innerText = '🔍 测试免密连接';
+                                if (res && res.connected) {
+                                    statusDiv.style.background = '#f0fdf4';
+                                    statusDiv.style.border = '1px solid #bbf7d0';
+                                    statusDiv.style.color = '#15803d';
+                                    statusDiv.innerHTML = `🎉 <strong>免密连接与管理员权限检查通过！</strong><br><span style="font-size: 12px;">已成功通过 Ed25519 公钥握手 VPS (${user}@${ip}:${port})，随时可以点击右侧一键部署。</span>`;
+                                } else {
+                                    statusDiv.style.background = '#fef2f2';
+                                    statusDiv.style.border = '1px solid #fecaca';
+                                    statusDiv.style.color = '#991b1b';
+                                    statusDiv.innerHTML = `❌ <strong>连接失败：</strong>${(res && res.message) || '未知错误'}`;
+                                }
+                            }).catch(err => {
+                                btn.disabled = false;
+                                btn.innerText = '🔍 测试免密连接';
+                                statusDiv.style.background = '#fef2f2';
+                                statusDiv.style.border = '1px solid #fecaca';
+                                statusDiv.style.color = '#991b1b';
+                                statusDiv.innerHTML = `❌ <strong>测试异常：</strong>${err.message}`;
+                            });
+                        }
+                    }, '🔍 测试免密连接'),
+
+                    E('button', {
+                        'id': 'btn-xkcp-vps-deploy',
+                        'type': 'button',
+                        'class': 'btn cbi-button cbi-button-apply',
+                        'style': 'background: #2563eb; color: #fff; border: none; padding: 8px 20px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;',
+                        'click': function(ev) {
+                            const btn = ev.target;
+                            const ip = (card.querySelector('#xkcp-vps-input-ip').value || '').trim();
+                            const user = (card.querySelector('#xkcp-vps-input-user').value || 'root').trim();
+                            const port = (card.querySelector('#xkcp-vps-input-port').value || '22').trim();
+                            const lPort = (card.querySelector('#xkcp-vps-input-lport').value || '9089').trim();
+                            const lMode = (card.querySelector('#xkcp-vps-input-mode').value || 'fast3').trim();
+                            const lKey = (card.querySelector('#xkcp-vps-input-key').value || '7f7ac683d720e1437019692eadb0b811').trim();
+                            const statusDiv = card.querySelector('#xkcp-vps-status-div');
+
+                            if (!ip) {
+                                alert('请先输入 VPS 公网 IP 地址！');
+                                return;
+                            }
+
+                            btn.disabled = true;
+                            btn.innerText = '⏳ 正在远程通过 deb 安装部署 (约 15~30 秒)...';
+                            statusDiv.style.display = 'block';
+                            statusDiv.style.background = '#eff6ff';
+                            statusDiv.style.border = '1px solid #bfdbfe';
+                            statusDiv.style.color = '#1e40af';
+                            statusDiv.innerHTML = `⏳ 正在连接 VPS (${user}@${ip}) 下载并安装 xkcptun-server deb 软件包、写入 systemd 服务并启动路由器加速客户端...`;
+
+                            callDeployVpsXkcptun(ip, port, user, lPort, lKey, lMode, '1').then(res => {
+                                if (res && res.success) {
+                                    btn.innerText = '✅ 部署完成并已连通！';
+                                    btn.style.background = '#16a34a';
+                                    card.style.borderColor = '#16a34a';
+                                    statusDiv.style.background = '#f0fdf4';
+                                    statusDiv.style.border = '1px solid #bbf7d0';
+                                    statusDiv.style.color = '#15803d';
+                                    statusDiv.innerHTML = `🎉 <strong>双端加速部署成功！</strong><br>KCP 加速服务器：<code>${ip}:${lPort}/udp</code> (模式: ${lMode})，路由器客户端已自动拉通。`;
+
+                                    appendMessage('assistant', `🎉 **VPS xkcptun 网络加速服务端 (deb) 已成功自动部署并启动！**\n\n• **云端服务器**：\`${res.vps_user || user}@${res.vps_ip}:${res.listen_port}/udp\` (xkcp_server 已通过 deb 安装并注册为 systemd 系统自启服务)\n• **加速模式**：\`${res.mode || lMode}\` (FEC 容错: 开启)\n• **路由器客户端**：\`xkcptun\` 已自动配置对应远端 IP、端口与认证密钥并启动连接！\n\n您现在可以在「网络加速与分流」中享受极速抗丢包网络加速。`);
+                                } else {
+                                    btn.disabled = false;
+                                    btn.innerText = '🚀 一键安装部署 (deb)';
+                                    statusDiv.style.background = '#fef2f2';
+                                    statusDiv.style.border = '1px solid #fecaca';
+                                    statusDiv.style.color = '#991b1b';
+                                    statusDiv.innerHTML = `❌ <strong>部署失败：</strong>${(res && res.message) || '未知错误'}`;
+                                }
+                            }).catch(err => {
+                                btn.disabled = false;
+                                btn.innerText = '🚀 一键安装部署 (deb)';
+                                statusDiv.style.background = '#fef2f2';
+                                statusDiv.style.border = '1px solid #fecaca';
+                                statusDiv.style.color = '#991b1b';
+                                statusDiv.innerHTML = `❌ <strong>执行异常：</strong>${err.message}`;
+                            });
+                        }
+                    }, '🚀 一键安装部署 (deb)'),
+
+                    E('button', {
+                        'type': 'button',
+                        'class': 'btn cbi-button cbi-button-reset',
+                        'style': 'background: var(--cw-bg-secondary); color: var(--cw-text-main); border: 1px solid var(--cw-border); padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 13px;',
+                        'click': function() {
+                            card.remove();
+                            appendMessage('assistant', '已取消 VPS xkcptun 网络加速自动部署向导。');
+                        }
+                    }, '❌ 取消')
+                ])
+            ]);
+
+            callGetRouterSshKey().then(res => {
+                if (res && res.auth_cmd) {
+                    const ta = card.querySelector('#xkcp-vps-auth-cmd');
+                    const loadingSpan = card.querySelector('#xkcp-vps-key-loading');
+                    if (ta) ta.value = res.auth_cmd;
+                    if (loadingSpan) loadingSpan.innerText = '已就绪 (Ed25519 椭圆曲线公钥)';
+                }
+            }).catch(e => {
+                const loadingSpan = card.querySelector('#xkcp-vps-key-loading');
+                if (loadingSpan) loadingSpan.innerText = '公钥获取失败';
+            });
+
+            chatWindow.appendChild(card);
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+
         // Send Message & Tool Calling Loop
         async function sendMessage() {
             const input = document.getElementById('chat-input');
@@ -2578,6 +2871,9 @@ return view.extend({
                             } else if (fnName === 'propose_vps_penetration') {
                                 appendVpsPenetrationCard(fnArgs);
                                 toolResult = { status: 'proposed_to_user', message: 'VPS penetration deployment card rendered in UI. Awaiting user authorization and execution.' };
+                            } else if (fnName === 'propose_vps_xkcptun') {
+                                appendVpsXkcptunCard(fnArgs);
+                                toolResult = { status: 'proposed_to_user', message: 'VPS xkcptun acceleration deployment card rendered in UI. Awaiting user authorization and execution.' };
                             } else {
                                 toolResult = { error: `Unknown tool: ${fnName}` };
                             }

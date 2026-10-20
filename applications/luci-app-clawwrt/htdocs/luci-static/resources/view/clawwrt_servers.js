@@ -37,6 +37,13 @@ const callDeployVpsFrps = rpc.declare({
     expect: { result: {} }
 });
 
+const callDeployVpsXkcptun = rpc.declare({
+    object: 'luci.clawwrt',
+    method: 'deploy_vps_xkcptun',
+    params: [ 'vps_ip', 'vps_port', 'vps_user', 'listen_port', 'key', 'mode', 'fec' ],
+    expect: { result: {} }
+});
+
 return view.extend({
     load: function() {
         return Promise.all([
@@ -482,6 +489,12 @@ return view.extend({
                         E('span', { 'class': 'cws-badge cws-badge-warning' }, '🟡 已安装未启动') :
                         E('span', { 'class': 'cws-badge cws-badge-neutral' }, '⚪ 未部署'));
 
+                const xkcptunBadge = srv.xkcptun_status === 'running' ?
+                    E('span', { 'class': 'cws-badge cws-badge-success' }, `🟢 运行中 (${srv.xkcptun_port || '9089'})`) :
+                    (srv.xkcptun_status === 'installed' ?
+                        E('span', { 'class': 'cws-badge cws-badge-warning' }, '🟡 已安装') :
+                        E('span', { 'class': 'cws-badge cws-badge-neutral' }, '⚪ 未部署'));
+
                 const tr = E('tr', {}, [
                     E('td', {}, [
                         E('div', { 'style': 'font-weight: 700; font-size: 14px;' }, srv.name || srv.host),
@@ -493,8 +506,9 @@ return view.extend({
                     E('td', {}, [ sudoBadge ]),
                     E('td', {}, [ statusBadge ]),
                     E('td', {}, [ frpsBadge ]),
+                    E('td', {}, [ xkcptunBadge ]),
                     E('td', { 'style': 'text-align: right;' }, [
-                        E('div', { 'style': 'display: inline-flex; gap: 6px;' }, [
+                        E('div', { 'style': 'display: inline-flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end;' }, [
                             E('button', {
                                 'class': 'cws-btn cws-btn-secondary',
                                 'title': '测试此服务器的免密 SSH 连接与运行状态',
@@ -504,7 +518,12 @@ return view.extend({
                                 'class': 'cws-btn cws-btn-secondary',
                                 'title': '在此服务器上一键部署/更新 frps 内网穿透服务端',
                                 'click': function() { openDeployModal(srv); }
-                            }, '🚀 部署frps'),
+                            }, '🌐 部署frps'),
+                            E('button', {
+                                'class': 'cws-btn cws-btn-secondary',
+                                'title': '在此服务器上一键通过 deb 安装部署 xkcptun 加速服务端',
+                                'click': function() { openDeployXkcptunModal(srv); }
+                            }, '🚀 部署加速(deb)'),
                             E('button', {
                                 'class': 'cws-btn cws-btn-danger',
                                 'title': '从服务器池中删除此服务器',
@@ -524,7 +543,8 @@ return view.extend({
                             E('th', {}, '主机与端口'),
                             E('th', {}, '登录身份'),
                             E('th', {}, '免密连通性'),
-                            E('th', {}, 'frps 服务端'),
+                            E('th', {}, 'frps 穿透'),
+                            E('th', {}, 'xkcptun 加速 (deb)'),
                             E('th', { 'style': 'text-align: right;' }, '操作')
                         ])
                     ]),
@@ -702,6 +722,101 @@ return view.extend({
             ]);
 
             ui.showModal('一键部署 frps 服务端', modalContent);
+        }
+
+        // Actions: Deploy xkcptun (deb) Modal
+        function openDeployXkcptunModal(srv) {
+            const defaultPort = 9089;
+            const autoKey = '7f7ac683d720e1437019692eadb0b811';
+
+            const modalContent = E('div', { 'style': 'padding: 10px;' }, [
+                E('div', { 'style': 'font-size: 15px; font-weight: 700; margin-bottom: 8px;' }, `在 [${srv.name || srv.host}] 上通过 deb 部署 xkcptun 服务端`),
+                E('p', { 'style': 'font-size: 13px; color: var(--cws-text-muted); line-height: 1.5;' },
+                    '小茶助手将通过免密 SSH 连接您的 Debian/Ubuntu VPS，自动拉取官方发布的 xkcptun-server deb 安装包，通过 dpkg 自动化安装、注册 systemd 守护服务并启动。同时路由器本地加速客户端将自动配置对端连通！'
+                ),
+                E('div', { 'style': 'display: flex; flex-direction: column; gap: 10px; margin: 14px 0;' }, [
+                    E('div', {}, [
+                        E('label', { 'style': 'display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px;' }, 'KCP 服务端监听 UDP 端口 (listen_port):'),
+                        E('input', {
+                            'id': 'm-xkcp-port',
+                            'type': 'number',
+                            'value': defaultPort,
+                            'style': 'width: 100%; padding: 6px 10px; border-radius: 6px; border: 1px solid var(--cws-border);'
+                        })
+                    ]),
+                    E('div', {}, [
+                        E('label', { 'style': 'display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px;' }, '预共享认证密钥 (key):'),
+                        E('input', {
+                            'id': 'm-xkcp-key',
+                            'type': 'text',
+                            'value': autoKey,
+                            'style': 'width: 100%; padding: 6px 10px; border-radius: 6px; border: 1px solid var(--cws-border); font-family: monospace;'
+                        })
+                    ]),
+                    E('div', {}, [
+                        E('label', { 'style': 'display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px;' }, '加速模式 (mode):'),
+                        E('select', {
+                            'id': 'm-xkcp-mode',
+                            'style': 'width: 100%; padding: 6px 10px; border-radius: 6px; border: 1px solid var(--cws-border);'
+                        }, [
+                            E('option', { 'value': 'fast3', 'selected': 'selected' }, 'fast3 (极速模式 - 适合抗高丢包)'),
+                            E('option', { 'value': 'fast2' }, 'fast2 (进阶模式)'),
+                            E('option', { 'value': 'fast' }, 'fast (快速模式)'),
+                            E('option', { 'value': 'normal' }, 'normal (标准模式)')
+                        ])
+                    ]),
+                    E('div', {}, [
+                        E('label', { 'style': 'display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px;' }, 'FEC 前向纠错:'),
+                        E('select', {
+                            'id': 'm-xkcp-fec',
+                            'style': 'width: 100%; padding: 6px 10px; border-radius: 6px; border: 1px solid var(--cws-border);'
+                        }, [
+                            E('option', { 'value': '1', 'selected': 'selected' }, '开启 FEC (Reed-Solomon 10:3 冗余容错)'),
+                            E('option', { 'value': '0' }, '关闭 FEC (节约流量)')
+                        ])
+                    ])
+                ]),
+                E('div', { 'id': 'm-xkcp-deploy-status', 'style': 'font-size: 12.5px; margin-top: 10px;' }),
+                E('div', { 'style': 'display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px;' }, [
+                    E('button', {
+                        'class': 'cws-btn cws-btn-secondary',
+                        'click': function() { ui.hideModal(); }
+                    }, '取消'),
+                    E('button', {
+                        'id': 'btn-exec-xkcp-deploy',
+                        'class': 'cws-btn cws-btn-primary',
+                        'click': function() {
+                            const lPort = document.getElementById('m-xkcp-port').value;
+                            const lKey = document.getElementById('m-xkcp-key').value;
+                            const lMode = document.getElementById('m-xkcp-mode').value;
+                            const lFec = document.getElementById('m-xkcp-fec').value;
+                            const statDiv = document.getElementById('m-xkcp-deploy-status');
+                            const execBtn = document.getElementById('btn-exec-xkcp-deploy');
+
+                            execBtn.disabled = true;
+                            statDiv.innerHTML = '<span style="color: #3b82f6;">正在通过 SSH 登录服务器，下载并安装 xkcptun-server deb 包（过程约 10~25 秒）...</span>';
+
+                            callDeployVpsXkcptun(srv.host, srv.port, srv.user, lPort, lKey, lMode, lFec).then(res => {
+                                execBtn.disabled = false;
+                                if (res && res.success) {
+                                    statDiv.innerHTML = '<span style="color: #10b981; font-weight: 600;">🎉 部署成功！' + (res.message || '服务端已启动') + '</span>';
+                                    setTimeout(() => {
+                                        ui.hideModal();
+                                        refreshList();
+                                    }, 2000);
+                                } else {
+                                    statDiv.innerHTML = '<span style="color: #ef4444; font-weight: 600;">部署遇到错误: ' + ((res && res.message) || '未知失败') + '</span>';
+                                }
+                            }).catch(err => {
+                                execBtn.disabled = false;
+                                statDiv.innerHTML = '<span style="color: #ef4444;">请求出错: ' + err + '</span>';
+                            });
+                        }
+                    }, '🚀 一键安装部署 (deb)')
+                ])
+            ]);
+
+            ui.showModal('一键部署 xkcptun 加速服务端 (deb)', modalContent);
         }
 
         // Helper: Refresh List

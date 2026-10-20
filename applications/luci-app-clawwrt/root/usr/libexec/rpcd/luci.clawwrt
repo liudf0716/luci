@@ -123,6 +123,15 @@ case "$1" in
             json_add_string "token"
             json_add_string "remote_web_port"
         json_close_object
+        json_add_object "deploy_vps_xkcptun"
+            json_add_string "vps_ip"
+            json_add_string "vps_port"
+            json_add_string "vps_user"
+            json_add_string "listen_port"
+            json_add_string "key"
+            json_add_string "mode"
+            json_add_string "fec"
+        json_close_object
         json_add_object "get_penetration_status"
         json_close_object
         json_add_object "manage_xdns_domain"
@@ -2102,7 +2111,7 @@ print(json.stringify(output))
             fi
 
             local t_start=$(date +%s%3N 2>/dev/null || date +%s)
-            local probe_cmd="echo CHAW_SSH_OK; if [ \$(id -u) -eq 0 ] || sudo -n true 2>/dev/null; then echo CHAW_PRIV_OK; else echo CHAW_NEED_SUDO; fi; if pgrep -x frps >/dev/null 2>&1; then echo CHAW_FRPS_RUNNING; elif which frps >/dev/null 2>&1 || [ -x /usr/local/bin/frps ]; then echo CHAW_FRPS_INSTALLED; fi; if pgrep -f 'server_linux' >/dev/null 2>&1; then echo CHAW_XKCP_RUNNING; elif which server_linux_arm64 >/dev/null 2>&1 || which server_linux_amd64 >/dev/null 2>&1 || [ -x /usr/local/bin/server_linux_amd64 ] || [ -x /usr/local/bin/server_linux_arm64 ]; then echo CHAW_XKCP_INSTALLED; fi"
+            local probe_cmd="echo CHAW_SSH_OK; if [ \$(id -u) -eq 0 ] || sudo -n true 2>/dev/null; then echo CHAW_PRIV_OK; else echo CHAW_NEED_SUDO; fi; if pgrep -x frps >/dev/null 2>&1; then echo CHAW_FRPS_RUNNING; elif which frps >/dev/null 2>&1 || [ -x /usr/local/bin/frps ]; then echo CHAW_FRPS_INSTALLED; fi; if pgrep -x 'xkcp_server' >/dev/null 2>&1 || pgrep -f 'server_linux' >/dev/null 2>&1; then echo CHAW_XKCP_RUNNING; elif which xkcp_server >/dev/null 2>&1 || [ -x /usr/local/bin/xkcp_server ] || which server_linux_arm64 >/dev/null 2>&1 || which server_linux_amd64 >/dev/null 2>&1 || [ -x /usr/local/bin/server_linux_amd64 ] || [ -x /usr/local/bin/server_linux_arm64 ]; then echo CHAW_XKCP_INSTALLED; fi"
             local out
             out=$(run_with_timeout 10 dbclient -y -o BatchMode=yes -i "$key_file" -p "$port" "${user}@${host}" "$probe_cmd" 2>&1)
             local ret=$?
@@ -2449,6 +2458,209 @@ fi
             json_add_string "remote_web_port" "$remote_web_port"
             json_add_string "token" "$token"
             json_add_string "web_url" "$web_url"
+            json_add_string "message" "$msg"
+            json_close_object
+            json_dump
+        }
+
+        deploy_vps_xkcptun() {
+            read -r input
+            json_load "$input"
+            json_get_var vps_ip "vps_ip"
+            json_get_var vps_port "vps_port"
+            json_get_var vps_user "vps_user"
+            json_get_var listen_port "listen_port"
+            json_get_var key "key"
+            json_get_var mode "mode"
+            json_get_var fec "fec"
+
+            [ -z "$vps_ip" ] && {
+                json_init
+                json_add_object "result"
+                json_add_boolean "success" 0
+                json_add_string "message" "缺少 VPS IP 地址"
+                json_close_object
+                json_dump
+                return
+            }
+
+            vps_port="${vps_port:-22}"
+            vps_user="${vps_user:-root}"
+            listen_port="${listen_port:-9089}"
+            mode="${mode:-fast3}"
+            fec="${fec:-1}"
+
+            if [ -z "$key" ]; then
+                key=$(hexdump -vn 16 -e '16/1 "%02x"' /dev/urandom 2>/dev/null || tr -dc 'a-f0-9' </dev/urandom | head -c 32)
+                [ -z "$key" ] && key="7f7ac683d720e1437019692eadb0b811"
+            fi
+
+            local key_file="/etc/clawwrt/id_dropbear"
+            if [ ! -f "$key_file" ]; then
+                mkdir -p /etc/clawwrt
+                dropbearkey -t ed25519 -f "$key_file" >/dev/null 2>&1
+            fi
+
+            local remote_cmd="
+set -e
+export DEBIAN_FRONTEND=noninteractive
+
+SUDO=''
+if [ \"\$(id -u)\" -ne 0 ]; then
+    if sudo -n true 2>/dev/null; then
+        SUDO='sudo '
+    else
+        echo 'ERR_SUDO_PASSWORD_REQUIRED'
+        exit 1
+    fi
+fi
+
+if ! command -v dpkg >/dev/null 2>&1; then
+    echo 'ERR_NOT_DEBIAN_BASED'
+    exit 1
+fi
+
+ARCH=\$(dpkg --print-architecture 2>/dev/null || uname -m)
+case \"\$ARCH\" in
+    amd64|x86_64) PKG_ARCH='amd64' ;;
+    arm64|aarch64) PKG_ARCH='arm64' ;;
+    *) PKG_ARCH='amd64' ;;
+esac
+
+XKCP_VER='1.10.566'
+DEB_NAME=\"xkcptun-server_\${XKCP_VER}_\${PKG_ARCH}.deb\"
+ORIGIN=\"https://github.com/liudf0716/xkcptun/releases/download/\${XKCP_VER}/\${DEB_NAME}\"
+
+DOWNLOADED=0
+for URL in \
+    \"https://ghproxy.cn/\${ORIGIN}\" \
+    \"https://gh-proxy.com/\${ORIGIN}\" \
+    \"https://ghfast.top/\${ORIGIN}\" \
+    \"https://github.boki.moe/\${ORIGIN}\" \
+    \"\${ORIGIN}\"
+do
+    rm -f /tmp/xkcptun-server.deb
+    if curl -fsSL --connect-timeout 8 -m 60 \"\$URL\" -o /tmp/xkcptun-server.deb 2>/dev/null || \
+       wget -q --timeout=8 -T 60 -O /tmp/xkcptun-server.deb \"\$URL\" 2>/dev/null; then
+        if [ -s /tmp/xkcptun-server.deb ]; then
+            DOWNLOADED=1
+            break
+        fi
+    fi
+done
+
+if [ \"\$DOWNLOADED\" -ne 1 ]; then
+    if [ ! -x /usr/local/bin/xkcp_server ] && [ ! -x /usr/bin/xkcp_server ]; then
+        echo 'ERR_DOWNLOAD_FAILED'
+        exit 1
+    fi
+fi
+
+if [ -f /tmp/xkcptun-server.deb ]; then
+    if ! \$SUDO dpkg -i /tmp/xkcptun-server.deb >/dev/null 2>&1; then
+        \$SUDO apt-get update -qq >/dev/null 2>&1 || true
+        \$SUDO apt-get install -y -f -qq >/dev/null 2>&1 || true
+        \$SUDO dpkg -i /tmp/xkcptun-server.deb >/dev/null 2>&1 || true
+    fi
+    rm -f /tmp/xkcptun-server.deb
+fi
+
+\$SUDO mkdir -p /etc/xkcptun
+\$SUDO tee /etc/xkcptun/server.toml >/dev/null << TOML
+[global]
+syslog = true
+mon_port = 9087
+local_port = ${listen_port}
+key = \"${key}\"
+mode = \"${mode}\"
+fec = ${fec}
+TOML
+
+if [ -d /etc/systemd/system ] || [ -d /lib/systemd/system ]; then
+    \$SUDO systemctl daemon-reload >/dev/null 2>&1 || true
+    \$SUDO systemctl enable xkcp_server >/dev/null 2>&1 || true
+    \$SUDO systemctl restart xkcp_server >/dev/null 2>&1 || true
+else
+    \$SUDO pkill -x xkcp_server 2>/dev/null || true
+    nohup \$SUDO /usr/local/bin/xkcp_server -c /etc/xkcptun/server.toml -f >/var/log/xkcp_server.log 2>&1 &
+fi
+
+if command -v ufw >/dev/null 2>&1 && \$SUDO ufw status 2>/dev/null | grep -q 'active'; then
+    \$SUDO ufw allow ${listen_port}/udp >/dev/null 2>&1 || true
+elif command -v firewall-cmd >/dev/null 2>&1 && systemctl is-active --quiet firewalld 2>/dev/null; then
+    \$SUDO firewall-cmd --add-port=${listen_port}/udp --permanent >/dev/null 2>&1 || true
+    \$SUDO firewall-cmd --reload >/dev/null 2>&1 || true
+elif command -v iptables >/dev/null 2>&1; then
+    \$SUDO iptables -I INPUT -p udp --dport ${listen_port} -j ACCEPT 2>/dev/null || true
+fi
+
+sleep 1
+if pgrep -x xkcp_server >/dev/null 2>&1; then
+    echo 'XKCP_DEPLOY_SUCCESS'
+else
+    echo 'XKCP_START_FAILED'
+    exit 1
+fi
+"
+
+            local out=""
+            local ret=1
+            out=$(run_with_timeout 150 dbclient -y -o BatchMode=yes -i "$key_file" -p "$vps_port" "${vps_user}@${vps_ip}" "$remote_cmd" 2>&1)
+            ret=$?
+
+            local success=0
+            local msg=""
+
+            if [ $ret -eq 0 ] && echo "$out" | grep -q "XKCP_DEPLOY_SUCCESS"; then
+                uci -q set xkcptun.client.enabled='1'
+                uci -q set xkcptun.client.remote_addr="$vps_ip"
+                uci -q set xkcptun.client.remote_port="$listen_port"
+                uci -q set xkcptun.client.key="$key"
+                uci -q set xkcptun.client.mode="$mode"
+                uci -q set xkcptun.client.fec="$fec"
+                uci -q set xkcptun.client.nodelay='1'
+                uci -q set xkcptun.client.nc='1'
+                uci commit xkcptun
+                /etc/init.d/xkcptun restart >/dev/null 2>&1 || true
+
+                for sid in $(uci -q show clawwrt | grep '=vps' | cut -d. -f2 | cut -d= -f1); do
+                    local s_host=$(uci -q get clawwrt.${sid}.host)
+                    if [ "$s_host" = "$vps_ip" ]; then
+                        uci -q set clawwrt.${sid}.xkcptun_status="running"
+                        uci -q set clawwrt.${sid}.xkcptun_port="$listen_port"
+                        uci commit clawwrt
+                        break
+                    fi
+                done
+
+                success=1
+                msg="已成功在 VPS 上通过 deb 安装并启动 xkcptun-server，路由器加速客户端已自动连通！"
+            else
+                success=0
+                if echo "$out" | grep -q "ERR_SUDO_PASSWORD_REQUIRED"; then
+                    msg="VPS 当前登录用户 (${vps_user}) 执行 sudo 需要密码，无法免交互部署 deb。请在 VPS 终端执行免密提权: echo '\$USER ALL=(ALL) NOPASSWD:ALL' | sudo tee /etc/sudoers.d/\$USER 或改用 root 用户。"
+                elif echo "$out" | grep -q "ERR_NOT_DEBIAN_BASED"; then
+                    msg="目标 VPS 系统非 Debian/Ubuntu 系列，不支持 dpkg/deb 包安装。"
+                elif echo "$out" | grep -q "ERR_DOWNLOAD_FAILED"; then
+                    msg="远程 VPS 从 GitHub 下载 xkcptun deb 安装包失败或超时。请检查 VPS 网络。"
+                elif echo "$out" | grep -qi "permission denied\|auth.*fail\|no auth methods"; then
+                    msg="SSH 免密登录失败（用户: ${vps_user}）：公钥尚未在该用户的 ~/.ssh/authorized_keys 中生效。"
+                elif echo "$out" | grep -q "XKCP_START_FAILED"; then
+                    msg="xkcp_server 服务在 VPS 上启动失败，可能是 UDP 端口 ${listen_port} 已被占用。"
+                else
+                    msg="远程部署失败: $(echo "$out" | tail -n 2 | tr '\n' ' ')"
+                fi
+            fi
+
+            json_init
+            json_add_object "result"
+            json_add_boolean "success" "$success"
+            json_add_string "vps_ip" "$vps_ip"
+            json_add_string "vps_user" "$vps_user"
+            json_add_string "listen_port" "$listen_port"
+            json_add_string "key" "$key"
+            json_add_string "mode" "$mode"
+            json_add_string "fec" "$fec"
             json_add_string "message" "$msg"
             json_close_object
             json_dump
@@ -3296,6 +3508,7 @@ EOF
             test_vps_server) test_vps_server ;;
             test_vps_ssh) test_vps_ssh ;;
             deploy_vps_frps) deploy_vps_frps ;;
+            deploy_vps_xkcptun) deploy_vps_xkcptun ;;
             get_penetration_status) get_penetration_status ;;
             manage_xdns_domain) manage_xdns_domain ;;
             manage_portal_access) manage_portal_access ;;
