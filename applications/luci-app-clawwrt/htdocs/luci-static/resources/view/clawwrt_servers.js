@@ -44,6 +44,13 @@ const callDeployVpsXkcptun = rpc.declare({
     expect: { result: {} }
 });
 
+const callUninstallVpsService = rpc.declare({
+    object: 'luci.clawwrt',
+    method: 'uninstall_vps_service',
+    params: [ 'id', 'name', 'host', 'port', 'user', 'service' ],
+    expect: { result: {} }
+});
+
 return view.extend({
     load: function() {
         return Promise.all([
@@ -519,11 +526,23 @@ return view.extend({
                                 'title': '在此服务器上一键部署/更新 frps 内网穿透服务端',
                                 'click': function() { openDeployModal(srv); }
                             }, '🌐 部署frps'),
+                            (srv.frps_status === 'running' || srv.frps_status === 'installed') ? E('button', {
+                                'class': 'cws-btn cws-btn-secondary',
+                                'style': 'color: #f59e0b; border-color: rgba(245,158,11,0.4);',
+                                'title': '在此服务器上停止并彻底卸载 frps 服务端',
+                                'click': function(e) { uninstallService(srv, 'frps', e.target); }
+                            }, '🛑 卸载frps') : null,
                             E('button', {
                                 'class': 'cws-btn cws-btn-secondary',
                                 'title': '在此服务器上一键通过 deb 安装部署 xkcptun 加速服务端',
                                 'click': function() { openDeployXkcptunModal(srv); }
                             }, '🚀 部署加速(deb)'),
+                            (srv.xkcptun_status === 'running' || srv.xkcptun_status === 'installed') ? E('button', {
+                                'class': 'cws-btn cws-btn-secondary',
+                                'style': 'color: #f59e0b; border-color: rgba(245,158,11,0.4);',
+                                'title': '在此服务器上停止并彻底卸载 xkcptun 加速服务端 (deb)',
+                                'click': function(e) { uninstallService(srv, 'xkcptun', e.target); }
+                            }, '🛑 卸载加速') : null,
                             E('button', {
                                 'class': 'cws-btn cws-btn-danger',
                                 'title': '从服务器池中删除此服务器',
@@ -639,6 +658,32 @@ return view.extend({
                 } else {
                     ui.addNotification(null, E('p', '删除失败: ' + ((res && res.message) || '未知错误')));
                 }
+            });
+        }
+
+        // Actions: Uninstall Service on VPS
+        function uninstallService(srv, service, btn) {
+            const svcTitle = service === 'xkcptun' ? 'xkcptun 弱网加速服务端 (deb)' : 'frps 内网穿透服务端';
+            if (!confirm(`确认要在服务器 [${srv.name || srv.host}] 上彻底卸载 ${svcTitle} 并停用路由器本地客户端吗？\n\n此操作将停止远程 systemd 守护进程并清理相关配置。`)) {
+                return;
+            }
+            const orig = btn.innerText;
+            btn.innerText = '⏳ 卸载中...';
+            btn.disabled = true;
+
+            callUninstallVpsService(srv.id, srv.name, srv.host, srv.port, srv.user, service).then(res => {
+                btn.innerText = orig;
+                btn.disabled = false;
+                if (res && res.success) {
+                    ui.addNotification(null, E('p', '🎉 ' + (res.message || '卸载完成')));
+                    refreshList();
+                } else {
+                    ui.addNotification(null, E('p', '⚠️ 卸载失败: ' + ((res && res.message) || '未知错误')));
+                }
+            }).catch(err => {
+                btn.innerText = orig;
+                btn.disabled = false;
+                ui.addNotification(null, E('p', '卸载出错: ' + err));
             });
         }
 

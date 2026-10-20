@@ -194,6 +194,13 @@ class XiaochaTester:
             assert "缺少 VPS IP 地址" in res.get("message", ""), f"提示信息不匹配: {res}"
         self.test("远程 VPS 一键部署 xkcptun (deb) 契约校验", s6_xkcptun_deploy_contract)
 
+        def s6_uninstall_vps_service_contract():
+            # 校验参数防御与服务卸载接口契约
+            res = self.call_ubus("uninstall_vps_service", {})
+            assert res.get("success") is False, "缺少主机或参数时应返回失败"
+            assert "未找到匹配的 VPS 或缺少主机地址" in res.get("message", ""), f"提示信息不匹配: {res}"
+        self.test("远程 VPS 一键卸载与环境清理契约校验", s6_uninstall_vps_service_contract)
+
         print("\n" + "=" * 65)
         print(f"自动化测试完成: 共 {self.passed + self.failed} 项, 通过 {self.passed} 项, 失败 {self.failed} 项")
         print("=" * 65)

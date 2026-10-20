@@ -132,6 +132,14 @@ case "$1" in
             json_add_string "mode"
             json_add_string "fec"
         json_close_object
+        json_add_object "uninstall_vps_service"
+            json_add_string "id"
+            json_add_string "name"
+            json_add_string "host"
+            json_add_string "port"
+            json_add_string "user"
+            json_add_string "service"
+        json_close_object
         json_add_object "get_penetration_status"
         json_close_object
         json_add_object "manage_xdns_domain"
@@ -2666,6 +2674,196 @@ fi
             json_dump
         }
 
+        uninstall_vps_service() {
+            read -r input
+            json_load "$input"
+            json_get_var id "id"
+            json_get_var name "name"
+            json_get_var host "host"
+            json_get_var port "port"
+            json_get_var user "user"
+            json_get_var service "service"
+
+            service="${service:-xkcptun}"
+
+            # If id provided, load from config
+            if [ -n "$id" ]; then
+                config_load clawwrt
+                config_get cfg_host "$id" host ""
+                config_get cfg_port "$id" port "22"
+                config_get cfg_user "$id" user "root"
+                config_get cfg_name "$id" name "$id"
+                [ -n "$cfg_host" ] && host="$cfg_host"
+                [ -n "$cfg_port" ] && port="$cfg_port"
+                [ -n "$cfg_user" ] && user="$cfg_user"
+                [ -n "$cfg_name" ] && name="$cfg_name"
+            fi
+
+            # If host still empty, search by name or match against all VPS entries
+            if [ -z "$host" ]; then
+                local search_key="${name:-$id}"
+                if [ -n "$search_key" ]; then
+                    for sid in $(uci -q show clawwrt | grep '=vps' | cut -d. -f2 | cut -d= -f1); do
+                        local s_name=$(uci -q get clawwrt.${sid}.name)
+                        local s_host=$(uci -q get clawwrt.${sid}.host)
+                        if [ "$s_name" = "$search_key" ] || [ "$s_host" = "$search_key" ]; then
+                            id="$sid"
+                            name="$s_name"
+                            host="$s_host"
+                            port=$(uci -q get clawwrt.${sid}.port || echo "22")
+                            user=$(uci -q get clawwrt.${sid}.user || echo "root")
+                            break
+                        fi
+                    done
+                fi
+            fi
+
+            # Fallback if search_key looks like an IP or hostname
+            if [ -z "$host" ] && [ -n "$name" ]; then
+                host="$name"
+            fi
+
+            [ -z "$host" ] && {
+                json_init
+                json_add_object "result"
+                json_add_boolean "success" 0
+                json_add_string "message" "未找到匹配的 VPS 或缺少主机地址"
+                json_close_object
+                json_dump
+                return
+            }
+
+            port="${port:-22}"
+            user="${user:-root}"
+
+            local key_file="/etc/clawwrt/id_dropbear"
+            if [ ! -f "$key_file" ]; then
+                mkdir -p /etc/clawwrt
+                dropbearkey -t ed25519 -f "$key_file" >/dev/null 2>&1
+            fi
+
+            local remote_cmd="
+set -e
+export DEBIAN_FRONTEND=noninteractive
+
+SUDO=''
+if [ \"\$(id -u)\" -ne 0 ]; then
+    if sudo -n true 2>/dev/null; then
+        SUDO='sudo '
+    else
+        echo 'ERR_SUDO_PASSWORD_REQUIRED'
+        exit 1
+    fi
+fi
+"
+
+            if [ "$service" = "xkcptun" ] || [ "$service" = "all" ]; then
+                remote_cmd="${remote_cmd}
+if command -v systemctl >/dev/null 2>&1; then
+    \$SUDO systemctl stop xkcptun-server 2>/dev/null || true
+    \$SUDO systemctl disable xkcptun-server 2>/dev/null || true
+    \$SUDO rm -f /etc/systemd/system/xkcptun-server.service /lib/systemd/system/xkcptun-server.service 2>/dev/null || true
+    \$SUDO systemctl daemon-reload 2>/dev/null || true
+fi
+\$SUDO pkill -9 -x xkcp_server 2>/dev/null || true
+\$SUDO pkill -9 -f server_linux 2>/dev/null || true
+if command -v dpkg >/dev/null 2>&1; then
+    if dpkg -s xkcptun-server >/dev/null 2>&1; then
+        \$SUDO dpkg -P xkcptun-server 2>/dev/null || \$SUDO dpkg -r xkcptun-server 2>/dev/null || true
+    fi
+fi
+\$SUDO rm -rf /etc/xkcptun 2>/dev/null || true
+\$SUDO rm -f /usr/local/bin/xkcp_server /usr/local/bin/server_linux_* 2>/dev/null || true
+if command -v ufw >/dev/null 2>&1 && \$SUDO ufw status 2>/dev/null | grep -q 'active'; then
+    \$SUDO ufw delete allow 9089/udp 2>/dev/null || true
+fi
+echo 'XKCPTUN_UNINSTALL_OK'
+"
+            fi
+
+            if [ "$service" = "frps" ] || [ "$service" = "all" ]; then
+                remote_cmd="${remote_cmd}
+if command -v systemctl >/dev/null 2>&1; then
+    \$SUDO systemctl stop frps 2>/dev/null || true
+    \$SUDO systemctl disable frps 2>/dev/null || true
+    \$SUDO rm -f /etc/systemd/system/frps.service 2>/dev/null || true
+    \$SUDO systemctl daemon-reload 2>/dev/null || true
+fi
+\$SUDO pkill -9 -x frps 2>/dev/null || true
+\$SUDO rm -rf /etc/frps /var/log/frps.log 2>/dev/null || true
+\$SUDO rm -f /usr/local/bin/frps 2>/dev/null || true
+echo 'FRPS_UNINSTALL_OK'
+"
+            fi
+
+            local out=""
+            local ret=1
+            out=$(run_with_timeout 15 dbclient -y -o BatchMode=yes -i "$key_file" -p "$port" "${user}@${host}" "$remote_cmd" 2>&1)
+            ret=$?
+
+            local success=0
+            local msg=""
+
+            if [ $ret -eq 0 ]; then
+                success=1
+                # Router local cleanup
+                if [ "$service" = "xkcptun" ] || [ "$service" = "all" ]; then
+                    local cur_remote=$(uci -q get xkcptun.client.remote_addr)
+                    if [ "$cur_remote" = "$host" ]; then
+                        uci -q set xkcptun.client.enabled='0'
+                        uci commit xkcptun 2>/dev/null
+                        /etc/init.d/xkcptun stop >/dev/null 2>&1 || true
+                    fi
+                fi
+                if [ "$service" = "frps" ] || [ "$service" = "all" ]; then
+                    local cur_srv=$(uci -q get xfrpc.common.server_addr)
+                    if [ "$cur_srv" = "$host" ]; then
+                        uci -q set xfrpc.common.enabled='0'
+                        uci commit xfrpc 2>/dev/null
+                        /etc/init.d/xfrpc stop >/dev/null 2>&1 || true
+                    fi
+                fi
+
+                # Update VPS registry status
+                for sid in $(uci -q show clawwrt | grep '=vps' | cut -d. -f2 | cut -d= -f1); do
+                    local s_host=$(uci -q get clawwrt.${sid}.host)
+                    if [ "$s_host" = "$host" ]; then
+                        if [ "$service" = "xkcptun" ] || [ "$service" = "all" ]; then
+                            uci -q set clawwrt.${sid}.xkcptun_status="uninstalled"
+                        fi
+                        if [ "$service" = "frps" ] || [ "$service" = "all" ]; then
+                            uci -q set clawwrt.${sid}.frps_status="uninstalled"
+                        fi
+                        uci commit clawwrt 2>/dev/null
+                        break
+                    fi
+                done
+
+                msg="已成功在 VPS [${name:-$host}] 上停止并彻底卸载 ${service} 服务端，路由器本地客户端已自动同步停用！"
+            else
+                success=0
+                if echo "$out" | grep -q "ERR_SUDO_PASSWORD_REQUIRED"; then
+                    msg="VPS 用户 (${user}) 执行 sudo 需要密码，无法免交互卸载服务。"
+                elif echo "$out" | grep -qi "permission denied\|auth.*fail\|no auth methods"; then
+                    msg="SSH 认证失败：公钥尚未在 VPS 的 ~/.ssh/authorized_keys 中生效。"
+                elif echo "$out" | grep -qi "timeout\|timed out"; then
+                    msg="SSH 连接 VPS 超时，请检查 VPS IP 与端口是否可达。"
+                else
+                    msg="远程卸载失败: $(echo "$out" | tail -n 2 | tr '\n' ' ')"
+                fi
+            fi
+
+            json_init
+            json_add_object "result"
+            json_add_boolean "success" "$success"
+            json_add_string "service" "$service"
+            json_add_string "host" "$host"
+            json_add_string "name" "$name"
+            json_add_string "message" "$msg"
+            json_close_object
+            json_dump
+        }
+
         get_penetration_status() {
             local enabled=$(uci -q get xfrpc.common.enabled || echo 0)
             local server_addr=$(uci -q get xfrpc.common.server_addr)
@@ -3509,6 +3707,7 @@ EOF
             test_vps_ssh) test_vps_ssh ;;
             deploy_vps_frps) deploy_vps_frps ;;
             deploy_vps_xkcptun) deploy_vps_xkcptun ;;
+            uninstall_vps_service) uninstall_vps_service ;;
             get_penetration_status) get_penetration_status ;;
             manage_xdns_domain) manage_xdns_domain ;;
             manage_portal_access) manage_portal_access ;;

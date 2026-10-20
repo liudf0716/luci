@@ -161,6 +161,13 @@ const callDeployVpsXkcptun = rpc.declare({
     expect: { result: {} }
 });
 
+const callUninstallVpsService = rpc.declare({
+    object: 'luci.clawwrt',
+    method: 'uninstall_vps_service',
+    params: [ 'id', 'name', 'host', 'port', 'user', 'service' ],
+    expect: { result: {} }
+});
+
 const callGetPenetrationStatus = rpc.declare({
     object: 'luci.clawwrt',
     method: 'get_penetration_status',
@@ -563,6 +570,22 @@ const routerTools = [
                 required: ['explanation']
             }
         }
+    },
+    {
+        type: 'function',
+        function: {
+            name: 'propose_vps_service_uninstall',
+            description: '向用户提议使用 SSH 免密登录自动在用户自有的 Linux VPS 上停止并彻底卸载服务端程序（如 xkcptun 加速服务端 或 frps 穿透服务端），并同步重置路由器本地客户端。前端将渲染高安全级别的卸载确认卡片供用户授权，不可私自直接修改',
+            parameters: {
+                type: 'object',
+                properties: {
+                    vps_target: { type: 'string', description: '目标 VPS 的别名（如 bwg）或公网 IP 地址' },
+                    service_type: { type: 'string', enum: ['xkcptun', 'frps', 'all'], description: '要卸载的服务端类型，默认为 xkcptun' },
+                    explanation: { type: 'string', description: '卸载原因及影响说明' }
+                },
+                required: ['vps_target', 'service_type', 'explanation']
+            }
+        }
     }
 
 ];
@@ -573,7 +596,7 @@ const systemPrompt = `你是一个专业的 OpenWrt / chaWrt 路由器专属 AI 
 
 工作原则：
 1. 【只读操作自主执行】：当用户询问是否能正常上网、网络是否卡顿、连了哪些设备、或者排查故障时，自主调用工具获取事实数据，结论先行，不要胡乱猜测。
-2. 【配置修改强安全原则】：凡涉及修改路由器配置、WiFi、流控限速、开关硬件加速或在 VPS 上部署穿透服务端的意图，必须通过提议工具（propose_uci_change, propose_service_config, propose_wifi_config, propose_qos_limit, propose_hw_offload, propose_vps_penetration）生成提议卡片，向用户通俗解释修改目的与影响，由用户在界面中点击确认授权。严禁在未经用户确认时宣称已完成修改！
+2. 【配置修改强安全原则】：凡涉及修改路由器配置、WiFi、流控限速、开关硬件加速或在 VPS 上部署/卸载服务端的意图，必须通过提议工具（propose_uci_change, propose_service_config, propose_wifi_config, propose_qos_limit, propose_hw_offload, propose_vps_penetration, propose_vps_xkcptun, propose_vps_service_uninstall）生成提议卡片，向用户通俗解释修改目的与影响，由用户在界面中点击确认授权。严禁在未经用户确认时宣称已完成修改！
 3. 【核心扩展服务与流控能力】：
    - 内网穿透与 VPS 自动化部署 (xfrpc & frps)：纯 C 高性能穿透，支持常规开启/关闭与参数配置；特别支持通过 get_penetration_status 深度检测穿透真实运行状况（绝不能只看 xfrpc 进程是否运行，必须检查 xfrpc 是否真正与远端 frps 建立了 ESTABLISHED 状态的连接、是否发生握手超时或鉴权失败，并列出各代理规则的公网访问 URL）；支持通过 manage_penetration_proxy 管理具体端口映射规则（查询列表 action: "list"、新增/修改 TCP/UDP/HTTP/HTTPS/SOCKS5 规则 action: "add"、启用规则 action: "enable"、临时禁用规则 action: "disable"、删除规则 action: "remove"，支持自定义域名 custom_domains 与远程子域名 subdomain，支持启用加密与压缩）；特别支持通过 SSH 免密公钥方式在用户云服务器 (VPS) 上全自动部署与配置 frps 服务端 (propose_vps_penetration) 与查询路由器公钥 (get_router_ssh_key)，实现双端一键拉通；
    - 硬件加速 (MediaTek PPE / Flow Offloading)：支持实时查询硬件加速状态 (get_hw_offload_status)，支持提议开启或关闭硬件加速 (propose_hw_offload)；基于芯片级 PPE 硬件网络处理单元，千兆转发 CPU 占用接近 0%，并结合 chaWrt 独家 Selective PPE 机制与 eBPF 智能流控无缝协同；
@@ -591,6 +614,7 @@ const systemPrompt = `你是一个专业的 OpenWrt / chaWrt 路由器专属 AI 
    - 当用户询问内网穿透状态、穿透是否正常、xfrpc 是否连上了服务端、测试穿透等问题时，主动调用 get_penetration_status 获取全量事实数据，严禁仅看进程存在就草率得出正常结论！必须向用户详细汇报：1. xfrpc 客户端进程运行状态；2. 与远端 frps 服务端的真实套接字连接状态 (ESTABLISHED / SYN_SENT 握手超时 / 断开)；3. 最新日志中的异常或诊断建议；4. 各映射规则的外网访问直达链接；
    - 当用户提出希望在自己的 VPS 上配置/部署内网穿透服务端时，主动调用 propose_vps_penetration 生成免密向导卡片（参数包含 vps_ip, vps_user, vps_port, remote_web_port），引导用户在 VPS 终端执行一行授权命令后全自动一键部署；
    - 当用户提出希望在自己的 VPS 上配置/安装/部署网络加速服务端（xkcptun server）时，主动调用 propose_vps_xkcptun 生成免密向导卡片（参数包含 vps_ip, vps_user, vps_port, listen_port, mode），引导用户在 VPS 终端执行授权后全自动通过 deb 包一键安装并自动配置路由器客户端连通；
+   - 当用户提出希望在远端 VPS 上删除、卸载或清理加速服务端（xkcptun server）或穿透服务端（frps）时，主动调用 propose_vps_service_uninstall 生成卸载确认卡片（参数包含 vps_target 如 'bwg' 或 IP、service_type 为 'xkcptun' 或 'frps'），严禁私自宣称已删除，必须生成卡片供用户点击确认执行；
    - 当用户询问网络加速状态、节点延迟、KCP 连接或加速隧道时，调用 get_service_detail('xkcptun') 或 manage_xkcptun_tunnel('list')；
    - 当用户询问或需要管理加速隧道时，调用 manage_xkcptun_tunnel（支持 list, add, remove, enable, disable）；
    - 当用户询问智能分流、拦截统计、分流域名、动态劫持 IP 或活跃代理会话时，调用 get_service_detail('xdns') 或 manage_xdns_domain；
@@ -2700,6 +2724,102 @@ return view.extend({
             chatWindow.scrollTop = chatWindow.scrollHeight;
         }
 
+        // Append VPS Service Uninstall Confirmation Card (Safe Remote Teardown)
+        function appendVpsUninstallCard(param) {
+            const vpsTarget = param.vps_target || '';
+            const serviceType = param.service_type || 'xkcptun';
+            const svcName = serviceType === 'xkcptun' ? 'xkcptun 弱网加速服务端 (deb / xkcp_server)' :
+                           (serviceType === 'frps' ? 'frps 内网穿透服务端' : '所有远端服务');
+
+            const card = E('div', {
+                'class': 'vps-uninstall-card',
+                'style': 'background: var(--cw-bg-card); border: 2px solid #ef4444; border-radius: 12px; padding: 18px 20px; margin: 12px 0; box-shadow: var(--cw-card-shadow);'
+            }, [
+                E('div', { 'style': 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid var(--cw-border); padding-bottom: 8px;' }, [
+                    E('div', { 'style': 'font-weight: 700; font-size: 15px; color: var(--cw-text-main); display: flex; align-items: center; gap: 8px;' }, [
+                        E('span', { 'style': 'font-size: 18px;' }, '🛑'),
+                        E('span', {}, '远程 VPS 服务端卸载确认')
+                    ]),
+                    E('span', { 'style': 'background: rgba(239,68,68,0.15); color: #ef4444; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 700; border: 1px solid rgba(239,68,68,0.3);' }, '⚠️ 高危移除操作')
+                ]),
+                E('div', { 'style': 'font-size: 13px; color: var(--cw-text-sub); margin-bottom: 14px; line-height: 1.5;' }, param.explanation || `即将通过免密 SSH 登录并在 VPS [${vpsTarget}] 上彻底停止并卸载 ${svcName}。`),
+
+                E('div', { 'style': 'background: var(--cw-bg-subtle); border: 1px solid var(--cw-border); border-radius: 8px; padding: 12px 14px; margin-bottom: 14px;' }, [
+                    E('div', { 'style': 'display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;' }, [
+                        E('div', {}, [
+                            E('label', { 'style': 'display: block; font-size: 11.5px; color: var(--cw-text-muted); margin-bottom: 3px;' }, '目标服务器:'),
+                            E('div', { 'style': 'font-weight: 700; font-size: 13px; color: var(--cw-text-main); font-family: monospace;' }, vpsTarget || '未指定')
+                        ]),
+                        E('div', {}, [
+                            E('label', { 'style': 'display: block; font-size: 11.5px; color: var(--cw-text-muted); margin-bottom: 3px;' }, '卸载服务:'),
+                            E('div', { 'style': 'font-weight: 700; font-size: 13px; color: #ef4444;' }, svcName)
+                        ])
+                    ]),
+                    E('div', { 'style': 'margin-top: 10px; font-size: 12px; color: var(--cw-text-muted); line-height: 1.4;' },
+                        '执行动作：停止并禁用远程 systemd 服务、清理残留进程、卸载软件包与配置、恢复防火墙端口，并同步停用路由器本地客户端。'
+                    )
+                ]),
+
+                E('div', {
+                    'id': 'vps-uninst-status',
+                    'style': 'display: none; padding: 10px 14px; border-radius: 6px; font-size: 12.5px; margin-bottom: 12px;'
+                }),
+
+                E('div', { 'style': 'display: flex; gap: 10px; justify-content: flex-end;' }, [
+                    E('button', {
+                        'type': 'button',
+                        'class': 'btn cbi-button',
+                        'style': 'padding: 8px 16px; border-radius: 6px; font-size: 12.5px; cursor: pointer;',
+                        'click': function(ev) {
+                            card.remove();
+                            appendMessage('assistant', `已取消对 VPS [${vpsTarget}] 上 ${serviceType} 服务的卸载操作。`);
+                        }
+                    }, '放弃取消'),
+                    E('button', {
+                        'type': 'button',
+                        'id': 'btn-exec-vps-uninstall',
+                        'class': 'btn cbi-button',
+                        'style': 'background: #dc2626; color: #fff; border: none; padding: 8px 20px; border-radius: 6px; font-size: 13px; font-weight: 700; cursor: pointer;',
+                        'click': function(ev) {
+                            const btn = ev.target;
+                            const statDiv = card.querySelector('#vps-uninst-status');
+                            btn.disabled = true;
+                            btn.innerText = '⏳ 正在远程卸载中...';
+
+                            statDiv.style.display = 'block';
+                            statDiv.style.background = '#fef2f2';
+                            statDiv.style.border = '1px solid #fecaca';
+                            statDiv.style.color = '#991b1b';
+                            statDiv.innerHTML = `⏳ 正在通过 SSH 免密登录 VPS [${vpsTarget}] 停止服务并清理残留...`;
+
+                            callUninstallVpsService('', vpsTarget, '', '', '', serviceType).then(res => {
+                                if (res && res.success) {
+                                    btn.innerText = '✅ 卸载完成';
+                                    btn.style.background = '#16a34a';
+                                    card.style.borderColor = '#16a34a';
+                                    statDiv.style.background = '#f0fdf4';
+                                    statDiv.style.border = '1px solid #bbf7d0';
+                                    statDiv.style.color = '#166534';
+                                    statDiv.innerHTML = `🎉 ${res.message || '远程服务已彻底清理，本地客户端已同步停用。'}`;
+                                } else {
+                                    btn.disabled = false;
+                                    btn.innerText = '🛑 重试卸载';
+                                    statDiv.innerHTML = `❌ 卸载失败: ${(res && res.message) || '未知错误'}`;
+                                }
+                            }).catch(err => {
+                                btn.disabled = false;
+                                btn.innerText = '🛑 重试卸载';
+                                statDiv.innerHTML = `❌ 连接或执行异常: ${err}`;
+                            });
+                        }
+                    }, `🛑 确认并立即从 VPS 卸载 ${serviceType}`)
+                ])
+            ]);
+
+            chatWindow.appendChild(card);
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+
         // Send Message & Tool Calling Loop
         async function sendMessage() {
             const input = document.getElementById('chat-input');
@@ -2874,6 +2994,9 @@ return view.extend({
                             } else if (fnName === 'propose_vps_xkcptun') {
                                 appendVpsXkcptunCard(fnArgs);
                                 toolResult = { status: 'proposed_to_user', message: 'VPS xkcptun acceleration deployment card rendered in UI. Awaiting user authorization and execution.' };
+                            } else if (fnName === 'propose_vps_service_uninstall') {
+                                appendVpsUninstallCard(fnArgs);
+                                toolResult = { status: 'proposed_to_user', message: 'VPS service uninstallation card rendered in UI. Awaiting user authorization and execution.' };
                             } else {
                                 toolResult = { error: `Unknown tool: ${fnName}` };
                             }
