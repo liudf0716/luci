@@ -695,7 +695,7 @@ if(__exports != exports)module.exports = exports;return module.exports})();
 return view.extend({
     render: function() {
         if (typeof L !== 'undefined' && L.env) {
-            L.env.rpctimeout = 120;
+            L.env.rpctimeout = 180;
         }
 
         let aiConfig = {
@@ -2664,17 +2664,24 @@ return view.extend({
                             }
 
                             btn.disabled = true;
-                            btn.innerText = '⏳ 正在远程通过 deb 安装部署 (约 15~30 秒)...';
+                            let elapsed = 0;
+                            btn.innerText = '⏳ 正在远程通过 deb 安装部署 (0s)...';
+                            const timer = setInterval(() => {
+                                elapsed++;
+                                btn.innerText = `⏳ 正在远程通过 deb 安装部署 (${elapsed}s)...`;
+                            }, 1000);
+
                             statusDiv.style.display = 'block';
                             statusDiv.style.background = '#eff6ff';
                             statusDiv.style.border = '1px solid #bfdbfe';
                             statusDiv.style.color = '#1e40af';
-                            statusDiv.innerHTML = `⏳ 正在连接 VPS (${user}@${ip}) 下载并安装 xkcptun-server deb 软件包、写入 systemd 服务并启动路由器加速客户端...`;
+                            statusDiv.innerHTML = `⏳ 正在连接 VPS (${user}@${ip}) 下载并安装 xkcptun-server deb 软件包、写入 systemd 服务并启动路由器加速客户端...<br><span style="font-size:11px;color:#64748b;">（正常耗时 3~10 秒，若 VPS 缺少基础库会自动补齐依赖，请稍候）</span>`;
 
-                            if (typeof L !== 'undefined' && L.env) L.env.rpctimeout = 120;
+                            if (typeof L !== 'undefined' && L.env) L.env.rpctimeout = 180;
                             callDeployVpsXkcptun(ip, port, user, lPort, lKey, lMode, '1').then(res => {
+                                clearInterval(timer);
                                 if (res && res.success) {
-                                    btn.innerText = '✅ 部署完成并已连通！';
+                                    btn.innerText = `✅ 部署完成并已连通 (${elapsed}s)！`;
                                     btn.style.background = '#16a34a';
                                     card.style.borderColor = '#16a34a';
                                     statusDiv.style.background = '#f0fdf4';
@@ -2692,6 +2699,7 @@ return view.extend({
                                     statusDiv.innerHTML = `❌ <strong>部署失败：</strong>${(res && res.message) || '未知错误'}`;
                                 }
                             }).catch(err => {
+                                clearInterval(timer);
                                 btn.disabled = false;
                                 btn.innerText = '🚀 一键安装部署 (deb)';
                                 statusDiv.style.background = '#fef2f2';

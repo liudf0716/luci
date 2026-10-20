@@ -2761,9 +2761,11 @@ fi
             if [ "$service" = "xkcptun" ] || [ "$service" = "all" ]; then
                 remote_cmd="${remote_cmd}
 if command -v systemctl >/dev/null 2>&1; then
+    \$SUDO systemctl stop xkcp_server 2>/dev/null || true
+    \$SUDO systemctl disable xkcp_server 2>/dev/null || true
     \$SUDO systemctl stop xkcptun-server 2>/dev/null || true
     \$SUDO systemctl disable xkcptun-server 2>/dev/null || true
-    \$SUDO rm -f /etc/systemd/system/xkcptun-server.service /lib/systemd/system/xkcptun-server.service 2>/dev/null || true
+    \$SUDO rm -f /etc/systemd/system/xkcp_server.service /lib/systemd/system/xkcp_server.service /etc/systemd/system/xkcptun-server.service /lib/systemd/system/xkcptun-server.service 2>/dev/null || true
     \$SUDO systemctl daemon-reload 2>/dev/null || true
 fi
 \$SUDO pkill -9 -x xkcp_server 2>/dev/null || true
