@@ -694,6 +694,10 @@ if(__exports != exports)module.exports = exports;return module.exports})();
 
 return view.extend({
     render: function() {
+        if (typeof L !== 'undefined' && L.env) {
+            L.env.rpctimeout = 120;
+        }
+
         let aiConfig = {
             apiKey: localStorage.getItem('chawrt_deepseek_key') || '',
             apiUrl: 'https://api.deepseek.com/chat/completions',
@@ -2400,6 +2404,7 @@ return view.extend({
                             statusDiv.style.color = '#1e40af';
                             statusDiv.innerHTML = `⏳ 正在连接 VPS (${user}@${ip}) 下载安装 frps、生成配置、创建 systemd 服务并启动路由器 xfrpc...`;
 
+                            if (typeof L !== 'undefined' && L.env) L.env.rpctimeout = 120;
                             callDeployVpsFrps(ip, port, user, '7001', '', webP).then(res => {
                                 if (res && res.success) {
                                     btn.innerText = '✅ 部署完成并已连通！';
@@ -2666,6 +2671,7 @@ return view.extend({
                             statusDiv.style.color = '#1e40af';
                             statusDiv.innerHTML = `⏳ 正在连接 VPS (${user}@${ip}) 下载并安装 xkcptun-server deb 软件包、写入 systemd 服务并启动路由器加速客户端...`;
 
+                            if (typeof L !== 'undefined' && L.env) L.env.rpctimeout = 120;
                             callDeployVpsXkcptun(ip, port, user, lPort, lKey, lMode, '1').then(res => {
                                 if (res && res.success) {
                                     btn.innerText = '✅ 部署完成并已连通！';

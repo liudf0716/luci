@@ -53,6 +53,9 @@ const callUninstallVpsService = rpc.declare({
 
 return view.extend({
     load: function() {
+        if (typeof L !== 'undefined' && L.env) {
+            L.env.rpctimeout = 120;
+        }
         return Promise.all([
             callGetRouterSshKey(),
             callGetVpsServers()
@@ -60,6 +63,9 @@ return view.extend({
     },
 
     render: function(data) {
+        if (typeof L !== 'undefined' && L.env) {
+            L.env.rpctimeout = 120;
+        }
         const keyInfo = data[0] || {};
         let currentKeyInfo = keyInfo;
         const serversData = data[1] || {};
@@ -746,6 +752,7 @@ return view.extend({
                             execBtn.disabled = true;
                             statDiv.innerHTML = '<span style="color: #3b82f6;">正在通过 SSH 登录服务器并自动化部署 frps 服务端（此过程大约需要 15-30 秒）...</span>';
 
+                            if (typeof L !== 'undefined' && L.env) L.env.rpctimeout = 120;
                             callDeployVpsFrps(srv.host, srv.port, srv.user, bPort, tok, wPort).then(res => {
                                 execBtn.disabled = false;
                                 if (res && res.success) {
@@ -841,6 +848,7 @@ return view.extend({
                             execBtn.disabled = true;
                             statDiv.innerHTML = '<span style="color: #3b82f6;">正在通过 SSH 登录服务器，下载并安装 xkcptun-server deb 包（过程约 10~25 秒）...</span>';
 
+                            if (typeof L !== 'undefined' && L.env) L.env.rpctimeout = 120;
                             callDeployVpsXkcptun(srv.host, srv.port, srv.user, lPort, lKey, lMode, lFec).then(res => {
                                 execBtn.disabled = false;
                                 if (res && res.success) {
