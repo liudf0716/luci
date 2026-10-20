@@ -140,6 +140,12 @@ const callGetRouterSshKey = rpc.declare({
     expect: { result: {} }
 });
 
+const callGetVpsServers = rpc.declare({
+    object: 'luci.clawwrt',
+    method: 'get_vps_servers',
+    expect: { result: {} }
+});
+
 const callTestVpsSsh = rpc.declare({
     object: 'luci.clawwrt',
     method: 'test_vps_ssh',
@@ -537,14 +543,22 @@ const routerTools = [
     {
         type: 'function',
         function: {
+            name: 'get_vps_servers',
+            description: '查询路由器受信任服务器池中所有已配置的远程 Linux 服务器 (VPS) 列表。返回每台服务器的别名 (name)、真实 IP 地址 (host)、已配置的 SSH 端口 (port，如 27334 等非默认 22 端口)、登录用户名 (user) 以及当前各项服务状态。重要：当用户提到在某台服务器（如 "bwg"）上操作、或者需要获取服务器配置时，必须先调用此接口查阅真实配置！',
+            parameters: { type: 'object', properties: {} }
+        }
+    },
+    {
+        type: 'function',
+        function: {
             name: 'propose_vps_penetration',
-            description: '向用户提议使用 SSH 免密登录自动在用户自有的 Linux VPS 上部署 frps 服务端，并自动配置路由器客户端 xfrpc 建立双端穿透隧道。前端将渲染免密授权与部署卡片供用户确认，不可私自直接修改',
+            description: '向用户提议使用 SSH 免密登录自动在用户自有的 Linux VPS 上部署 frps 服务端，并自动配置路由器客户端 xfrpc 建立双端穿透隧道。若用户指定了服务器名称（如 bwg），必须先通过 get_vps_servers 获取其真实 IP (host) 和配置的特定 SSH 端口 (port，如 27334)。前端将渲染免密授权与部署卡片供用户确认，不可私自直接修改',
             parameters: {
                 type: 'object',
                 properties: {
-                    vps_ip: { type: 'string', description: '用户提供的云服务器 (VPS) 公网 IP 地址' },
-                    vps_user: { type: 'string', description: 'VPS 的登录用户名，如 root, ubuntu, debian, ec2-user 等，默认为 root' },
-                    vps_port: { type: 'string', description: 'VPS 的 SSH 端口，默认为 22' },
+                    vps_ip: { type: 'string', description: '云服务器 (VPS) 的公网 IP 地址（通过 get_vps_servers 获取真实 host 如 172.96.252.145）' },
+                    vps_user: { type: 'string', description: 'VPS 的登录用户名，默认为 root' },
+                    vps_port: { type: 'string', description: 'VPS 的 SSH 端口（必须与 get_vps_servers 中该服务器配置的特定端口一致，如 27334，切勿盲目默认填 22）' },
                     remote_web_port: { type: 'string', description: '穿透后在外网访问路由器 Web 界面的远程端口，默认 18000' },
                     explanation: { type: 'string', description: '部署方案与影响说明' }
                 },
@@ -556,16 +570,16 @@ const routerTools = [
         type: 'function',
         function: {
             name: 'propose_vps_xkcptun',
-            description: '向用户提议使用 SSH 免密登录自动在用户自有的 Linux VPS 上通过官方 deb 软件包安装部署 xkcptun 服务端 (xkcp_server)，并自动配置路由器客户端 xkcptun 建立弱网加速。前端将渲染免密授权与部署卡片供用户确认，不可私自直接修改',
+            description: '向用户提议使用 SSH 免密登录自动在用户自有的 Linux VPS 上通过官方 deb 软件包安装部署 xkcptun 服务端 (xkcp_server)，并自动配置路由器客户端 xkcptun 建立弱网加速。注意：目标系统必须为 Ubuntu 或 Debian（支持 deb 安装包）。若用户指定了服务器名称（如 bwg），必须先通过 get_vps_servers 获取其真实 host 和特定端口 (如 27334)，再传入本工具！前端将渲染免密授权与部署卡片供用户确认，不可私自直接修改',
             parameters: {
                 type: 'object',
                 properties: {
-                    vps_ip: { type: 'string', description: '用户提供的云服务器 (VPS) 公网 IP 地址' },
+                    vps_ip: { type: 'string', description: '云服务器 (VPS) 的公网 IP 地址（若用户输入别名如 bwg，应通过 get_vps_servers 获取对应的真实 IP 如 172.96.252.145）' },
                     vps_user: { type: 'string', description: 'VPS 的登录用户名，如 root, ubuntu, debian 等，默认为 root' },
-                    vps_port: { type: 'string', description: 'VPS 的 SSH 端口，默认为 22' },
+                    vps_port: { type: 'string', description: 'VPS 的 SSH 端口（必须与 get_vps_servers 中该服务器配置的特定端口一致，如 27334，切勿盲目默认填 22）' },
                     listen_port: { type: 'string', description: 'xkcptun 服务端监听的 UDP 端口，默认 9089' },
                     mode: { type: 'string', description: '加速模式 (fast3 / fast2 / fast / normal)，默认 fast3' },
-                    explanation: { type: 'string', description: '部署方案与影响说明' }
+                    explanation: { type: 'string', description: '部署方案与影响说明，需明确提示目标 VPS 操作系统必须为 Ubuntu 或 Debian' }
                 },
                 required: ['explanation']
             }
@@ -613,8 +627,11 @@ const systemPrompt = `你是一个专业的 OpenWrt / chaWrt 路由器专属 AI 
    - 当用户提出对设备进行限速、调整限速或解除限速时，主动调用 propose_qos_limit 生成流控确认卡片（支持 target 为 IP、MAC 或 "all"，支持限制下行/上行带宽 dl_mbps/ul_mbps，支持定时时段）；
    - 当用户询问内网穿透状态、穿透是否正常、xfrpc 是否连上了服务端、测试穿透等问题时，主动调用 get_penetration_status 获取全量事实数据，严禁仅看进程存在就草率得出正常结论！必须向用户详细汇报：1. xfrpc 客户端进程运行状态；2. 与远端 frps 服务端的真实套接字连接状态 (ESTABLISHED / SYN_SENT 握手超时 / 断开)；3. 最新日志中的异常或诊断建议；4. 各映射规则的外网访问直达链接；
    - 当用户提出希望在自己的 VPS 上配置/部署内网穿透服务端时，主动调用 propose_vps_penetration 生成免密向导卡片（参数包含 vps_ip, vps_user, vps_port, remote_web_port），引导用户在 VPS 终端执行一行授权命令后全自动一键部署；
-   - 当用户提出希望在自己的 VPS 上配置/安装/部署网络加速服务端（xkcptun server）时，主动调用 propose_vps_xkcptun 生成免密向导卡片（参数包含 vps_ip, vps_user, vps_port, listen_port, mode），引导用户在 VPS 终端执行授权后全自动通过 deb 包一键安装并自动配置路由器客户端连通；
-   - 当用户提出希望在远端 VPS 上删除、卸载或清理加速服务端（xkcptun server）或穿透服务端（frps）时，主动调用 propose_vps_service_uninstall 生成卸载确认卡片（参数包含 vps_target 如 'bwg' 或 IP、service_type 为 'xkcptun' 或 'frps'），严禁私自宣称已删除，必须生成卡片供用户点击确认执行；
+   - 当用户提出希望在自己的 VPS 上配置/安装/部署网络加速服务端（xkcptun server）时，若指定了服务器名称（如 bwg），必须先调用 get_vps_servers 获取真实 host 与特定端口（如 27334），再调用 propose_vps_xkcptun 生成免密向导卡片（参数包含 vps_ip, vps_user, vps_port, listen_port, mode），引导用户在 VPS 终端执行授权后全自动通过 deb 包一键安装并自动配置路由器客户端连通；明确告知目标系统必须为 Ubuntu 或 Debian（基于 deb 安装包）；
+   - 当用户提出希望在远端 VPS 上删除、卸载或清理加速服务端（xkcptun server）或穿透服务端（frps）时，若指定了服务器名称（如 bwg），先调用 get_vps_servers 获取真实 host，再主动调用 propose_vps_service_uninstall 生成卸载确认卡片（参数包含 vps_target 如 'bwg' 或 IP、service_type 为 'xkcptun' 或 'frps'），严禁私自宣称已删除，必须生成卡片供用户点击确认执行；
+   - 【极其重要的服务器配置与系统限制准则】：
+     ① 当用户提到在某台服务器（如 "bwg" 或某名称）上安装/部署/卸载服务（如 xkcptun 或 frps）时，你必须先主动调用 get_vps_servers 查询已纳管服务器列表！从返回结果中查阅该服务器的真实公网 IP (host)、特定的 SSH 端口 (port，例如 bwg 的 27334 端口而非默认的 22 端口) 与用户名 (user)，然后再将精确的真实 IP、端口和用户名填入 propose_vps_xkcptun / propose_vps_penetration / propose_vps_service_uninstall 工具参数中！严禁在未查询时盲目使用默认的 22 端口或占位 IP！
+     ② 当前 xkcptun 服务端通过官方 deb 软件包进行自动化安装部署，明确限制目标服务器操作系统必须为 Ubuntu 或 Debian（支持 deb/dpkg 软件包）。在向用户解释提议卡片时，必须明确告知系统要求为 Ubuntu / Debian。
    - 当用户询问网络加速状态、节点延迟、KCP 连接或加速隧道时，调用 get_service_detail('xkcptun') 或 manage_xkcptun_tunnel('list')；
    - 当用户询问或需要管理加速隧道时，调用 manage_xkcptun_tunnel（支持 list, add, remove, enable, disable）；
    - 当用户询问智能分流、拦截统计、分流域名、动态劫持 IP 或活跃代理会话时，调用 get_service_detail('xdns') 或 manage_xdns_domain；
@@ -2265,7 +2282,18 @@ return view.extend({
 
                 // Step 2: VPS Connection & Proxy Parameters
                 E('div', { 'style': 'background: var(--cw-bg-subtle); border: 1px solid var(--cw-border); border-radius: 8px; padding: 12px 14px; margin-bottom: 14px;' }, [
-                    E('div', { 'style': 'font-weight: 700; font-size: 13px; color: var(--cw-text-main); margin-bottom: 8px;' }, '第 2 步：填写 VPS 连接与穿透参数'),
+                    E('div', { 'style': 'font-weight: 700; font-size: 13px; color: var(--cw-text-main); margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;' }, [
+                        E('span', {}, '第 2 步：填写 VPS 连接与穿透参数'),
+                        E('div', { 'style': 'font-size: 12px; display: flex; align-items: center; gap: 6px;' }, [
+                            E('span', { 'style': 'color: var(--cw-text-muted); font-weight: normal;' }, '已纳管服务器快捷载入:'),
+                            E('select', {
+                                'id': 'vps-pen-server-select',
+                                'style': 'padding: 3px 8px; font-size: 11.5px; border-radius: 4px; border: 1px solid var(--cw-border); background: var(--cw-input-bg); color: var(--cw-input-text);'
+                            }, [
+                                E('option', { 'value': '' }, '-- 选择已有服务器 --')
+                            ])
+                        ])
+                    ]),
                     E('div', { 'style': 'display: grid; grid-template-columns: 1.8fr 1.2fr 1fr 1fr; gap: 10px;' }, [
                         E('div', {}, [
                             E('label', { 'style': 'display: block; font-size: 12px; font-weight: 600; color: var(--cw-text-main); margin-bottom: 4px;' }, 'VPS 公网 IP 地址:'),
@@ -2460,6 +2488,53 @@ return view.extend({
                 if (loadingSpan) loadingSpan.innerText = '公钥获取失败';
             });
 
+            // Automatically load and link managed VPS servers
+            callGetVpsServers().then(res => {
+                const servers = (res && res.servers) || [];
+                const sel = card.querySelector('#vps-pen-server-select');
+                if (sel && servers.length > 0) {
+                    servers.forEach(s => {
+                        const opt = E('option', { 'value': s.id }, `${s.name || '未命名'} (${s.host}:${s.port})`);
+                        sel.appendChild(opt);
+                    });
+
+                    const targetNorm = (param.vps_ip || '').toLowerCase().trim();
+                    let matched = servers.find(s =>
+                        (s.name && s.name.toLowerCase() === targetNorm) ||
+                        (s.host && s.host === targetNorm) ||
+                        (s.id && s.id === targetNorm)
+                    );
+
+                    if (!matched && servers.length === 1 && (!param.vps_ip || param.vps_ip === 'root')) {
+                        matched = servers[0];
+                    }
+
+                    if (matched) {
+                        sel.value = matched.id;
+                        const ipInput = card.querySelector('#vps-input-ip');
+                        const portInput = card.querySelector('#vps-input-port');
+                        const userInput = card.querySelector('#vps-input-user');
+                        if (ipInput) ipInput.value = matched.host;
+                        if (portInput) portInput.value = matched.port || '22';
+                        if (userInput) userInput.value = matched.user || 'root';
+                    }
+
+                    sel.addEventListener('change', function() {
+                        const s = servers.find(item => item.id === this.value);
+                        if (s) {
+                            const ipInput = card.querySelector('#vps-input-ip');
+                            const portInput = card.querySelector('#vps-input-port');
+                            const userInput = card.querySelector('#vps-input-user');
+                            if (ipInput) ipInput.value = s.host;
+                            if (portInput) portInput.value = s.port || '22';
+                            if (userInput) userInput.value = s.user || 'root';
+                        }
+                    });
+                }
+            }).catch(e => {
+                console.warn('Failed to load vps servers in pen card', e);
+            });
+
             chatWindow.appendChild(card);
             chatWindow.scrollTop = chatWindow.scrollHeight;
         }
@@ -2481,9 +2556,15 @@ return view.extend({
                         E('span', { 'style': 'font-size: 18px;' }, '⚡'),
                         E('span', {}, 'VPS 网络加速服务端一键安装 (xkcptun deb 自动化)')
                     ]),
-                    E('span', { 'style': 'background: rgba(59,130,246,0.15); color: #3b82f6; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 700; border: 1px solid rgba(59,130,246,0.3);' }, '📦 官方 deb 包 · systemd 守护')
+                    E('div', { 'style': 'display: flex; gap: 6px; align-items: center;' }, [
+                        E('span', { 'style': 'background: rgba(16,185,129,0.12); color: #059669; padding: 3px 8px; border-radius: 12px; font-size: 11.5px; font-weight: 700; border: 1px solid rgba(16,185,129,0.3);' }, '🐧 仅限 Ubuntu / Debian (deb 包)'),
+                        E('span', { 'style': 'background: rgba(59,130,246,0.15); color: #3b82f6; padding: 3px 8px; border-radius: 12px; font-size: 11.5px; font-weight: 700; border: 1px solid rgba(59,130,246,0.3);' }, '📦 官方 deb 包 · systemd 守护')
+                    ])
                 ]),
-                E('div', { 'style': 'font-size: 13px; color: var(--cw-text-sub); margin-bottom: 14px; line-height: 1.5;' }, param.explanation || '通过 SSH 免密在远端 Debian/Ubuntu VPS 上自动拉取官方 xkcptun-server deb 安装包，全自动部署服务端并同步配置路由器加速客户端。'),
+                E('div', { 'style': 'font-size: 13px; color: var(--cw-text-sub); margin-bottom: 14px; line-height: 1.5;' }, [
+                    E('div', { 'style': 'margin-bottom: 6px;' }, param.explanation || '通过 SSH 免密在远端 Debian/Ubuntu VPS 上自动拉取官方 xkcptun-server deb 安装包，全自动部署服务端并同步配置路由器加速客户端。'),
+                    E('div', { 'style': 'background: #fffbeb; border: 1px solid #fde68a; color: #92400e; padding: 6px 10px; border-radius: 6px; font-size: 12px;' }, '⚠️ <strong>系统限制提示</strong>：该自动化部署基于 deb 官方安装包，目标服务器操作系统<strong>必须为 Ubuntu 或 Debian</strong>。')
+                ]),
 
                 // Step 1: VPS Authorization Command
                 E('div', { 'style': 'background: var(--cw-bg-subtle); border: 1px solid var(--cw-border); border-radius: 8px; padding: 12px 14px; margin-bottom: 14px;' }, [
@@ -2523,7 +2604,18 @@ return view.extend({
 
                 // Step 2: VPS Server Connection Parameters
                 E('div', { 'style': 'background: var(--cw-bg-subtle); border: 1px solid var(--cw-border); border-radius: 8px; padding: 12px 14px; margin-bottom: 14px;' }, [
-                    E('div', { 'style': 'font-weight: 700; font-size: 13px; color: var(--cw-text-main); margin-bottom: 10px;' }, '第 2 步：核对远端服务器与加速配置'),
+                    E('div', { 'style': 'font-weight: 700; font-size: 13px; color: var(--cw-text-main); margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;' }, [
+                        E('span', {}, '第 2 步：核对远端服务器与加速配置'),
+                        E('div', { 'style': 'font-size: 12px; display: flex; align-items: center; gap: 6px;' }, [
+                            E('span', { 'style': 'color: var(--cw-text-muted); font-weight: normal;' }, '已纳管服务器快捷载入:'),
+                            E('select', {
+                                'id': 'xkcp-vps-server-select',
+                                'style': 'padding: 3px 8px; font-size: 11.5px; border-radius: 4px; border: 1px solid var(--cw-border); background: var(--cw-input-bg); color: var(--cw-input-text);'
+                            }, [
+                                E('option', { 'value': '' }, '-- 选择已有服务器 --')
+                            ])
+                        ])
+                    ]),
                     E('div', { 'style': 'display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px;' }, [
                         E('div', {}, [
                             E('label', { 'style': 'display: block; font-size: 11.5px; color: var(--cw-text-muted); margin-bottom: 3px;' }, 'VPS 公网 IP:'),
@@ -2732,6 +2824,53 @@ return view.extend({
             }).catch(e => {
                 const loadingSpan = card.querySelector('#xkcp-vps-key-loading');
                 if (loadingSpan) loadingSpan.innerText = '公钥获取失败';
+            });
+
+            // Automatically load and link managed VPS servers
+            callGetVpsServers().then(res => {
+                const servers = (res && res.servers) || [];
+                const sel = card.querySelector('#xkcp-vps-server-select');
+                if (sel && servers.length > 0) {
+                    servers.forEach(s => {
+                        const opt = E('option', { 'value': s.id }, `${s.name || '未命名'} (${s.host}:${s.port})`);
+                        sel.appendChild(opt);
+                    });
+
+                    const targetNorm = (param.vps_ip || param.vps_target || '').toLowerCase().trim();
+                    let matched = servers.find(s =>
+                        (s.name && s.name.toLowerCase() === targetNorm) ||
+                        (s.host && s.host === targetNorm) ||
+                        (s.id && s.id === targetNorm)
+                    );
+
+                    if (!matched && servers.length === 1 && (!param.vps_ip || param.vps_ip === 'root')) {
+                        matched = servers[0];
+                    }
+
+                    if (matched) {
+                        sel.value = matched.id;
+                        const ipInput = card.querySelector('#xkcp-vps-input-ip');
+                        const portInput = card.querySelector('#xkcp-vps-input-port');
+                        const userInput = card.querySelector('#xkcp-vps-input-user');
+                        if (ipInput) ipInput.value = matched.host;
+                        if (portInput) portInput.value = matched.port || '22';
+                        if (userInput) userInput.value = matched.user || 'root';
+                    }
+
+                    sel.addEventListener('change', function() {
+                        const s = servers.find(item => item.id === this.value);
+                        if (s) {
+                            const ipInput = card.querySelector('#xkcp-vps-input-ip');
+                            const portInput = card.querySelector('#xkcp-vps-input-port');
+                            const userInput = card.querySelector('#xkcp-vps-input-user');
+                            if (ipInput) ipInput.value = s.host;
+                            if (portInput) portInput.value = s.port || '22';
+                            if (userInput) userInput.value = s.user || 'root';
+                        }
+                    });
+                }
+            }).catch(e => {
+                console.warn('Failed to load vps servers in xkcp card', e);
             });
 
             chatWindow.appendChild(card);
@@ -3002,6 +3141,8 @@ return view.extend({
                                 toolResult = { status: 'proposed_to_user', message: 'Hardware acceleration card rendered in UI. Waiting for user authorization.' };
                             } else if (fnName === 'get_router_ssh_key') {
                                 toolResult = await callGetRouterSshKey();
+                            } else if (fnName === 'get_vps_servers') {
+                                toolResult = await callGetVpsServers();
                             } else if (fnName === 'propose_vps_penetration') {
                                 appendVpsPenetrationCard(fnArgs);
                                 toolResult = { status: 'proposed_to_user', message: 'VPS penetration deployment card rendered in UI. Awaiting user authorization and execution.' };

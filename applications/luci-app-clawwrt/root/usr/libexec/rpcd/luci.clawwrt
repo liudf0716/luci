@@ -2523,10 +2523,20 @@ if [ \"\$(id -u)\" -ne 0 ]; then
     fi
 fi
 
-if ! command -v dpkg >/dev/null 2>&1; then
-    echo 'ERR_NOT_DEBIAN_BASED'
-    exit 1
+OS_ID=""
+if [ -f /etc/os-release ]; then
+    . /etc/os-release
+    OS_ID="\$ID \$ID_LIKE"
 fi
+case "\$OS_ID" in
+    *ubuntu*|*debian*) ;;
+    *)
+        if ! command -v dpkg >/dev/null 2>&1 || ! command -v apt-get >/dev/null 2>&1; then
+            echo 'ERR_NOT_UBUNTU_DEBIAN'
+            exit 1
+        fi
+        ;;
+esac
 
 ARCH=\$(dpkg --print-architecture 2>/dev/null || uname -m)
 case \"\$ARCH\" in
@@ -2648,8 +2658,8 @@ fi
                 success=0
                 if echo "$out" | grep -q "ERR_SUDO_PASSWORD_REQUIRED"; then
                     msg="VPS 当前登录用户 (${vps_user}) 执行 sudo 需要密码，无法免交互部署 deb。请在 VPS 终端执行免密提权: echo '\$USER ALL=(ALL) NOPASSWD:ALL' | sudo tee /etc/sudoers.d/\$USER 或改用 root 用户。"
-                elif echo "$out" | grep -q "ERR_NOT_DEBIAN_BASED"; then
-                    msg="目标 VPS 系统非 Debian/Ubuntu 系列，不支持 dpkg/deb 包安装。"
+                elif echo "$out" | grep -q "ERR_NOT_UBUNTU_DEBIAN\|ERR_NOT_DEBIAN_BASED"; then
+                    msg="目标 VPS 系统不受支持。当前 xkcptun 服务端 (deb) 仅支持 Ubuntu 或 Debian 操作系统。"
                 elif echo "$out" | grep -q "ERR_DOWNLOAD_FAILED"; then
                     msg="远程 VPS 从 GitHub 下载 xkcptun deb 安装包失败或超时。请检查 VPS 网络。"
                 elif echo "$out" | grep -qi "permission denied\|auth.*fail\|no auth methods"; then
