@@ -2324,25 +2324,34 @@ if ! command -v frps >/dev/null 2>&1 && [ ! -x /usr/local/bin/frps ]; then
     TAR=\"frp_\${FRP_VER}_linux_\${FRP_ARCH}.tar.gz\"
     ORIGIN=\"https://github.com/fatedier/frp/releases/download/v\${FRP_VER}/\${TAR}\"
     DOWNLOADED=0
-    URLS=\"\"
-    if curl -sI --connect-timeout 2 https://github.com >/dev/null 2>&1 || wget -q --spider --timeout=2 https://github.com 2>/dev/null; then
-        URLS=\"\${ORIGIN} https://ghfast.top/\${ORIGIN} https://gh-proxy.com/\${ORIGIN}\"
-    else
-        URLS=\"https://ghproxy.cn/\${ORIGIN} https://gh-proxy.com/\${ORIGIN} https://ghfast.top/\${ORIGIN} \${ORIGIN}\"
+    rm -f /tmp/frp.tar.gz
+
+    # 1. First priority: try official GitHub directly (fastest & safest for overseas VPS)
+    if curl -fsSL --connect-timeout 6 -m 30 \"\$ORIGIN\" -o /tmp/frp.tar.gz 2>/dev/null || \
+       wget -q --timeout=6 -T 30 -O /tmp/frp.tar.gz \"\$ORIGIN\" 2>/dev/null; then
+        if tar -ztvf /tmp/frp.tar.gz >/dev/null 2>&1; then
+            DOWNLOADED=1
+        else
+            rm -f /tmp/frp.tar.gz
+        fi
     fi
 
-    for URL in \$URLS; do
-        rm -f /tmp/frp.tar.gz
-        if curl -fsSL --connect-timeout 5 -m 35 \"\$URL\" -o /tmp/frp.tar.gz 2>/dev/null || \
-           wget -q --timeout=5 -T 35 -O /tmp/frp.tar.gz \"\$URL\" 2>/dev/null; then
-            if tar -ztvf /tmp/frp.tar.gz >/dev/null 2>&1; then
-                DOWNLOADED=1
-                break
-            else
-                rm -f /tmp/frp.tar.gz
+    # 2. Fallback: only if direct GitHub failed (e.g. domestic VPS in mainland China), try acceleration mirrors
+    if [ \"\$DOWNLOADED\" -ne 1 ]; then
+        for MIRROR in \"https://ghfast.top\" \"https://gh-proxy.com\" \"https://mirror.ghproxy.com\"; do
+            rm -f /tmp/frp.tar.gz
+            URL=\"\${MIRROR}/\${ORIGIN}\"
+            if curl -fsSL --connect-timeout 5 -m 25 \"\$URL\" -o /tmp/frp.tar.gz 2>/dev/null || \
+               wget -q --timeout=5 -T 25 -O /tmp/frp.tar.gz \"\$URL\" 2>/dev/null; then
+                if tar -ztvf /tmp/frp.tar.gz >/dev/null 2>&1; then
+                    DOWNLOADED=1
+                    break
+                else
+                    rm -f /tmp/frp.tar.gz
+                fi
             fi
-        fi
-    done
+        done
+    fi
     if [ \"\$DOWNLOADED\" -ne 1 ]; then
         echo 'ERR_DOWNLOAD_FAILED'
         exit 1
@@ -2549,23 +2558,34 @@ DEB_NAME=\"xkcptun-server_\${XKCP_VER}_\${PKG_ARCH}.deb\"
 ORIGIN=\"https://github.com/liudf0716/xkcptun/releases/download/\${XKCP_VER}/\${DEB_NAME}\"
 
 DOWNLOADED=0
-URLS=\"\"
-if curl -sI --connect-timeout 2 https://github.com >/dev/null 2>&1 || wget -q --spider --timeout=2 https://github.com 2>/dev/null; then
-    URLS=\"\${ORIGIN} https://ghfast.top/\${ORIGIN} https://gh-proxy.com/\${ORIGIN}\"
-else
-    URLS=\"https://ghproxy.cn/\${ORIGIN} https://gh-proxy.com/\${ORIGIN} https://ghfast.top/\${ORIGIN} \${ORIGIN}\"
+rm -f /tmp/xkcptun-server.deb
+
+# 1. First priority: try official GitHub directly (fastest & safest for overseas VPS)
+if curl -fsSL --connect-timeout 6 -m 30 \"\$ORIGIN\" -o /tmp/xkcptun-server.deb 2>/dev/null || \
+   wget -q --timeout=6 -T 30 -O /tmp/xkcptun-server.deb \"\$ORIGIN\" 2>/dev/null; then
+    if [ -s /tmp/xkcptun-server.deb ]; then
+        DOWNLOADED=1
+    else
+        rm -f /tmp/xkcptun-server.deb
+    fi
 fi
 
-for URL in \$URLS; do
-    rm -f /tmp/xkcptun-server.deb
-    if curl -fsSL --connect-timeout 5 -m 35 \"\$URL\" -o /tmp/xkcptun-server.deb 2>/dev/null || \
-       wget -q --timeout=5 -T 35 -O /tmp/xkcptun-server.deb \"\$URL\" 2>/dev/null; then
-        if [ -s /tmp/xkcptun-server.deb ]; then
-            DOWNLOADED=1
-            break
+# 2. Fallback: only if direct GitHub failed, try acceleration mirrors
+if [ \"\$DOWNLOADED\" -ne 1 ]; then
+    for MIRROR in \"https://ghfast.top\" \"https://gh-proxy.com\" \"https://mirror.ghproxy.com\"; do
+        rm -f /tmp/xkcptun-server.deb
+        URL=\"\${MIRROR}/\${ORIGIN}\"
+        if curl -fsSL --connect-timeout 5 -m 25 \"\$URL\" -o /tmp/xkcptun-server.deb 2>/dev/null || \
+           wget -q --timeout=5 -T 25 -O /tmp/xkcptun-server.deb \"\$URL\" 2>/dev/null; then
+            if [ -s /tmp/xkcptun-server.deb ]; then
+                DOWNLOADED=1
+                break
+            else
+                rm -f /tmp/xkcptun-server.deb
+            fi
         fi
-    fi
-done
+    done
+fi
 
 if [ \"\$DOWNLOADED\" -ne 1 ]; then
     if [ ! -x /usr/local/bin/xkcp_server ] && [ ! -x /usr/bin/xkcp_server ]; then

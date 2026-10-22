@@ -2432,7 +2432,7 @@ return view.extend({
                             statusDiv.style.color = '#1e40af';
                             statusDiv.innerHTML = `⏳ 正在连接 VPS (${user}@${ip}) 下载安装 frps、生成配置、创建 systemd 服务并启动路由器 xfrpc...`;
 
-                            if (typeof L !== 'undefined' && L.env) L.env.rpctimeout = 120;
+                            if (typeof L !== 'undefined' && L.env) L.env.rpctimeout = 180;
                             callDeployVpsFrps(ip, port, user, '7001', '', webP).then(res => {
                                 if (res && res.success) {
                                     btn.innerText = '✅ 部署完成并已连通！';
