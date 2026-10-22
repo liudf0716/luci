@@ -51,6 +51,20 @@ const callUninstallVpsService = rpc.declare({
     expect: { result: {} }
 });
 
+const callGetVpsServiceConfig = rpc.declare({
+    object: 'luci.clawwrt',
+    method: 'get_vps_service_config',
+    params: [ 'id', 'name', 'host', 'port', 'user', 'service' ],
+    expect: { result: {} }
+});
+
+const callUpdateVpsServiceConfig = rpc.declare({
+    object: 'luci.clawwrt',
+    method: 'update_vps_service_config',
+    params: [ 'id', 'name', 'host', 'port', 'user', 'service', 'bind_port', 'token', 'vhost_http_port', 'vhost_https_port', 'allow_ports', 'listen_port', 'key', 'mode', 'fec', 'raw_config' ],
+    expect: { result: {} }
+});
+
 return view.extend({
     load: function() {
         if (typeof L !== 'undefined' && L.env) {
@@ -534,6 +548,12 @@ return view.extend({
                             }, '🌐 部署frps'),
                             (srv.frps_status === 'running' || srv.frps_status === 'installed') ? E('button', {
                                 'class': 'cws-btn cws-btn-secondary',
+                                'style': 'color: #3b82f6; border-color: rgba(59,130,246,0.4);',
+                                'title': '查看或修改此服务器上的 frps 服务端配置',
+                                'click': function() { openConfigModal(srv, 'frps'); }
+                            }, '⚙️ frps配置') : null,
+                            (srv.frps_status === 'running' || srv.frps_status === 'installed') ? E('button', {
+                                'class': 'cws-btn cws-btn-secondary',
                                 'style': 'color: #f59e0b; border-color: rgba(245,158,11,0.4);',
                                 'title': '在此服务器上停止并彻底卸载 frps 服务端',
                                 'click': function(e) { uninstallService(srv, 'frps', e.target); }
@@ -543,6 +563,12 @@ return view.extend({
                                 'title': '在此服务器上一键通过 deb 安装部署 xkcptun 加速服务端',
                                 'click': function() { openDeployXkcptunModal(srv); }
                             }, '🚀 部署加速(deb)'),
+                            (srv.xkcptun_status === 'running' || srv.xkcptun_status === 'installed') ? E('button', {
+                                'class': 'cws-btn cws-btn-secondary',
+                                'style': 'color: #3b82f6; border-color: rgba(59,130,246,0.4);',
+                                'title': '查看或修改此服务器上的 xkcptun 加速服务端配置',
+                                'click': function() { openConfigModal(srv, 'xkcptun'); }
+                            }, '⚙️ 加速配置') : null,
                             (srv.xkcptun_status === 'running' || srv.xkcptun_status === 'installed') ? E('button', {
                                 'class': 'cws-btn cws-btn-secondary',
                                 'style': 'color: #f59e0b; border-color: rgba(245,158,11,0.4);',
@@ -870,6 +896,218 @@ return view.extend({
             ]);
 
             ui.showModal('一键部署 xkcptun 加速服务端 (deb)', modalContent);
+        }
+
+        // Actions: Open Remote Service Config Modal
+        function openConfigModal(srv, service) {
+            const svcTitle = service === 'xkcptun' ? 'xkcptun 弱网加速服务端' : 'frps 内网穿透服务端';
+            const modalContent = E('div', { 'style': 'padding: 10px; min-width: 320px;' }, [
+                E('div', { 'style': 'font-size: 15px; font-weight: 700; margin-bottom: 8px;' }, `管理 [${srv.name || srv.host}] 上的 ${svcTitle} 配置`),
+                E('div', { 'id': 'cfg-modal-body', 'style': 'font-size: 13px; color: var(--cws-text-muted);' }, [
+                    E('div', { 'style': 'padding: 20px 0; text-align: center;' }, '⏳ 正在通过 SSH 免密通道读取远端最新配置文件...')
+                ])
+            ]);
+
+            ui.showModal(`远程配置 · ${svcTitle}`, modalContent);
+
+            callGetVpsServiceConfig(srv.id, srv.name, srv.host, srv.port, srv.user, service).then(res => {
+                const body = document.getElementById('cfg-modal-body');
+                if (!body) return;
+
+                if (!res || !res.success) {
+                    body.innerHTML = `<div style="color: #ef4444; padding: 10px 0;">❌ 读取远程配置失败: ${(res && res.message) || '无法连接'}</div>`;
+                    return;
+                }
+
+                const cfg = res.config || {};
+                const isFrps = service === 'frps';
+
+                const formElements = [];
+
+                // Status info badge
+                formElements.push(E('div', { 'style': 'background: var(--cws-bg-secondary); border: 1px solid var(--cws-border); border-radius: 8px; padding: 10px 12px; margin-bottom: 14px; font-size: 12px;' }, [
+                    E('div', { 'style': 'display: flex; justify-content: space-between; margin-bottom: 4px;' }, [
+                        E('span', { 'style': 'color: var(--cws-text-muted);' }, '运行状态:'),
+                        E('span', { 'style': `font-weight: 700; color: ${res.status === 'running' ? '#10b981' : '#f59e0b'};` }, res.status === 'running' ? '● 正在运行 (running)' : '○ 已停止 (stopped)')
+                    ]),
+                    E('div', { 'style': 'display: flex; justify-content: space-between;' }, [
+                        E('span', { 'style': 'color: var(--cws-text-muted);' }, '配置文件路径:'),
+                        E('span', { 'style': 'font-family: monospace; color: var(--cws-text-main);' }, res.config_file || '未检测到')
+                    ])
+                ]));
+
+                if (isFrps) {
+                    formElements.push(E('div', { 'style': 'display: flex; flex-direction: column; gap: 10px;' }, [
+                        E('div', {}, [
+                            E('label', { 'style': 'display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px;' }, '通信监听端口 (bindPort):'),
+                            E('input', {
+                                'id': 'cfg-bind-port',
+                                'type': 'number',
+                                'value': cfg.bind_port || '7001',
+                                'style': 'width: 100%; padding: 6px 10px; border-radius: 6px; border: 1px solid var(--cws-border);'
+                            })
+                        ]),
+                        E('div', {}, [
+                            E('label', { 'style': 'display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px;' }, '认证密钥 Token (auth.token):'),
+                            E('input', {
+                                'id': 'cfg-token',
+                                'type': 'text',
+                                'value': cfg.token || '',
+                                'style': 'width: 100%; padding: 6px 10px; border-radius: 6px; border: 1px solid var(--cws-border); font-family: monospace;'
+                            })
+                        ]),
+                        E('div', { 'style': 'display: grid; grid-template-columns: 1fr 1fr; gap: 10px;' }, [
+                            E('div', {}, [
+                                E('label', { 'style': 'display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px;' }, 'HTTP 域名反代端口:'),
+                                E('input', {
+                                    'id': 'cfg-vhost-http',
+                                    'type': 'number',
+                                    'placeholder': '例如 80 或 8080',
+                                    'value': cfg.vhost_http_port || '',
+                                    'style': 'width: 100%; padding: 6px 10px; border-radius: 6px; border: 1px solid var(--cws-border);'
+                                })
+                            ]),
+                            E('div', {}, [
+                                E('label', { 'style': 'display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px;' }, 'HTTPS 域名反代端口:'),
+                                E('input', {
+                                    'id': 'cfg-vhost-https',
+                                    'type': 'number',
+                                    'placeholder': '例如 443',
+                                    'value': cfg.vhost_https_port || '',
+                                    'style': 'width: 100%; padding: 6px 10px; border-radius: 6px; border: 1px solid var(--cws-border);'
+                                })
+                            ])
+                        ]),
+                        E('div', {}, [
+                            E('label', { 'style': 'display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px;' }, '允许穿透公网端口范围 (allowPorts):'),
+                            E('input', {
+                                'id': 'cfg-allow-ports',
+                                'type': 'text',
+                                'value': cfg.allow_ports || '10000-30000',
+                                'style': 'width: 100%; padding: 6px 10px; border-radius: 6px; border: 1px solid var(--cws-border);'
+                            })
+                        ])
+                    ]));
+                } else {
+                    formElements.push(E('div', { 'style': 'display: flex; flex-direction: column; gap: 10px;' }, [
+                        E('div', {}, [
+                            E('label', { 'style': 'display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px;' }, 'UDP 监听端口 (local_port):'),
+                            E('input', {
+                                'id': 'cfg-listen-port',
+                                'type': 'number',
+                                'value': cfg.listen_port || '9089',
+                                'style': 'width: 100%; padding: 6px 10px; border-radius: 6px; border: 1px solid var(--cws-border);'
+                            })
+                        ]),
+                        E('div', {}, [
+                            E('label', { 'style': 'display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px;' }, '认证密钥 (key):'),
+                            E('input', {
+                                'id': 'cfg-key',
+                                'type': 'text',
+                                'value': cfg.key || '',
+                                'style': 'width: 100%; padding: 6px 10px; border-radius: 6px; border: 1px solid var(--cws-border); font-family: monospace;'
+                            })
+                        ]),
+                        E('div', {}, [
+                            E('label', { 'style': 'display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px;' }, '加速模式 (mode):'),
+                            E('select', {
+                                'id': 'cfg-mode',
+                                'style': 'width: 100%; padding: 6px 10px; border-radius: 6px; border: 1px solid var(--cws-border);'
+                            }, [
+                                E('option', { 'value': 'fast3', 'selected': cfg.mode === 'fast3' ? 'selected' : null }, 'fast3 (极速模式)'),
+                                E('option', { 'value': 'fast2', 'selected': cfg.mode === 'fast2' ? 'selected' : null }, 'fast2 (进阶模式)'),
+                                E('option', { 'value': 'fast', 'selected': cfg.mode === 'fast' ? 'selected' : null }, 'fast (快速模式)'),
+                                E('option', { 'value': 'normal', 'selected': cfg.mode === 'normal' ? 'selected' : null }, 'normal (标准模式)')
+                            ])
+                        ]),
+                        E('div', {}, [
+                            E('label', { 'style': 'display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px;' }, 'FEC 前向纠错:'),
+                            E('select', {
+                                'id': 'cfg-fec',
+                                'style': 'width: 100%; padding: 6px 10px; border-radius: 6px; border: 1px solid var(--cws-border);'
+                            }, [
+                                E('option', { 'value': '1', 'selected': cfg.fec !== '0' ? 'selected' : null }, '开启 FEC (10:3 容错)'),
+                                E('option', { 'value': '0', 'selected': cfg.fec === '0' ? 'selected' : null }, '关闭 FEC')
+                            ])
+                        ])
+                    ]));
+                }
+
+                // Collapsible raw config
+                if (res.raw_config) {
+                    formElements.push(E('details', { 'style': 'margin-top: 14px; font-size: 12px; color: var(--cws-text-muted); cursor: pointer;' }, [
+                        E('summary', { 'style': 'outline: none;' }, '查看远端原始配置文件文本'),
+                        E('pre', { 'style': 'background: #0f172a; color: #38bdf8; padding: 10px; border-radius: 6px; margin-top: 6px; overflow-x: auto; font-size: 11.5px; max-height: 140px;' }, res.raw_config)
+                    ]));
+                }
+
+                formElements.push(E('div', {
+                    'style': 'margin-top: 12px; font-size: 11.5px; color: var(--cws-text-muted); line-height: 1.4;'
+                }, '🛡️ 安全机制：保存前自动备份原配置；服务启动校验失败将自动平滑回滚；修改端口或密钥后路由器本地客户端自动同步。'));
+
+                formElements.push(E('div', { 'id': 'm-cfg-update-status', 'style': 'font-size: 12.5px; margin-top: 10px;' }));
+
+                formElements.push(E('div', { 'style': 'display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px;' }, [
+                    E('button', {
+                        'class': 'cws-btn cws-btn-secondary',
+                        'click': function() { ui.hideModal(); }
+                    }, '取消'),
+                    E('button', {
+                        'id': 'btn-exec-cfg-update',
+                        'class': 'cws-btn cws-btn-primary',
+                        'click': function() {
+                            const statDiv = document.getElementById('m-cfg-update-status');
+                            const execBtn = document.getElementById('btn-exec-cfg-update');
+
+                            execBtn.disabled = true;
+                            statDiv.innerHTML = '<span style="color: #3b82f6;">正在通过 SSH 写入新配置并平滑重启服务...</span>';
+
+                            let bPort = '', tok = '', vHttp = '', vHttps = '', aPorts = '';
+                            let lPort = '', lKey = '', lMode = '', lFec = '';
+
+                            if (isFrps) {
+                                bPort = document.getElementById('cfg-bind-port').value;
+                                tok = document.getElementById('cfg-token').value;
+                                vHttp = document.getElementById('cfg-vhost-http').value;
+                                vHttps = document.getElementById('cfg-vhost-https').value;
+                                aPorts = document.getElementById('cfg-allow-ports').value;
+                            } else {
+                                lPort = document.getElementById('cfg-listen-port').value;
+                                lKey = document.getElementById('cfg-key').value;
+                                lMode = document.getElementById('cfg-mode').value;
+                                lFec = document.getElementById('cfg-fec').value;
+                            }
+
+                            if (typeof L !== 'undefined' && L.env) L.env.rpctimeout = 180;
+                            callUpdateVpsServiceConfig(
+                                srv.id, srv.name, srv.host, srv.port, srv.user, service,
+                                bPort, tok, vHttp, vHttps, aPorts,
+                                lPort, lKey, lMode, lFec, ''
+                            ).then(uRes => {
+                                execBtn.disabled = false;
+                                if (uRes && uRes.success) {
+                                    statDiv.innerHTML = '<span style="color: #10b981; font-weight: 600;">🎉 ' + (uRes.message || '配置更新并重启成功！') + '</span>';
+                                    setTimeout(() => {
+                                        ui.hideModal();
+                                        refreshList();
+                                    }, 1800);
+                                } else {
+                                    statDiv.innerHTML = '<span style="color: #ef4444; font-weight: 600;">❌ ' + ((uRes && uRes.message) || '更新失败') + '</span>';
+                                }
+                            }).catch(err => {
+                                execBtn.disabled = false;
+                                statDiv.innerHTML = '<span style="color: #ef4444;">请求出错: ' + err + '</span>';
+                            });
+                        }
+                    }, '🚀 保存配置并平滑重启服务')
+                ]));
+
+                while (body.firstChild) body.removeChild(body.firstChild);
+                formElements.forEach(el => el && body.appendChild(el));
+            }).catch(e => {
+                const body = document.getElementById('cfg-modal-body');
+                if (body) body.innerHTML = `<div style="color: #ef4444; padding: 10px 0;">❌ 连接出错: ${e}</div>`;
+            });
         }
 
         // Helper: Refresh List

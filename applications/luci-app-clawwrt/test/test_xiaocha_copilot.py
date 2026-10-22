@@ -201,6 +201,18 @@ class XiaochaTester:
             assert "未找到匹配的 VPS 或缺少主机地址" in res.get("message", ""), f"提示信息不匹配: {res}"
         self.test("远程 VPS 一键卸载与环境清理契约校验", s6_uninstall_vps_service_contract)
 
+        def s6_get_vps_service_config_contract():
+            res = self.call_ubus("get_vps_service_config", {})
+            assert res.get("success") is False, "缺少主机时应返回失败"
+            assert "未找到匹配的 VPS 或缺少主机地址" in res.get("message", ""), f"提示信息不匹配: {res}"
+        self.test("远程 VPS 服务端配置查询接口契约", s6_get_vps_service_config_contract)
+
+        def s6_update_vps_service_config_contract():
+            res = self.call_ubus("update_vps_service_config", {})
+            assert res.get("success") is False, "缺少主机时应返回失败"
+            assert "未找到匹配的 VPS 或缺少主机地址" in res.get("message", ""), f"提示信息不匹配: {res}"
+        self.test("远程 VPS 服务端配置更新接口契约", s6_update_vps_service_config_contract)
+
         print("\n" + "=" * 65)
         print(f"自动化测试完成: 共 {self.passed + self.failed} 项, 通过 {self.passed} 项, 失败 {self.failed} 项")
         print("=" * 65)

@@ -140,6 +140,32 @@ case "$1" in
             json_add_string "user"
             json_add_string "service"
         json_close_object
+        json_add_object "get_vps_service_config"
+            json_add_string "id"
+            json_add_string "name"
+            json_add_string "host"
+            json_add_string "port"
+            json_add_string "user"
+            json_add_string "service"
+        json_close_object
+        json_add_object "update_vps_service_config"
+            json_add_string "id"
+            json_add_string "name"
+            json_add_string "host"
+            json_add_string "port"
+            json_add_string "user"
+            json_add_string "service"
+            json_add_string "bind_port"
+            json_add_string "token"
+            json_add_string "vhost_http_port"
+            json_add_string "vhost_https_port"
+            json_add_string "allow_ports"
+            json_add_string "listen_port"
+            json_add_string "key"
+            json_add_string "mode"
+            json_add_string "fec"
+            json_add_string "raw_config"
+        json_close_object
         json_add_object "get_penetration_status"
         json_close_object
         json_add_object "manage_xdns_domain"
@@ -2905,6 +2931,458 @@ echo 'FRPS_UNINSTALL_OK'
             json_dump
         }
 
+        get_vps_service_config() {
+            read -r input
+            json_load "$input"
+            json_get_var id "id"
+            json_get_var name "name"
+            json_get_var host "host"
+            json_get_var port "port"
+            json_get_var user "user"
+            json_get_var service "service"
+
+            service="${service:-frps}"
+
+            if [ -n "$id" ]; then
+                config_load clawwrt
+                config_get cfg_host "$id" host ""
+                config_get cfg_port "$id" port "22"
+                config_get cfg_user "$id" user "root"
+                config_get cfg_name "$id" name "$id"
+                [ -n "$cfg_host" ] && host="$cfg_host"
+                [ -n "$cfg_port" ] && port="$cfg_port"
+                [ -n "$cfg_user" ] && user="$cfg_user"
+                [ -n "$cfg_name" ] && name="$cfg_name"
+            fi
+
+            if [ -z "$host" ]; then
+                local search_key="${name:-$id}"
+                if [ -n "$search_key" ]; then
+                    for sid in $(uci -q show clawwrt | grep '=vps' | cut -d. -f2 | cut -d= -f1); do
+                        local s_name=$(uci -q get clawwrt.${sid}.name)
+                        local s_host=$(uci -q get clawwrt.${sid}.host)
+                        if [ "$s_name" = "$search_key" ] || [ "$s_host" = "$search_key" ]; then
+                            id="$sid"
+                            name="$s_name"
+                            host="$s_host"
+                            port=$(uci -q get clawwrt.${sid}.port || echo "22")
+                            user=$(uci -q get clawwrt.${sid}.user || echo "root")
+                            break
+                        fi
+                    done
+                fi
+            fi
+
+            if [ -z "$host" ] && [ -n "$name" ]; then
+                host="$name"
+            fi
+
+            [ -z "$host" ] && {
+                json_init
+                json_add_object "result"
+                json_add_boolean "success" 0
+                json_add_string "message" "未找到匹配的 VPS 或缺少主机地址"
+                json_close_object
+                json_dump
+                return
+            }
+
+            port="${port:-22}"
+            user="${user:-root}"
+
+            local key_file="/etc/clawwrt/id_dropbear"
+            if [ ! -f "$key_file" ]; then
+                mkdir -p /etc/clawwrt
+                dropbearkey -t ed25519 -f "$key_file" >/dev/null 2>&1
+            fi
+
+            local remote_cmd=""
+            if [ "$service" = "frps" ]; then
+                remote_cmd="
+set -e
+SUDO=''
+[ \"\$(id -u)\" -ne 0 ] && sudo -n true 2>/dev/null && SUDO='sudo '
+
+STATUS='stopped'
+if (command -v systemctl >/dev/null 2>&1 && systemctl is-active frps >/dev/null 2>&1) || pgrep -x frps >/dev/null 2>&1; then
+    STATUS='running'
+fi
+
+CFG_FILE=''
+if [ -f /etc/frps/frps.toml ]; then
+    CFG_FILE='/etc/frps/frps.toml'
+elif [ -f /etc/frps/frps.ini ]; then
+    CFG_FILE='/etc/frps/frps.ini'
+elif [ -f /opt/frps/frps.toml ]; then
+    CFG_FILE='/opt/frps/frps.toml'
+fi
+
+RAW_CFG=''
+[ -n \"\$CFG_FILE\" ] && RAW_CFG=\$(\$SUDO cat \"\$CFG_FILE\" 2>/dev/null || true)
+
+echo '===STATUS==='
+echo \"\$STATUS\"
+echo '===CFG_FILE==='
+echo \"\$CFG_FILE\"
+echo '===RAW_CFG==='
+echo \"\$RAW_CFG\"
+"
+            else
+                remote_cmd="
+set -e
+SUDO=''
+[ \"\$(id -u)\" -ne 0 ] && sudo -n true 2>/dev/null && SUDO='sudo '
+
+STATUS='stopped'
+if (command -v systemctl >/dev/null 2>&1 && (systemctl is-active xkcp_server >/dev/null 2>&1 || systemctl is-active xkcptun-server >/dev/null 2>&1)) || pgrep -x xkcp_server >/dev/null 2>&1; then
+    STATUS='running'
+fi
+
+CFG_FILE=''
+if [ -f /etc/xkcptun/server.toml ]; then
+    CFG_FILE='/etc/xkcptun/server.toml'
+elif [ -f /etc/xkcptun/xkcp_server.json ]; then
+    CFG_FILE='/etc/xkcptun/xkcp_server.json'
+fi
+
+RAW_CFG=''
+[ -n \"\$CFG_FILE\" ] && RAW_CFG=\$(\$SUDO cat \"\$CFG_FILE\" 2>/dev/null || true)
+
+echo '===STATUS==='
+echo \"\$STATUS\"
+echo '===CFG_FILE==='
+echo \"\$CFG_FILE\"
+echo '===RAW_CFG==='
+echo \"\$RAW_CFG\"
+"
+            fi
+
+            local out=""
+            local ret=1
+            out=$(run_with_timeout 15 dbclient -y -o BatchMode=yes -i "$key_file" -p "$port" "${user}@${host}" "$remote_cmd" 2>&1)
+            ret=$?
+
+            if [ $ret -ne 0 ]; then
+                json_init
+                json_add_object "result"
+                json_add_boolean "success" 0
+                json_add_string "service" "$service"
+                json_add_string "host" "$host"
+                json_add_string "message" "连接 VPS 查询配置失败: $(echo "$out" | tail -n 2 | tr '\n' ' ')"
+                json_close_object
+                json_dump
+                return
+            fi
+
+            local r_status=$(echo "$out" | sed -n '/===STATUS===/{n;p;}')
+            local r_file=$(echo "$out" | sed -n '/===CFG_FILE===/{n;p;}')
+            local r_cfg=$(echo "$out" | sed -n '/===RAW_CFG===/,$p' | sed '1d')
+
+            json_init
+            json_add_object "result"
+            json_add_boolean "success" 1
+            json_add_string "service" "$service"
+            json_add_string "host" "$host"
+            json_add_string "port" "$port"
+            json_add_string "user" "$user"
+            json_add_string "name" "$name"
+            json_add_string "status" "$r_status"
+            json_add_string "config_file" "$r_file"
+            json_add_string "raw_config" "$r_cfg"
+
+            if [ "$service" = "frps" ]; then
+                local b_port=$(echo "$r_cfg" | grep -E '^[[:space:]]*bindPort[[:space:]]*=' | sed -E 's/.*=[[:space:]]*([0-9]+).*/\1/' | head -n1)
+                [ -z "$b_port" ] && b_port=$(echo "$r_cfg" | grep -E '^[[:space:]]*bind_port[[:space:]]*=' | sed -E 's/.*=[[:space:]]*([0-9]+).*/\1/' | head -n1)
+                local tok=$(echo "$r_cfg" | grep -E '^[[:space:]]*(auth\.token|token)[[:space:]]*=' | sed -E 's/.*=[[:space:]]*["'\'']?([^"'\'']+)["'\'']?.*/\1/' | head -n1)
+                local v_http=$(echo "$r_cfg" | grep -E '^[[:space:]]*(vhostHTTPPort|vhost_http_port)[[:space:]]*=' | sed -E 's/.*=[[:space:]]*([0-9]+).*/\1/' | head -n1)
+                local v_https=$(echo "$r_cfg" | grep -E '^[[:space:]]*(vhostHTTPSPort|vhost_https_port)[[:space:]]*=' | sed -E 's/.*=[[:space:]]*([0-9]+).*/\1/' | head -n1)
+                local a_ports=$(echo "$r_cfg" | grep -A 2 -E '^[[:space:]]*allowPorts' | tr '\n' ' ' | sed -E 's/.*start[[:space:]]*=[[:space:]]*([0-9]+).*end[[:space:]]*=[[:space:]]*([0-9]+).*/\1-\2/' | head -n1)
+
+                json_add_object "config"
+                json_add_string "bind_port" "${b_port:-7001}"
+                json_add_string "token" "$tok"
+                json_add_string "vhost_http_port" "$v_http"
+                json_add_string "vhost_https_port" "$v_https"
+                json_add_string "allow_ports" "$a_ports"
+                json_close_object
+            else
+                local l_port=$(echo "$r_cfg" | grep -E '^[[:space:]]*(local_port|listen)[[:space:]]*=' | sed -E 's/.*=[[:space:]]*["'\'']?:?([0-9]+)["'\'']?.*/\1/' | head -n1)
+                local l_key=$(echo "$r_cfg" | grep -E '^[[:space:]]*key[[:space:]]*=' | sed -E 's/.*=[[:space:]]*["'\'']?([^"'\'']+)["'\'']?.*/\1/' | head -n1)
+                local l_mode=$(echo "$r_cfg" | grep -E '^[[:space:]]*mode[[:space:]]*=' | sed -E 's/.*=[[:space:]]*["'\'']?([^"'\'']+)["'\'']?.*/\1/' | head -n1)
+                local l_fec=$(echo "$r_cfg" | grep -E '^[[:space:]]*fec[[:space:]]*=' | sed -E 's/.*=[[:space:]]*([0-9]+).*/\1/' | head -n1)
+
+                json_add_object "config"
+                json_add_string "listen_port" "${l_port:-9089}"
+                json_add_string "key" "$l_key"
+                json_add_string "mode" "${l_mode:-fast3}"
+                json_add_string "fec" "${l_fec:-1}"
+                json_close_object
+            fi
+
+            json_close_object
+            json_dump
+        }
+
+        update_vps_service_config() {
+            read -r input
+            json_load "$input"
+            json_get_var id "id"
+            json_get_var name "name"
+            json_get_var host "host"
+            json_get_var port "port"
+            json_get_var user "user"
+            json_get_var service "service"
+            json_get_var bind_port "bind_port"
+            json_get_var token "token"
+            json_get_var vhost_http_port "vhost_http_port"
+            json_get_var vhost_https_port "vhost_https_port"
+            json_get_var allow_ports "allow_ports"
+            json_get_var listen_port "listen_port"
+            json_get_var key "key"
+            json_get_var mode "mode"
+            json_get_var fec "fec"
+            json_get_var raw_config "raw_config"
+
+            service="${service:-frps}"
+
+            if [ -n "$id" ]; then
+                config_load clawwrt
+                config_get cfg_host "$id" host ""
+                config_get cfg_port "$id" port "22"
+                config_get cfg_user "$id" user "root"
+                config_get cfg_name "$id" name "$id"
+                [ -n "$cfg_host" ] && host="$cfg_host"
+                [ -n "$cfg_port" ] && port="$cfg_port"
+                [ -n "$cfg_user" ] && user="$cfg_user"
+                [ -n "$cfg_name" ] && name="$cfg_name"
+            fi
+
+            if [ -z "$host" ]; then
+                local search_key="${name:-$id}"
+                if [ -n "$search_key" ]; then
+                    for sid in $(uci -q show clawwrt | grep '=vps' | cut -d. -f2 | cut -d= -f1); do
+                        local s_name=$(uci -q get clawwrt.${sid}.name)
+                        local s_host=$(uci -q get clawwrt.${sid}.host)
+                        if [ "$s_name" = "$search_key" ] || [ "$s_host" = "$search_key" ]; then
+                            id="$sid"
+                            name="$s_name"
+                            host="$s_host"
+                            port=$(uci -q get clawwrt.${sid}.port || echo "22")
+                            user=$(uci -q get clawwrt.${sid}.user || echo "root")
+                            break
+                        fi
+                    done
+                fi
+            fi
+
+            if [ -z "$host" ] && [ -n "$name" ]; then
+                host="$name"
+            fi
+
+            [ -z "$host" ] && {
+                json_init
+                json_add_object "result"
+                json_add_boolean "success" 0
+                json_add_string "message" "未找到匹配的 VPS 或缺少主机地址"
+                json_close_object
+                json_dump
+                return
+            }
+
+            port="${port:-22}"
+            user="${user:-root}"
+
+            local key_file="/etc/clawwrt/id_dropbear"
+            if [ ! -f "$key_file" ]; then
+                mkdir -p /etc/clawwrt
+                dropbearkey -t ed25519 -f "$key_file" >/dev/null 2>&1
+            fi
+
+            local remote_cmd=""
+            if [ "$service" = "frps" ]; then
+                local ap_start=10000
+                local ap_end=30000
+                if [ -n "$allow_ports" ]; then
+                    ap_start=$(echo "$allow_ports" | cut -d- -f1 | tr -dc '0-9')
+                    ap_end=$(echo "$allow_ports" | cut -d- -f2 | tr -dc '0-9')
+                    [ -z "$ap_start" ] && ap_start=10000
+                    [ -z "$ap_end" ] && ap_end=30000
+                fi
+
+                remote_cmd="
+set -e
+SUDO=''
+[ \"\$(id -u)\" -ne 0 ] && sudo -n true 2>/dev/null && SUDO='sudo '
+
+\$SUDO mkdir -p /etc/frps
+[ -f /etc/frps/frps.toml ] && \$SUDO cp -f /etc/frps/frps.toml /etc/frps/frps.toml.bak 2>/dev/null || true
+
+OLD_BIND=\$(grep -E '^[[:space:]]*bindPort[[:space:]]*=' /etc/frps/frps.toml 2>/dev/null | sed -E 's/.*=[[:space:]]*([0-9]+).*/\1/' | head -n1 || echo '')
+OLD_TOKEN=\$(grep -E '^[[:space:]]*auth\.token[[:space:]]*=' /etc/frps/frps.toml 2>/dev/null | sed -E 's/.*=[[:space:]]*[\"'\''']?([^\"'\''']+)[\"'\''']?.*/\1/' | head -n1 || echo '')
+
+NEW_BIND='${bind_port}'
+[ -z \"\$NEW_BIND\" ] && NEW_BIND=\"\$OLD_BIND\"
+[ -z \"\$NEW_BIND\" ] && NEW_BIND='7001'
+
+NEW_TOKEN='${token}'
+[ -z \"\$NEW_TOKEN\" ] && NEW_TOKEN=\"\$OLD_TOKEN\"
+
+\$SUDO tee /etc/frps/frps.toml >/dev/null << TOML
+bindPort = \${NEW_BIND}
+auth.token = \"\${NEW_TOKEN}\"
+$( [ -n "$vhost_http_port" ] && echo "vhostHTTPPort = ${vhost_http_port}" )
+$( [ -n "$vhost_https_port" ] && echo "vhostHTTPSPort = ${vhost_https_port}" )
+allowPorts = [
+    { start = ${ap_start}, end = ${ap_end} }
+]
+TOML
+
+if command -v systemctl >/dev/null 2>&1; then
+    \$SUDO systemctl daemon-reload >/dev/null 2>&1 || true
+    \$SUDO systemctl restart frps >/dev/null 2>&1 || true
+    sleep 1
+    if systemctl is-active frps >/dev/null 2>&1; then
+        echo 'CONFIG_UPDATE_SUCCESS'
+    else
+        echo 'CONFIG_UPDATE_FAILED_REVERTING'
+        [ -f /etc/frps/frps.toml.bak ] && \$SUDO cp -f /etc/frps/frps.toml.bak /etc/frps/frps.toml && \$SUDO systemctl restart frps 2>/dev/null || true
+        journalctl -u frps -n 10 --no-pager 2>/dev/null || true
+        exit 1
+    fi
+else
+    \$SUDO pkill -9 -x frps 2>/dev/null || true
+    nohup \$SUDO /usr/local/bin/frps -c /etc/frps/frps.toml >/var/log/frps.log 2>&1 &
+    sleep 1
+    if pgrep -x frps >/dev/null 2>&1; then
+        echo 'CONFIG_UPDATE_SUCCESS'
+    else
+        echo 'CONFIG_UPDATE_FAILED_REVERTING'
+        [ -f /etc/frps/frps.toml.bak ] && \$SUDO cp -f /etc/frps/frps.toml.bak /etc/frps/frps.toml
+        exit 1
+    fi
+fi
+
+# Firewall updates
+if command -v ufw >/dev/null 2>&1 && \$SUDO ufw status 2>/dev/null | grep -q 'active'; then
+    \$SUDO ufw allow \${NEW_BIND}/tcp >/dev/null 2>&1 || true
+    $( [ -n "$vhost_http_port" ] && echo "\$SUDO ufw allow ${vhost_http_port}/tcp >/dev/null 2>&1 || true" )
+    $( [ -n "$vhost_https_port" ] && echo "\$SUDO ufw allow ${vhost_https_port}/tcp >/dev/null 2>&1 || true" )
+elif command -v firewall-cmd >/dev/null 2>&1 && systemctl is-active --quiet firewalld 2>/dev/null; then
+    \$SUDO firewall-cmd --add-port=\${NEW_BIND}/tcp --permanent >/dev/null 2>&1 || true
+    $( [ -n "$vhost_http_port" ] && echo "\$SUDO firewall-cmd --add-port=${vhost_http_port}/tcp --permanent >/dev/null 2>&1 || true" )
+    $( [ -n "$vhost_https_port" ] && echo "\$SUDO firewall-cmd --add-port=${vhost_https_port}/tcp --permanent >/dev/null 2>&1 || true" )
+    \$SUDO firewall-cmd --reload >/dev/null 2>&1 || true
+fi
+"
+            else
+                remote_cmd="
+set -e
+SUDO=''
+[ \"\$(id -u)\" -ne 0 ] && sudo -n true 2>/dev/null && SUDO='sudo '
+
+\$SUDO mkdir -p /etc/xkcptun
+[ -f /etc/xkcptun/server.toml ] && \$SUDO cp -f /etc/xkcptun/server.toml /etc/xkcptun/server.toml.bak 2>/dev/null || true
+
+OLD_PORT=\$(grep -E '^[[:space:]]*local_port[[:space:]]*=' /etc/xkcptun/server.toml 2>/dev/null | sed -E 's/.*=[[:space:]]*([0-9]+).*/\1/' | head -n1 || echo '')
+OLD_KEY=\$(grep -E '^[[:space:]]*key[[:space:]]*=' /etc/xkcptun/server.toml 2>/dev/null | sed -E 's/.*=[[:space:]]*[\"'\''']?([^\"'\''']+)[\"'\''']?.*/\1/' | head -n1 || echo '')
+OLD_MODE=\$(grep -E '^[[:space:]]*mode[[:space:]]*=' /etc/xkcptun/server.toml 2>/dev/null | sed -E 's/.*=[[:space:]]*[\"'\''']?([^\"'\''']+)[\"'\''']?.*/\1/' | head -n1 || echo '')
+OLD_FEC=\$(grep -E '^[[:space:]]*fec[[:space:]]*=' /etc/xkcptun/server.toml 2>/dev/null | sed -E 's/.*=[[:space:]]*([0-9]+).*/\1/' | head -n1 || echo '')
+
+NEW_PORT='${listen_port}'
+[ -z \"\$NEW_PORT\" ] && NEW_PORT=\"\$OLD_PORT\"
+[ -z \"\$NEW_PORT\" ] && NEW_PORT='9089'
+
+NEW_KEY='${key}'
+[ -z \"\$NEW_KEY\" ] && NEW_KEY=\"\$OLD_KEY\"
+
+NEW_MODE='${mode}'
+[ -z \"\$NEW_MODE\" ] && NEW_MODE=\"\$OLD_MODE\"
+[ -z \"\$NEW_MODE\" ] && NEW_MODE='fast3'
+
+NEW_FEC='${fec}'
+[ -z \"\$NEW_FEC\" ] && NEW_FEC=\"\$OLD_FEC\"
+[ -z \"\$NEW_FEC\" ] && NEW_FEC='1'
+
+\$SUDO tee /etc/xkcptun/server.toml >/dev/null << TOML
+[global]
+syslog = true
+mon_port = 9087
+local_port = \${NEW_PORT}
+key = \"\${NEW_KEY}\"
+mode = \"\${NEW_MODE}\"
+fec = \${NEW_FEC}
+TOML
+
+if command -v systemctl >/dev/null 2>&1; then
+    \$SUDO systemctl daemon-reload >/dev/null 2>&1 || true
+    \$SUDO systemctl restart xkcp_server >/dev/null 2>&1 || true
+    sleep 1
+    if systemctl is-active xkcp_server >/dev/null 2>&1; then
+        echo 'CONFIG_UPDATE_SUCCESS'
+    else
+        echo 'CONFIG_UPDATE_FAILED_REVERTING'
+        [ -f /etc/xkcptun/server.toml.bak ] && \$SUDO cp -f /etc/xkcptun/server.toml.bak /etc/xkcptun/server.toml && \$SUDO systemctl restart xkcp_server 2>/dev/null || true
+        journalctl -u xkcp_server -n 10 --no-pager 2>/dev/null || true
+        exit 1
+    fi
+fi
+
+if command -v ufw >/dev/null 2>&1 && \$SUDO ufw status 2>/dev/null | grep -q 'active'; then
+    \$SUDO ufw allow \${NEW_PORT}/udp >/dev/null 2>&1 || true
+fi
+"
+            fi
+
+            local out=""
+            local ret=1
+            out=$(run_with_timeout 30 dbclient -y -o BatchMode=yes -i "$key_file" -p "$port" "${user}@${host}" "$remote_cmd" 2>&1)
+            ret=$?
+
+            local success=0
+            local msg=""
+
+            if [ $ret -eq 0 ] && echo "$out" | grep -q "CONFIG_UPDATE_SUCCESS"; then
+                success=1
+                # Sync router client if matching current remote host
+                if [ "$service" = "frps" ]; then
+                    local cur_srv=$(uci -q get xfrpc.common.server_addr)
+                    if [ "$cur_srv" = "$host" ]; then
+                        [ -n "$bind_port" ] && uci -q set xfrpc.common.server_port="$bind_port"
+                        [ -n "$token" ] && uci -q set xfrpc.common.token="$token"
+                        uci commit xfrpc 2>/dev/null
+                        /etc/init.d/xfrpc restart >/dev/null 2>&1 || true
+                    fi
+                elif [ "$service" = "xkcptun" ]; then
+                    local cur_remote=$(uci -q get xkcptun.client.remote_addr)
+                    if [ "$cur_remote" = "$host" ]; then
+                        [ -n "$listen_port" ] && uci -q set xkcptun.client.remote_port="$listen_port"
+                        [ -n "$key" ] && uci -q set xkcptun.client.key="$key"
+                        [ -n "$mode" ] && uci -q set xkcptun.client.mode="$mode"
+                        uci commit xkcptun 2>/dev/null
+                        /etc/init.d/xkcptun restart >/dev/null 2>&1 || true
+                    fi
+                fi
+                msg="已成功在 VPS [${name:-$host}] 上更新 ${service} 服务端配置，服务平滑重启正常！路由器本地客户端已自动同步保持连通。"
+            else
+                success=0
+                if echo "$out" | grep -q "CONFIG_UPDATE_FAILED_REVERTING"; then
+                    msg="新配置参数导致服务启动失败，系统已自动平滑回滚至修改前备份配置！"
+                else
+                    msg="更新远程配置失败: $(echo "$out" | tail -n 2 | tr '\n' ' ')"
+                fi
+            fi
+
+            json_init
+            json_add_object "result"
+            json_add_boolean "success" "$success"
+            json_add_string "service" "$service"
+            json_add_string "host" "$host"
+            json_add_string "name" "$name"
+            json_add_string "message" "$msg"
+            json_close_object
+            json_dump
+        }
+
         get_penetration_status() {
             local enabled=$(uci -q get xfrpc.common.enabled || echo 0)
             local server_addr=$(uci -q get xfrpc.common.server_addr)
@@ -3749,6 +4227,8 @@ EOF
             deploy_vps_frps) deploy_vps_frps ;;
             deploy_vps_xkcptun) deploy_vps_xkcptun ;;
             uninstall_vps_service) uninstall_vps_service ;;
+            get_vps_service_config) get_vps_service_config ;;
+            update_vps_service_config) update_vps_service_config ;;
             get_penetration_status) get_penetration_status ;;
             manage_xdns_domain) manage_xdns_domain ;;
             manage_portal_access) manage_portal_access ;;
