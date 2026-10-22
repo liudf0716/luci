@@ -1,0 +1,4 @@
+config ai 'ai'
+	option model 'deepseek-flash'
+	option api_url 'https://api.deepseek.com/chat/completions'
+	option temperature '0.3'

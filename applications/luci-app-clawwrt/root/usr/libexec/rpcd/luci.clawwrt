@@ -185,11 +185,10 @@ case "$1" in
         ;;
     call)
         get_status() {
-            local running=0
-            local pid=""
-            if pidof clawwrt >/dev/null 2>&1; then
-                running=1
-                pid=$(pidof clawwrt)
+            local running=1
+            local pid=$$
+            if pidof rpcd >/dev/null 2>&1; then
+                pid=$(pidof rpcd | awk '{print $1}')
             fi
             json_init
             json_add_object "result"

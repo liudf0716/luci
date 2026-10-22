@@ -2,8 +2,8 @@
 
 include $(TOPDIR)/rules.mk
 
-LUCI_TITLE:=LuCI Support for ClawWRT
-LUCI_DEPENDS:=+clawwrt
+LUCI_TITLE:=LuCI Support for Xiaocha AI Copilot
+LUCI_DEPENDS:=+curl +ca-bundle
 
 PKG_LICENSE:=Apache-2.0
 PKG_MAINTAINER:=Dengfeng Liu <liudf0716@gmail.com>
