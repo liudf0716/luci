@@ -1903,12 +1903,19 @@ print(json.stringify(output))
             shift
             "$@" &
             local pid=$!
-            ( sleep "$timeout" && kill -9 "$pid" 2>/dev/null ) &
+            (
+                trap 'exit 0' TERM INT HUP
+                sleep "$timeout" 2>/dev/null &
+                local spid=$!
+                trap 'kill -9 "$spid" 2>/dev/null; exit 0' TERM INT HUP
+                wait "$spid" 2>/dev/null
+                kill -9 "$pid" 2>/dev/null
+            ) </dev/null >/dev/null 2>&1 &
             local watcher=$!
             wait "$pid" 2>/dev/null
             local ret=$?
-            kill -9 "$watcher" 2>/dev/null
-            wait "$watcher" 2>/dev/null
+            kill "$watcher" 2>/dev/null
+            pkill -P "$watcher" 2>/dev/null
             return $ret
         }
 
@@ -2388,11 +2395,12 @@ RestartSec=5s
 WantedBy=multi-user.target
 SERVICE
 
+    \$SUDO pkill -9 -x frps 2>/dev/null || true
     \$SUDO systemctl daemon-reload >/dev/null 2>&1 || true
     \$SUDO systemctl enable frps >/dev/null 2>&1 || true
     \$SUDO systemctl restart frps >/dev/null 2>&1 || true
 else
-    \$SUDO pkill -x frps 2>/dev/null || true
+    \$SUDO pkill -9 -x frps 2>/dev/null || true
     nohup \$SUDO /usr/local/bin/frps -c /etc/frps/frps.toml >/var/log/frps.log 2>&1 &
 fi
 
@@ -2434,6 +2442,7 @@ fi
                 uci -q set xfrpc.common.auth_method='token'
                 uci -q set xfrpc.common.protocol='tcp'
                 uci -q set xfrpc.common.tcp_mux='1'
+                uci -q set xfrpc.common.tls_enable='0'
 
                 if ! uci -q get xfrpc.aw_web_tcp >/dev/null; then
                     uci -q set xfrpc.aw_web_tcp='tcp'
