@@ -257,6 +257,41 @@ return view.extend({
         ]);
         container.appendChild(header);
 
+        // Section: Top Eye-Catching Cloud Provider Recommendation (BandwagonHost)
+        const bwhRecommendCard = E('div', {
+            'class': 'cws-card',
+            'style': 'background: linear-gradient(135deg, rgba(245,158,11,0.12) 0%, rgba(249,115,22,0.06) 100%); border: 1.5px solid rgba(245,158,11,0.45); box-shadow: 0 4px 18px rgba(245,158,11,0.14); margin-bottom: 18px; padding: 18px 22px;'
+        }, [
+            E('div', { 'style': 'display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;' }, [
+                E('div', { 'style': 'display: flex; align-items: center; gap: 16px; flex: 1; min-width: 280px;' }, [
+                    E('div', {
+                        'style': 'width: 48px; height: 48px; border-radius: 12px; background: linear-gradient(135deg, #f59e0b 0%, #ea580c 100%); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 800; box-shadow: 0 3px 10px rgba(245,158,11,0.4); flex-shrink: 0;'
+                    }, 'BWG'),
+                    E('div', {}, [
+                        E('div', { 'style': 'display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 5px;' }, [
+                            E('span', { 'style': 'font-size: 16px; font-weight: 800; color: var(--cws-text-main); letter-spacing: -0.3px;' }, '官方实测兼容推荐 · 搬瓦工 (BandwagonHost) 高性能 VPS'),
+                            E('span', { 'class': 'cws-badge cws-badge-success', 'style': 'background: rgba(16,185,129,0.18); color: #059669; font-weight: 700; border: 1px solid rgba(16,185,129,0.3);' }, '🏅 100% 协议适配'),
+                            E('span', { 'class': 'cws-badge cws-badge-neutral', 'style': 'background: rgba(245,158,11,0.18); color: #b45309; font-weight: 700;' }, '⚡ 优质 CN2 GIA / 国际千兆')
+                        ]),
+                        E('div', { 'style': 'font-size: 13px; color: var(--cws-text-muted); line-height: 1.5;' },
+                            '拥有独立公网 IPv4 · 免备案即买即用 · 原生适配小茶助手 xfrpc 穿透与 xkcptun 协议加速（支持微信 / 支付宝安全付款）'
+                        )
+                    ])
+                ]),
+                E('a', {
+                    'href': 'https://bwh81.net/aff.php?aff=24134',
+                    'target': '_blank',
+                    'rel': 'noopener noreferrer',
+                    'class': 'cws-btn',
+                    'style': 'background: linear-gradient(135deg, #f59e0b 0%, #ea580c 100%); color: #fff; border: none; font-size: 14px; font-weight: 700; padding: 10px 22px; border-radius: 8px; text-decoration: none; box-shadow: 0 3px 12px rgba(245,158,11,0.35); display: inline-flex; align-items: center; gap: 8px; white-space: nowrap;'
+                }, [
+                    E('span', { 'style': 'font-size: 16px;' }, '🛒'),
+                    E('span', {}, '前往选购搬瓦工 VPS (直达官网) →')
+                ])
+            ])
+        ]);
+        container.appendChild(bwhRecommendCard);
+
         // Section 1: Router Public Key
         const keyCard = E('div', { 'class': 'cws-card' }, [
             E('div', { 'style': 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;' }, [
@@ -413,40 +448,6 @@ return view.extend({
             ])
         ]);
         container.appendChild(guideCard);
-
-        // Section 5: Recommended Cloud Provider (BandwagonHost)
-        const bwhRecommendCard = E('div', {
-            'class': 'cws-card',
-            'style': 'background: linear-gradient(135deg, rgba(245,158,11,0.07) 0%, rgba(249,115,22,0.03) 100%); border: 1px solid rgba(245,158,11,0.25);'
-        }, [
-            E('div', { 'style': 'display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;' }, [
-                E('div', { 'style': 'display: flex; align-items: center; gap: 14px;' }, [
-                    E('div', {
-                        'style': 'width: 44px; height: 44px; border-radius: 10px; background: linear-gradient(135deg, #f59e0b 0%, #ea580c 100%); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 800; box-shadow: 0 2px 8px rgba(245,158,11,0.35); flex-shrink: 0;'
-                    }, 'BWG'),
-                    E('div', {}, [
-                        E('div', { 'style': 'display: flex; align-items: center; gap: 8px; flex-wrap: wrap;' }, [
-                            E('span', { 'style': 'font-size: 15px; font-weight: 700; color: var(--cws-text-main);' }, '官方实测兼容推荐 · 搬瓦工 (BandwagonHost)'),
-                            E('span', { 'class': 'cws-badge cws-badge-success', 'style': 'background: rgba(16,185,129,0.15); color: #059669; font-weight: 600;' }, '🏅 100% 协议适配')
-                        ]),
-                        E('div', { 'style': 'font-size: 12.5px; color: var(--cws-text-muted); margin-top: 4px; line-height: 1.5;' },
-                            '独立公网 IPv4 · 优质 CN2 GIA / 国际直连大带宽 · 原生兼容 xfrpc 穿透与 xkcptun 协议加速（支持微信/支付宝）'
-                        )
-                    ])
-                ]),
-                E('a', {
-                    'href': 'https://bwh81.net/aff.php?aff=24134',
-                    'target': '_blank',
-                    'rel': 'noopener noreferrer',
-                    'class': 'cws-btn',
-                    'style': 'background: linear-gradient(135deg, #f59e0b 0%, #ea580c 100%); color: #fff; border: none; font-weight: 600; padding: 8px 18px; border-radius: 8px; text-decoration: none; box-shadow: 0 2px 8px rgba(245,158,11,0.3); display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;'
-                }, [
-                    E('span', {}, '🛒'),
-                    E('span', {}, '前往选购搬瓦工 VPS →')
-                ])
-            ])
-        ]);
-        container.appendChild(bwhRecommendCard);
 
         // Helper: Robust Copy Text (Supports both Secure HTTPS and Insecure HTTP context)
         function copyText(text, btnElement, successMsg) {
