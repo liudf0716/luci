@@ -2339,8 +2339,16 @@ return view.extend({
 
                 // Step 2: VPS Connection & Proxy Parameters
                 E('div', { 'style': 'background: var(--cw-bg-subtle); border: 1px solid var(--cw-border); border-radius: 8px; padding: 12px 14px; margin-bottom: 14px;' }, [
-                    E('div', { 'style': 'font-weight: 700; font-size: 13px; color: var(--cw-text-main); margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;' }, [
-                        E('span', {}, '第 2 步：填写 VPS 连接与穿透参数'),
+                    E('div', { 'style': 'font-weight: 700; font-size: 13px; color: var(--cw-text-main); margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;' }, [
+                        E('div', { 'style': 'display: flex; align-items: center; gap: 8px;' }, [
+                            E('span', {}, '第 2 步：填写 VPS 连接与穿透参数'),
+                            E('a', {
+                                'href': 'https://bwh81.net/aff.php?aff=24134',
+                                'target': '_blank',
+                                'rel': 'noopener noreferrer',
+                                'style': 'font-size: 11.5px; font-weight: 600; color: #f59e0b; text-decoration: none;'
+                            }, '🛒 推荐选购搬瓦工 VPS →')
+                        ]),
                         E('div', { 'style': 'font-size: 12px; display: flex; align-items: center; gap: 6px;' }, [
                             E('span', { 'style': 'color: var(--cw-text-muted); font-weight: normal;' }, '已纳管服务器快捷载入:'),
                             E('select', {

@@ -314,9 +314,17 @@ return view.extend({
 
         // Section 2: Add New Server
         const addCard = E('div', { 'class': 'cws-card' }, [
-            E('div', { 'style': 'font-size: 16px; font-weight: 700; color: var(--cws-text-main); margin-bottom: 12px; display: flex; align-items: center; gap: 8px;' }, [
-                E('span', {}, '➕'),
-                E('span', {}, '添加远程服务器 (VPS)')
+            E('div', { 'style': 'font-size: 16px; font-weight: 700; color: var(--cws-text-main); margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;' }, [
+                E('div', { 'style': 'display: flex; align-items: center; gap: 8px;' }, [
+                    E('span', {}, '➕'),
+                    E('span', {}, '添加远程服务器 (VPS)')
+                ]),
+                E('a', {
+                    'href': 'https://bwh81.net/aff.php?aff=24134',
+                    'target': '_blank',
+                    'rel': 'noopener noreferrer',
+                    'style': 'font-size: 12px; font-weight: 600; color: #f59e0b; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 6px; background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.25);'
+                }, '🛒 还没有云服务器？推荐选购优质 VPS (搬瓦工) →')
             ]),
             E('div', { 'style': 'display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 16px;' }, [
                 E('div', {}, [
@@ -406,6 +414,40 @@ return view.extend({
         ]);
         container.appendChild(guideCard);
 
+        // Section 5: Recommended Cloud Provider (BandwagonHost)
+        const bwhRecommendCard = E('div', {
+            'class': 'cws-card',
+            'style': 'background: linear-gradient(135deg, rgba(245,158,11,0.07) 0%, rgba(249,115,22,0.03) 100%); border: 1px solid rgba(245,158,11,0.25);'
+        }, [
+            E('div', { 'style': 'display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;' }, [
+                E('div', { 'style': 'display: flex; align-items: center; gap: 14px;' }, [
+                    E('div', {
+                        'style': 'width: 44px; height: 44px; border-radius: 10px; background: linear-gradient(135deg, #f59e0b 0%, #ea580c 100%); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 800; box-shadow: 0 2px 8px rgba(245,158,11,0.35); flex-shrink: 0;'
+                    }, 'BWG'),
+                    E('div', {}, [
+                        E('div', { 'style': 'display: flex; align-items: center; gap: 8px; flex-wrap: wrap;' }, [
+                            E('span', { 'style': 'font-size: 15px; font-weight: 700; color: var(--cws-text-main);' }, '官方实测兼容推荐 · 搬瓦工 (BandwagonHost)'),
+                            E('span', { 'class': 'cws-badge cws-badge-success', 'style': 'background: rgba(16,185,129,0.15); color: #059669; font-weight: 600;' }, '🏅 100% 协议适配')
+                        ]),
+                        E('div', { 'style': 'font-size: 12.5px; color: var(--cws-text-muted); margin-top: 4px; line-height: 1.5;' },
+                            '独立公网 IPv4 · 优质 CN2 GIA / 国际直连大带宽 · 原生兼容 xfrpc 穿透与 xkcptun 协议加速（支持微信/支付宝）'
+                        )
+                    ])
+                ]),
+                E('a', {
+                    'href': 'https://bwh81.net/aff.php?aff=24134',
+                    'target': '_blank',
+                    'rel': 'noopener noreferrer',
+                    'class': 'cws-btn',
+                    'style': 'background: linear-gradient(135deg, #f59e0b 0%, #ea580c 100%); color: #fff; border: none; font-weight: 600; padding: 8px 18px; border-radius: 8px; text-decoration: none; box-shadow: 0 2px 8px rgba(245,158,11,0.3); display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;'
+                }, [
+                    E('span', {}, '🛒'),
+                    E('span', {}, '前往选购搬瓦工 VPS →')
+                ])
+            ])
+        ]);
+        container.appendChild(bwhRecommendCard);
+
         // Helper: Robust Copy Text (Supports both Secure HTTPS and Insecure HTTP context)
         function copyText(text, btnElement, successMsg) {
             if (!text || text.indexOf('正在生成') !== -1) {
@@ -490,9 +532,26 @@ return view.extend({
         // Helper: Render Table
         function renderServerTable(list) {
             if (!list || list.length === 0) {
-                return E('div', { 'style': 'padding: 30px; text-align: center; color: var(--cws-text-muted); font-size: 13px;' }, [
-                    E('div', { 'style': 'font-size: 32px; margin-bottom: 8px;' }, '🍃'),
-                    E('div', {}, '当前暂无纳管的远程服务器，请在上方添加您的第一台云服务器！')
+                return E('div', {
+                    'style': 'padding: 36px 20px; text-align: center; background: linear-gradient(135deg, rgba(245,158,11,0.04) 0%, rgba(249,115,22,0.02) 100%); border: 1px dashed rgba(245,158,11,0.3); border-radius: 12px; margin: 8px 0;'
+                }, [
+                    E('div', { 'style': 'font-size: 36px; margin-bottom: 8px;' }, '☁️'),
+                    E('div', { 'style': 'font-size: 15px; font-weight: 700; color: var(--cws-text-main); margin-bottom: 6px;' }, '当前暂无纳管的远程服务器 (VPS)'),
+                    E('div', { 'style': 'font-size: 13px; color: var(--cws-text-muted); max-width: 560px; margin: 0 auto 16px auto; line-height: 1.6;' },
+                        '小茶助手通过远程 Linux 服务器接管外网穿透与网络加速。若您已有服务器可在上方直接录入；若尚未持有，推荐选用免备案、带独立 IPv4 的搬瓦工 (BandwagonHost) 优质高速 VPS。'
+                    ),
+                    E('div', { 'style': 'display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;' }, [
+                        E('a', {
+                            'href': 'https://bwh81.net/aff.php?aff=24134',
+                            'target': '_blank',
+                            'rel': 'noopener noreferrer',
+                            'class': 'cws-btn',
+                            'style': 'background: linear-gradient(135deg, #f59e0b 0%, #ea580c 100%); color: #fff; border: none; font-weight: 600; padding: 8px 18px; border-radius: 8px; text-decoration: none; box-shadow: 0 2px 8px rgba(245,158,11,0.3); display: inline-flex; align-items: center; gap: 6px;'
+                        }, [
+                            E('span', {}, '🛒'),
+                            E('span', {}, '选购搬瓦工高性能 VPS (支持支付宝/微信)')
+                        ])
+                    ])
                 ]);
             }
 
