@@ -791,34 +791,30 @@ return view.extend({
 
         // Top Header
         const header = E('div', {
-            'style': 'display: flex; justify-content: space-between; align-items: center; background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); color: #fff; padding: 18px 24px; border-radius: 12px; margin-bottom: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);'
+            'class': 'cw-header'
         }, [
-            E('div', { 'style': 'display: flex; align-items: center; gap: 14px;' }, [
-                E('div', {
-                    'style': 'width: 44px; height: 44px; border-radius: 10px; background: #3b82f6; display: flex; align-items: center; justify-content: center; font-size: 24px; box-shadow: 0 0 15px rgba(59,130,246,0.5);'
-                }, '🍵'),
+            E('div', { 'class': 'cw-header-brand' }, [
+                E('img', { 'class': 'cw-logo', 'src': '/luci-static/argon/img/chawrt.svg', 'alt': 'chaWrt' }),
                 E('div', {}, [
-                    E('div', { 'style': 'font-size: 20px; font-weight: 700; letter-spacing: -0.5px;' }, '小茶助手 · chaWrt'),
-                    E('div', { 'style': 'font-size: 13px; color: #94a3b8; display: flex; align-items: center; gap: 8px;' }, [
+                    E('div', { 'class': 'cw-title' }, '小茶助手'),
+                    E('div', { 'class': 'cw-subtitle' }, [
                         E('span', {
                             'id': 'ai-status-pill',
-                            'style': 'display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #10b981;'
+                            'class': 'cw-status-dot'
                         }),
-                        E('span', { 'id': 'ai-status-text' }, '本地就绪 · DeepSeek-V4 (Flash) 驱动')
+                        E('span', { 'id': 'ai-status-text' }, '本地就绪 · DeepSeek-V4 (Flash)')
                     ])
                 ])
             ]),
-            E('div', { 'style': 'display: flex; gap: 10px;' }, [
+            E('div', { 'class': 'cw-header-actions' }, [
                 E('button', {
-                    'class': 'btn cbi-button cbi-button-neutral',
-                    'style': 'background: #334155; color: #f1f5f9; border: none; padding: 8px 14px; border-radius: 8px; cursor: pointer; font-size: 13px;',
+                    'class': 'btn cbi-button cw-header-btn',
                     'click': function() { openSettingsModal(); }
-                }, '⚙️ 设置 API Key'),
+                }, '设置'),
                 E('button', {
-                    'class': 'btn cbi-button cbi-button-reset',
-                    'style': 'background: #475569; color: #f1f5f9; border: none; padding: 8px 14px; border-radius: 8px; cursor: pointer; font-size: 13px;',
+                    'class': 'btn cbi-button cw-header-btn',
                     'click': function() { resetChat(); }
-                }, '🧹 清空对话')
+                }, '清空对话')
             ])
         ]);
 
@@ -869,7 +865,7 @@ return view.extend({
         // Chat Box
         const chatWindow = E('div', {
             'id': 'chat-window',
-            'style': 'background: var(--cw-bg-chat); border: 1px solid var(--cw-border); border-radius: 12px; height: 500px; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 16px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.06);'
+            'class': 'cw-chat'
         });
 
         // Categorized Quick Action Cards
@@ -1046,14 +1042,14 @@ return view.extend({
 
         // Input Area
         const inputArea = E('div', {
-            'style': 'background: var(--cw-bg-card); border: 1px solid var(--cw-border); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 8px; box-shadow: var(--cw-card-shadow);'
+            'class': 'cw-composer'
         }, [
             quickChips,
-            E('div', { 'style': 'display: flex; gap: 10px; align-items: flex-end;' }, [
+            E('div', { 'class': 'cw-composer-row' }, [
                 E('textarea', {
                     'id': 'chat-input',
-                    'placeholder': '用自然语言对路由器下达指令（如：“帮我测试外网延迟”、“开启透明代理”...）回车发送',
-                    'style': 'flex: 1; border: none; resize: none; outline: none; font-size: 14px; min-height: 48px; max-height: 120px; line-height: 1.5; font-family: inherit; background: transparent; color: var(--cw-input-text);',
+                    'placeholder': '用自然语言下达指令，回车发送，Shift+回车换行',
+                    'class': 'cw-input',
                     'keydown': function(e) {
                         if (e.key === 'Enter' && !e.shiftKey) {
                             e.preventDefault();
@@ -1063,10 +1059,9 @@ return view.extend({
                 }),
                 E('button', {
                     'id': 'send-btn',
-                    'class': 'btn cbi-button cbi-button-apply',
-                    'style': 'padding: 10px 22px; font-size: 14px; font-weight: 600; border-radius: 8px; background: #2563eb; color: #fff; cursor: pointer; transition: background 0.2s;',
+                    'class': 'btn cbi-button cbi-button-apply cw-send',
                     'click': function() { sendMessage(); }
-                }, '发送 ➔')
+                }, '发送')
             ])
         ]);
 
@@ -1258,6 +1253,97 @@ return view.extend({
                 background: var(--cw-modal-bg) !important;
                 color: var(--cw-modal-text) !important;
                 border: 1px solid var(--cw-border) !important;
+            }
+
+            .cw-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                gap: 12px;
+                background: var(--cw-bg-card);
+                color: var(--cw-text-main);
+                border: 1px solid var(--cw-border);
+                padding: 14px 16px;
+                border-radius: 14px;
+                margin-bottom: 12px;
+                box-shadow: var(--cw-card-shadow);
+            }
+            .cw-header-brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+            .cw-logo {
+                width: 42px; height: 42px; border-radius: 12px; flex: 0 0 auto;
+                display: block; object-fit: cover; background: transparent;
+            }
+            .cw-title { font-size: 18px; font-weight: 700; letter-spacing: 0; line-height: 1.2; }
+            .cw-subtitle { display: flex; align-items: center; gap: 8px; margin-top: 3px; font-size: 12px; color: var(--cw-text-muted); }
+            .cw-status-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #10b981; flex: 0 0 auto; }
+            .cw-header-actions { display: flex; gap: 8px; flex: 0 0 auto; }
+            .cw-header-btn {
+                background: var(--cw-bg-secondary) !important;
+                color: var(--cw-text-main) !important;
+                border: 1px solid var(--cw-border) !important;
+                padding: 7px 12px !important;
+                border-radius: 9px !important;
+                font-size: 13px !important;
+                cursor: pointer;
+            }
+            .cw-chat {
+                background: var(--cw-bg-chat);
+                border: 1px solid var(--cw-border);
+                border-radius: 14px;
+                height: min(560px, calc(100vh - 390px));
+                min-height: 320px;
+                overflow-y: auto;
+                padding: 16px 18px;
+                display: flex;
+                flex-direction: column;
+                gap: 14px;
+                margin-bottom: 12px;
+            }
+            .cw-composer {
+                background: var(--cw-bg-card);
+                border: 1px solid var(--cw-border);
+                border-radius: 14px;
+                padding: 12px;
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+                box-shadow: var(--cw-card-shadow);
+            }
+            .cw-composer-row { display: flex; gap: 10px; align-items: flex-end; }
+            .cw-input {
+                flex: 1;
+                border: 1px solid var(--cw-border) !important;
+                border-radius: 12px !important;
+                resize: none;
+                outline: none;
+                font-size: 14px;
+                min-height: 52px;
+                max-height: 120px;
+                line-height: 1.5;
+                font-family: inherit;
+                background: var(--cw-bg-secondary) !important;
+                color: var(--cw-input-text);
+                padding: 10px 12px;
+                box-sizing: border-box;
+            }
+            .cw-input:focus { border-color: #2563eb !important; }
+            .cw-send {
+                padding: 10px 18px !important;
+                min-height: 44px;
+                font-size: 14px !important;
+                font-weight: 600 !important;
+                border-radius: 12px !important;
+                background: #2563eb !important;
+                color: #fff !important;
+                border: none !important;
+                cursor: pointer;
+            }
+            .quick-cat-tab { border-radius: 999px; padding: 5px 12px; font-size: 12.5px; }
+            #metrics-bar .metric-tile { min-height: 92px; }
+            @media (max-width: 720px) {
+                .cw-header { align-items: flex-start; flex-direction: column; }
+                .cw-chat { height: 420px; }
+                #metrics-bar { grid-template-columns: 1fr !important; }
             }
         `);
         container.appendChild(mdStyle);
