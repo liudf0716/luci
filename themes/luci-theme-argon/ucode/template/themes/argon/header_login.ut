@@ -119,7 +119,8 @@
 		{{ css }}
 	</style>
 	{% endif -%}
+	<link rel="stylesheet" href="{{ media }}/css/login.css">
 
 </head>
 
-<body>
+<body class="argon-{{ mode }}">

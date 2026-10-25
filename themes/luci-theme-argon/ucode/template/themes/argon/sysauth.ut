@@ -115,7 +115,7 @@
 	<div class="login-container">
 		<div class="login-form">
 			<!-- Logo Start -->
-			<a class="brand" href="/"><img src="{{ media }}/img/argon.svg" class="icon">
+			<a class="brand" href="/"><img src="{{ media }}/img/chawrt.svg" class="icon" alt="chaWrt">
 				<span class="brand-text">{{ hostname }}</span>
 			</a>
 			<!-- Logo End -->
@@ -123,17 +123,19 @@
 			<form class="form-login" method="post" action="{{ http.getenv("REQUEST_URI") }}">
 
 				{%- if (fuser): %}
-				<div class="errorbox">{{ _('Invalid username and/or password! Please try again.') }}</div>
+				<div class="errorbox" role="alert">{{ _('Invalid username and/or password! Please try again.') }}</div>
 				{% endif -%}
 
 				<div class="input-container">
 					<div class="input-group user-icon">
-						<input class="cbi-input-user" id="cbi-input-user" type="text" name="luci_username" value="{{ entityencode(duser, true) }}" />
-						<label class="border" for="cbi-input-user"></label>
+						<label class="field-label" for="cbi-input-user">{{ _('Username') }}</label>
+						<input class="cbi-input-user" id="cbi-input-user" type="text" name="luci_username" value="{{ entityencode(duser, true) }}" autocomplete="username"{{ fuser ? ' aria-invalid="true"' : '' }} />
+						<span class="border"></span>
 					</div>
 					<div class="input-group pass-icon">
-						<input class="cbi-input-password" id="cbi-input-password" type="password" name="luci_password" />
-						<label class="border" for="cbi-input-password"></label>
+						<label class="field-label" for="cbi-input-password">{{ _('Password') }}</label>
+						<input class="cbi-input-password" id="cbi-input-password" type="password" name="luci_password" autocomplete="current-password"{{ fuser ? ' aria-invalid="true"' : '' }} />
+						<span class="border"></span>
 					</div>
 				</div>
 				<div>
@@ -142,8 +144,19 @@
 			</form>
 			<!-- Login Form End -->
 			<script type="text/javascript">//<![CDATA[
-				var input = document.getElementsByName('luci_password')[0];
-				if (input)
-					input.focus();
+				var user = document.getElementById('cbi-input-user');
+				var pass = document.getElementById('cbi-input-password');
+				if (user && !user.value)
+					user.focus();
+				else if (pass)
+					pass.focus();
+				var form = document.querySelector('.form-login');
+				if (form) {
+					form.addEventListener('submit', function () {
+						var btn = form.querySelector('input[type="submit"]');
+						if (btn)
+							btn.disabled = true;
+					});
+				}
 			//]]></script>
 {% include("themes/" + theme + "/footer_login") %}

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="chaWrt">
+  <defs>
+    <linearGradient id="chawrt-bg" x1="6" y1="2" x2="58" y2="62" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#2563eb"/>
+      <stop offset="1" stop-color="#0f766e"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="16" fill="url(#chawrt-bg)"/>
+  <path fill="#ffffff" d="M17 27.5h24c.2 1.2.2 2.4 0 3.6-1.2 8.4-5.4 14.4-12 14.4s-10.8-6-12-14.4c-.2-1.2-.2-2.4 0-3.6z"/>
+  <path fill="none" stroke="#ffffff" stroke-width="3.4" stroke-linecap="round" d="M41 31.2c3.2.4 5.4 2.6 5.4 5.6s-2.2 5.4-5.4 5.8"/>
+  <path fill="#d1fae5" d="M34 12c4.2 1.6 6.6 5.2 6.4 9.2-4.4-.6-8-3.2-10-6.6C31.6 13 32.6 12.2 34 12z"/>
+  <path fill="none" stroke="#ecfdf5" stroke-width="1.5" stroke-linecap="round" d="M33.2 15.2c1.8 2.6 2 5.2.6 7.4"/>
+</svg>
