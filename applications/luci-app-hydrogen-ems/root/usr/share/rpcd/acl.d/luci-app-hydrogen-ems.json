@@ -1,0 +1,10 @@
+{
+	"luci-app-hydrogen-ems": {
+		"description": "Grant access to ChaWRT Hydrogen EMS Dashboard",
+		"read": {
+			"ubus": {
+				"service": [ "list" ]
+			}
+		}
+	}
+}
