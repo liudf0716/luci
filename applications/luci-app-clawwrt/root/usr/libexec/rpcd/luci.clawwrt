@@ -82,6 +82,11 @@ case "$1" in
             json_add_string "key"
             json_add_string "enabled"
         json_close_object
+        json_add_object "get_network_tune"
+        json_close_object
+        json_add_object "apply_network_tune"
+            json_add_string "actions"
+        json_close_object
         json_add_object "call_deepseek"
             json_add_string "messages_json"
             json_add_string "tools_json"
@@ -709,7 +714,218 @@ case "$1" in
             fi
         }
 
-        
+        _tune_add() {
+            json_add_object
+            json_add_string "id" "$1"
+            json_add_string "area" "$2"
+            json_add_string "title" "$3"
+            json_add_string "current" "$4"
+            json_add_string "target" "$5"
+            json_add_string "reason" "$6"
+            json_close_object
+        }
+
+        get_network_tune() {
+            local ps sw hw
+            ps=$(uci -q get network.globals.packet_steering)
+            [ -z "$ps" ] && ps=$(uci -q get network.@globals[0].packet_steering)
+            [ -z "$ps" ] && ps="0"
+            sw=$(uci -q get firewall.@defaults[0].flow_offloading || echo "0")
+            hw=$(uci -q get firewall.@defaults[0].flow_offloading_hw || echo "0")
+
+            json_init
+            json_add_object "result"
+            json_add_string "lan_ip" "$(uci -q get network.lan.ipaddr || echo '')"
+            json_add_string "wan_proto" "$(uci -q get network.wan.proto || echo '')"
+            json_add_string "packet_steering" "$ps"
+            json_add_string "flow_offloading" "$sw"
+            json_add_string "flow_offloading_hw" "$hw"
+            local radios=$(uci -q show wireless | grep '=wifi-device' | cut -d. -f2 | cut -d= -f1)
+            [ -z "$radios" ] && radios="radio0 radio1 radio2"
+
+            json_add_array "radios"
+            for rad in $radios; do
+                local band=$(uci -q get wireless.${rad}.band)
+                [ -z "$band" ] && continue
+                json_add_object
+                json_add_string "radio" "$rad"
+                json_add_string "band" "$band"
+                json_add_string "channel" "$(uci -q get wireless.${rad}.channel || echo auto)"
+                json_add_string "htmode" "$(uci -q get wireless.${rad}.htmode || echo '')"
+                json_add_string "country" "$(uci -q get wireless.${rad}.country || echo '')"
+                json_close_object
+            done
+            json_close_array
+
+            json_add_array "actions"
+            if [ "$ps" = "0" ]; then
+                _tune_add "packet_steering" "network" "开启多核软中断分发" "$ps" "1" "把网卡收包分散到多个 CPU，多终端同时上网时降低单核打满。"
+            fi
+            if [ "$sw" != "1" ] || [ "$hw" != "1" ]; then
+                _tune_add "flow_offload_hw" "network" "开启硬件流转发" "sw=$sw hw=$hw" "sw=1 hw=1" "MediaTek PPE 转发已建立的流，千兆转发时 CPU 占用更低。限速主机仍由 eBPF 处理。"
+            fi
+
+            local need_wmm=0 need_dis=0
+            for rad in $radios; do
+                local band=$(uci -q get wireless.${rad}.band)
+                local ht=$(uci -q get wireless.${rad}.htmode)
+                [ -z "$band" ] && continue
+
+                if [ "$band" = "5g" ]; then
+                    local tgt_5g=""
+                    case "$ht" in
+                        EHT20) tgt_5g="EHT80" ;;
+                        HE20)  tgt_5g="HE80" ;;
+                        VHT20) tgt_5g="VHT80" ;;
+                        HT20)  tgt_5g="VHT80" ;;
+                    esac
+                    if [ -n "$tgt_5g" ]; then
+                        _tune_add "wifi_htmode_${rad}_${tgt_5g}" "wireless" "5 GHz (${rad}) 信道宽度提到 80 MHz" "$ht" "$tgt_5g" "20 MHz 限制了 5 GHz 吞吐。会短暂重载无线。"
+                    fi
+                fi
+
+                if [ "$band" = "2g" ]; then
+                    local tgt_2g=""
+                    case "$ht" in
+                        EHT40) tgt_2g="EHT20" ;;
+                        HE40)  tgt_2g="HE20" ;;
+                        HT40)  tgt_2g="HT20" ;;
+                    esac
+                    if [ -n "$tgt_2g" ]; then
+                        _tune_add "wifi_htmode_${rad}_${tgt_2g}" "wireless" "2.4 GHz (${rad}) 改用 20 MHz" "$ht" "$tgt_2g" "40 MHz 在 2.4 GHz 容易和邻居重叠。改成 20 MHz 更稳，峰值速率下降。"
+                    fi
+                fi
+
+                for iface in $(uci -q show wireless | grep '=wifi-iface' | cut -d. -f2 | cut -d= -f1); do
+                    local dev=$(uci -q get wireless.${iface}.device)
+                    local mode=$(uci -q get wireless.${iface}.mode)
+                    [ "$dev" = "$rad" ] && [ "$mode" = "ap" ] || continue
+                    local wmm=$(uci -q get wireless.${iface}.wmm || echo "1")
+                    local dis=$(uci -q get wireless.${iface}.disassoc_low_ack || echo "1")
+                    [ "$wmm" = "0" ] && need_wmm=1
+                    [ "$dis" != "0" ] && need_dis=1
+                done
+            done
+            [ "$need_wmm" = "1" ] && _tune_add "wifi_wmm" "wireless" "打开 AP 的 WMM" "0" "1" "WMM 是 802.11n 及以上速率的前提，关闭时协商速率会掉到很低。"
+            [ "$need_dis" = "1" ] && _tune_add "wifi_disassoc" "wireless" "避免弱信号终端被踢下线" "disassoc_low_ack=1" "0" "弱信号手机不会因为应答少被断开，覆盖边缘更稳。极端弱信号时占空比会略增。"
+            json_close_array
+            json_close_object
+            json_dump
+        }
+
+        apply_network_tune() {
+            read -r input
+            json_load "$input"
+            json_get_var actions "actions"
+            local applied=""
+            local do_fw=0 do_wifi=0 do_ps=0
+            local radios=$(uci -q show wireless | grep '=wifi-device' | cut -d. -f2 | cut -d= -f1)
+            [ -z "$radios" ] && radios="radio0 radio1 radio2"
+
+            case ",$actions," in
+                *,packet_steering,*)
+                    local cur_ps=$(uci -q get network.globals.packet_steering)
+                    [ -z "$cur_ps" ] && cur_ps=$(uci -q get network.@globals[0].packet_steering)
+                    [ -z "$cur_ps" ] && cur_ps="0"
+                    if [ "$cur_ps" = "0" ]; then
+                        if ! uci -q get network.globals >/dev/null && ! uci -q get network.@globals[0] >/dev/null; then
+                            uci add network globals >/dev/null
+                        fi
+                        if uci -q get network.globals >/dev/null; then
+                            uci set network.globals.packet_steering='1'
+                        else
+                            uci set network.@globals[0].packet_steering='1'
+                        fi
+                        applied="$applied packet_steering"
+                        do_ps=1
+                    fi
+                    ;;
+            esac
+            case ",$actions," in
+                *,flow_offload_hw,*)
+                    uci -q set firewall.@defaults[0].flow_offloading='1'
+                    uci -q set firewall.@defaults[0].flow_offloading_hw='1'
+                    applied="$applied flow_offload_hw"
+                    do_fw=1
+                    ;;
+            esac
+            case ",$actions," in
+                *,wifi_wmm,*)
+                    for iface in $(uci -q show wireless | grep '=wifi-iface' | cut -d. -f2 | cut -d= -f1); do
+                        [ "$(uci -q get wireless.${iface}.mode)" = "ap" ] && uci set wireless.${iface}.wmm='1'
+                    done
+                    applied="$applied wifi_wmm"
+                    do_wifi=1
+                    ;;
+            esac
+            case ",$actions," in
+                *,wifi_disassoc,*)
+                    for iface in $(uci -q show wireless | grep '=wifi-iface' | cut -d. -f2 | cut -d= -f1); do
+                        [ "$(uci -q get wireless.${iface}.mode)" = "ap" ] && uci set wireless.${iface}.disassoc_low_ack='0'
+                    done
+                    applied="$applied wifi_disassoc"
+                    do_wifi=1
+                    ;;
+            esac
+
+            for act in $(echo "$actions" | tr ',' ' '); do
+                case "$act" in
+                    wifi_htmode_*)
+                        local rad_target="${act#wifi_htmode_}"
+                        local rad="${rad_target%_*}"
+                        local tgt="${rad_target##*_}"
+                        if [ -n "$rad" ] && [ -n "$tgt" ] && uci -q get "wireless.${rad}" >/dev/null; then
+                            uci set "wireless.${rad}.htmode=$tgt"
+                            applied="$applied $act"
+                            do_wifi=1
+                        fi
+                        ;;
+                    wifi_5g_vht80)
+                        for rad in $radios; do
+                            [ "$(uci -q get wireless.${rad}.band)" = "5g" ] || continue
+                            local cur_ht=$(uci -q get wireless.${rad}.htmode)
+                            case "$cur_ht" in
+                                EHT20) uci set "wireless.${rad}.htmode=EHT80"; applied="$applied wifi_5g_eht80"; do_wifi=1 ;;
+                                HE20)  uci set "wireless.${rad}.htmode=HE80";  applied="$applied wifi_5g_he80";  do_wifi=1 ;;
+                                VHT20|HT20) uci set "wireless.${rad}.htmode=VHT80"; applied="$applied wifi_5g_vht80"; do_wifi=1 ;;
+                            esac
+                        done
+                        ;;
+                    wifi_2g_ht20)
+                        for rad in $radios; do
+                            [ "$(uci -q get wireless.${rad}.band)" = "2g" ] || continue
+                            local cur_ht=$(uci -q get wireless.${rad}.htmode)
+                            case "$cur_ht" in
+                                EHT40) uci set "wireless.${rad}.htmode=EHT20"; applied="$applied wifi_2g_eht20"; do_wifi=1 ;;
+                                HE40)  uci set "wireless.${rad}.htmode=HE20";  applied="$applied wifi_2g_he20";  do_wifi=1 ;;
+                                HT40)  uci set "wireless.${rad}.htmode=HT20";  applied="$applied wifi_2g_ht20";  do_wifi=1 ;;
+                            esac
+                        done
+                        ;;
+                esac
+            done
+
+            [ "$do_ps" = "1" ] && uci commit network
+            [ "$do_fw" = "1" ] && uci commit firewall
+            [ "$do_wifi" = "1" ] && uci commit wireless
+            [ "$do_ps" = "1" ] && [ -x /etc/init.d/packet_steering ] && /etc/init.d/packet_steering restart >/dev/null 2>&1
+            [ "$do_fw" = "1" ] && /etc/init.d/firewall reload >/dev/null 2>&1
+            [ "$do_wifi" = "1" ] && /sbin/wifi reload >/dev/null 2>&1
+
+            json_init
+            json_add_object "result"
+            if [ -n "$applied" ]; then
+                json_add_boolean "success" "1"
+                json_add_string "applied" "$applied"
+                json_add_string "message" "已应用网络优化。无线项会短暂重载 WiFi。"
+            else
+                json_add_boolean "success" "0"
+                json_add_string "message" "没有可应用的优化项。"
+            fi
+            json_close_object
+            json_dump
+        }
+
         get_service_detail() {
             read -r input
             json_load "$input"
@@ -4217,6 +4433,8 @@ EOF
             set_service_detail) set_service_detail ;;
             get_wifi_info) get_wifi_info ;;
             set_wifi_config) set_wifi_config ;;
+            get_network_tune) get_network_tune ;;
+            apply_network_tune) apply_network_tune ;;
             get_hw_offload_status) get_hw_offload_status ;;
             set_hw_offload) set_hw_offload ;;
             get_router_ssh_key) get_router_ssh_key ;;

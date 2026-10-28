@@ -34,6 +34,19 @@ const callSetWifiConfig = rpc.declare({
     expect: { result: {} }
 });
 
+const callGetNetworkTune = rpc.declare({
+    object: 'luci.clawwrt',
+    method: 'get_network_tune',
+    expect: { result: {} }
+});
+
+const callApplyNetworkTune = rpc.declare({
+    object: 'luci.clawwrt',
+    method: 'apply_network_tune',
+    params: [ 'actions' ],
+    expect: { result: {} }
+});
+
 
 function normalizeApiUrl(url) {
     if (!url) return 'https://api.deepseek.com/chat/completions';
@@ -533,6 +546,28 @@ const routerTools = [
     {
         type: 'function',
         function: {
+            name: 'get_network_tune',
+            description: '读取当前网络与无线配置，返回尚未达到建议值的优化项（多核收包、硬件流转发、WMM、弱信号踢线、5G/2.4G 信道宽度）。不修改配置。',
+            parameters: { type: 'object', properties: {} }
+        }
+    },
+    {
+        type: 'function',
+        function: {
+            name: 'propose_network_optimize',
+            description: '向用户展示网络优化确认卡片。必须先调用 get_network_tune。卡片按当前真实配置列出可选项，用户确认后才写入。不要宣称已经优化完成。',
+            parameters: {
+                type: 'object',
+                properties: {
+                    explanation: { type: 'string', description: '为什么建议做这些优化，以及对无线重载的影响' }
+                },
+                required: ['explanation']
+            }
+        }
+    },
+    {
+        type: 'function',
+        function: {
             name: 'propose_hw_offload',
             description: '向用户提议开启或关闭路由器的硬件加速（MediaTek PPE 硬件 NAT 流分流）。前端将渲染硬件加速授权卡片供用户点击确认，不会私自直接修改',
             parameters: {
@@ -676,6 +711,7 @@ const systemPrompt = `你是一个专业的 OpenWrt / chaWrt 路由器专属 AI 
    - 智能分流 (xdns)：基于 Linux 内核 TC-eBPF 动态智能分流，在 br-lan 网卡挂载 TC ingress pref 5 与 egress pref 10 双向探针，自动拦截分流域名并重定向至 xkcptun 隧道；支持查询当前 DNS 拦截数、代理数、学习应答数与 TCP 代理连接数、内核动态劫持 IP 表及活跃会话 (get_service_detail('xdns'))；支持全能分流管理 (manage_xdns_domain)：查询加速域名及内核状态 (action: "list")、添加域名 (action: "add")、删除域名 (action: "remove")、清空内核动态 IP 缓存 (action: "clear_ips")、重载规则文件 (action: "reload")、查看内核劫持 IP 列表 (action: "list_ips")、查看活跃代理会话 (action: "list_sessions")、统计数据 (action: "stats")；
    - StrongSwan IPsec VPN (ipsec)：企业级加密隧道，支持开启/关闭、配置对端网关 (gateway) 与预共享密钥 (key)；
    - 无线 WiFi 托管：支持查询与修改 WiFi 名称密码 (get_wifi_info, propose_wifi_config)。
+   - 网络优化：用户要求优化网络、无线或整体上网体验时，先调用 get_network_tune 读取网络与无线现状，再调用 propose_network_optimize 生成确认卡片。不改 SSID、密码、信道和国家码。用户确认前不得宣称已经优化。
 
 4. 【操作与输出规范】：
    - 当用户查询上述任何服务、硬件加速、设备流量速率或公钥状态时，优先调用真实接口（get_services_status, get_penetration_status, get_router_ssh_key, get_hw_offload_status, get_service_detail, get_wifi_info, get_qos_status, get_l7_top）获取底层数据；
@@ -879,6 +915,7 @@ return view.extend({
                     { label: '📱 查看当前连接设备', query: '当前局域网连接了哪些手机、电脑或终端？列出它们的 IP、MAC 和主机名' },
                     { label: '🔍 穿透连通性深度检测', query: '帮我深度检测内网穿透当前是否正常运行，检查 xfrpc 是否已经真正连上了远端 frps 服务端，查看连接套接字、日志与公网访问链接' },
                     { label: '⚡ 硬件加速状态', query: '查看当前路由器的硬件加速（MediaTek PPE 硬件流量分流）运行状态与硬件流表' },
+                    { label: '📶 优化网络与无线', query: '检查当前网络配置和无线配置，给出可以改进的项，并生成网络优化确认卡片' },
                     { label: '🚀 实时流量与流控', query: '查看当前局域网各终端设备的实时上下行网速与智能流控限速状态' },
                     { label: '🔀 智能分流与加速域名', query: '查看智能分流 xdns 的运行状态、eBPF 拦截统计、动态劫持 IP 以及当前分流加速的域名列表' },
                     { label: '🛡️ 门户认证与白名单', query: '查看当前门户认证 wifidogx 的运行状态、云端连接、在线用户及免认证 MAC 白名单' }
@@ -2286,6 +2323,68 @@ return view.extend({
             chatWindow.scrollTop = chatWindow.scrollHeight;
         }
 
+        function appendNetworkTuneCard(param) {
+            const card = E('div', {
+                'class': 'network-tune-card',
+                'style': 'background: var(--cw-bg-card); border: 2px solid #2563eb; border-radius: 12px; padding: 16px 20px; margin: 12px 0; box-shadow: var(--cw-card-shadow);'
+            }, [
+                E('div', { 'style': 'font-weight: 700; font-size: 15px; color: var(--cw-text-main); margin-bottom: 8px;' }, '网络优化'),
+                E('div', { 'style': 'font-size: 13px; color: var(--cw-text-sub); margin-bottom: 10px; line-height: 1.5;' }, (param && param.explanation) || '按当前网络和无线配置列出可以改进的项。确认后才会写入。'),
+                E('div', { 'class': 'tune-list', 'style': 'font-size: 13px; color: var(--cw-text-main);' }, '正在读取当前配置…')
+            ]);
+            chatWindow.appendChild(card);
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+
+            callGetNetworkTune().then(res => {
+                const list = card.querySelector('.tune-list');
+                const actions = (res && res.actions) || [];
+                list.innerHTML = '';
+                if (!actions.length) {
+                    list.textContent = '当前网络和无线配置已经在建议值上，没有需要改的项。';
+                    return;
+                }
+                actions.forEach(item => {
+                    list.appendChild(E('div', {
+                        'style': 'padding: 8px 0; border-top: 1px solid var(--cw-border);'
+                    }, [
+                        E('div', { 'style': 'font-weight: 600;' }, item.title || item.id),
+                        E('div', { 'style': 'color: var(--cw-text-muted); margin-top: 2px;' }, (item.current || '') + ' → ' + (item.target || '')),
+                        E('div', { 'style': 'margin-top: 2px;' }, item.reason || '')
+                    ]));
+                });
+                const ids = actions.map(item => item.id).join(',');
+                list.appendChild(E('div', { 'style': 'display: flex; gap: 10px; margin-top: 12px;' }, [
+                    E('button', {
+                        'class': 'btn cbi-button cbi-button-apply',
+                        'style': 'background: #2563eb; color: #fff; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 13px;',
+                        'click': function(ev) {
+                            const btn = ev.target;
+                            btn.disabled = true;
+                            btn.textContent = '正在应用…';
+                            callApplyNetworkTune(ids).then(applyRes => {
+                                btn.textContent = (applyRes && applyRes.success) ? '已应用' : '未应用';
+                                appendMessage('assistant', (applyRes && applyRes.message) || '网络优化已结束。');
+                            }).catch(err => {
+                                btn.disabled = false;
+                                btn.textContent = '重试';
+                                appendMessage('assistant', '网络优化失败：' + err.message);
+                            });
+                        }
+                    }, '确认并应用'),
+                    E('button', {
+                        'class': 'btn cbi-button cbi-button-reset',
+                        'style': 'background: var(--cw-bg-secondary); color: var(--cw-text-main); border: 1px solid var(--cw-border); padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 13px;',
+                        'click': function() {
+                            card.remove();
+                            appendMessage('assistant', '已取消网络优化，配置保持原样。');
+                        }
+                    }, '取消')
+                ]));
+            }).catch(err => {
+                card.querySelector('.tune-list').textContent = '读取配置失败：' + err.message;
+            });
+        }
+
         // Append Hardware Acceleration Interactive Proposal Card
         function appendHwOffloadCard(param) {
             const isEnable = (param.enabled === '1' || param.enabled === true || param.mode === 'hw');
@@ -3429,6 +3528,11 @@ return view.extend({
                             } else if (fnName === 'propose_uci_change') {
                                 appendDiffCard(fnArgs);
                                 toolResult = { status: 'proposed_to_user', message: 'Proposal card rendered. Awaiting user click to apply.' };
+                            } else if (fnName === 'get_network_tune') {
+                                toolResult = await callGetNetworkTune();
+                            } else if (fnName === 'propose_network_optimize') {
+                                appendNetworkTuneCard(fnArgs);
+                                toolResult = { status: 'proposed_to_user', message: 'Network optimization card rendered. Waiting for user authorization.' };
                             } else if (fnName === 'get_hw_offload_status') {
                                 toolResult = await callGetHwOffloadStatus();
                             } else if (fnName === 'propose_hw_offload') {
