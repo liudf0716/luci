@@ -3,40 +3,51 @@
 'require dom';
 'require ui';
 'require form';
-'require rpc';
 'require uci';
 'require fs';
 'require poll';
 
-var callServiceList = rpc.declare({
-	object: 'service',
-	method: 'list',
-	params: [ 'name' ],
-	expect: { '': {} }
-});
+function pickStat(text, labels) {
+	for (var i = 0; i < labels.length; i++) {
+		var m = text.match(new RegExp(labels[i] + '\\s*:\\s*(\\d+)', 'i'));
+		if (m)
+			return parseInt(m[1], 10);
+	}
+	return 0;
+}
 
 function parseStats(statsText) {
 	var res = {
-		dnsIntercepted: 0,
 		dnsProxied: 0,
+		dnsPassed: 0,
+		dnsFailed: 0,
 		dnsLearned: 0,
-		tcpProxied: 0
+		tcpConns: 0,
+		tcpBytes: 0
 	};
 	if (!statsText) return res;
 
-	var m1 = statsText.match(/DNS Queries Intercepted\s*:\s*(\d+)/i);
-	if (m1) res.dnsIntercepted = parseInt(m1[1], 10);
-
-	var m2 = statsText.match(/DNS Queries Proxied\s*:\s*(\d+)/i);
-	if (m2) res.dnsProxied = parseInt(m2[1], 10);
-
-	var m3 = statsText.match(/DNS Responses Learned\s*:\s*(\d+)/i);
-	if (m3) res.dnsLearned = parseInt(m3[1], 10);
-
-	var m4 = statsText.match(/TCP Connections Proxied\s*:\s*(\d+)/i);
-	if (m4) res.tcpProxied = parseInt(m4[1], 10);
-
+	res.dnsProxied = pickStat(statsText, ['DNS Queries Proxied']);
+	res.dnsPassed = pickStat(statsText, ['DNS Queries Passed']);
+	res.dnsFailed = pickStat(statsText, ['DNS Forward Failed']);
+	res.dnsLearned = pickStat(statsText, ['DNS A Records Learned', 'DNS Responses Learned']);
+	res.tcpConns = pickStat(statsText, ['TCP Connections Steered', 'TCP Connections Proxied']);
+	res.tcpBytes = pickStat(statsText, ['TCP Bytes Steered']);
+	if (!res.dnsProxied)
+		res.dnsProxied = pickStat(statsText, ['DNS Queries Intercepted']);
 	return res;
+}
+
+function formatBytes(n) {
+	n = parseInt(n, 10) || 0;
+	if (n < 1024) return n + ' B';
+	if (n < 1048576) return (n / 1024).toFixed(1) + ' KB';
+	if (n < 1073741824) return (n / 1048576).toFixed(1) + ' MB';
+	return (n / 1073741824).toFixed(2) + ' GB';
+}
+
+function isIpv4(s) {
+	return /^(\d{1,3}\.){3}\d{1,3}$/.test(s || '');
 }
 
 function parseDomains(domainsText) {
@@ -72,10 +83,21 @@ function parseIps(ipsText) {
 			continue;
 
 		var parts = line.split(/\s+/);
-		if (parts.length >= 1 && parts[0].indexOf('.') !== -1) {
+		if (isIpv4(parts[1])) {
 			list.push({
+				domain: parts[0] === '-' ? '' : parts[0],
+				ip: parts[1],
+				expires: parts[2] || '0s',
+				conns: parts[3] || '0',
+				bytes: parts[5] || '0'
+			});
+		} else if (isIpv4(parts[0])) {
+			list.push({
+				domain: '',
 				ip: parts[0],
-				expires: parts[1] || '0s'
+				expires: parts[1] || '0s',
+				conns: '0',
+				bytes: '0'
 			});
 		}
 	}
@@ -93,11 +115,19 @@ function parseSessions(sessionsText) {
 			continue;
 
 		var parts = line.split(/\s+/);
-		if (parts.length >= 2) {
+		if (parts.length >= 3 && !isIpv4((parts[0] || '').split(':')[0]) && isIpv4((parts[1] || '').split(':')[0])) {
 			list.push({
+				site: parts[0] === '-' ? '' : parts[0],
+				client: parts[1],
+				target: parts[2],
+				lastSeen: parts.slice(3).join(' ')
+			});
+		} else if (parts.length >= 2 && isIpv4((parts[0] || '').split(':')[0])) {
+			list.push({
+				site: '',
 				client: parts[0],
 				target: parts[1],
-				lastSeen: parts[2] || '-'
+				lastSeen: parts.slice(2).join(' ')
 			});
 		}
 	}
@@ -109,7 +139,7 @@ return view.extend({
 		return Promise.all([
 			uci.load('xdns'),
 			uci.load('network'),
-			L.resolveDefault(callServiceList('xdns'), {}),
+			L.resolveDefault(fs.exec_direct('/usr/bin/xdns-ctl', ['status']), ''),
 			L.resolveDefault(fs.exec_direct('/usr/bin/xdns-ctl', ['stats']), ''),
 			L.resolveDefault(fs.exec_direct('/usr/bin/xdns-ctl', ['list-domains']), ''),
 			L.resolveDefault(fs.exec_direct('/usr/bin/xdns-ctl', ['list-ips']), ''),
@@ -118,129 +148,224 @@ return view.extend({
 		]);
 	},
 
-	renderStatusTab: function(svcData, statsText, ipsText, sessionsText, domainsCount) {
+	renderStatusTab: function(statusText, statsText, ipsText, sessionsText, domainsCount) {
 		var self = this;
 		var stats = parseStats(statsText);
 		var ips = parseIps(ipsText);
 		var sessions = parseSessions(sessionsText);
 
-		var isRunning = false;
-		var pid = null;
-		try {
-			var inst = svcData && svcData.xdns && svcData.xdns.instances;
-			if (inst) {
-				for (var k in inst) {
-					if (inst[k] && inst[k].running) {
-						isRunning = true;
-						pid = inst[k].pid;
-						break;
-					}
-				}
-			}
-		} catch(e) {}
+		/* Attached tc programs, not a procd process. xdns exits after loading BPF. */
+		var isRunning = /Running\s*:\s*yes/i.test(statusText || '');
 
-		// Service status badge
 		var svcBadge = E('span', {
 			'class': 'label ' + (isRunning ? 'success' : 'neutral'),
 			'style': 'padding: 4px 10px; border-radius: 4px; font-weight: bold; font-size: 90%; color: #fff; background-color: ' + (isRunning ? '#28a745' : '#6c757d') + ';'
-		}, isRunning ? (_('RUNNING') + (pid ? ' (PID ' + pid + ')' : '')) : _('NOT RUNNING'));
+		}, isRunning ? _('运行中') : _('未运行'));
+
+		var nameByIp = {};
+		var bySite = {};
+		ips.forEach(function(item) {
+			if (item.ip && item.domain)
+				nameByIp[item.ip] = item.domain;
+			if (!item.domain && !(parseInt(item.bytes, 10) || 0) && !(parseInt(item.conns, 10) || 0))
+				return;
+			var key = item.domain || item.ip || '?';
+			if (!bySite[key]) {
+				bySite[key] = {
+					domain: item.domain || '',
+					ips: [],
+					bytes: 0,
+					conns: 0,
+					expires: parseInt(item.expires, 10) || 0
+				};
+			}
+			var g = bySite[key];
+			if (item.ip && g.ips.indexOf(item.ip) < 0)
+				g.ips.push(item.ip);
+			g.bytes += parseInt(item.bytes, 10) || 0;
+			g.conns += parseInt(item.conns, 10) || 0;
+			var exp = parseInt(item.expires, 10) || 0;
+			if (exp > g.expires)
+				g.expires = exp;
+		});
+		var sites = Object.keys(bySite).map(function(k) { return bySite[k]; });
+		sites.sort(function(a, b) { return b.bytes - a.bytes; });
+
+		function rememberText(sec) {
+			sec = parseInt(sec, 10) || 0;
+			if (sec <= 0)
+				return _('即将重新查询');
+			if (sec < 60)
+				return sec + _(' 秒');
+			if (sec < 3600)
+				return Math.round(sec / 60) + _(' 分钟');
+			return Math.round(sec / 3600) + _(' 小时');
+		}
+
+		function siteCell(site) {
+			var title = site.domain || _('还没记到网站名');
+			var extra = '';
+			if (site.domain && site.ips.length > 1)
+				extra = site.ips.length + _(' 台服务器');
+			return E('div', {}, [
+				E('div', { 'style': 'font-weight: 650; font-size: 15px;' }, title),
+				extra ? E('div', { 'style': 'color: #888; font-size: 12px; margin-top: 2px;' }, extra) : ''
+			]);
+		}
 
 		// KPI Cards
 		var kpiRow = E('div', {
 			'style': 'display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 15px 0 25px 0;'
 		}, [
 			E('div', { 'class': 'cbi-value', 'style': 'background: var(--cbi-section-bg, #f8f9fa); border: 1px solid #ddd; border-radius: 8px; padding: 15px; text-align: center;' }, [
-				E('div', { 'style': 'font-size: 13px; color: #666; margin-bottom: 5px;' }, _('累计拦截 DNS 查询')),
-				E('div', { 'style': 'font-size: 26px; font-weight: bold; color: #007bff;' }, String(stats.dnsIntercepted))
-			]),
-			E('div', { 'class': 'cbi-value', 'style': 'background: var(--cbi-section-bg, #f8f9fa); border: 1px solid #ddd; border-radius: 8px; padding: 15px; text-align: center;' }, [
-				E('div', { 'style': 'font-size: 13px; color: #666; margin-bottom: 5px;' }, _('累计命中分流域名')),
+				E('div', { 'style': 'font-size: 13px; color: #666; margin-bottom: 5px;' }, _('走加速通道的网站查询')),
 				E('div', { 'style': 'font-size: 26px; font-weight: bold; color: #28a745;' }, String(stats.dnsProxied))
 			]),
 			E('div', { 'class': 'cbi-value', 'style': 'background: var(--cbi-section-bg, #f8f9fa); border: 1px solid #ddd; border-radius: 8px; padding: 15px; text-align: center;' }, [
-				E('div', { 'style': 'font-size: 13px; color: #666; margin-bottom: 5px;' }, _('当前活跃目标 IP')),
-				E('div', { 'style': 'font-size: 26px; font-weight: bold; color: #fd7e14;' }, String(ips.length))
+				E('div', { 'style': 'font-size: 13px; color: #666; margin-bottom: 5px;' }, _('直接上网的网站查询')),
+				E('div', { 'style': 'font-size: 26px; font-weight: bold; color: #007bff;' }, String(stats.dnsPassed))
 			]),
 			E('div', { 'class': 'cbi-value', 'style': 'background: var(--cbi-section-bg, #f8f9fa); border: 1px solid #ddd; border-radius: 8px; padding: 15px; text-align: center;' }, [
-				E('div', { 'style': 'font-size: 13px; color: #666; margin-bottom: 5px;' }, _('内核生效域名数')),
+				E('div', { 'style': 'font-size: 13px; color: #666; margin-bottom: 5px;' }, _('正在加速的网站')),
+				E('div', { 'style': 'font-size: 26px; font-weight: bold; color: #fd7e14;' }, String(sites.length))
+			]),
+			E('div', { 'class': 'cbi-value', 'style': 'background: var(--cbi-section-bg, #f8f9fa); border: 1px solid #ddd; border-radius: 8px; padding: 15px; text-align: center;' }, [
+				E('div', { 'style': 'font-size: 13px; color: #666; margin-bottom: 5px;' }, _('加速通道流量')),
+				E('div', { 'style': 'font-size: 26px; font-weight: bold; color: #17a2b8;' }, formatBytes(stats.tcpBytes))
+			]),
+			E('div', { 'class': 'cbi-value', 'style': 'background: var(--cbi-section-bg, #f8f9fa); border: 1px solid #ddd; border-radius: 8px; padding: 15px; text-align: center;' }, [
+				E('div', { 'style': 'font-size: 13px; color: #666; margin-bottom: 5px;' }, _('分流名单中的网站')),
 				E('div', { 'style': 'font-size: 26px; font-weight: bold; color: #6f42c1;' }, String(domainsCount))
-			]),
-			E('div', { 'class': 'cbi-value', 'style': 'background: var(--cbi-section-bg, #f8f9fa); border: 1px solid #ddd; border-radius: 8px; padding: 15px; text-align: center;' }, [
-				E('div', { 'style': 'font-size: 13px; color: #666; margin-bottom: 5px;' }, _('累计代理 TCP 连接')),
-				E('div', { 'style': 'font-size: 26px; font-weight: bold; color: #17a2b8;' }, String(stats.tcpProxied))
 			])
 		]);
 
-		// Dynamic IP Table
+		function td(content, title) {
+			var attrs = {
+				'class': 'td left',
+				'style': 'text-align:left !important'
+			};
+			if (title)
+				attrs['data-title'] = title;
+			return E('td', attrs, content);
+		}
+
 		var ipTableRows = [
 			E('tr', { 'class': 'tr table-titles' }, [
-				E('th', { 'class': 'th left' }, _('目标 IP 地址 (Dynamic IP)')),
-				E('th', { 'class': 'th left' }, _('剩余过期时间 (Expires In)'))
+				E('th', { 'class': 'th left', 'style': 'text-align:left' }, _('网站')),
+				E('th', { 'class': 'th left', 'style': 'text-align:left' }, _('加速流量')),
+				E('th', { 'class': 'th left', 'style': 'text-align:left' }, _('连接数')),
+				E('th', { 'class': 'th left', 'style': 'text-align:left' }, _('还会记住'))
 			])
 		];
 
-		if (ips.length === 0) {
+		if (sites.length === 0) {
 			ipTableRows.push(E('tr', { 'class': 'tr placeholder' }, [
-				E('td', { 'class': 'td', 'colspan': '2' }, E('em', {}, _('当前暂无活跃的动态目标 IP 缓存（访问分流域名后将自动自学习生成）')))
+				E('td', { 'class': 'td left', 'style': 'text-align:left !important', 'colspan': '4' }, E('em', {}, _('还没有网站走加速通道。打开分流名单里的网站后，这里会显示网站名称。')))
 			]));
 		} else {
-			ips.forEach(function(item) {
+			sites.forEach(function(site) {
 				ipTableRows.push(E('tr', { 'class': 'tr' }, [
-					E('td', { 'class': 'td' }, E('code', { 'style': 'font-size: 110%;' }, item.ip)),
-					E('td', { 'class': 'td' }, E('span', { 'class': 'badge' }, item.expires))
+					td(siteCell(site), _('网站')),
+					td(formatBytes(site.bytes), _('加速流量')),
+					td(String(site.conns || 0), _('连接数')),
+					td(rememberText(site.expires), _('还会记住'))
 				]));
 			});
 		}
 
 		var ipSection = E('div', { 'class': 'cbi-section', 'style': 'margin-top: 25px;' }, [
 			E('div', { 'style': 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;' }, [
-				E('h3', { 'style': 'margin: 0;' }, [ _('⚡ 动态自学习目标 IP 表 (xdns_ip_set)'), ' (', String(ips.length), ')' ]),
+				E('h3', { 'style': 'margin: 0;' }, [ _('正在走加速通道的网站'), ' (', String(sites.length), ')' ]),
 				E('button', {
 					'class': 'btn cbi-button cbi-button-remove',
 					'click': function(ev) {
 						var btn = ev.target.closest('button');
 						btn.disabled = true;
 						fs.exec_direct('/usr/bin/xdns-ctl', ['clear-ips']).then(function() {
-							ui.addTimeLimitedNotification(null, E('p', _('已成功清空内核 xdns_ip_set 缓存！')), 3000, 'info');
+							ui.addTimeLimitedNotification(null, E('p', _('已清除记住的网站，下次访问会重新学习。')), 3000, 'info');
 							location.reload();
 						}).catch(function(err) {
 							btn.disabled = false;
 							ui.addNotification(null, E('p', _('清空失败: %s').format(err.message || err)), 'error');
 						});
 					}
-				}, [ '🧹 ', _('一键清空 IP 缓存') ])
+				}, _('清除记住的网站'))
 			]),
-			E('p', { 'class': 'cbi-section-descr' }, _('内网发起分流域名的 DNS 查询并获得响应后，真实目标 IP 将由 eBPF 自动学习并写入该内核表，并随 DNS TTL 自动老化，驱动后续 TCP 握手直通加速隧道。')),
+			E('p', { 'class': 'cbi-section-descr' }, _('这些网站的访问会进入网络加速通道。网站名来自刚才的 DNS 查询，下面的地址是实际连过去的服务器。过期后需要重新访问才会再出现。')),
+			E('style', {}, '#xdns-ips-table .th, #xdns-ips-table .td, #xdns-sessions .th, #xdns-sessions .td { text-align: left !important; }'),
 			E('table', { 'class': 'table', 'id': 'xdns-ips-table' }, ipTableRows)
 		]);
 
-		// TCP Sessions Table
+		function hostOf(endpoint) {
+			var s = endpoint || '';
+			var i = s.lastIndexOf(':');
+			if (i > 0 && /^\d+$/.test(s.slice(i + 1)))
+				return s.slice(0, i);
+			return s;
+		}
+
+		function ageSeconds(text) {
+			var m = String(text || '').match(/(\d+)\s*s/);
+			return m ? parseInt(m[1], 10) : 0;
+		}
+
+		var sessionGroups = {};
+		sessions.forEach(function(s) {
+			var who = hostOf(s.client) || _('未知设备');
+			var tip = hostOf(s.target);
+			var site = s.site || nameByIp[tip] || '';
+			var key = who + '\n' + (site || tip || '-');
+			var age = ageSeconds(s.lastSeen);
+			if (!sessionGroups[key]) {
+				sessionGroups[key] = { who: who, site: site, conns: 0, age: age, lastSeen: s.lastSeen || '' };
+			}
+			var g = sessionGroups[key];
+			g.conns++;
+			if (age < g.age) {
+				g.age = age;
+				g.lastSeen = s.lastSeen || '';
+			}
+		});
+		var sessionRows = Object.keys(sessionGroups).map(function(k) { return sessionGroups[k]; });
+		sessionRows.sort(function(a, b) { return a.age - b.age; });
+		var sessionLimit = 20;
+		var sessionShown = sessionRows.slice(0, sessionLimit);
+		var sessionHidden = sessionRows.length - sessionShown.length;
+
 		var sessionTableRows = [
 			E('tr', { 'class': 'tr table-titles' }, [
-				E('th', { 'class': 'th left' }, _('客户端地址 (Client Endpoint)')),
-				E('th', { 'class': 'th left' }, _('原始目标地址 (Original Target)')),
-				E('th', { 'class': 'th left' }, _('最后活跃时间 (Last Seen)'))
+				E('th', { 'class': 'th left', 'style': 'text-align:left' }, _('谁在访问')),
+				E('th', { 'class': 'th left', 'style': 'text-align:left' }, _('正在加速的网站')),
+				E('th', { 'class': 'th left', 'style': 'text-align:left' }, _('连接数')),
+				E('th', { 'class': 'th left', 'style': 'text-align:left' }, _('最近活动'))
 			])
 		];
 
-		if (sessions.length === 0) {
+		if (sessionRows.length === 0) {
 			sessionTableRows.push(E('tr', { 'class': 'tr placeholder' }, [
-				E('td', { 'class': 'td', 'colspan': '3' }, E('em', {}, _('当前暂无活跃的 TCP 并发会话（短连接传输完成后已由内核自动释放）')))
+				E('td', { 'class': 'td left', 'style': 'text-align:left !important', 'colspan': '4' }, E('em', {}, _('当前没有正在加速的连接。网页打开后这里会短暂出现，传输结束就会消失。')))
 			]));
 		} else {
-			sessions.forEach(function(s) {
+			sessionShown.forEach(function(g) {
 				sessionTableRows.push(E('tr', { 'class': 'tr' }, [
-					E('td', { 'class': 'td' }, E('code', {}, s.client)),
-					E('td', { 'class': 'td' }, E('code', {}, s.target)),
-					E('td', { 'class': 'td' }, s.lastSeen)
+					td(g.who, _('谁在访问')),
+					td(E('div', { 'style': 'font-weight:650; font-size:15px; text-align:left !important' }, g.site || _('还没记到网站名')), _('正在加速的网站')),
+					td(String(g.conns), _('连接数')),
+					td((g.lastSeen || '').replace('ago', _('前')), _('最近活动'))
 				]));
 			});
+			if (sessionHidden > 0) {
+				sessionTableRows.push(E('tr', { 'class': 'tr' }, [
+					E('td', { 'class': 'td left', 'style': 'text-align:left !important', 'colspan': '4' },
+						_('还有 %s 组连接没有展开，都是更早之前的活动。').format(String(sessionHidden)))
+				]));
+			}
 		}
 
 		var sessionSection = E('div', { 'class': 'cbi-section', 'style': 'margin-top: 25px;' }, [
-			E('h3', {}, [ _('🔗 当前活跃 TCP 代理会话 (实时并发)'), ' (', String(sessions.length), ')' ]),
-			E('p', { 'class': 'cbi-section-descr' }, _('实时展示此刻正在进行数据传输的并发 TCP 代理连接。连接关闭（FIN/RST）后由内核立即释放销毁；若当前无正在通信的长连接，则显示为 0。')),
-			E('table', { 'class': 'table' }, sessionTableRows)
+			E('h3', {}, [ _('此刻正在加速的连接'), ' (', String(sessionRows.length), ')' ]),
+			E('p', { 'class': 'cbi-section-descr' }, _('同一台设备访问同一个网站会合并成一行，并显示还有几条连接。连接断开后这一行会消失。')),
+			E('table', { 'class': 'table', 'id': 'xdns-sessions' }, sessionTableRows)
 		]);
 
 		return E('div', { 'class': 'cbi-section' }, [
@@ -421,7 +546,7 @@ return view.extend({
 
 	render: function(data) {
 		var self = this;
-		var svcData = data[2] || {};
+		var statusText = data[2] || '';
 		var statsText = data[3] || '';
 		var domainsText = data[4] || '';
 		var ipsText = data[5] || '';
@@ -478,7 +603,7 @@ return view.extend({
 			// Tabs Container
 			var tabsContainer = E('div', {}, [
 				E('div', { 'class': 'cbi-section', 'data-tab': 'status', 'data-tab-title': _('运行状态与统计'), 'data-tab-active': 'true' }, [
-					self.renderStatusTab(svcData, statsText, ipsText, sessionsText, domainsList.length)
+					self.renderStatusTab(statusText, statsText, ipsText, sessionsText, domainsList.length)
 				]),
 				E('div', { 'class': 'cbi-section', 'data-tab': 'domains', 'data-tab-title': _('分流域名规则管治') }, [
 					self.renderDomainsTab(domainsList, fileContent)
