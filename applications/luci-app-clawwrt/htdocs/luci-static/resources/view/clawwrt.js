@@ -34,6 +34,19 @@ const callSetWifiConfig = rpc.declare({
     expect: { result: {} }
 });
 
+const callGetWifiRoaming = rpc.declare({
+    object: 'luci.clawwrt',
+    method: 'get_wifi_roaming',
+    expect: { result: {} }
+});
+
+const callSetWifiRoaming = rpc.declare({
+    object: 'luci.clawwrt',
+    method: 'set_wifi_roaming',
+    params: [ 'band', 'mode', 'mobility_domain', 'ft_over_ds', 'ft_psk_generate_local', 'usteer_enabled' ],
+    expect: { result: {} }
+});
+
 const callGetNetworkTune = rpc.declare({
     object: 'luci.clawwrt',
     method: 'get_network_tune',
@@ -501,6 +514,32 @@ const routerTools = [
     {
         type: 'function',
         function: {
+            name: 'get_wifi_roaming',
+            description: '获取路由器 Wi-Fi 802.11k/v/r 无缝漫游配置与协议运行状态：包括 hostapd 满血漫游支持度、usteer 智能调度大脑运行状态、各频段 (2.4G/5G) 漫游参数 (802.11k RRM 邻居/信标报告、802.11v BSS Transition 弱信号转移、802.11r FT 快速漫游与 Mobility Domain 移动域 ID)',
+            parameters: { type: 'object', properties: {} }
+        }
+    },
+    {
+        type: 'function',
+        function: {
+            name: 'propose_wifi_roaming',
+            description: '向用户提议开启、关闭或调整 Wi-Fi 802.11k/v/r 无缝漫游配置（如开启满血 802.11k/v/r 15ms 瞬移漫游、仅开启 802.11k/v 基础漫游以兼容老旧 IoT 智能家居设备、修改 Mobility Domain 移动域 ID、或联动开关 usteer 弱信号调度守护），前端将渲染直观的可视化授权卡片供用户确认，不会私自直接修改',
+            parameters: {
+                type: 'object',
+                properties: {
+                    band: { type: 'string', enum: ['all', '2.4G', '5G'], description: '生效频段：all (双频推荐), 2.4G, 或 5G' },
+                    mode: { type: 'string', enum: ['full_kvr', 'kv_only', 'disable'], description: '漫游模式：full_kvr (满血 k/v/r，15ms 瞬移破门), kv_only (仅 k/v 兼顾老旧 IoT), disable (关闭漫游)' },
+                    mobility_domain: { type: 'string', description: '802.11r 移动域 ID (4位十六进制字符，如 e1a0，组网内所有 AP 必须保持完全相同)' },
+                    usteer_enabled: { type: 'string', enum: ['1', '0'], description: '是否同时启用 usteer 弱信号剔除与频段引导智能调度守护 (1: 启用, 0: 停用)' },
+                    explanation: { type: 'string', description: '向用户通俗解释开启或调整漫游的原因及体验收益（如解决移动时断网、微信语音卡顿、游戏团战丢包等）' }
+                },
+                required: ['mode']
+            }
+        }
+    },
+    {
+        type: 'function',
+        function: {
             name: 'get_qos_status',
             description: '查询路由器当前基于内核 eBPF 的实时设备流量与智能流控状态：包括各连接设备的实时下行/上行速率（以 Mbps 及 MB/s 呈现）、MAC 地址、主机名、累计上下行流量、当前限速规则（Mbps）及定时限速时段，以及 eBPF 引擎运行状态、FastPath 硬件加速与 xDPI L7 识别状态',
             parameters: { type: 'object', properties: {} }
@@ -710,7 +749,7 @@ const systemPrompt = `你是一个专业的 OpenWrt / chaWrt 路由器专属 AI 
    - 网络加速 (xkcptun)：纯 C 抗丢包加速引擎，支持开启/关闭、配置加速节点 (remote_addr)、端口 (remote_port)、模式 (mode)、密钥 (key)、前向纠错 (fec)、发送/接收窗口 (sndwnd/rcvwnd)；支持深度检测与实时测量节点 RTT 往返延迟 (ping_ms)、查看所有活跃加速隧道与实时加速连接目标 (get_service_detail('xkcptun'))；支持通过 manage_xkcptun_tunnel 管理具体加速隧道（查询列表 action: "list"、新增/修改 action: "add"、启用 action: "enable"、停用 action: "disable"、删除 action: "remove"，支持 transparent redir 与 forward 端口转发等各种端口与目标）；
    - 智能分流 (xdns)：基于 Linux 内核 TC-eBPF 动态智能分流，在 br-lan 网卡挂载 TC ingress pref 5 与 egress pref 10 双向探针，自动拦截分流域名并重定向至 xkcptun 隧道；支持查询当前 DNS 拦截数、代理数、学习应答数与 TCP 代理连接数、内核动态劫持 IP 表及活跃会话 (get_service_detail('xdns'))；支持全能分流管理 (manage_xdns_domain)：查询加速域名及内核状态 (action: "list")、添加域名 (action: "add")、删除域名 (action: "remove")、清空内核动态 IP 缓存 (action: "clear_ips")、重载规则文件 (action: "reload")、查看内核劫持 IP 列表 (action: "list_ips")、查看活跃代理会话 (action: "list_sessions")、统计数据 (action: "stats")；
    - StrongSwan IPsec VPN (ipsec)：企业级加密隧道，支持开启/关闭、配置对端网关 (gateway) 与预共享密钥 (key)；
-   - 无线 WiFi 托管：支持查询与修改 WiFi 名称密码 (get_wifi_info, propose_wifi_config)。
+   - 无线 WiFi 与 802.11k/v/r 无缝漫游：支持查询 WiFi 状态与修改名称密码 (get_wifi_info, propose_wifi_config)；特别支持专业级 Wi-Fi 802.11k/v/r 无缝漫游与 usteer 调度状态查询与配置提议 (get_wifi_roaming, propose_wifi_roaming)。深度融合 802.11k (RRM 邻居测量避免盲扫)、802.11v (BSS Transition 弱信号主动转移避免死咬) 与 802.11r (FT Fast BSS Transition 搭便车 15ms 瞬移破门)，支持配置满血 full_kvr、老旧设备兼容模式 kv_only、修改统一的 Mobility Domain 移动域 ID 以及一键开启/停用漫游；
    - 网络优化：用户要求优化网络、无线或整体上网体验时，先调用 get_network_tune 读取网络与无线现状，再调用 propose_network_optimize 生成确认卡片。不改 SSID、密码、信道和国家码。用户确认前不得宣称已经优化。
 
 4. 【操作与输出规范】：
@@ -736,7 +775,8 @@ const systemPrompt = `你是一个专业的 OpenWrt / chaWrt 路由器专属 AI 
      ①【L7 应用协议实时流速排行榜 Top 10】（应用协议、中文说明、即时总流速、下行流速、上行流速、累计总流量）；
      ②【实时高流速服务与域名 Top 10】（服务/域名、中文说明、类型、实时流速、累计流量）；
      ③【高频访问域名 Top 10】（域名、中文名称、访问频次）；
-   - 凡涉及 VPS 部署、开启/关闭硬件加速、设置/解除限速、修改 WiFi 或服务参数、添加/删除分流域名、添加/删除白名单 MAC、新增/停用/启用/删除穿透规则，必须通过对应的提议/管理工具生成可视化卡片供用户点击确认！
+   - 当用户询问无线漫游、802.11k/v/r、走动断网或弱信号切换时，调用 get_wifi_roaming 查询状态；当用户需要开启或调整漫游时，调用 propose_wifi_roaming 生成确认卡片；
+   - 凡涉及 VPS 部署、开启/关闭硬件加速、设置/解除限速、修改 WiFi 或漫游配置、服务参数、添加/删除分流域名、添加/删除白名单 MAC、新增/停用/启用/删除穿透规则，必须通过对应的提议/管理工具生成可视化卡片供用户点击确认！
 5. 【回答风格】：亲切自然、通俗易懂，结论先行，再提供结构清晰的 Markdown 表格说明或建议。`;
 
 var marked = (function(){var exports={};var __exports=exports;var module={exports};
@@ -2177,6 +2217,153 @@ return view.extend({
             chatWindow.scrollTop = chatWindow.scrollHeight;
         }
 
+        function appendWifiRoamingCard(param) {
+            const rawBand = param.band || 'all';
+            const bandLabel = (rawBand === '2.4G' || rawBand === '2g') ? '2.4G 专属' : (rawBand === '5G' || rawBand === '5g') ? '5G 专属' : '双频全开 (推荐)';
+            const initialMode = param.mode || 'full_kvr';
+            const initialMd = param.mobility_domain || 'e1a0';
+            const initialUsteer = (param.usteer_enabled !== '0');
+            
+            const card = E('div', {
+                'class': 'wifi-roaming-card',
+                'style': 'background: var(--cw-bg-card); border: 2px solid #06b6d4; border-radius: 12px; padding: 16px 20px; margin: 12px 0; box-shadow: var(--cw-card-shadow);'
+            }, [
+                E('div', { 'style': 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px;' }, [
+                    E('div', { 'style': 'font-weight: 700; font-size: 15px; color: #0891b2; display: flex; align-items: center; gap: 8px;' }, [
+                        E('span', { 'style': 'font-size: 18px;' }, '🔄'),
+                        E('span', {}, 'Wi-Fi 802.11k/v/r 无缝漫游配置授权')
+                    ]),
+                    E('span', { 'style': 'background: #cffafe; color: #0e7490; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 600;' }, bandLabel)
+                ]),
+                E('div', { 'style': 'font-size: 13px; color: var(--cw-text-sub); margin-bottom: 12px;' }, param.explanation || '启用 802.11k/v/r 协议栈与 usteer 智能协同，使手机/电脑在多频段或多 AP 间移动时实现 15ms 零感瞬移，彻底消除游戏丢包与语音卡顿。'),
+                
+                // Form Fields
+                E('div', { 'style': 'display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;' }, [
+                    E('div', {}, [
+                        E('label', { 'style': 'display: block; font-size: 12px; font-weight: 600; color: var(--cw-text-main); margin-bottom: 4px;' }, '漫游协议模式:'),
+                        E('select', {
+                            'id': 'roam-card-mode',
+                            'class': 'cbi-input-select',
+                            'style': 'width: 100%; border: 1px solid var(--cw-border); background: var(--cw-input-bg); color: var(--cw-input-text); border-radius: 6px; padding: 6px 10px; font-size: 13px;',
+                            'change': function(ev) {
+                                const mdGroup = card.querySelector('#roam-md-group');
+                                if (ev.target.value === 'full_kvr') {
+                                    mdGroup.style.display = 'block';
+                                } else {
+                                    mdGroup.style.display = 'none';
+                                }
+                            }
+                        }, [
+                            E('option', { 'value': 'full_kvr', 'selected': (initialMode === 'full_kvr' ? '' : null) }, '⚡ 满血 802.11k/v/r (15ms 瞬移破门)'),
+                            E('option', { 'value': 'kv_only', 'selected': (initialMode === 'kv_only' ? '' : null) }, '🛡️ 基础 802.11k/v (老旧 IoT 设备兼容)'),
+                            E('option', { 'value': 'disable', 'selected': (initialMode === 'disable' ? '' : null) }, '⛔ 关闭无缝漫游')
+                        ])
+                    ]),
+                    E('div', {}, [
+                        E('label', { 'style': 'display: block; font-size: 12px; font-weight: 600; color: var(--cw-text-main); margin-bottom: 4px;' }, '生效频段范围:'),
+                        E('select', {
+                            'id': 'roam-card-band',
+                            'class': 'cbi-input-select',
+                            'style': 'width: 100%; border: 1px solid var(--cw-border); background: var(--cw-input-bg); color: var(--cw-input-text); border-radius: 6px; padding: 6px 10px; font-size: 13px;'
+                        }, [
+                            E('option', { 'value': 'all', 'selected': (rawBand === 'all' ? '' : null) }, '双频同步全开 (2.4G + 5G 推荐)'),
+                            E('option', { 'value': '5G', 'selected': (rawBand === '5G' || rawBand === '5g' ? '' : null) }, '仅 5GHz 高速频段 (5G 专属)'),
+                            E('option', { 'value': '2.4G', 'selected': (rawBand === '2.4G' || rawBand === '2g' ? '' : null) }, '仅 2.4GHz 频段 (2.4G 专属)')
+                        ])
+                    ])
+                ]),
+                
+                // Mobility Domain & usteer row
+                E('div', { 'style': 'display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;' }, [
+                    E('div', {
+                        'id': 'roam-md-group',
+                        'style': (initialMode === 'full_kvr') ? 'display: block;' : 'display: none;'
+                    }, [
+                        E('label', { 'style': 'display: block; font-size: 12px; font-weight: 600; color: var(--cw-text-main); margin-bottom: 4px;' }, '802.11r 移动域 (Mobility Domain, 4位Hex):'),
+                        E('input', {
+                            'id': 'roam-card-md',
+                            'type': 'text',
+                            'class': 'cbi-input-text',
+                            'style': 'width: 100%; border: 1px solid var(--cw-border); background: var(--cw-input-bg); color: var(--cw-input-text); border-radius: 6px; padding: 6px 10px; font-size: 13px; font-family: monospace;',
+                            'value': initialMd,
+                            'maxlength': 4
+                        })
+                    ]),
+                    E('div', { 'style': 'display: flex; align-items: center; margin-top: 18px;' }, [
+                        E('label', { 'style': 'font-size: 13px; color: var(--cw-text-main); cursor: pointer; display: flex; align-items: center; gap: 6px;' }, [
+                            E('input', {
+                                'id': 'roam-card-usteer',
+                                'type': 'checkbox',
+                                'checked': initialUsteer ? '' : null
+                            }),
+                            E('span', { 'style': 'font-weight: 600;' }, '联动启用 usteer 弱信号调度守护')
+                        ])
+                    ])
+                ]),
+                
+                // Technical highlights note
+                E('div', {
+                    'style': 'background: var(--cw-bg-subtle); border-left: 4px solid #06b6d4; padding: 8px 12px; font-size: 12px; color: var(--cw-text-main); border-radius: 0 6px 6px 0; margin-bottom: 14px; line-height: 1.6;'
+                }, [
+                    E('div', { 'style': 'font-weight: 700; color: #0891b2; margin-bottom: 2px;' }, '💡 协议技术收益说明：'),
+                    E('div', {}, '• 802.11k 邻居报告：手机主动获取周围 AP 信道表，避免全信道逐个盲扫 (由 3~5 秒盲扫缩短至 10ms)；'),
+                    E('div', {}, '• 802.11v BSS 转移：路由器协同探测弱信号主动引导手机转移，告别死咬弱信号不放；'),
+                    E('div', {}, '• 802.11r FT 极速破门：在 Reassoc 阶段内嵌分发 GTK 密钥搭便车，将 8 步四次握手缩减至 4 步 (15ms 瞬移开门)。')
+                ]),
+                
+                // Action Buttons
+                E('div', { 'style': 'display: flex; gap: 10px;' }, [
+                    E('button', {
+                        'class': 'btn cbi-button cbi-button-apply',
+                        'style': 'background: #0891b2; color: #fff; border: none; padding: 8px 20px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;',
+                        'click': function(ev) {
+                            const btn = ev.target;
+                            const curMode = card.querySelector('#roam-card-mode').value;
+                            const curBand = card.querySelector('#roam-card-band').value;
+                            const curMd = card.querySelector('#roam-card-md').value.trim();
+                            const curUsteer = card.querySelector('#roam-card-usteer').checked ? '1' : '0';
+                            
+                            if (curMode === 'full_kvr' && curMd.length !== 4) {
+                                alert('Mobility Domain 必须为 4 位十六进制字符（例如: e1a0）！');
+                                return;
+                            }
+                            
+                            btn.disabled = true;
+                            btn.innerText = '⏳ 正在写入漫游配置并热重载无线...';
+                            
+                            callSetWifiRoaming(curBand, curMode, curMd, '0', '1', curUsteer).then(res => {
+                                if (res && res.success) {
+                                    btn.innerText = '✅ 漫游配置已生效';
+                                    btn.style.background = '#16a34a';
+                                    card.style.borderColor = '#16a34a';
+                                    
+                                    const modeName = (curMode === 'full_kvr') ? '满血 802.11k/v/r (15ms 极速瞬移)' : (curMode === 'kv_only') ? '基础 802.11k/v 漫游 (兼容老设备)' : '已停用漫游';
+                                    appendMessage('assistant', `🎉 **Wi-Fi 无缝漫游配置已成功应用并立即生效！**\n\n• **生效频段**：${curBand === 'all' ? '双频 (2.4G + 5G)' : curBand}\n• **漫游模式**：${modeName}\n• **移动域 (Mobility Domain)**：\`${curMode === 'full_kvr' ? curMd : 'N/A'}\`\n• **usteer 智能调度守护**：${curUsteer === '1' ? '已运行并接入 BSS' : '已停用'}\n\n底层无线守护进程已完成热加载，现在携带手机在室内走动，即可体验毫秒级无缝漫游！`);
+                                } else {
+                                    btn.innerText = '❌ 修改失败: ' + (res.message || '未知错误');
+                                    btn.style.background = '#dc2626';
+                                }
+                            }).catch(err => {
+                                btn.innerText = '❌ 写入失败';
+                                appendMessage('assistant', `❌ 漫游配置写入失败: ${err.message}`);
+                            });
+                        }
+                    }, '✅ 确认并立即应用漫游配置'),
+                    E('button', {
+                        'class': 'btn cbi-button cbi-button-reset',
+                        'style': 'background: var(--cw-bg-secondary); color: var(--cw-text-main); border: 1px solid var(--cw-border); padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 13px;',
+                        'click': function() {
+                            card.remove();
+                            appendMessage('assistant', '已取消本次 Wi-Fi 漫游配置变更。现有漫游设置保持不变。');
+                        }
+                    }, '❌ 取消')
+                ])
+            ]);
+            
+            chatWindow.appendChild(card);
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+
         function appendQosCard(param) {
             const targetIp = param.target || '';
             const isAll = (targetIp === 'all');
@@ -3521,6 +3708,11 @@ return view.extend({
                             } else if (fnName === 'propose_wifi_config') {
                                 appendWifiCard(fnArgs);
                                 toolResult = { status: 'proposed_to_user', message: 'WiFi configuration card rendered in UI. Waiting for user authorization.' };
+                            } else if (fnName === 'get_wifi_roaming') {
+                                toolResult = await callGetWifiRoaming();
+                            } else if (fnName === 'propose_wifi_roaming') {
+                                appendWifiRoamingCard(fnArgs);
+                                toolResult = { status: 'proposed_to_user', message: 'Wi-Fi roaming configuration card rendered in UI. Waiting for user authorization.' };
                             } else if (fnName === 'run_diagnostics') {
                                 toolResult = await callRunDiagnostics(fnArgs.action, fnArgs.target);
                             } else if (fnName === 'uci_read') {

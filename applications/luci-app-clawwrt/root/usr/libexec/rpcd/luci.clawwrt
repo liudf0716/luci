@@ -82,6 +82,16 @@ case "$1" in
             json_add_string "key"
             json_add_string "enabled"
         json_close_object
+        json_add_object "get_wifi_roaming"
+        json_close_object
+        json_add_object "set_wifi_roaming"
+            json_add_string "band"
+            json_add_string "mode"
+            json_add_string "mobility_domain"
+            json_add_string "ft_over_ds"
+            json_add_string "ft_psk_generate_local"
+            json_add_string "usteer_enabled"
+        json_close_object
         json_add_object "get_network_tune"
         json_close_object
         json_add_object "apply_network_tune"
@@ -621,6 +631,10 @@ case "$1" in
                         local key=$(uci -q get wireless.${iface}.key)
                         local enc=$(uci -q get wireless.${iface}.encryption || echo 'psk2')
                         local dis=$(uci -q get wireless.${iface}.disabled || echo '0')
+                        local k_val=$(uci -q get wireless.${iface}.ieee80211k || echo '0')
+                        local v_val=$(uci -q get wireless.${iface}.ieee80211v || echo '0')
+                        local r_val=$(uci -q get wireless.${iface}.ieee80211r || echo '0')
+                        local mdom=$(uci -q get wireless.${iface}.mobility_domain || echo '')
                         
                         json_add_object
                         json_add_string "radio" "$rad"
@@ -631,6 +645,10 @@ case "$1" in
                         json_add_string "encryption" "$enc"
                         json_add_string "channel" "$channel"
                         json_add_boolean "enabled" "$([ "$dis" = "0" ] && echo 1 || echo 0)"
+                        json_add_boolean "ieee80211k" "$([ "$k_val" = "1" ] && echo 1 || echo 0)"
+                        json_add_boolean "ieee80211v" "$([ "$v_val" = "1" ] && echo 1 || echo 0)"
+                        json_add_boolean "ieee80211r" "$([ "$r_val" = "1" ] && echo 1 || echo 0)"
+                        json_add_string "mobility_domain" "$mdom"
                         json_close_object
                     fi
                 done
@@ -702,6 +720,216 @@ case "$1" in
                 json_add_boolean "success" "1"
                 json_add_int "modified_count" "$modified"
                 json_add_string "message" "WiFi 配置已成功应用并生效！"
+                json_close_object
+                json_dump
+            else
+                json_init
+                json_add_object "result"
+                json_add_boolean "success" "0"
+                json_add_string "message" "未找到匹配的无线 AP 接口"
+                json_close_object
+                json_dump
+            fi
+        }
+
+        get_wifi_roaming() {
+            json_init
+            json_add_object "result"
+            
+            # Check hostapd binary capabilities
+            local hostapd_kvr=0
+            if [ -x /usr/sbin/hostapd ]; then
+                if strings /usr/sbin/hostapd 2>/dev/null | grep -q "mobility_domain"; then
+                    hostapd_kvr=1
+                fi
+            fi
+            json_add_boolean "hostapd_supports_kvr" "$hostapd_kvr"
+            
+            # Check usteer status
+            local usteer_installed=0
+            local usteer_running=0
+            local usteer_enabled=0
+            [ -x /sbin/usteerd -o -x /usr/sbin/usteerd -o -f /etc/init.d/usteer ] && usteer_installed=1
+            /etc/init.d/usteer status 2>/dev/null | grep -q running && usteer_running=1
+            /etc/init.d/usteer enabled 2>/dev/null && usteer_enabled=1
+            
+            json_add_object "usteer"
+            json_add_boolean "installed" "$usteer_installed"
+            json_add_boolean "running" "$usteer_running"
+            json_add_boolean "enabled" "$usteer_enabled"
+            json_close_object
+            
+            # Roaming overview across AP interfaces
+            json_add_array "interfaces"
+            for rad in radio0 radio1 radio2; do
+                local band=$(uci -q get wireless.${rad}.band)
+                [ -z "$band" ] && continue
+                local channel=$(uci -q get wireless.${rad}.channel)
+                
+                for iface in $(uci -q show wireless | grep '=wifi-iface' | cut -d. -f2 | cut -d= -f1); do
+                    local dev=$(uci -q get wireless.${iface}.device)
+                    local wmode=$(uci -q get wireless.${iface}.mode)
+                    if [ "$dev" = "$rad" ] && [ "$wmode" = "ap" ]; then
+                        local ssid=$(uci -q get wireless.${iface}.ssid)
+                        local dis=$(uci -q get wireless.${iface}.disabled || echo '0')
+                        local k_en=$(uci -q get wireless.${iface}.ieee80211k || echo '0')
+                        local rrm_nr=$(uci -q get wireless.${iface}.rrm_neighbor_report || echo '0')
+                        local rrm_br=$(uci -q get wireless.${iface}.rrm_beacon_report || echo '0')
+                        local v_en=$(uci -q get wireless.${iface}.ieee80211v || echo '0')
+                        local bss_trans=$(uci -q get wireless.${iface}.bss_transition || echo '0')
+                        local wnm_sleep=$(uci -q get wireless.${iface}.wnm_sleep_mode || echo '0')
+                        local r_en=$(uci -q get wireless.${iface}.ieee80211r || echo '0')
+                        local mdom=$(uci -q get wireless.${iface}.mobility_domain || echo '')
+                        local ft_ds=$(uci -q get wireless.${iface}.ft_over_ds || echo '0')
+                        local ft_local=$(uci -q get wireless.${iface}.ft_psk_generate_local || echo '0')
+                        
+                        # Determine human-readable status
+                        local status_str="disabled"
+                        if [ "$k_en" = "1" ] && [ "$v_en" = "1" ] && [ "$r_en" = "1" ]; then
+                            status_str="full_kvr"
+                        elif [ "$k_en" = "1" ] && [ "$v_en" = "1" ]; then
+                            status_str="kv_only"
+                        elif [ "$k_en" = "1" ] || [ "$v_en" = "1" ] || [ "$r_en" = "1" ]; then
+                            status_str="custom"
+                        fi
+                        
+                        json_add_object
+                        json_add_string "radio" "$rad"
+                        json_add_string "section" "$iface"
+                        json_add_string "band" "$band"
+                        json_add_string "ssid" "$ssid"
+                        json_add_string "channel" "$channel"
+                        json_add_boolean "enabled" "$([ "$dis" = "0" ] && echo 1 || echo 0)"
+                        json_add_string "roaming_status" "$status_str"
+                        
+                        json_add_boolean "ieee80211k" "$([ "$k_en" = "1" ] && echo 1 || echo 0)"
+                        json_add_boolean "rrm_neighbor_report" "$([ "$rrm_nr" = "1" ] && echo 1 || echo 0)"
+                        json_add_boolean "rrm_beacon_report" "$([ "$rrm_br" = "1" ] && echo 1 || echo 0)"
+                        
+                        json_add_boolean "ieee80211v" "$([ "$v_en" = "1" ] && echo 1 || echo 0)"
+                        json_add_boolean "bss_transition" "$([ "$bss_trans" = "1" ] && echo 1 || echo 0)"
+                        json_add_boolean "wnm_sleep_mode" "$([ "$wnm_sleep" = "1" ] && echo 1 || echo 0)"
+                        
+                        json_add_boolean "ieee80211r" "$([ "$r_en" = "1" ] && echo 1 || echo 0)"
+                        json_add_string "mobility_domain" "$mdom"
+                        json_add_boolean "ft_over_ds" "$([ "$ft_ds" = "1" ] && echo 1 || echo 0)"
+                        json_add_boolean "ft_psk_generate_local" "$([ "$ft_local" = "1" ] && echo 1 || echo 0)"
+                        
+                        json_close_object
+                    fi
+                done
+            done
+            json_close_array
+            
+            json_close_object
+            json_dump
+        }
+
+        set_wifi_roaming() {
+            read -r input
+            json_load "$input"
+            json_get_var band "band"
+            json_get_var mode "mode"
+            json_get_var mobility_domain "mobility_domain"
+            json_get_var ft_over_ds "ft_over_ds"
+            json_get_var ft_psk_generate_local "ft_psk_generate_local"
+            json_get_var usteer_enabled "usteer_enabled"
+            
+            [ -z "$band" ] && band="all"
+            [ -z "$mode" ] && mode="full_kvr"
+            [ -z "$mobility_domain" ] && mobility_domain="e1a0"
+            [ -z "$ft_over_ds" ] && ft_over_ds="0"
+            [ -z "$ft_psk_generate_local" ] && ft_psk_generate_local="1"
+            
+            # Validate mobility_domain (must be 4-digit hex)
+            if [ "$mode" = "full_kvr" ]; then
+                local md_len=${#mobility_domain}
+                if [ "$md_len" -ne 4 ]; then
+                    json_init
+                    json_add_object "result"
+                    json_add_boolean "success" "0"
+                    json_add_string "message" "Mobility Domain (移动域ID) 必须为 4 位十六进制字符 (例如: e1a0)"
+                    json_close_object
+                    json_dump
+                    return
+                fi
+            fi
+            
+            local modified=0
+            for rad in radio0 radio1 radio2; do
+                local rband=$(uci -q get wireless.${rad}.band)
+                [ -z "$rband" ] && continue
+                local match=0
+                if [ "$band" = "all" ]; then
+                    match=1
+                elif [ "$band" = "$rband" ] || [ "$band" = "${rband}g" ] || [ "$band" = "${rband%g}G" ] || [ "$band" = "2.4G" -a "$rband" = "2g" ] || [ "$band" = "5G" -a "$rband" = "5g" ]; then
+                    match=1
+                fi
+                
+                if [ $match -eq 1 ]; then
+                    for iface in $(uci -q show wireless | grep '=wifi-iface' | cut -d. -f2 | cut -d= -f1); do
+                        local dev=$(uci -q get wireless.${iface}.device)
+                        local wmode=$(uci -q get wireless.${iface}.mode)
+                        if [ "$dev" = "$rad" ] && [ "$wmode" = "ap" ]; then
+                            case "$mode" in
+                                full_kvr)
+                                    uci set wireless.${iface}.ieee80211k='1'
+                                    uci set wireless.${iface}.rrm_neighbor_report='1'
+                                    uci set wireless.${iface}.rrm_beacon_report='1'
+                                    uci set wireless.${iface}.ieee80211v='1'
+                                    uci set wireless.${iface}.bss_transition='1'
+                                    uci set wireless.${iface}.wnm_sleep_mode='1'
+                                    uci set wireless.${iface}.ieee80211r='1'
+                                    uci set wireless.${iface}.mobility_domain="$mobility_domain"
+                                    uci set wireless.${iface}.ft_over_ds="$ft_over_ds"
+                                    uci set wireless.${iface}.ft_psk_generate_local="$ft_psk_generate_local"
+                                    ;;
+                                kv_only)
+                                    uci set wireless.${iface}.ieee80211k='1'
+                                    uci set wireless.${iface}.rrm_neighbor_report='1'
+                                    uci set wireless.${iface}.rrm_beacon_report='1'
+                                    uci set wireless.${iface}.ieee80211v='1'
+                                    uci set wireless.${iface}.bss_transition='1'
+                                    uci set wireless.${iface}.wnm_sleep_mode='1'
+                                    uci set wireless.${iface}.ieee80211r='0'
+                                    ;;
+                                disable)
+                                    uci set wireless.${iface}.ieee80211k='0'
+                                    uci set wireless.${iface}.ieee80211v='0'
+                                    uci set wireless.${iface}.ieee80211r='0'
+                                    ;;
+                            esac
+                            modified=$((modified + 1))
+                        fi
+                    done
+                fi
+            done
+            
+            if [ "$modified" -gt 0 ]; then
+                uci commit wireless
+                /sbin/wifi reload >/dev/null 2>&1
+                
+                # Manage usteer if requested or available
+                local usteer_msg=""
+                if [ -x /sbin/usteerd -o -x /usr/sbin/usteerd -o -f /etc/init.d/usteer ]; then
+                    if [ "$usteer_enabled" = "1" ] || [ -z "$usteer_enabled" -a "$mode" != "disable" ]; then
+                        /etc/init.d/usteer enable >/dev/null 2>&1
+                        /etc/init.d/usteer restart >/dev/null 2>&1
+                        usteer_msg="，且已激活 usteer 漫游调度守护"
+                    elif [ "$usteer_enabled" = "0" ] || [ "$mode" = "disable" -a "$usteer_enabled" != "1" ]; then
+                        /etc/init.d/usteer stop >/dev/null 2>&1
+                        /etc/init.d/usteer disable >/dev/null 2>&1
+                        usteer_msg="，且已停用 usteer 漫游调度守护"
+                    fi
+                fi
+                
+                json_init
+                json_add_object "result"
+                json_add_boolean "success" "1"
+                json_add_int "modified_count" "$modified"
+                json_add_string "mode" "$mode"
+                json_add_string "mobility_domain" "$mobility_domain"
+                json_add_string "message" "Wi-Fi 无缝漫游配置已成功应用并生效${usteer_msg}！"
                 json_close_object
                 json_dump
             else
@@ -4433,6 +4661,8 @@ EOF
             set_service_detail) set_service_detail ;;
             get_wifi_info) get_wifi_info ;;
             set_wifi_config) set_wifi_config ;;
+            get_wifi_roaming) get_wifi_roaming ;;
+            set_wifi_roaming) set_wifi_roaming ;;
             get_network_tune) get_network_tune ;;
             apply_network_tune) apply_network_tune ;;
             get_hw_offload_status) get_hw_offload_status ;;

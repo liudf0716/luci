@@ -146,9 +146,11 @@ assert_ubus "重载规则" "从持久化规则文件重新装载分流域名至�
 # ---------------------------------------------------------------------
 # 7. 硬件加速与外围配置
 # ---------------------------------------------------------------------
-echo -e "\n${BOLD}${BLUE}【7. 硬件加速 (PPE) 与无线网络配置】${NC}"
+echo -e "\n${BOLD}${BLUE}【7. 硬件加速 (PPE) 与无线网络及无缝漫游配置】${NC}"
 assert_ubus "硬件加速" "获取 MediaTek PPE 硬件流表与加速状态" "get_hw_offload_status" "" "enabled" "true"
 assert_ubus "无线状态" "获取当前 WiFi 频段、SSID 与安全状态" "get_wifi_info" "" "radios"
+assert_ubus "无线漫游" "获取 802.11k/v/r 漫游及 usteer 调度状态" "get_wifi_roaming" "" "hostapd_supports_kvr" "true"
+assert_ubus "漫游配置" "下发满血 802.11k/v/r 漫游与调度参数" "set_wifi_roaming" '{"band":"all","mode":"full_kvr","mobility_domain":"e1a0","usteer_enabled":"1"}' "success" "true"
 assert_ubus "SSH密钥" "获取路由器自动生成的穿透运维 SSH 公钥" "get_router_ssh_key" "" "pubkey"
 
 END_TIME=$(date +%s)
