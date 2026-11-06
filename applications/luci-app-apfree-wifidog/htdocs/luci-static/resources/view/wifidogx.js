@@ -80,6 +80,22 @@ function validateWildcardDomain(section_id, value) {
 	return _('Expecting a valid wildcard domain pattern like *.example.com or .example.com');
 }
 
+function checkAndCleanGhostSection(config, type, name, excludeSid) {
+	var sections = uci.sections(config, type);
+	for (var i = 0; i < sections.length; i++) {
+		var s = sections[i];
+		var sname = s['.name'];
+		if (sname === name && sname !== excludeSid) {
+			if (s['.create'] != null) {
+				uci.remove(config, sname);
+				continue;
+			}
+			return true;
+		}
+	}
+	return false;
+}
+
 return view.extend({
 	render: function () {
 		var m, s, o, ss;
@@ -291,19 +307,13 @@ return view.extend({
 		ss.handleAdd = function (ev, name) {
 			var self = this;
 			if (name) {
-				var longconnSections = uci.sections('wifidogx', 'longconn');
-				for (var i = 0; i < longconnSections.length; i++) {
-					if (longconnSections[i]['.name'] === name) {
-						ui.addNotification(null, E('p', _('The name "%s" already exists in Long Connection profiles. Please choose a different name.').format(name)), 'error');
-						return Promise.resolve();
-					}
+				if (checkAndCleanGhostSection('wifidogx', 'longconn', name)) {
+					ui.addNotification(null, E('p', _('The name "%s" already exists in Long Connection profiles. Please choose a different name.').format(name)), 'error');
+					return Promise.resolve();
 				}
-				var authSections = uci.sections('wifidogx', 'auth');
-				for (var i = 0; i < authSections.length; i++) {
-					if (authSections[i]['.name'] === name) {
-						ui.addNotification(null, E('p', _('The name "%s" already exists in Auth Server profiles. Please choose a different name.').format(name)), 'error');
-						return Promise.resolve();
-					}
+				if (checkAndCleanGhostSection('wifidogx', 'auth', name)) {
+					ui.addNotification(null, E('p', _('The name "%s" already exists in Auth Server profiles. Please choose a different name.').format(name)), 'error');
+					return Promise.resolve();
 				}
 			}
 			return this.super('handleAdd', [ev, name]);
@@ -341,19 +351,13 @@ return view.extend({
 							ui.hideModal();
 							return;
 						}
-						var longconnSections = uci.sections('wifidogx', 'longconn');
-						for (var i = 0; i < longconnSections.length; i++) {
-							if (longconnSections[i]['.name'] === newName) {
-								ui.addNotification(null, E('p', _('The name "%s" already exists in Long Connection profiles. Please choose a different name.').format(newName)), 'error');
-								return;
-							}
+						if (checkAndCleanGhostSection('wifidogx', 'longconn', newName, oldName)) {
+							ui.addNotification(null, E('p', _('The name "%s" already exists in Long Connection profiles. Please choose a different name.').format(newName)), 'error');
+							return;
 						}
-						var authSections = uci.sections('wifidogx', 'auth');
-						for (var i = 0; i < authSections.length; i++) {
-							if (authSections[i]['.name'] === newName && authSections[i]['.name'] !== oldName) {
-								ui.addNotification(null, E('p', _('The name "%s" already exists in Auth Server profiles. Please choose a different name.').format(newName)), 'error');
-								return;
-							}
+						if (checkAndCleanGhostSection('wifidogx', 'auth', newName, oldName)) {
+							ui.addNotification(null, E('p', _('The name "%s" already exists in Auth Server profiles. Please choose a different name.').format(newName)), 'error');
+							return;
 						}
 						ui.hideModal();
 						uci.rename('wifidogx', section_id, newName);
@@ -739,19 +743,13 @@ return view.extend({
 		ss.handleAdd = function (ev, name) {
 			var self = this;
 			if (name) {
-				var authSections = uci.sections('wifidogx', 'auth');
-				for (var i = 0; i < authSections.length; i++) {
-					if (authSections[i]['.name'] === name) {
-						ui.addNotification(null, E('p', _('The name "%s" already exists in Auth Server profiles. Please choose a different name.').format(name)), 'error');
-						return Promise.resolve();
-					}
+				if (checkAndCleanGhostSection('wifidogx', 'auth', name)) {
+					ui.addNotification(null, E('p', _('The name "%s" already exists in Auth Server profiles. Please choose a different name.').format(name)), 'error');
+					return Promise.resolve();
 				}
-				var longconnSections = uci.sections('wifidogx', 'longconn');
-				for (var i = 0; i < longconnSections.length; i++) {
-					if (longconnSections[i]['.name'] === name) {
-						ui.addNotification(null, E('p', _('The name "%s" already exists in Long Connection profiles. Please choose a different name.').format(name)), 'error');
-						return Promise.resolve();
-					}
+				if (checkAndCleanGhostSection('wifidogx', 'longconn', name)) {
+					ui.addNotification(null, E('p', _('The name "%s" already exists in Long Connection profiles. Please choose a different name.').format(name)), 'error');
+					return Promise.resolve();
 				}
 			}
 			return this.super('handleAdd', [ev, name]);
@@ -789,19 +787,13 @@ return view.extend({
 							ui.hideModal();
 							return;
 						}
-						var authSections = uci.sections('wifidogx', 'auth');
-						for (var i = 0; i < authSections.length; i++) {
-							if (authSections[i]['.name'] === newName) {
-								ui.addNotification(null, E('p', _('The name "%s" already exists in Auth Server profiles. Please choose a different name.').format(newName)), 'error');
-								return;
-							}
+						if (checkAndCleanGhostSection('wifidogx', 'auth', newName, oldName)) {
+							ui.addNotification(null, E('p', _('The name "%s" already exists in Auth Server profiles. Please choose a different name.').format(newName)), 'error');
+							return;
 						}
-						var longconnSections = uci.sections('wifidogx', 'longconn');
-						for (var i = 0; i < longconnSections.length; i++) {
-							if (longconnSections[i]['.name'] === newName && longconnSections[i]['.name'] !== oldName) {
-								ui.addNotification(null, E('p', _('The name "%s" already exists in Long Connection profiles. Please choose a different name.').format(newName)), 'error');
-								return;
-							}
+						if (checkAndCleanGhostSection('wifidogx', 'longconn', newName, oldName)) {
+							ui.addNotification(null, E('p', _('The name "%s" already exists in Long Connection profiles. Please choose a different name.').format(newName)), 'error');
+							return;
 						}
 						ui.hideModal();
 						uci.rename('wifidogx', section_id, newName);
