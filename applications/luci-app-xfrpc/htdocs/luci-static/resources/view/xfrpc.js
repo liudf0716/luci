@@ -2,6 +2,7 @@
 'require view';
 'require ui';
 'require form';
+'require uci';
 'require rpc';
 'require dom';
 'require tools.widgets as widgets';
@@ -100,6 +101,51 @@ function executePluginAction(id, ev) {
 	}
 }
 
+const PROXY_TYPES = [
+	'tcp', 'http', 'https', 'tcpmux', 'socks5',
+	'stcp', 'xtcp', 'sudp', 'stcp_visitor', 'xtcp_visitor',
+	'iod', 'plugin'
+];
+
+function checkAndCleanGhostProxy(name, currentType) {
+	if (!name) return false;
+
+	for (var i = 0; i < PROXY_TYPES.length; i++) {
+		var type = PROXY_TYPES[i];
+		var sections = uci.sections('xfrpc', type);
+		for (var j = 0; j < sections.length; j++) {
+			var s = sections[j];
+			if (s['.name'] === name) {
+				if (s['.create'] != null) {
+					var keys = Object.keys(s).filter(function(k) { return !k.startsWith('.'); });
+					if (keys.length === 0) {
+						uci.remove('xfrpc', name);
+						continue;
+					}
+				}
+				return type;
+			}
+		}
+	}
+	return false;
+}
+
+function setupProxyGridSection(ss, proxyType) {
+	ss.addremove = true;
+	ss.nodescriptions = true;
+
+	ss.handleAdd = function(ev, name) {
+		if (name) {
+			var conflictType = checkAndCleanGhostProxy(name, proxyType);
+			if (conflictType) {
+				ui.addNotification(null, E('p', _('The proxy name "%s" is already used by a %s proxy. Proxy names must be unique across all services.').format(name, conflictType.toUpperCase())), 'error');
+				return Promise.resolve();
+			}
+		}
+		return this.super('handleAdd', [ev, name]);
+	};
+}
+
 /**
  * Add common proxy options (encryption, compression, start/end time) to a GridSection.
  * @param {Object} ss - The GridSection subsection
@@ -143,8 +189,11 @@ function addCommonProxyOptions(ss, opts) {
 			o.value(i.toString(), i.toString());
 		}
 		o.validate = function(section_id, value) {
-			var start_time = this.map.lookupOption('start_time', section_id)[0].formvalue(section_id);
-			if (parseInt(value) < parseInt(start_time)) {
+			var start_time_opt = this.map.lookupOption('start_time', section_id);
+			var start_time = (start_time_opt && start_time_opt[0]) ? start_time_opt[0].formvalue(section_id) : '0';
+			var endVal = parseInt(value, 10);
+			var startVal = parseInt(start_time, 10);
+			if (endVal > 0 && startVal > 0 && endVal < startVal) {
 				return _('End time must be greater than start time');
 			}
 			return true;
@@ -158,6 +207,22 @@ return view.extend({
 
 		m = new form.Map('xfrpc', _('xfrpc'));
 		m.description = _('xfrpc is a lightweight C language frp client for frps.');
+
+		var origSave = m.save;
+		m.save = function() {
+			PROXY_TYPES.forEach(function(type) {
+				var sections = uci.sections('xfrpc', type);
+				sections.forEach(function(s) {
+					if (s['.create'] != null) {
+						var keys = Object.keys(s).filter(function(k) { return !k.startsWith('.'); });
+						if (keys.length === 0) {
+							uci.remove('xfrpc', s['.name']);
+						}
+					}
+				});
+			});
+			return origSave.apply(this, arguments);
+		};
 
 		s = m.section(form.NamedSection, '_status');
 		s.anonymous = true;
@@ -399,8 +464,7 @@ return view.extend({
 		// ===== TCP Proxy Settings =====
 		o = s.taboption('tcp', form.SectionValue, '_tcp', form.GridSection, 'tcp');
 		ss = o.subsection;
-		ss.addremove = true;
-		ss.nodescriptions = true;
+		setupProxyGridSection(ss, 'tcp');
 
 		o = ss.option(form.Flag, 'enabled', _('Enable'), _('Enable this TCP proxy.'));
 		o.rmempty = false;
@@ -478,8 +542,7 @@ return view.extend({
 		// ===== HTTP Proxy Settings =====
 		o = s.taboption('http', form.SectionValue, '_http', form.GridSection, 'http');
 		ss = o.subsection;
-		ss.addremove = true;
-		ss.nodescriptions = true;
+		setupProxyGridSection(ss, 'http');
 
 		o = ss.option(form.Flag, 'enabled', _('Enable'), _('Enable this HTTP proxy.'));
 		o.rmempty = false;
@@ -572,8 +635,7 @@ return view.extend({
 		// ===== HTTPS Proxy Settings =====
 		o = s.taboption('https', form.SectionValue, '_https', form.GridSection, 'https');
 		ss = o.subsection;
-		ss.addremove = true;
-		ss.nodescriptions = true;
+		setupProxyGridSection(ss, 'https');
 
 		o = ss.option(form.Flag, 'enabled', _('Enable'), _('Enable this HTTPS proxy.'));
 		o.rmempty = false;
@@ -666,8 +728,7 @@ return view.extend({
 		// ===== TCPMux Proxy Settings =====
 		o = s.taboption('tcpmux', form.SectionValue, '_tcpmux', form.GridSection, 'tcpmux');
 		ss = o.subsection;
-		ss.addremove = true;
-		ss.nodescriptions = true;
+		setupProxyGridSection(ss, 'tcpmux');
 
 		o = ss.option(form.Flag, 'enabled', _('Enable'), _('Enable this TCPMux proxy.'));
 		o.rmempty = false;
@@ -722,8 +783,7 @@ return view.extend({
 		// ===== SOCKS5 Proxy Settings =====
 		o = s.taboption('socks5', form.SectionValue, '_socks5', form.GridSection, 'socks5');
 		ss = o.subsection;
-		ss.addremove = true;
-		ss.nodescriptions = true;
+		setupProxyGridSection(ss, 'socks5');
 
 		o = ss.option(form.Flag, 'enabled', _('Enable'), _('Enable this SOCKS5 proxy.'));
 		o.rmempty = false;
@@ -740,8 +800,7 @@ return view.extend({
 		// ===== STCP Proxy Settings =====
 		o = s.taboption('stcp', form.SectionValue, '_stcp', form.GridSection, 'stcp');
 		ss = o.subsection;
-		ss.addremove = true;
-		ss.nodescriptions = true;
+		setupProxyGridSection(ss, 'stcp');
 
 		o = ss.option(form.Flag, 'enabled', _('Enable'), _('Enable this STCP proxy.'));
 		o.rmempty = false;
@@ -783,8 +842,7 @@ return view.extend({
 		// ===== XTCP Proxy Settings =====
 		o = s.taboption('xtcp', form.SectionValue, '_xtcp', form.GridSection, 'xtcp');
 		ss = o.subsection;
-		ss.addremove = true;
-		ss.nodescriptions = true;
+		setupProxyGridSection(ss, 'xtcp');
 
 		o = ss.option(form.Flag, 'enabled', _('Enable'), _('Enable this XTCP proxy.'));
 		o.rmempty = false;
@@ -826,8 +884,7 @@ return view.extend({
 		// ===== SUDP Proxy Settings =====
 		o = s.taboption('sudp', form.SectionValue, '_sudp', form.GridSection, 'sudp');
 		ss = o.subsection;
-		ss.addremove = true;
-		ss.nodescriptions = true;
+		setupProxyGridSection(ss, 'sudp');
 
 		o = ss.option(form.Flag, 'enabled', _('Enable'), _('Enable this SUDP proxy.'));
 		o.rmempty = false;
@@ -864,8 +921,7 @@ return view.extend({
 		// ===== STCP Visitor Settings =====
 		o = s.taboption('stcp_visitor', form.SectionValue, '_stcp_visitor', form.GridSection, 'stcp_visitor');
 		ss = o.subsection;
-		ss.addremove = true;
-		ss.nodescriptions = true;
+		setupProxyGridSection(ss, 'stcp_visitor');
 
 		o = ss.option(form.Flag, 'enabled', _('Enable'), _('Enable this STCP visitor.'));
 		o.rmempty = false;
@@ -912,8 +968,7 @@ return view.extend({
 		// ===== XTCP Visitor Settings =====
 		o = s.taboption('xtcp_visitor', form.SectionValue, '_xtcp_visitor', form.GridSection, 'xtcp_visitor');
 		ss = o.subsection;
-		ss.addremove = true;
-		ss.nodescriptions = true;
+		setupProxyGridSection(ss, 'xtcp_visitor');
 
 		o = ss.option(form.Flag, 'enabled', _('Enable'), _('Enable this XTCP visitor.'));
 		o.rmempty = false;
@@ -960,8 +1015,7 @@ return view.extend({
 		// ===== IOD Settings (legacy) =====
 		o = s.taboption('iod', form.SectionValue, '_iod', form.GridSection, 'iod');
 		ss = o.subsection;
-		ss.addremove = true;
-		ss.nodescriptions = true;
+		setupProxyGridSection(ss, 'iod');
 
 		o = ss.option(form.Flag, 'enabled', _('Enable'), _('Enable iod service.'));
 		o.rmempty = false;
@@ -982,8 +1036,7 @@ return view.extend({
 		// ===== Plugin Settings =====
 		o = s.taboption('plugin', form.SectionValue, '_plugin', form.GridSection, 'plugin');
 		ss = o.subsection;
-		ss.addremove = true;
-		ss.nodescriptions = true;
+		setupProxyGridSection(ss, 'plugin');
 
 		o = ss.option(form.ListValue, 'plugin_name', _('Plugin Name'),
 			_('Specifies the name of remote xfrpc plugin.'));
