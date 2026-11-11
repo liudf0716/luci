@@ -213,6 +213,47 @@ class XiaochaTester:
             assert "未找到匹配的 VPS 或缺少主机地址" in res.get("message", ""), f"提示信息不匹配: {res}"
         self.test("远程 VPS 服务端配置更新接口契约", s6_update_vps_service_config_contract)
 
+        # 场景 7: 用户要求“开启全屋 Mesh 组网与 802.11kvrs 快速无线漫游”
+        print("\n【场景 7：802.11s Mesh 组网与 802.11kvrs 漫游生命周期契约】")
+        def s7_mesh_status():
+            res = self.call_ubus("get_mesh_status")
+            assert "role" in res, "响应应包含当前 Mesh 角色"
+            assert "mesh_id" in res, "响应应包含 Mesh ID"
+            assert "nodes" in res and isinstance(res["nodes"], list), "响应应包含 nodes 节点列表"
+        self.test("Mesh 组网状态与节点拓扑查询", s7_mesh_status)
+
+        def s7_discover_nodes():
+            res = self.call_ubus("discover_mesh_nodes")
+            assert "discovered" in res or "nodes" in res, "应返回扫描到的候选节点列表"
+        self.test("局域网 ChaWrt 候选子路由（Node 分身）自动发现", s7_discover_nodes)
+
+        def s7_pair_node_contract():
+            res = self.call_ubus("pair_mesh_node", {})
+            assert res.get("success") is False, "缺少 node_ip 时应拦截并返回失败"
+            assert "缺少" in res.get("message", "") and "IP" in res.get("message", ""), f"提示不符合预期: {res}"
+        self.test("Mesh 子节点免密配对与自动纳管接口契约防御", s7_pair_node_contract)
+
+        def s7_wifi_roaming():
+            res = self.call_ubus("get_wifi_roaming")
+            assert "interfaces" in res or "radios" in res, "应返回无线频段漫游配置详情"
+        self.test("802.11k/v/r 与 usteer 漫游配置校验", s7_wifi_roaming)
+
+        # 场景 8: 2.4G/5G 无线全流程性能诊断与调优闭环
+        print("\n【场景 8：2.4G/5G 无线全流程性能诊断与调优闭环】")
+        def s8_diagnose_wifi():
+            res = self.call_ubus("diagnose_wifi_performance")
+            assert "radios" in res, "响应应包含各射频频段信息"
+            assert "actions" in res, "响应应包含推荐优化项列表"
+            assert "scan_analysis" in res, "响应应包含周边信道扫描分析"
+            assert "active_regulatory_country" in res, "响应应包含当前生效的规约国家码"
+        self.test("2.4G/5G 无线射频与信道全链路体检诊断", s8_diagnose_wifi)
+
+        def s8_apply_wifi_tune_contract():
+            res = self.call_ubus("apply_wifi_tune", {"actions": ""})
+            assert res.get("success") is False, "空 actions 时应返回未选择"
+            assert "未选择" in res.get("message", "")
+        self.test("无线调优应用接口防御校验", s8_apply_wifi_tune_contract)
+
         print("\n" + "=" * 65)
         print(f"自动化测试完成: 共 {self.passed + self.failed} 项, 通过 {self.passed} 项, 失败 {self.failed} 项")
         print("=" * 65)

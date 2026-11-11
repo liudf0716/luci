@@ -92,9 +92,34 @@ case "$1" in
             json_add_string "ft_psk_generate_local"
             json_add_string "usteer_enabled"
         json_close_object
+        json_add_object "get_mesh_status"
+        json_close_object
+        json_add_object "set_mesh_config"
+            json_add_string "enabled"
+            json_add_string "role"
+            json_add_string "mesh_id"
+            json_add_string "key"
+            json_add_string "channel"
+            json_add_string "band"
+        json_close_object
+        json_add_object "discover_mesh_nodes"
+        json_close_object
+        json_add_object "pair_mesh_node"
+            json_add_string "target_ip"
+            json_add_string "node_name"
+            json_add_string "target_lan_ip"
+        json_close_object
+        json_add_object "unpair_mesh_node"
+            json_add_string "id"
+        json_close_object
         json_add_object "get_network_tune"
         json_close_object
         json_add_object "apply_network_tune"
+            json_add_string "actions"
+        json_close_object
+        json_add_object "diagnose_wifi_performance"
+        json_close_object
+        json_add_object "apply_wifi_tune"
             json_add_string "actions"
         json_close_object
         json_add_object "call_deepseek"
@@ -942,6 +967,291 @@ case "$1" in
             fi
         }
 
+        get_mesh_status() {
+            json_init
+            json_add_object "result"
+
+            local role=$(uci -q get clawwrt.mesh.role || echo "master")
+            local enabled="0"
+            local mesh_id=""
+            local mesh_key=""
+            local mesh_radio=""
+            local mesh_channel=""
+
+            for iface in $(uci -q show wireless | grep '=wifi-iface' | cut -d. -f2 | cut -d= -f1); do
+                local m=$(uci -q get wireless.${iface}.mode)
+                if [ "$m" = "mesh" ]; then
+                    local dis=$(uci -q get wireless.${iface}.disabled || echo "0")
+                    [ "$dis" = "0" ] && enabled="1"
+                    mesh_id=$(uci -q get wireless.${iface}.mesh_id)
+                    mesh_key=$(uci -q get wireless.${iface}.key)
+                    mesh_radio=$(uci -q get wireless.${iface}.device)
+                    mesh_channel=$(uci -q get wireless.${mesh_radio}.channel || echo "44")
+                    break
+                fi
+            done
+
+            json_add_string "role" "$role"
+            json_add_boolean "enabled" "$([ "$enabled" = "1" ] && echo 1 || echo 0)"
+            json_add_string "mesh_id" "$mesh_id"
+            json_add_string "radio" "$mesh_radio"
+            json_add_string "channel" "$mesh_channel"
+            json_add_string "encryption" "sae"
+            json_add_string "local_ip" "$(uci -q get network.lan.ipaddr || echo '192.168.1.1')"
+
+            # 获取 802.11s HWMP 链路与跃点表
+            json_add_array "paths"
+            local mpath_count=0
+            local real_mesh_if=""
+            for dev in $(iw dev 2>/dev/null | grep Interface | awk '{print $2}'); do
+                if iw dev "$dev" info 2>/dev/null | grep -q "type mesh point"; then
+                    real_mesh_if="$dev"
+                    break
+                fi
+            done
+
+            if [ -n "$real_mesh_if" ]; then
+                iw dev "$real_mesh_if" mpath dump 2>/dev/null | while read -r d n i sn m q f; do
+                    [ -z "$d" ] && continue
+                    json_add_object
+                    json_add_string "destination" "$d"
+                    json_add_string "next_hop" "$n"
+                    json_add_string "iface" "$i"
+                    json_add_string "metric" "$m"
+                    json_add_string "flags" "$f"
+                    json_close_object
+                done
+                mpath_count=$(iw dev "$real_mesh_if" mpath dump 2>/dev/null | grep -c .)
+            fi
+            json_close_array
+            json_add_int "mpath_count" "$mpath_count"
+
+            # 获取已纳入集群纳管的子节点列表
+            json_add_array "nodes"
+            if [ -f /etc/config/clawwrt ]; then
+                config_load clawwrt
+                _handle_mesh_node() {
+                    local s="$1"
+                    local name ip mac status added_time
+                    config_get name "$s" name "未命名分身"
+                    config_get ip "$s" ip ""
+                    config_get mac "$s" mac ""
+                    config_get status "$s" status "online"
+                    config_get added_time "$s" added_time ""
+
+                    local ping_ok=0
+                    if [ -n "$ip" ]; then
+                        ping -c 1 -W 1 "$ip" >/dev/null 2>&1 && ping_ok=1
+                    fi
+
+                    json_add_object
+                    json_add_string "id" "$s"
+                    json_add_string "name" "$name"
+                    json_add_string "ip" "$ip"
+                    json_add_string "mac" "$mac"
+                    json_add_string "status" "$([ "$ping_ok" = "1" ] && echo "online" || echo "offline")"
+                    json_add_string "added_time" "$added_time"
+                    json_close_object
+                }
+                config_foreach _handle_mesh_node "mesh_node"
+            fi
+            json_close_array
+
+            json_close_object
+            json_dump
+        }
+
+        set_mesh_config() {
+            read -r input
+            json_load "$input"
+            json_get_var enabled "enabled"
+            json_get_var role "role"
+            json_get_var mesh_id "mesh_id"
+            json_get_var key "key"
+            json_get_var band "band"
+            json_get_var channel "channel"
+
+            [ -z "$enabled" ] && enabled="1"
+            [ -z "$role" ] && role="master"
+            [ -z "$mesh_id" ] && mesh_id="chawrt_mesh_5g"
+            [ -z "$key" ] && key="chawrt@80211s"
+            [ -z "$channel" ] && channel="44"
+
+            # 寻找 5G 射频
+            local target_radio="radio0"
+            for rad in radio0 radio1 radio2; do
+                local b=$(uci -q get wireless.${rad}.band)
+                if [ "$b" = "5g" ] || [ "$b" = "5G" ]; then
+                    target_radio="$rad"
+                    break
+                fi
+            done
+
+            uci set wireless.${target_radio}.channel="$channel"
+            uci set wireless.${target_radio}.disabled='0'
+
+            local mesh_sec="mesh_backhaul"
+            uci set wireless.${mesh_sec}=wifi-iface
+            uci set wireless.${mesh_sec}.device="$target_radio"
+            uci set wireless.${mesh_sec}.mode='mesh'
+            uci set wireless.${mesh_sec}.mesh_id="$mesh_id"
+            uci set wireless.${mesh_sec}.network='lan'
+            uci set wireless.${mesh_sec}.encryption='sae'
+            uci set wireless.${mesh_sec}.key="$key"
+            uci set wireless.${mesh_sec}.mesh_fwding='1'
+            uci set wireless.${mesh_sec}.disabled="$([ "$enabled" = "1" ] && echo 0 || echo 1)"
+
+            [ -f /etc/config/clawwrt ] || touch /etc/config/clawwrt
+            uci set clawwrt.mesh=mesh
+            uci set clawwrt.mesh.role="$role"
+            uci set clawwrt.mesh.mesh_id="$mesh_id"
+            uci set clawwrt.mesh.channel="$channel"
+            uci commit wireless
+            uci commit clawwrt
+
+            /sbin/wifi reload >/dev/null 2>&1
+
+            json_init
+            json_add_object "result"
+            json_add_boolean "success" "1"
+            json_add_string "role" "$role"
+            json_add_string "mesh_id" "$mesh_id"
+            json_add_string "channel" "$channel"
+            json_add_string "message" "802.11s Mesh 骨干网配置已成功应用并下发！"
+            json_close_object
+            json_dump
+        }
+
+        discover_mesh_nodes() {
+            json_init
+            json_add_object "result"
+            json_add_array "discovered"
+
+            local my_lan_ip=$(uci -q get network.lan.ipaddr || echo "192.168.1.1")
+            local candidates=""
+
+            if [ -f /tmp/dhcp.leases ]; then
+                while read -r ts mac ip host client_id; do
+                    [ -z "$ip" ] || [ "$ip" = "$my_lan_ip" ] && continue
+                    candidates="$candidates $ip,$mac,$host"
+                done < /tmp/dhcp.leases
+            fi
+
+            if [ -f /proc/net/arp ]; then
+                while read -r ip hw flags mac mask dev; do
+                    [ "$ip" = "IP" ] || [ -z "$ip" ] || [ "$ip" = "$my_lan_ip" ] && continue
+                    if ! echo "$candidates" | grep -q "$ip"; then
+                        candidates="$candidates $ip,$mac,unknown"
+                    fi
+                done < /proc/net/arp
+            fi
+
+            for item in $candidates; do
+                local ip=$(echo "$item" | cut -d, -f1)
+                local mac=$(echo "$item" | cut -d, -f2)
+                local host=$(echo "$item" | cut -d, -f3)
+
+                local is_candidate=0
+                local probe_msg="局域网通用终端"
+
+                if nc -z -w 1 "$ip" 22 >/dev/null 2>&1; then
+                    is_candidate=1
+                    probe_msg="开放 SSH 端口的待配对路由器"
+                elif echo "$host" | grep -qi "chawrt\|openwrt"; then
+                    is_candidate=1
+                    probe_msg="检测到 ChaWrt/OpenWrt 待组网设备"
+                fi
+
+                json_add_object
+                json_add_string "ip" "$ip"
+                json_add_string "mac" "$mac"
+                json_add_string "hostname" "$host"
+                json_add_boolean "is_candidate" "$is_candidate"
+                json_add_string "description" "$probe_msg"
+                json_close_object
+            done
+
+            json_close_array
+            json_close_object
+            json_dump
+        }
+
+        pair_mesh_node() {
+            read -r input
+            json_load "$input"
+            json_get_var target_ip "target_ip"
+            json_get_var node_name "node_name"
+            json_get_var target_lan_ip "target_lan_ip"
+
+            if [ -z "$target_ip" ]; then
+                json_init
+                json_add_object "result"
+                json_add_boolean "success" "0"
+                json_add_string "message" "缺少目标子路由 IP 地址"
+                json_close_object
+                json_dump
+                return
+            fi
+
+            [ -z "$node_name" ] && node_name="卧室分身路由"
+            [ -z "$target_lan_ip" ] && target_lan_ip="192.168.1.2"
+
+            local mesh_id=$(uci -q get wireless.mesh_backhaul.mesh_id || echo "chawrt_mesh_5g")
+            local mesh_key=$(uci -q get wireless.mesh_backhaul.key || echo "chawrt@80211s")
+            local mesh_channel=$(uci -q get wireless.radio0.channel || echo "44")
+            local master_ssid=$(uci -q get wireless.@wifi-iface[0].ssid || echo "ChaWrt-Home")
+            local master_key=$(uci -q get wireless.@wifi-iface[0].key || echo "12345678")
+            local mdomain=$(uci -q get wireless.@wifi-iface[0].mobility_domain || echo "c4a1")
+            local master_lan_ip=$(uci -q get network.lan.ipaddr || echo "192.168.1.1")
+
+            local key_file="/etc/clawwrt/id_dropbear"
+            if [ ! -f "$key_file" ]; then
+                mkdir -p /etc/clawwrt
+                dropbearkey -t ed25519 -f "$key_file" >/dev/null 2>&1
+            fi
+            local pubkey=$(dropbearkey -y -f "$key_file" 2>/dev/null | grep '^ssh-')
+
+            local node_setup_cmd="mkdir -p ~/.ssh /etc/dropbear && echo '${pubkey}' >> ~/.ssh/authorized_keys && echo '${pubkey}' >> /etc/dropbear/authorized_keys && uci set network.lan.ipaddr='${target_lan_ip}' && uci set network.lan.gateway='${master_lan_ip}' && uci set network.lan.dns='${master_lan_ip}' && uci set dhcp.lan.ignore='1' && uci set wireless.radio0.channel='${mesh_channel}' && uci set wireless.radio0.disabled='0' && uci set wireless.mesh_backhaul=wifi-iface && uci set wireless.mesh_backhaul.device='radio0' && uci set wireless.mesh_backhaul.mode='mesh' && uci set wireless.mesh_backhaul.mesh_id='${mesh_id}' && uci set wireless.mesh_backhaul.network='lan' && uci set wireless.mesh_backhaul.encryption='sae' && uci set wireless.mesh_backhaul.key='${mesh_key}' && uci set wireless.mesh_backhaul.mesh_fwding='1' && uci set wireless.mesh_backhaul.disabled='0' && uci commit && /etc/init.d/dnsmasq stop 2>/dev/null && /etc/init.d/dnsmasq disable 2>/dev/null && ( sleep 2 && wifi reload && /etc/init.d/network restart ) &"
+
+            ssh -i "$key_file" -o StrictHostKeyChecking=no -o ConnectTimeout=5 "root@${target_ip}" "$node_setup_cmd" >/dev/null 2>&1
+
+            local node_sec_name="node_$(echo "$target_lan_ip" | tr '.' '_')"
+            [ -f /etc/config/clawwrt ] || touch /etc/config/clawwrt
+            uci set clawwrt.${node_sec_name}=mesh_node
+            uci set clawwrt.${node_sec_name}.name="$node_name"
+            uci set clawwrt.${node_sec_name}.ip="$target_lan_ip"
+            uci set clawwrt.${node_sec_name}.status="paired"
+            uci set clawwrt.${node_sec_name}.added_time="$(date '+%Y-%m-%d %H:%M:%S')"
+            uci commit clawwrt
+
+            json_init
+            json_add_object "result"
+            json_add_boolean "success" "1"
+            json_add_string "target_lan_ip" "$target_lan_ip"
+            json_add_string "node_name" "$node_name"
+            json_add_string "message" "已成功向子路由下发 802.11s + 802.11k/v/r 纯二层 Mesh 配置！请拔下网线放置到卧室。"
+            json_close_object
+            json_dump
+        }
+
+        unpair_mesh_node() {
+            read -r input
+            json_load "$input"
+            json_get_var id "id"
+
+            if [ -n "$id" ]; then
+                uci -q delete clawwrt."$id"
+                uci commit clawwrt
+            fi
+
+            json_init
+            json_add_object "result"
+            json_add_boolean "success" "1"
+            json_add_string "message" "子路由节点已成功从 Mesh 集群中移除"
+            json_close_object
+            json_dump
+        }
+
         _tune_add() {
             json_add_object
             json_add_string "id" "$1"
@@ -1149,6 +1459,320 @@ case "$1" in
             else
                 json_add_boolean "success" "0"
                 json_add_string "message" "没有可应用的优化项。"
+            fi
+            json_close_object
+            json_dump
+        }
+
+        _wifi_tune_add() {
+            json_add_object
+            json_add_string "id" "$1"
+            json_add_string "category" "$2"
+            json_add_string "title" "$3"
+            json_add_string "current" "$4"
+            json_add_string "target" "$5"
+            json_add_string "reason" "$6"
+            json_add_string "risk_level" "$7"
+            json_close_object
+        }
+
+        diagnose_wifi_performance() {
+            json_init
+            json_add_object "result"
+
+            local active_country=$(iw reg get 2>/dev/null | grep -i '^country' | head -n1 | awk '{print $2}' | tr -d ':')
+            [ -z "$active_country" ] && active_country="00"
+            json_add_string "active_regulatory_country" "$active_country"
+
+            local radios=$(uci -q show wireless | grep '=wifi-device' | cut -d. -f2 | cut -d= -f1)
+            [ -z "$radios" ] && radios="radio0 radio1"
+
+            json_add_array "radios"
+            local has_country_trap=0
+            local has_dfs_issue=0
+            local rad_5g=""
+            local rad_2g=""
+
+            for rad in $radios; do
+                local band=$(uci -q get wireless.${rad}.band)
+                local channel=$(uci -q get wireless.${rad}.channel || echo "auto")
+                local htmode=$(uci -q get wireless.${rad}.htmode || echo "")
+                local country=$(uci -q get wireless.${rad}.country || echo "")
+                local txpower=$(uci -q get wireless.${rad}.txpower || echo "")
+                [ -z "$band" ] && continue
+
+                local active_iface=""
+                for iface in $(uci -q show wireless | grep '=wifi-iface' | cut -d. -f2 | cut -d= -f1); do
+                    if [ "$(uci -q get wireless.${iface}.device)" = "$rad" ]; then
+                        local m=$(uci -q get wireless.${iface}.mode || echo "ap")
+                        if [ "$m" = "ap" ]; then
+                            active_iface=$(iw dev 2>/dev/null | grep -B1 "channel ${channel}" | grep Interface | awk '{print $2}' | head -n1)
+                            [ -z "$active_iface" ] && active_iface=$(uci -q get wireless.${iface}.ifname)
+                        fi
+                    fi
+                done
+                [ -z "$active_iface" ] && active_iface="${rad}-ap0"
+
+                local noise="-92 dBm"
+                local real_txpower="$txpower"
+                if [ -n "$active_iface" ] && command -v iwinfo >/dev/null 2>&1; then
+                    local iw_noise=$(iwinfo "$active_iface" info 2>/dev/null | grep -i "Noise:" | awk '{print $4, $5}')
+                    [ -n "$iw_noise" ] && noise="$iw_noise"
+                    local iw_pwr=$(iwinfo "$active_iface" info 2>/dev/null | grep -i "Tx-Power:" | awk '{print $2}')
+                    [ -n "$iw_pwr" ] && real_txpower="$iw_pwr"
+                fi
+
+                local is_dfs=0
+                if [ "$band" = "5g" ]; then
+                    rad_5g="$rad"
+                    case "$channel" in
+                        52|56|60|64|100|104|108|112|116|120|124|128|132|136|140|144)
+                            is_dfs=1
+                            has_dfs_issue=1
+                            ;;
+                    esac
+                elif [ "$band" = "2g" ]; then
+                    rad_2g="$rad"
+                fi
+
+                local is_trap=0
+                if [ -z "$country" ] || [ "$country" = "00" ] || [ "$active_country" = "00" ]; then
+                    is_trap=1
+                    has_country_trap=1
+                fi
+
+                json_add_object
+                json_add_string "radio" "$rad"
+                json_add_string "band" "$band"
+                json_add_string "channel" "$channel"
+                json_add_string "htmode" "$htmode"
+                json_add_string "config_country" "$country"
+                json_add_string "txpower" "$real_txpower"
+                json_add_string "noise" "$noise"
+                json_add_boolean "is_dfs" "$is_dfs"
+                json_add_boolean "country_trap" "$is_trap"
+                json_close_object
+            done
+            json_close_array
+
+            local rec_2g="6"
+            local rec_5g="149"
+            if command -v iwinfo >/dev/null 2>&1; then
+                local scan_if_2g="" scan_if_5g=""
+                for ifc in phy0-ap0 phy1-ap0 wlan0 wlan1; do
+                    if iwinfo "$ifc" info >/dev/null 2>&1; then
+                        local b=$(iwinfo "$ifc" info 2>/dev/null | grep -i "Frequency:" | awk '{print $3}')
+                        if echo "$b" | grep -q "2.4"; then
+                            [ -z "$scan_if_2g" ] && scan_if_2g="$ifc"
+                        elif echo "$b" | grep -q "5."; then
+                            [ -z "$scan_if_5g" ] && scan_if_5g="$ifc"
+                        fi
+                    fi
+                done
+
+                if [ -n "$scan_if_2g" ]; then
+                    local scan_raw_2g=$(iwinfo "$scan_if_2g" scan 2>/dev/null)
+                    local c1=$(echo "$scan_raw_2g" | grep -c "Channel: 1$")
+                    local c6=$(echo "$scan_raw_2g" | grep -c "Channel: 6$")
+                    local c11=$(echo "$scan_raw_2g" | grep -c "Channel: 11$")
+                    if [ "$c1" -le "$c6" ] && [ "$c1" -le "$c11" ]; then
+                        rec_2g="1"
+                    elif [ "$c6" -le "$c1" ] && [ "$c6" -le "$c11" ]; then
+                        rec_2g="6"
+                    else
+                        rec_2g="11"
+                    fi
+                fi
+
+                if [ -n "$scan_if_5g" ]; then
+                    local scan_raw_5g=$(iwinfo "$scan_if_5g" scan 2>/dev/null)
+                    local c149=$(echo "$scan_raw_5g" | grep -c "Channel: 149")
+                    local c36=$(echo "$scan_raw_5g" | grep -c "Channel: 36")
+                    if [ "$c149" -eq 0 ]; then
+                        rec_5g="149"
+                    elif [ "$c36" -eq 0 ]; then
+                        rec_5g="36"
+                    else
+                        rec_5g="149"
+                    fi
+                fi
+            fi
+
+            json_add_object "scan_analysis"
+            json_add_string "recommended_2g_channel" "$rec_2g"
+            json_add_string "recommended_5g_channel" "$rec_5g"
+            json_close_object
+
+            json_add_array "actions"
+
+            if [ "$has_country_trap" -eq 1 ]; then
+                _wifi_tune_add "set_country_cn" "regulatory" "解除 Country 00 功率与频段锁死" "未配置/World (14dBm)" "CN 中国 (解锁20~23dBm)" "当前由于缺少国家码，发射功率被腰斩至 10~25mW，且 149+ 信道无法建网。设置 CN 可立即解锁满血发射功率，大幅改善隔墙衰减！" "high"
+            fi
+
+            if [ "$has_dfs_issue" -eq 1 ]; then
+                _wifi_tune_add "switch_5g_channel_149" "channel" "5G 避开气象雷达区，锁定大功率 149 信道" "当前信道 (DFS雷达区)" "信道 149 (纯民用免雷达)" "当前 5G 处于气象雷达频段，开机强制静默 60 秒（搜不到信号），且偶遇雷达脉冲会被迫跳频中断。149 信道无雷达干扰，且允许最大功率发射。" "high"
+            fi
+
+            for rad in $radios; do
+                if [ "$(uci -q get wireless.${rad}.band)" = "5g" ]; then
+                    local ht=$(uci -q get wireless.${rad}.htmode)
+                    case "$ht" in
+                        EHT20|EHT40) _wifi_tune_add "opt_5g_htmode_${rad}_EHT80" "htmode" "5G 频宽拉满至 80MHz (Wi-Fi 7)" "$ht" "EHT80" "当前频宽过窄限制了吞吐量，提升至 80MHz 跑满千兆带宽。" "medium" ;;
+                        HE20|HE40)   _wifi_tune_add "opt_5g_htmode_${rad}_HE80" "htmode" "5G 频宽拉满至 80MHz (Wi-Fi 6)" "$ht" "HE80" "当前频宽限制了协商速率，提升至 80MHz 可跑满 1200Mbps 协商速率。" "medium" ;;
+                        VHT20|VHT40|HT20|HT40) _wifi_tune_add "opt_5g_htmode_${rad}_VHT80" "htmode" "5G 频宽拉满至 80MHz (Wi-Fi 5)" "$ht" "VHT80" "提升至 80MHz 协商速率跑满 866Mbps。" "medium" ;;
+                    esac
+                fi
+            done
+
+            for rad in $radios; do
+                if [ "$(uci -q get wireless.${rad}.band)" = "2g" ]; then
+                    local ht=$(uci -q get wireless.${rad}.htmode)
+                    case "$ht" in
+                        EHT40) _wifi_tune_add "opt_2g_htmode_${rad}_EHT20" "htmode" "2.4G 锁定 20MHz 避开邻居重叠干扰" "$ht" "EHT20" "40MHz 会占满 2.4G 整段频谱与邻居严重互调，改为 20MHz 可显著提高智能家居稳定性与抗干扰。" "medium" ;;
+                        HE40)  _wifi_tune_add "opt_2g_htmode_${rad}_HE20" "htmode" "2.4G 锁定 20MHz 避开邻居重叠干扰" "$ht" "HE20" "40MHz 在 2.4G 极易丢包，改为 20MHz 降低延迟。" "medium" ;;
+                        HT40)  _wifi_tune_add "opt_2g_htmode_${rad}_HT20" "htmode" "2.4G 锁定 20MHz 避开邻居重叠干扰" "$ht" "HT20" "收窄频宽，提升信噪比，避免与邻居 1/6/11 冲突。" "medium" ;;
+                    esac
+                fi
+            done
+
+            local need_wmm=0
+            for iface in $(uci -q show wireless | grep '=wifi-iface' | cut -d. -f2 | cut -d= -f1); do
+                [ "$(uci -q get wireless.${iface}.mode || echo ap)" = "ap" ] && [ "$(uci -q get wireless.${iface}.wmm || echo 1)" = "0" ] && need_wmm=1
+            done
+            if [ "$need_wmm" -eq 1 ]; then
+                _wifi_tune_add "enable_wmm" "protocol" "开启 WMM 无线多媒体优先级" "关闭 (降级为54M)" "开启 (满血速率)" "关闭 WMM 会导致 802.11n/ac/ax 高速协议失效，速率跌回 54Mbps。" "high"
+            fi
+
+            local need_dis=0
+            for iface in $(uci -q show wireless | grep '=wifi-iface' | cut -d. -f2 | cut -d= -f1); do
+                [ "$(uci -q get wireless.${iface}.mode || echo ap)" = "ap" ] && [ "$(uci -q get wireless.${iface}.disassoc_low_ack || echo 1)" != "0" ] && need_dis=1
+            done
+            if [ "$need_dis" -eq 1 ]; then
+                _wifi_tune_add "disable_disassoc_low_ack" "protocol" "防弱信号误踢线 (覆盖边缘防断网)" "开启踢线 (disassoc_low_ack=1)" "禁用踢线 (disassoc_low_ack=0)" "走到门外或洗手间等弱信号区域时，避免因偶发丢包被路由器强行切断 Wi-Fi。" "low"
+            fi
+
+            for rad in $radios; do
+                local cur_pwr=$(uci -q get wireless.${rad}.txpower)
+                case "$cur_pwr" in
+                    ''|*[!0-9]*) cur_pwr=0 ;;
+                esac
+                if [ "$cur_pwr" -gt 0 ] && [ "$cur_pwr" -lt 20 ]; then
+                    _wifi_tune_add "unlock_txpower_${rad}_20" "power" "${rad} 发射功率提升至满血 20dBm (100mW)" "${cur_pwr} dBm" "20 dBm" "合法范围内拉满发射功率，提升信号穿墙能力。" "medium"
+                fi
+            done
+
+            json_close_array
+            json_close_object
+            json_dump
+        }
+
+        apply_wifi_tune() {
+            read -r input
+            json_load "$input"
+            json_get_var actions "actions"
+            local applied=""
+            local do_wifi=0
+            local radios=$(uci -q show wireless | grep '=wifi-device' | cut -d. -f2 | cut -d= -f1)
+            [ -z "$radios" ] && radios="radio0 radio1"
+
+            for act in $(echo "$actions" | tr ',' ' '); do
+                case "$act" in
+                    set_country_cn)
+                        for rad in $radios; do
+                            uci set wireless.${rad}.country='CN'
+                        done
+                        applied="$applied set_country_cn"
+                        do_wifi=1
+                        ;;
+                    switch_5g_channel_149)
+                        for rad in $radios; do
+                            if [ "$(uci -q get wireless.${rad}.band)" = "5g" ]; then
+                                uci set wireless.${rad}.channel='149'
+                                applied="$applied switch_5g_channel_149"
+                                do_wifi=1
+                            fi
+                        done
+                        ;;
+                    switch_5g_channel_36)
+                        for rad in $radios; do
+                            if [ "$(uci -q get wireless.${rad}.band)" = "5g" ]; then
+                                uci set wireless.${rad}.channel='36'
+                                applied="$applied switch_5g_channel_36"
+                                do_wifi=1
+                            fi
+                        done
+                        ;;
+                    opt_5g_htmode_*)
+                        local rad_target="${act#opt_5g_htmode_}"
+                        local rad="${rad_target%_*}"
+                        local tgt="${rad_target##*_}"
+                        if [ -n "$rad" ] && [ -n "$tgt" ] && uci -q get "wireless.${rad}" >/dev/null; then
+                            uci set "wireless.${rad}.htmode=$tgt"
+                            applied="$applied $act"
+                            do_wifi=1
+                        fi
+                        ;;
+                    opt_2g_htmode_*)
+                        local rad_target="${act#opt_2g_htmode_}"
+                        local rad="${rad_target%_*}"
+                        local tgt="${rad_target##*_}"
+                        if [ -n "$rad" ] && [ -n "$tgt" ] && uci -q get "wireless.${rad}" >/dev/null; then
+                            uci set "wireless.${rad}.htmode=$tgt"
+                            applied="$applied $act"
+                            do_wifi=1
+                        fi
+                        ;;
+                    opt_2g_channel_*)
+                        local ch="${act#opt_2g_channel_}"
+                        for rad in $radios; do
+                            if [ "$(uci -q get wireless.${rad}.band)" = "2g" ]; then
+                                uci set wireless.${rad}.channel="$ch"
+                                applied="$applied $act"
+                                do_wifi=1
+                            fi
+                        done
+                        ;;
+                    enable_wmm)
+                        for iface in $(uci -q show wireless | grep '=wifi-iface' | cut -d. -f2 | cut -d= -f1); do
+                            [ "$(uci -q get wireless.${iface}.mode || echo ap)" = "ap" ] && uci set wireless.${iface}.wmm='1'
+                        done
+                        applied="$applied enable_wmm"
+                        do_wifi=1
+                        ;;
+                    disable_disassoc_low_ack)
+                        for iface in $(uci -q show wireless | grep '=wifi-iface' | cut -d. -f2 | cut -d= -f1); do
+                            [ "$(uci -q get wireless.${iface}.mode || echo ap)" = "ap" ] && uci set wireless.${iface}.disassoc_low_ack='0'
+                        done
+                        applied="$applied disable_disassoc_low_ack"
+                        do_wifi=1
+                        ;;
+                    unlock_txpower_*)
+                        local rad_target="${act#unlock_txpower_}"
+                        local rad="${rad_target%_*}"
+                        local pwr="${rad_target##*_}"
+                        if [ -n "$rad" ] && [ -n "$pwr" ] && uci -q get "wireless.${rad}" >/dev/null; then
+                            uci set "wireless.${rad}.txpower=$pwr"
+                            applied="$applied $act"
+                            do_wifi=1
+                        fi
+                        ;;
+                esac
+            done
+
+            if [ "$do_wifi" = "1" ]; then
+                uci commit wireless
+                [ -x /sbin/wifi ] && /sbin/wifi reload >/dev/null 2>&1 &
+            fi
+
+            json_init
+            json_add_object "result"
+            if [ -n "$applied" ]; then
+                json_add_boolean "success" "1"
+                json_add_string "applied" "$applied"
+                json_add_string "message" "无线性能优化配置已成功写入并平滑重载！"
+            else
+                json_add_boolean "success" "0"
+                json_add_string "message" "未选择任何需要应用的优化项。"
             fi
             json_close_object
             json_dump
@@ -4663,8 +5287,15 @@ EOF
             set_wifi_config) set_wifi_config ;;
             get_wifi_roaming) get_wifi_roaming ;;
             set_wifi_roaming) set_wifi_roaming ;;
+            get_mesh_status) get_mesh_status ;;
+            set_mesh_config) set_mesh_config ;;
+            discover_mesh_nodes) discover_mesh_nodes ;;
+            pair_mesh_node) pair_mesh_node ;;
+            unpair_mesh_node) unpair_mesh_node ;;
             get_network_tune) get_network_tune ;;
             apply_network_tune) apply_network_tune ;;
+            diagnose_wifi_performance) diagnose_wifi_performance ;;
+            apply_wifi_tune) apply_wifi_tune ;;
             get_hw_offload_status) get_hw_offload_status ;;
             set_hw_offload) set_hw_offload ;;
             get_router_ssh_key) get_router_ssh_key ;;

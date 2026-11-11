@@ -47,6 +47,39 @@ const callSetWifiRoaming = rpc.declare({
     expect: { result: {} }
 });
 
+const callGetMeshStatus = rpc.declare({
+    object: 'luci.clawwrt',
+    method: 'get_mesh_status',
+    expect: { result: {} }
+});
+
+const callSetMeshConfig = rpc.declare({
+    object: 'luci.clawwrt',
+    method: 'set_mesh_config',
+    params: [ 'enabled', 'role', 'mesh_id', 'key', 'channel', 'band' ],
+    expect: { result: {} }
+});
+
+const callDiscoverMeshNodes = rpc.declare({
+    object: 'luci.clawwrt',
+    method: 'discover_mesh_nodes',
+    expect: { result: {} }
+});
+
+const callPairMeshNode = rpc.declare({
+    object: 'luci.clawwrt',
+    method: 'pair_mesh_node',
+    params: [ 'target_ip', 'node_name', 'target_lan_ip' ],
+    expect: { result: {} }
+});
+
+const callUnpairMeshNode = rpc.declare({
+    object: 'luci.clawwrt',
+    method: 'unpair_mesh_node',
+    params: [ 'id' ],
+    expect: { result: {} }
+});
+
 const callGetNetworkTune = rpc.declare({
     object: 'luci.clawwrt',
     method: 'get_network_tune',
@@ -56,6 +89,19 @@ const callGetNetworkTune = rpc.declare({
 const callApplyNetworkTune = rpc.declare({
     object: 'luci.clawwrt',
     method: 'apply_network_tune',
+    params: [ 'actions' ],
+    expect: { result: {} }
+});
+
+const callDiagnoseWifiPerformance = rpc.declare({
+    object: 'luci.clawwrt',
+    method: 'diagnose_wifi_performance',
+    expect: { result: {} }
+});
+
+const callApplyWifiTune = rpc.declare({
+    object: 'luci.clawwrt',
+    method: 'apply_wifi_tune',
     params: [ 'actions' ],
     expect: { result: {} }
 });
@@ -540,6 +586,79 @@ const routerTools = [
     {
         type: 'function',
         function: {
+            name: 'diagnose_wifi_performance',
+            description: '深度诊断 2.4G 与 5G 的无线信号、射频规约与信道瓶颈：排查是否掉入 Country 00 功率锁死黑洞（导致仅剩 14dBm/25mW 功率无法穿墙）、是否误入 52~64 DFS 气象雷达信道（开机罚站 60 秒搜不到信号）、5G 频宽是否被限制在 20MHz、2.4G 是否误开 40MHz 造成严重互调干扰、周边信道拥挤度以及 WMM 状态。只读不改。',
+            parameters: { type: 'object', properties: {} }
+        }
+    },
+    {
+        type: 'function',
+        function: {
+            name: 'propose_wifi_optimize',
+            description: '向用户展示 2.4G/5G 满血无线信号优化确认卡片。必须先调用 diagnose_wifi_performance 获取真实体检数据。卡片将列出可优化的关键项（如解除 Country 00 功率锁死、5G 切换大功率免雷达信道、5G 频宽拉满 80MHz、2.4G 锁定 20MHz、开启 WMM 与防踢线），由用户在界面中自主勾选并授权应用。用户确认前严禁宣称已优化。',
+            parameters: {
+                type: 'object',
+                properties: {
+                    summary: { type: 'string', description: '向用户通俗解释当前 Wi-Fi 存在的核心瓶颈与痛点（如功率被削弱、雷达罚站、频宽受限等）以及优化收益' }
+                },
+                required: ['summary']
+            }
+        }
+    },
+    {
+        type: 'function',
+        function: {
+            name: 'get_mesh_status',
+            description: '查询当前路由器的 802.11s 无线 Mesh 骨干网运行状态：包括当前集群角色（Master 主路由 / Satellite 子节点）、802.11s Mesh ID、5G 回传信道、HWMP 动态自愈跃点路由表 (mpath) 及已纳管的所有子路由在线状态',
+            parameters: { type: 'object', properties: {} }
+        }
+    },
+    {
+        type: 'function',
+        function: {
+            name: 'propose_mesh_config',
+            description: '向用户提议开启、关闭或调整本地 802.11s Mesh 骨干回传网络（包括指定回传信道如 44、设置 Mesh ID、配置 WPA3-SAE 预共享密钥、指定主从角色），前端将渲染直观的参数对比确认卡片供用户授权，不可私自直接修改',
+            parameters: {
+                type: 'object',
+                properties: {
+                    enabled: { type: 'string', enum: ['1', '0'], description: '是否启用 802.11s Mesh 骨干网 (1: 开启, 0: 关闭)' },
+                    role: { type: 'string', enum: ['master', 'satellite'], description: '节点角色：master (主路由网关) 或 satellite (分身扩展节点)' },
+                    mesh_id: { type: 'string', description: 'Mesh 网络标识符 (如 chawrt_mesh_5g)' },
+                    channel: { type: 'string', description: '5G 回传固定信道 (如 44, 36, 149)' },
+                    explanation: { type: 'string', description: '向用户解释配置 Mesh 骨干网的原因与收益' }
+                },
+                required: ['enabled']
+            }
+        }
+    },
+    {
+        type: 'function',
+        function: {
+            name: 'discover_mesh_nodes',
+            description: '在局域网中自动嗅探扫描待配对的 ChaWrt 路由器硬件节点（检查已接入 LAN 网段但尚未配对的设备、开放 SSH 端口或匹配主机名的节点，返回候选 IP 与 MAC），为一键配对子路由做准备',
+            parameters: { type: 'object', properties: {} }
+        }
+    },
+    {
+        type: 'function',
+        function: {
+            name: 'propose_pair_mesh_node',
+            description: '向用户提议将刚接入的待配对子路由器（通过网线插在主路由下）一键自动配对为全屋 802.11kvrs 纯二层 Mesh 子节点（自动注入 Ed25519 免密密钥、自动分配不冲突的静态 LAN IP 如 192.168.1.2、关闭子路由 DHCP、无感推送 802.11s 骨干网与 802.11k/v/r 漫游配置）。前端渲染防呆卡片供用户点击确认',
+            parameters: {
+                type: 'object',
+                properties: {
+                    target_ip: { type: 'string', description: '待配对子路由当前的临时 IP（通常由 discover_mesh_nodes 扫描获得，如 192.168.1.188 或 192.168.2.1）' },
+                    node_name: { type: 'string', description: '为子路由指定的中文名称（如 "卧室分身路由"、"书房节点"）' },
+                    target_lan_ip: { type: 'string', description: '计划为子路由分配的固定 LAN IP（如 192.168.1.2，必须与主路由同网段且不冲突）' },
+                    explanation: { type: 'string', description: '向用户通俗说明配对流程：配对成功后即可拔掉网线放置在目标房间' }
+                },
+                required: ['target_ip']
+            }
+        }
+    },
+    {
+        type: 'function',
+        function: {
             name: 'get_qos_status',
             description: '查询路由器当前基于内核 eBPF 的实时设备流量与智能流控状态：包括各连接设备的实时下行/上行速率（以 Mbps 及 MB/s 呈现）、MAC 地址、主机名、累计上下行流量、当前限速规则（Mbps）及定时限速时段，以及 eBPF 引擎运行状态、FastPath 硬件加速与 xDPI L7 识别状态',
             parameters: { type: 'object', properties: {} }
@@ -750,6 +869,7 @@ const systemPrompt = `你是一个专业的 OpenWrt / chaWrt 路由器专属 AI 
    - 智能分流 (xdns)：基于 Linux 内核 TC-eBPF 动态智能分流，在 br-lan 网卡挂载 TC ingress pref 5 与 egress pref 10 双向探针，自动拦截分流域名并重定向至 xkcptun 隧道；支持查询当前 DNS 拦截数、代理数、学习应答数与 TCP 代理连接数、内核动态劫持 IP 表及活跃会话 (get_service_detail('xdns'))；支持全能分流管理 (manage_xdns_domain)：查询加速域名及内核状态 (action: "list")、添加域名 (action: "add")、删除域名 (action: "remove")、清空内核动态 IP 缓存 (action: "clear_ips")、重载规则文件 (action: "reload")、查看内核劫持 IP 列表 (action: "list_ips")、查看活跃代理会话 (action: "list_sessions")、统计数据 (action: "stats")；
    - StrongSwan IPsec VPN (ipsec)：企业级加密隧道，支持开启/关闭、配置对端网关 (gateway) 与预共享密钥 (key)；
    - 无线 WiFi 与 802.11k/v/r 无缝漫游：支持查询 WiFi 状态与修改名称密码 (get_wifi_info, propose_wifi_config)；特别支持专业级 Wi-Fi 802.11k/v/r 无缝漫游与 usteer 调度状态查询与配置提议 (get_wifi_roaming, propose_wifi_roaming)。深度融合 802.11k (RRM 邻居测量避免盲扫)、802.11v (BSS Transition 弱信号主动转移避免死咬) 与 802.11r (FT Fast BSS Transition 搭便车 15ms 瞬移破门)，支持配置满血 full_kvr、老旧设备兼容模式 kv_only、修改统一的 Mobility Domain 移动域 ID 以及一键开启/停用漫游；
+   - 2.4G/5G 无线性能与信号深度排查调优：当用户提出“Wi-Fi信号不好”、“5G老是搜不到”、“5G穿墙太弱”、“Wi-Fi体检”、“调优2.4G/5G”等无线体验痛点时，必须先调用 diagnose_wifi_performance 进行全链路深度体检（排查是否掉入 Country 00 功率锁死黑洞导致仅剩 14dBm/25mW 功率无法穿墙、是否误入 52~64 DFS 气象雷达信道遭遇 60 秒开机罚站、5G 频宽是否被限制在 20MHz 无法跑满千兆、2.4G 是否误开 40MHz 造成严重互调干扰、周边信道拥挤度以及 WMM 状态）；随后必须调用 propose_wifi_optimize 生成可视化调优确认卡片供用户授权，绝不可在用户点击前宣称已经优化完毕；
    - 网络优化：用户要求优化网络、无线或整体上网体验时，先调用 get_network_tune 读取网络与无线现状，再调用 propose_network_optimize 生成确认卡片。不改 SSID、密码、信道和国家码。用户确认前不得宣称已经优化。
 
 4. 【操作与输出规范】：
@@ -776,7 +896,11 @@ const systemPrompt = `你是一个专业的 OpenWrt / chaWrt 路由器专属 AI 
      ②【实时高流速服务与域名 Top 10】（服务/域名、中文说明、类型、实时流速、累计流量）；
      ③【高频访问域名 Top 10】（域名、中文名称、访问频次）；
    - 当用户询问无线漫游、802.11k/v/r、走动断网或弱信号切换时，调用 get_wifi_roaming 查询状态；当用户需要开启或调整漫游时，调用 propose_wifi_roaming 生成确认卡片；
-   - 凡涉及 VPS 部署、开启/关闭硬件加速、设置/解除限速、修改 WiFi 或漫游配置、服务参数、添加/删除分流域名、添加/删除白名单 MAC、新增/停用/启用/删除穿透规则，必须通过对应的提议/管理工具生成可视化卡片供用户点击确认！
+   - 当用户询问或抱怨 Wi-Fi 信号弱、5G 经常搜不到、穿墙差、无线卡顿或要求体检/优化 Wi-Fi 信号时，先调用 diagnose_wifi_performance 获取全链路底层事实数据，再调用 propose_wifi_optimize 生成直观的可视化调优授权卡片！
+   - 当用户询问 Mesh 组网、多路由组网、全屋 WiFi 覆盖、回程状态或节点拓扑时，调用 get_mesh_status 查询当前 Mesh 角色（Master/Node/Disabled）及已连接节点；
+   - 当用户需要配置或启用 Mesh 网络（设置主路由/子路由模式、802.11s Mesh ID、回程密钥、信道、加密）时，调用 propose_mesh_config 生成参数确认卡片；
+   - 当用户需要发现或一键添加/配对局域网内的子路由（Node 分身）时，先调用 discover_mesh_nodes 自动扫描局域网待配对 ChaWrt 节点，再调用 propose_pair_mesh_node 生成一键配对卡片（全自动分发 Ed25519 密钥、平滑转换子节点为 L2 哑 AP、同步 Mesh 802.11s 回程与 802.11k/v/r 漫游、规避 LAN IP 冲突）；
+   - 凡涉及 VPS 部署、开启/关闭硬件加速、设置/解除限速、修改 WiFi 或漫游配置、配置 Mesh 网络、配对/纳管/移除 Mesh 节点、服务参数、添加/删除分流域名、添加/删除白名单 MAC、新增/停用/启用/删除穿透规则，必须通过对应的提议/管理工具生成可视化卡片供用户点击确认！
 5. 【回答风格】：亲切自然、通俗易懂，结论先行，再提供结构清晰的 Markdown 表格说明或建议。`;
 
 var marked = (function(){var exports={};var __exports=exports;var module={exports};
@@ -951,6 +1075,9 @@ return view.extend({
                 name: '🔥 常用精选',
                 cards: [
                     { label: '📊 路由器健康体检', query: '对这台路由器进行健康巡检，汇报系统负载、内存剩余、开机时长与网络状态' },
+                    { label: '📡 2.4G/5G 满血信号调优', query: '帮我全面体检 2.4G 和 5G 无线信号与射频配置，排查是否存在 Country 00 功率锁死、DFS 雷达信道冲突、频宽错配与信道干扰，并给出满血调优建议' },
+                    { label: '🚀 一键创建全屋 Mesh 骨干网', query: '我想将这台路由器配置为全屋 802.11s Mesh 组网的 Master 主路由网关，回程信道设为 44，Mesh ID 设为 chawrt_mesh_5g，请帮我生成 Mesh 启用配置卡片' },
+                    { label: '🔄 开启 802.11k/v/r 漫游', query: '查看当前 Wi-Fi 802.11k/v/r 无缝漫游配置，帮我开启满血 15ms 快速漫游与 usteer 调度' },
                     { label: '🌐 测试外网连通与延迟', query: '帮我全面测试路由器当前能否正常上网，检测外网延迟、丢包率与 DNS 解析情况' },
                     { label: '📱 查看当前连接设备', query: '当前局域网连接了哪些手机、电脑或终端？列出它们的 IP、MAC 和主机名' },
                     { label: '🔍 穿透连通性深度检测', query: '帮我深度检测内网穿透当前是否正常运行，检查 xfrpc 是否已经真正连上了远端 frps 服务端，查看连接套接字、日志与公网访问链接' },
@@ -959,6 +1086,20 @@ return view.extend({
                     { label: '🚀 实时流量与流控', query: '查看当前局域网各终端设备的实时上下行网速与智能流控限速状态' },
                     { label: '🔀 智能分流与加速域名', query: '查看智能分流 xdns 的运行状态、eBPF 拦截统计、动态劫持 IP 以及当前分流加速的域名列表' },
                     { label: '🛡️ 门户认证与白名单', query: '查看当前门户认证 wifidogx 的运行状态、云端连接、在线用户及免认证 MAC 白名单' }
+                ]
+            },
+            {
+                id: 'wifi_mesh',
+                name: '📡 无线调优与Mesh组网',
+                cards: [
+                    { label: '📡 2.4G/5G 满血信号调优', query: '帮我全面体检 2.4G 和 5G 无线信号与射频配置，排查是否存在 Country 00 功率锁死、DFS 雷达信道冲突、频宽错配与信道干扰，并给出满血调优建议' },
+                    { label: '📶 为什么 5G 信号穿墙弱或搜不到？', query: '帮我排查 5G 信号穿墙弱或搜不到的原因，排查是否掉进 Country 00 功率黑洞或遇到 DFS 雷达罚站，并给出满血优化方案' },
+                    { label: '🚀 一键创建全屋 Mesh 骨干网', query: '我想将这台路由器配置为全屋 802.11s Mesh 组网的 Master 主路由网关，回程信道设为 44，Mesh ID 设为 chawrt_mesh_5g，请帮我生成 Mesh 启用配置卡片' },
+                    { label: '➕ 给 Master 添加并配对 Node 子节点', query: '我想给这台 Master 主机添加并配对一台新的子路由器作为 Mesh Node 分身节点，请帮我扫描局域网待配对设备并准备一键配对' },
+                    { label: '🕸️ 查看 Mesh 拓扑与子节点状态', query: '查看当前路由器的 802.11s 无线 Mesh 骨干网运行状态、回程信道、HWMP 路由跳数及已纳管的所有子节点在线状态' },
+                    { label: '🔄 开启 802.11k/v/r 无缝快速漫游', query: '查看当前 Wi-Fi 802.11k/v/r 无缝漫游配置，帮我开启满血 15ms 快速漫游与 usteer 调度，解决房间走动断网与丢包' },
+                    { label: '🔍 周边 Wi-Fi 信道扫描与避堵', query: '扫描周边邻居的 Wi-Fi 信道占用情况，分析 2.4G 和 5G 干扰程度，并为我推荐最干净的黄金信道' },
+                    { label: '🔑 查看或修改 WiFi 密码', query: '查看当前路由器的 WiFi 名称与密码配置' }
                 ]
             },
             {
@@ -2364,6 +2505,230 @@ return view.extend({
             chatWindow.scrollTop = chatWindow.scrollHeight;
         }
 
+        function appendMeshConfigCard(param) {
+            const initialRole = param.role || 'master';
+            const initialId = param.mesh_id || 'chawrt_mesh_5g';
+            const initialCh = param.channel || '44';
+            const initialEnabled = (param.enabled !== '0');
+            
+            const card = E('div', {
+                'class': 'mesh-config-card',
+                'style': 'background: var(--cw-bg-card); border: 2px solid #10b981; border-radius: 12px; padding: 16px 20px; margin: 12px 0; box-shadow: var(--cw-card-shadow);'
+            }, [
+                E('div', { 'style': 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px;' }, [
+                    E('div', { 'style': 'font-weight: 700; font-size: 15px; color: #059669; display: flex; align-items: center; gap: 8px;' }, [
+                        E('span', { 'style': 'font-size: 18px;' }, '📡'),
+                        E('span', {}, '802.11s 无线 Mesh 骨干网配置授权')
+                    ]),
+                    E('span', { 'style': 'background: #d1fae5; color: #047857; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 600;' }, initialRole === 'master' ? '👑 主路由 Master' : '🛰️ 子节点 Satellite')
+                ]),
+                E('div', { 'style': 'font-size: 13px; color: var(--cw-text-sub); margin-bottom: 12px;' }, param.explanation || '启用 IEEE 802.11s 国际标准无线网格骨干网，支持 6 地址纯二层透明透传与 HWMP 动态秒级自愈，彻底杜绝 NAT 割裂局域网。'),
+                
+                E('div', { 'style': 'display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;' }, [
+                    E('div', {}, [
+                        E('label', { 'style': 'display: block; font-size: 12px; font-weight: 600; color: var(--cw-text-main); margin-bottom: 4px;' }, 'Mesh 骨干网状态:'),
+                        E('select', {
+                            'id': 'mesh-card-enabled',
+                            'class': 'cbi-input-select',
+                            'style': 'width: 100%; border: 1px solid var(--cw-border); background: var(--cw-input-bg); color: var(--cw-input-text); border-radius: 6px; padding: 6px 10px; font-size: 13px;'
+                        }, [
+                            E('option', { 'value': '1', 'selected': initialEnabled ? 'selected' : null }, '开启 (推荐)'),
+                            E('option', { 'value': '0', 'selected': !initialEnabled ? 'selected' : null }, '关闭')
+                        ])
+                    ]),
+                    E('div', {}, [
+                        E('label', { 'style': 'display: block; font-size: 12px; font-weight: 600; color: var(--cw-text-main); margin-bottom: 4px;' }, '集群节点角色:'),
+                        E('select', {
+                            'id': 'mesh-card-role',
+                            'class': 'cbi-input-select',
+                            'style': 'width: 100%; border: 1px solid var(--cw-border); background: var(--cw-input-bg); color: var(--cw-input-text); border-radius: 6px; padding: 6px 10px; font-size: 13px;'
+                        }, [
+                            E('option', { 'value': 'master', 'selected': initialRole === 'master' ? 'selected' : null }, 'Master (主路由网关)'),
+                            E('option', { 'value': 'satellite', 'selected': initialRole === 'satellite' ? 'selected' : null }, 'Satellite (分身子节点)')
+                        ])
+                    ]),
+                    E('div', {}, [
+                        E('label', { 'style': 'display: block; font-size: 12px; font-weight: 600; color: var(--cw-text-main); margin-bottom: 4px;' }, 'Mesh ID:'),
+                        E('input', {
+                            'id': 'mesh-card-id',
+                            'type': 'text',
+                            'class': 'cbi-input-text',
+                            'value': initialId,
+                            'style': 'width: 100%; border: 1px solid var(--cw-border); background: var(--cw-input-bg); color: var(--cw-input-text); border-radius: 6px; padding: 6px 10px; font-size: 13px;'
+                        })
+                    ]),
+                    E('div', {}, [
+                        E('label', { 'style': 'display: block; font-size: 12px; font-weight: 600; color: var(--cw-text-main); margin-bottom: 4px;' }, '5G 回传信道:'),
+                        E('select', {
+                            'id': 'mesh-card-channel',
+                            'class': 'cbi-input-select',
+                            'style': 'width: 100%; border: 1px solid var(--cw-border); background: var(--cw-input-bg); color: var(--cw-input-text); border-radius: 6px; padding: 6px 10px; font-size: 13px;'
+                        }, [
+                            E('option', { 'value': '44', 'selected': initialCh === '44' ? 'selected' : null }, '信道 44 (推荐 · 常用纯净频段)'),
+                            E('option', { 'value': '36', 'selected': initialCh === '36' ? 'selected' : null }, '信道 36'),
+                            E('option', { 'value': '149', 'selected': initialCh === '149' ? 'selected' : null }, '信道 149 (高功率频段)')
+                        ])
+                    ])
+                ]),
+                
+                E('div', { 'style': 'background: var(--cw-bg-secondary); border-radius: 8px; padding: 10px 14px; margin-bottom: 14px; font-size: 12px; color: var(--cw-text-sub); line-height: 1.5;' }, [
+                    E('div', { 'style': 'font-weight: 600; color: var(--cw-text-main); margin-bottom: 4px;' }, '💡 协议特性与保障：'),
+                    E('div', {}, '• 加密协议：强制采用 WPA3-SAE 硬件加速加密，杜绝空中窃听与字典破解；'),
+                    E('div', {}, '• 二层透传：桥入 br-lan，局域网多 AP 处于同一 192.168.x.x 网段，广播与投屏零障碍。')
+                ]),
+                
+                E('div', { 'style': 'display: flex; gap: 10px; justify-content: flex-end;' }, [
+                    E('button', {
+                        'class': 'btn cbi-button cbi-button-apply',
+                        'style': 'background: #059669; color: #fff; border: none; padding: 8px 20px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;',
+                        'click': function(ev) {
+                            const btn = ev.target;
+                            const curEnabled = card.querySelector('#mesh-card-enabled').value;
+                            const curRole = card.querySelector('#mesh-card-role').value;
+                            const curId = card.querySelector('#mesh-card-id').value.trim() || 'chawrt_mesh_5g';
+                            const curCh = card.querySelector('#mesh-card-channel').value;
+                            
+                            btn.disabled = true;
+                            btn.innerText = '⏳ 正在写入 802.11s 骨干网配置...';
+                            
+                            callSetMeshConfig(curEnabled, curRole, curId, 'chawrt@80211s', curCh, '5G').then(res => {
+                                if (res && res.success) {
+                                    btn.innerText = '✅ 骨干网配置已生效';
+                                    btn.style.background = '#16a34a';
+                                    card.style.borderColor = '#16a34a';
+                                    appendMessage('assistant', `🎉 **802.11s 无线 Mesh 骨干网已成功激活！**\n\n• **当前节点角色**：\`${curRole === 'master' ? '主路由网关 (Master)' : '子路由分身 (Satellite)'}\`\n• **Mesh ID**：\`${curId}\`\n• **回传信道**：\`5GHz 信道 ${curCh}\`\n• **加密标准**：\`WPA3-SAE 硬件加速\`\n\n骨干链路已无损桥入 \`br-lan\`。现在可以使用网线接入新子路由，由小茶助手自动完成一键配对纳管！`);
+                                } else {
+                                    btn.innerText = '❌ 配置失败: ' + (res.message || '未知错误');
+                                    btn.style.background = '#dc2626';
+                                }
+                            }).catch(err => {
+                                btn.innerText = '❌ 写入失败';
+                                appendMessage('assistant', `❌ 写入 Mesh 骨干配置失败: ${err.message}`);
+                            });
+                        }
+                    }, '✅ 确认应用 Mesh 骨干网'),
+                    E('button', {
+                        'class': 'btn cbi-button cbi-button-reset',
+                        'style': 'background: var(--cw-bg-secondary); color: var(--cw-text-main); border: 1px solid var(--cw-border); padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 13px;',
+                        'click': function() {
+                            card.remove();
+                            appendMessage('assistant', '已取消本次 Mesh 骨干网配置。');
+                        }
+                    }, '❌ 取消')
+                ])
+            ]);
+            
+            chatWindow.appendChild(card);
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+
+        function appendMeshPairNodeCard(param) {
+            const targetIp = param.target_ip || '';
+            const nodeName = param.node_name || '卧室分身路由';
+            const targetLanIp = param.target_lan_ip || '192.168.1.2';
+            
+            const card = E('div', {
+                'class': 'mesh-pair-card',
+                'style': 'background: var(--cw-bg-card); border: 2px solid #8b5cf6; border-radius: 12px; padding: 16px 20px; margin: 12px 0; box-shadow: var(--cw-card-shadow);'
+            }, [
+                E('div', { 'style': 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px;' }, [
+                    E('div', { 'style': 'font-weight: 700; font-size: 15px; color: #7c3aed; display: flex; align-items: center; gap: 8px;' }, [
+                        E('span', { 'style': 'font-size: 18px;' }, '🔗'),
+                        E('span', {}, '一键自动配对子路由 (802.11kvrs 纯二层 Mesh)')
+                    ]),
+                    E('span', { 'style': 'background: #ede9fe; color: #6d28d9; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 600;' }, '端云免密互信')
+                ]),
+                E('div', { 'style': 'font-size: 13px; color: var(--cw-text-sub); margin-bottom: 12px;' }, param.explanation || '检测到新 ChaWrt 路由器接入！小茶助手将自动向其注入 Master 的 Ed25519 免密密钥，将其自动配置为纯二层 AP，并无感下发 802.11s 骨干与 802.11k/v/r 漫游参数。'),
+                
+                E('div', { 'style': 'display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;' }, [
+                    E('div', {}, [
+                        E('label', { 'style': 'display: block; font-size: 12px; font-weight: 600; color: var(--cw-text-main); margin-bottom: 4px;' }, '子路由当前临时 IP:'),
+                        E('input', {
+                            'id': 'pair-card-target-ip',
+                            'type': 'text',
+                            'class': 'cbi-input-text',
+                            'value': targetIp,
+                            'style': 'width: 100%; border: 1px solid var(--cw-border); background: var(--cw-input-bg); color: var(--cw-input-text); border-radius: 6px; padding: 6px 10px; font-size: 13px;'
+                        })
+                    ]),
+                    E('div', {}, [
+                        E('label', { 'style': 'display: block; font-size: 12px; font-weight: 600; color: var(--cw-text-main); margin-bottom: 4px;' }, '子路由命名:'),
+                        E('input', {
+                            'id': 'pair-card-node-name',
+                            'type': 'text',
+                            'class': 'cbi-input-text',
+                            'value': nodeName,
+                            'style': 'width: 100%; border: 1px solid var(--cw-border); background: var(--cw-input-bg); color: var(--cw-input-text); border-radius: 6px; padding: 6px 10px; font-size: 13px;'
+                        })
+                    ]),
+                    E('div', { 'style': 'grid-column: span 2;' }, [
+                        E('label', { 'style': 'display: block; font-size: 12px; font-weight: 600; color: var(--cw-text-main); margin-bottom: 4px;' }, '配对后固定的同网段静态 LAN IP:'),
+                        E('input', {
+                            'id': 'pair-card-lan-ip',
+                            'type': 'text',
+                            'class': 'cbi-input-text',
+                            'value': targetLanIp,
+                            'style': 'width: 100%; border: 1px solid var(--cw-border); background: var(--cw-input-bg); color: var(--cw-input-text); border-radius: 6px; padding: 6px 10px; font-size: 13px;'
+                        })
+                    ])
+                ]),
+                
+                E('div', { 'style': 'background: var(--cw-bg-secondary); border-radius: 8px; padding: 10px 14px; margin-bottom: 14px; font-size: 12px; color: var(--cw-text-sub); line-height: 1.5;' }, [
+                    E('div', { 'style': 'font-weight: 600; color: var(--cw-text-main); margin-bottom: 4px;' }, '🚀 自动化流水线保障：'),
+                    E('div', {}, '1. 自动关闭子路由 DHCP，消除双 DHCP 抢客与 IP 冲突；'),
+                    E('div', {}, '2. 自动同步主路由同名 Wi-Fi、密码与 802.11r 移动域；'),
+                    E('div', {}, '3. 配对成功后即可拔下网线，拿到目标房间通电，5GHz 骨干网将秒级自动建立。')
+                ]),
+                
+                E('div', { 'style': 'display: flex; gap: 10px; justify-content: flex-end;' }, [
+                    E('button', {
+                        'class': 'btn cbi-button cbi-button-apply',
+                        'style': 'background: #7c3aed; color: #fff; border: none; padding: 8px 20px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;',
+                        'click': function(ev) {
+                            const btn = ev.target;
+                            const curTargetIp = card.querySelector('#pair-card-target-ip').value.trim();
+                            const curName = card.querySelector('#pair-card-node-name').value.trim() || '分身路由';
+                            const curLanIp = card.querySelector('#pair-card-lan-ip').value.trim() || '192.168.1.2';
+                            
+                            if (!curTargetIp) {
+                                alert('请输入目标子路由当前的临时 IP 地址！');
+                                return;
+                            }
+                            
+                            btn.disabled = true;
+                            btn.innerText = '⏳ 正在进行 SSH 免密注入与二层 Mesh 配置...';
+                            
+                            callPairMeshNode(curTargetIp, curName, curLanIp).then(res => {
+                                if (res && res.success) {
+                                    btn.innerText = '✅ 配对下发完成';
+                                    btn.style.background = '#16a34a';
+                                    card.style.borderColor = '#16a34a';
+                                    appendMessage('assistant', `🎉 **子路由【${curName}】已成功完成配对并固化！**\n\n• **新固定局域网 IP**：\`${curLanIp}\`（与主路由处于同一二层大局域网）\n• **子路由 DHCP**：已自动彻底停用，消除网络冲突\n• **802.11s 骨干网**：已注入 Master 相同 Mesh ID 与 WPA3 加密\n• **802.11k/v/r 漫游**：已同步同名 SSID、密码与移动域\n• **免密管理集群**：Master Ed25519 公钥已永久注入子路由\n\n👉 **下一步操作**：现在您可以拔下两台路由器之间的网线，将这台【${curName}】放置到卧室或书房插上电源，无线自愈骨干网将在通电后秒级自动连通！`);
+                                } else {
+                                    btn.innerText = '❌ 配对失败: ' + (res.message || '未知错误');
+                                    btn.style.background = '#dc2626';
+                                }
+                            }).catch(err => {
+                                btn.innerText = '❌ 写入失败';
+                                appendMessage('assistant', `❌ 子路由配对下发失败: ${err.message}`);
+                            });
+                        }
+                    }, '⚡ 确认一键完成 Mesh 配对'),
+                    E('button', {
+                        'class': 'btn cbi-button cbi-button-reset',
+                        'style': 'background: var(--cw-bg-secondary); color: var(--cw-text-main); border: 1px solid var(--cw-border); padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 13px;',
+                        'click': function() {
+                            card.remove();
+                            appendMessage('assistant', '已取消本次子路由配对。');
+                        }
+                    }, '❌ 取消')
+                ])
+            ]);
+            
+            chatWindow.appendChild(card);
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+
         function appendQosCard(param) {
             const targetIp = param.target || '';
             const isAll = (targetIp === 'all');
@@ -2569,6 +2934,131 @@ return view.extend({
                 ]));
             }).catch(err => {
                 card.querySelector('.tune-list').textContent = '读取配置失败：' + err.message;
+            });
+        }
+
+        // Append 2.4G/5G Wi-Fi Performance & Signal Optimization Interactive Proposal Card
+        function appendWifiOptimizeCard(param) {
+            const card = E('div', {
+                'class': 'wifi-optimize-card',
+                'style': 'background: var(--cw-bg-card); border: 2px solid #0284c7; border-radius: 12px; padding: 16px 20px; margin: 12px 0; box-shadow: var(--cw-card-shadow);'
+            }, [
+                E('div', { 'style': 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;' }, [
+                    E('div', { 'style': 'font-weight: 700; font-size: 15px; color: var(--cw-text-main); display: flex; align-items: center; gap: 8px;' }, [
+                        E('span', { 'style': 'font-size: 18px;' }, '📡'),
+                        E('span', {}, '2.4G / 5G 无线性能与信号调优提案')
+                    ]),
+                    E('span', { 'style': 'background: #e0f2fe; color: #0284c7; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 700;' }, '射频与规约深度调优')
+                ]),
+                E('div', { 'style': 'font-size: 13px; color: var(--cw-text-sub); margin-bottom: 12px; line-height: 1.5;' }, (param && param.summary) || '已完成 2.4G 与 5G 无线链路全面体检。请勾选您希望执行的调优项：'),
+                E('div', { 'class': 'wifi-tune-list', 'style': 'font-size: 13px; color: var(--cw-text-main);' }, '正在读取底层无线射频状态与信道扫描数据…')
+            ]);
+            chatWindow.appendChild(card);
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+
+            callDiagnoseWifiPerformance().then(res => {
+                const list = card.querySelector('.wifi-tune-list');
+                const actions = (res && res.actions) || [];
+                const radios = (res && res.radios) || [];
+                list.innerHTML = '';
+
+                if (radios.length > 0) {
+                    const snapDiv = E('div', {
+                        'style': 'background: var(--cw-bg-subtle); border: 1px solid var(--cw-border); border-radius: 8px; padding: 10px 12px; margin-bottom: 12px; font-size: 12px;'
+                    }, [
+                        E('div', { 'style': 'font-weight: 600; margin-bottom: 4px; color: var(--cw-text-muted);' }, '📊 当前射频实测快照：'),
+                        E('div', { 'style': 'display: flex; gap: 16px; flex-wrap: wrap;' }, radios.map(r => {
+                            const is5g = r.band === '5g';
+                            return E('div', {}, [
+                                E('span', { 'style': `font-weight: 700; color: ${is5g ? '#0284c7' : '#d97706'};` }, `${is5g ? '5G' : '2.4G'} (${r.radio}): `),
+                                E('span', {}, `信道 ${r.channel} · 频宽 ${r.htmode} · 功率 ${r.txpower}dBm · 国家码 ${r.config_country || '未配(00)'}`),
+                                r.country_trap ? E('span', { 'style': 'color: #dc2626; font-weight: 700; margin-left: 4px;' }, '⚠️功率受限') : null,
+                                r.is_dfs ? E('span', { 'style': 'color: #f59e0b; font-weight: 700; margin-left: 4px;' }, '⚠️DFS雷达区') : null
+                            ]);
+                        }))
+                    ]);
+                    list.appendChild(snapDiv);
+                }
+
+                if (!actions.length) {
+                    list.appendChild(E('div', { 'style': 'padding: 8px 0; color: #16a34a; font-weight: 600;' }, '🎉 当前 2.4G 与 5G 无线配置已达到满血状态，未发现功率锁死或信道冲突问题！'));
+                    return;
+                }
+
+                actions.forEach(item => {
+                    const chkId = `wifi_act_${item.id}`;
+                    let badgeColor = '#0284c7';
+                    let badgeText = '常规优化';
+                    if (item.category === 'regulatory' || item.category === 'power') {
+                        badgeColor = '#dc2626';
+                        badgeText = '🔥 释放满血功率';
+                    } else if (item.category === 'channel') {
+                        badgeColor = '#ea580c';
+                        badgeText = '🛡️ 避开雷达罚站';
+                    } else if (item.category === 'htmode') {
+                        badgeColor = '#16a34a';
+                        badgeText = '🚀 跑满千兆频宽';
+                    }
+
+                    const itemDiv = E('div', {
+                        'style': 'padding: 10px 0; border-top: 1px solid var(--cw-border); display: flex; align-items: flex-start; gap: 10px;'
+                    }, [
+                        E('input', {
+                            'type': 'checkbox',
+                            'id': chkId,
+                            'value': item.id,
+                            'checked': true,
+                            'style': 'margin-top: 3px; cursor: pointer; width: 16px; height: 16px;'
+                        }),
+                        E('label', { 'for': chkId, 'style': 'flex: 1; cursor: pointer;' }, [
+                            E('div', { 'style': 'display: flex; align-items: center; gap: 8px; font-weight: 600;' }, [
+                                E('span', {}, item.title),
+                                E('span', { 'style': `background: ${badgeColor}18; color: ${badgeColor}; padding: 1px 6px; border-radius: 4px; font-size: 11px; font-weight: 700;` }, badgeText)
+                            ]),
+                            E('div', { 'style': 'color: var(--cw-text-muted); margin-top: 3px; font-size: 12px;' }, [
+                                E('span', { 'style': 'text-decoration: line-through; margin-right: 6px;' }, item.current),
+                                E('span', { 'style': 'color: #16a34a; font-weight: 700;' }, `➔ ${item.target}`)
+                            ]),
+                            E('div', { 'style': 'margin-top: 3px; font-size: 12px; color: var(--cw-text-sub); line-height: 1.4;' }, item.reason)
+                        ])
+                    ]);
+                    list.appendChild(itemDiv);
+                });
+
+                list.appendChild(E('div', { 'style': 'display: flex; gap: 10px; margin-top: 14px;' }, [
+                    E('button', {
+                        'class': 'btn cbi-button cbi-button-apply',
+                        'style': 'background: #0284c7; color: #fff; border: none; padding: 8px 18px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;',
+                        'click': function(ev) {
+                            const btn = ev.target;
+                            const checked = Array.from(card.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
+                            if (!checked.length) {
+                                alert('请至少勾选一个调优项！');
+                                return;
+                            }
+                            btn.disabled = true;
+                            btn.textContent = '正在应用调优并重载射频…';
+                            callApplyWifiTune(checked.join(',')).then(applyRes => {
+                                btn.textContent = (applyRes && applyRes.success) ? '✅ 调优已生效' : '❌ 应用失败';
+                                appendMessage('assistant', (applyRes && applyRes.message) || 'Wi-Fi 调优已完成！');
+                            }).catch(err => {
+                                btn.disabled = false;
+                                btn.textContent = '重试';
+                                appendMessage('assistant', 'Wi-Fi 调优执行异常：' + err.message);
+                            });
+                        }
+                    }, '🚀 确认并应用所选项 (一键满血优化)'),
+                    E('button', {
+                        'class': 'btn cbi-button cbi-button-reset',
+                        'style': 'background: var(--cw-bg-secondary); color: var(--cw-text-main); border: 1px solid var(--cw-border); padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 13px;',
+                        'click': function() {
+                            card.remove();
+                            appendMessage('assistant', '已取消无线调优，当前 Wi-Fi 配置保持原样。');
+                        }
+                    }, '取消')
+                ]));
+            }).catch(err => {
+                card.querySelector('.wifi-tune-list').textContent = '读取无线配置失败：' + err.message;
             });
         }
 
@@ -3713,6 +4203,21 @@ return view.extend({
                             } else if (fnName === 'propose_wifi_roaming') {
                                 appendWifiRoamingCard(fnArgs);
                                 toolResult = { status: 'proposed_to_user', message: 'Wi-Fi roaming configuration card rendered in UI. Waiting for user authorization.' };
+                            } else if (fnName === 'diagnose_wifi_performance') {
+                                toolResult = await callDiagnoseWifiPerformance();
+                            } else if (fnName === 'propose_wifi_optimize') {
+                                appendWifiOptimizeCard(fnArgs);
+                                toolResult = { status: 'proposed_to_user', message: 'Wi-Fi optimization proposal card rendered in UI. Waiting for user authorization.' };
+                            } else if (fnName === 'get_mesh_status') {
+                                toolResult = await callGetMeshStatus();
+                            } else if (fnName === 'propose_mesh_config') {
+                                appendMeshConfigCard(fnArgs);
+                                toolResult = { status: 'proposed_to_user', message: 'Mesh configuration proposal card rendered in UI. Waiting for user authorization.' };
+                            } else if (fnName === 'discover_mesh_nodes') {
+                                toolResult = await callDiscoverMeshNodes();
+                            } else if (fnName === 'propose_pair_mesh_node') {
+                                appendMeshPairNodeCard(fnArgs);
+                                toolResult = { status: 'proposed_to_user', message: 'Mesh node pairing authorization card rendered in UI. Waiting for user authorization.' };
                             } else if (fnName === 'run_diagnostics') {
                                 toolResult = await callRunDiagnostics(fnArgs.action, fnArgs.target);
                             } else if (fnName === 'uci_read') {
