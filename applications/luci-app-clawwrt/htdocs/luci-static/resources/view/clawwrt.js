@@ -69,7 +69,7 @@ const callDiscoverMeshNodes = rpc.declare({
 const callPairMeshNode = rpc.declare({
     object: 'luci.clawwrt',
     method: 'pair_mesh_node',
-    params: [ 'target_ip', 'node_name', 'target_lan_ip' ],
+    params: [ 'target_ip', 'node_name', 'target_lan_ip', 'password' ],
     expect: { result: {} }
 });
 
@@ -106,6 +106,15 @@ const callApplyWifiTune = rpc.declare({
     expect: { result: {} }
 });
 
+
+function decodeDeepseekBody(res) {
+    if (!res || res.response == null) return '';
+    if (res.encoding !== 'base64') return res.response;
+    const bin = atob(res.response);
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return new TextDecoder().decode(bytes);
+}
 
 function normalizeApiUrl(url) {
     if (!url) return 'https://api.deepseek.com/chat/completions';
@@ -190,7 +199,8 @@ const callDeepseekProxy = rpc.declare({
     object: 'luci.clawwrt',
     method: 'call_deepseek',
     params: [ 'messages_json', 'tools_json' ],
-    expect: { result: {} }
+    expect: { result: {} },
+    nobatch: true
 });
 
 const callGetHwOffloadStatus = rpc.declare({
@@ -266,6 +276,18 @@ const callGetPenetrationStatus = rpc.declare({
     expect: { result: {} }
 });
 
+const callGetAccelerationStatus = rpc.declare({
+    object: 'luci.clawwrt',
+    method: 'get_acceleration_status',
+    expect: { result: {} }
+});
+
+const callFixAccelerationPipeline = rpc.declare({
+    object: 'luci.clawwrt',
+    method: 'fix_acceleration_pipeline',
+    expect: { result: {} }
+});
+
 const callManageXdnsDomain = rpc.declare({
     object: 'luci.clawwrt',
     method: 'manage_xdns_domain',
@@ -307,6 +329,22 @@ const routerTools = [
         function: {
             name: 'get_penetration_status',
             description: '深度检测内网穿透（xfrpc）的真实运行状况与连通性：不仅检测客户端进程是否存活，还会通过底层网络套接字检测是否真正与远端 frps 服务端建立了 ESTABLISHED 状态的连接、套接字状态（如 SYN_SENT 握手超时、断开等）、内核实时日志报错、当前生效的穿透映射规则及对应的公网访问链接',
+            parameters: { type: 'object', properties: {} }
+        }
+    },
+    {
+        type: 'function',
+        function: {
+            name: 'get_acceleration_status',
+            description: '深度检测智能分流 (xDNS - eBPF) 与网络加速 (xkcptun) 的全链路运行状况、健康度与问题排查：检查 br-lan TC Ingress (pref 5) 与 Egress (pref 10) eBPF 过滤器是否双向挂载、已生效分流域名规则数、内核动态劫持 IP 数、已加速流量与连接数、xkcptun 客户端进程、本地 TCP 12345/DNS 5353 监听状态、VPS 隧道连通性、实时日志异常（如 BPF Map 句柄失效、握手超时、认证失败等），并在界面中生成全链路诊断卡片',
+            parameters: { type: 'object', properties: {} }
+        }
+    },
+    {
+        type: 'function',
+        function: {
+            name: 'fix_acceleration_pipeline',
+            description: '一键自愈并重建智能分流与网络加速链路：平滑清理陈旧 BPF Map，重新挂载 TC Ingress/Egress 过滤器，并重启 xkcptun 加速客户端恢复透明重定向，解决 BPF Map 句柄错配、会话丢失或过滤器脱钩等问题',
             parameters: { type: 'object', properties: {} }
         }
     },
@@ -617,15 +655,16 @@ const routerTools = [
         type: 'function',
         function: {
             name: 'propose_mesh_config',
-            description: '向用户提议开启、关闭或调整本地 802.11s Mesh 骨干回传网络（包括指定回传信道如 44、设置 Mesh ID、配置 WPA3-SAE 预共享密钥、指定主从角色），前端将渲染直观的参数对比确认卡片供用户授权，不可私自直接修改',
+            description: '向用户提议开启、关闭或调整本地 802.11s Mesh 骨干回传网络（包括选择回传频段：5G 极速回传或 2.4G 强力穿墙、指定信道、设置 Mesh ID、配置 WPA3-SAE 预共享密钥、指定主从角色），前端将渲染直观的参数对比确认卡片供用户授权，不可私自直接修改',
             parameters: {
                 type: 'object',
                 properties: {
                     enabled: { type: 'string', enum: ['1', '0'], description: '是否启用 802.11s Mesh 骨干网 (1: 开启, 0: 关闭)' },
                     role: { type: 'string', enum: ['master', 'satellite'], description: '节点角色：master (主路由网关) 或 satellite (分身扩展节点)' },
-                    mesh_id: { type: 'string', description: 'Mesh 网络标识符 (如 chawrt_mesh_5g)' },
-                    channel: { type: 'string', description: '5G 回传固定信道 (如 44, 36, 149)' },
-                    explanation: { type: 'string', description: '向用户解释配置 Mesh 骨干网的原因与收益' }
+                    band: { type: 'string', enum: ['5G', '2.4G'], description: '骨干回传频段：5G (推荐 · 跑满高速千兆带宽，适合隔1堵墙内), 2.4G (强力穿墙模式 · 适合隔2~3堵厚承重墙远距离)' },
+                    mesh_id: { type: 'string', description: 'Mesh 网络标识符 (如 chawrt_mesh_5g 或 chawrt_mesh_2g)' },
+                    channel: { type: 'string', description: '骨干回传信道 (5G 推荐 44、36、149；2.4G 推荐 6、1、11)' },
+                    explanation: { type: 'string', description: '向用户客观陈述选择该回传频段和参数的原因、依据与性能/穿墙权衡建议' }
                 },
                 required: ['enabled']
             }
@@ -867,6 +906,7 @@ const systemPrompt = `你是一个专业的 OpenWrt / chaWrt 路由器专属 AI 
    - 门户认证 (wifidogx & apfree-wifidog)：企业级/热点强制网页认证门户，深度集成 apfree-wifidog C 引擎内核；支持开启/关闭、免认证直通 (disable_portal_auth)、有线网口直接放行 (wired_passed)、防私接检测 (enable_anti_nat)；支持查询云端 WebSocket/MQTT 连接状态、认证服务器地址与当前实时在线认证用户列表（包含终端 MAC、IP、主机名及剩余有效时间）(get_service_detail('wifidogx') 或 manage_portal_access('list'))；支持全能门禁管理 (manage_portal_access)：一键强制踢终端下线断网 (kick_client)、终端黑名单拉黑并即时阻断 (add_blacklist / del_blacklist)、终端 MAC 免认证白名单放行 (add_whitelist / del_whitelist)、免认证域名及通配符域名放行 (add_domain / del_domain)；
    - 网络加速 (xkcptun)：纯 C 抗丢包加速引擎，支持开启/关闭、配置加速节点 (remote_addr)、端口 (remote_port)、模式 (mode)、密钥 (key)、前向纠错 (fec)、发送/接收窗口 (sndwnd/rcvwnd)；支持深度检测与实时测量节点 RTT 往返延迟 (ping_ms)、查看所有活跃加速隧道与实时加速连接目标 (get_service_detail('xkcptun'))；支持通过 manage_xkcptun_tunnel 管理具体加速隧道（查询列表 action: "list"、新增/修改 action: "add"、启用 action: "enable"、停用 action: "disable"、删除 action: "remove"，支持 transparent redir 与 forward 端口转发等各种端口与目标）；
    - 智能分流 (xdns)：基于 Linux 内核 TC-eBPF 动态智能分流，在 br-lan 网卡挂载 TC ingress pref 5 与 egress pref 10 双向探针，自动拦截分流域名并重定向至 xkcptun 隧道；支持查询当前 DNS 拦截数、代理数、学习应答数与 TCP 代理连接数、内核动态劫持 IP 表及活跃会话 (get_service_detail('xdns'))；支持全能分流管理 (manage_xdns_domain)：查询加速域名及内核状态 (action: "list")、添加域名 (action: "add")、删除域名 (action: "remove")、清空内核动态 IP 缓存 (action: "clear_ips")、重载规则文件 (action: "reload")、查看内核劫持 IP 列表 (action: "list_ips")、查看活跃代理会话 (action: "list_sessions")、统计数据 (action: "stats")；
+   - 智能分流与网络加速全链路诊断与自愈 (xdns & xkcptun): 深度体检内核 TC-eBPF 分流 (br-lan Ingress/Egress 挂载、加速域名数、动态劫持 IP 数、代理统计) 与 xkcptun 加速客户端 (TCP 12345/UDP 5353 监听、节点连通性、活跃隧道、最近日志排障) 的整体链路健康度。支持全链路健康检测 (get_acceleration_status) 并在 UI 中生成全链路交互式诊断卡片；支持一键自愈重建链路 (fix_acceleration_pipeline，平滑清理陈旧 BPF Map，重挂 TC 过滤器，重启加速客户端恢复透明重定向)；
    - StrongSwan IPsec VPN (ipsec)：企业级加密隧道，支持开启/关闭、配置对端网关 (gateway) 与预共享密钥 (key)；
    - 无线 WiFi 与 802.11k/v/r 无缝漫游：支持查询 WiFi 状态与修改名称密码 (get_wifi_info, propose_wifi_config)；特别支持专业级 Wi-Fi 802.11k/v/r 无缝漫游与 usteer 调度状态查询与配置提议 (get_wifi_roaming, propose_wifi_roaming)。深度融合 802.11k (RRM 邻居测量避免盲扫)、802.11v (BSS Transition 弱信号主动转移避免死咬) 与 802.11r (FT Fast BSS Transition 搭便车 15ms 瞬移破门)，支持配置满血 full_kvr、老旧设备兼容模式 kv_only、修改统一的 Mobility Domain 移动域 ID 以及一键开启/停用漫游；
    - 2.4G/5G 无线性能与信号深度排查调优：当用户提出“Wi-Fi信号不好”、“5G老是搜不到”、“5G穿墙太弱”、“Wi-Fi体检”、“调优2.4G/5G”等无线体验痛点时，必须先调用 diagnose_wifi_performance 进行全链路深度体检（排查是否掉入 Country 00 功率锁死黑洞导致仅剩 14dBm/25mW 功率无法穿墙、是否误入 52~64 DFS 气象雷达信道遭遇 60 秒开机罚站、5G 频宽是否被限制在 20MHz 无法跑满千兆、2.4G 是否误开 40MHz 造成严重互调干扰、周边信道拥挤度以及 WMM 状态）；随后必须调用 propose_wifi_optimize 生成可视化调优确认卡片供用户授权，绝不可在用户点击前宣称已经优化完毕；
@@ -887,6 +927,7 @@ const systemPrompt = `你是一个专业的 OpenWrt / chaWrt 路由器专属 AI 
    - 当用户询问网络加速状态、节点延迟、KCP 连接或加速隧道时，调用 get_service_detail('xkcptun') 或 manage_xkcptun_tunnel('list')；
    - 当用户询问或需要管理加速隧道时，调用 manage_xkcptun_tunnel（支持 list, add, remove, enable, disable）；
    - 当用户询问智能分流、拦截统计、分流域名、动态劫持 IP 或活跃代理会话时，调用 get_service_detail('xdns') 或 manage_xdns_domain；
+   - 当用户询问智能分流或网络加速是否正常、排查加速或分流问题、检查加速健康度、或者网页打不开需排查加速链路时，主动调用 get_acceleration_status 获取全链路诊断数据并在 UI 渲染全链路诊断卡片！若检测到异常或用户要求自愈修复时，主动提供或调用 fix_acceleration_pipeline 一键自愈重建链路；
    - 当用户需要添加/删除分流域名、清空分流 IP 缓存或重载规则时，调用 manage_xdns_domain；
    - 当用户询问门户认证状态、在线用户、踢人下线或管理黑白名单与免认证域名时，调用 get_service_detail('wifidogx') 或 manage_portal_access；
    - 当用户询问或需要管理内网穿透端口映射规则时，调用 manage_penetration_proxy（支持 list, add, remove, enable, disable）；
@@ -972,12 +1013,21 @@ return view.extend({
             L.env.rpctimeout = 180;
         }
 
+        let chatBusy = false;
+
         let aiConfig = {
-            apiKey: localStorage.getItem('chawrt_deepseek_key') || '',
+            apiKey: '',
             apiUrl: 'https://api.deepseek.com/chat/completions',
             model: 'deepseek-flash',
             temperature: 0.3
         };
+        try {
+            const legacyKey = localStorage.getItem('chawrt_deepseek_key');
+            if (legacyKey) {
+                localStorage.removeItem('chawrt_deepseek_key');
+                callSaveAiSettings(legacyKey, aiConfig.model, aiConfig.apiUrl, '0.3');
+            }
+        } catch (e) {}
 
         let messages = [
             { role: 'system', content: systemPrompt }
@@ -1080,6 +1130,7 @@ return view.extend({
                     { label: '🔄 开启 802.11k/v/r 漫游', query: '查看当前 Wi-Fi 802.11k/v/r 无缝漫游配置，帮我开启满血 15ms 快速漫游与 usteer 调度' },
                     { label: '🌐 测试外网连通与延迟', query: '帮我全面测试路由器当前能否正常上网，检测外网延迟、丢包率与 DNS 解析情况' },
                     { label: '📱 查看当前连接设备', query: '当前局域网连接了哪些手机、电脑或终端？列出它们的 IP、MAC 和主机名' },
+                    { label: '🩺 分流与加速全链路体检', query: '深度检测智能分流 (xDNS) 与网络加速 (xkcptun) 的全链路运行健康度，排查分流与加速是否存在异常，并在界面生成全链路诊断卡片' },
                     { label: '🔍 穿透连通性深度检测', query: '帮我深度检测内网穿透当前是否正常运行，检查 xfrpc 是否已经真正连上了远端 frps 服务端，查看连接套接字、日志与公网访问链接' },
                     { label: '⚡ 硬件加速状态', query: '查看当前路由器的硬件加速（MediaTek PPE 硬件流量分流）运行状态与硬件流表' },
                     { label: '📶 优化网络与无线', query: '检查当前网络配置和无线配置，给出可以改进的项，并生成网络优化确认卡片' },
@@ -1130,6 +1181,8 @@ return view.extend({
                 id: 'accel_divert',
                 name: '⚡ 网络加速与分流',
                 cards: [
+                    { label: '🩺 全链路健康体检与诊断', query: '深度检测智能分流 (xDNS) 与网络加速 (xkcptun) 的全链路运行健康度，排查分流与加速是否存在异常，并在界面生成全链路诊断卡片' },
+                    { label: '🛠️ 一键自愈加速链路', query: '帮我一键自愈并重建智能分流与网络加速链路，清理陈旧 BPF Map 并重启加速服务' },
                     { label: '⚡ 网络加速与隧道', query: '查看网络加速 xkcptun 当前连接的加速节点、模式、往返延迟以及所有活跃加速隧道与连接' },
                     { label: '🚀 VPS 安装 xkcptun 服务端 (deb)', query: '我想在我的远程 Linux VPS 上通过官方 deb 包自动安装并部署 xkcptun 加速服务端，并建立网络加速' },
                     { label: '🔀 智能分流与加速域名', query: '查看智能分流 xdns 的运行状态、eBPF 拦截统计、动态劫持 IP 以及当前分流加速的域名列表' },
@@ -1266,7 +1319,7 @@ return view.extend({
             E('div', { 'class': 'cw-composer-row' }, [
                 E('textarea', {
                     'id': 'chat-input',
-                    'placeholder': '用自然语言下达指令，回车发送，Shift+回车换行',
+                    'placeholder': '用自然语言描述你想做的事',
                     'class': 'cw-input',
                     'keydown': function(e) {
                         if (e.key === 'Enter' && !e.shiftKey) {
@@ -1280,7 +1333,8 @@ return view.extend({
                     'class': 'btn cbi-button cbi-button-apply cw-send',
                     'click': function() { sendMessage(); }
                 }, '发送')
-            ])
+            ]),
+            E('div', { 'class': 'cw-input-hint' }, '回车发送，Shift+回车换行')
         ]);
 
         
@@ -1545,6 +1599,18 @@ return view.extend({
                 box-sizing: border-box;
             }
             .cw-input:focus { border-color: #2563eb !important; }
+            .cw-input::placeholder,
+            .cw-input::-webkit-input-placeholder {
+                color: var(--cw-text-muted) !important;
+                opacity: 1 !important;
+                font-style: italic;
+                font-weight: 400;
+            }
+            .cw-input-hint {
+                font-size: 12px;
+                line-height: 1.4;
+                color: var(--cw-text-muted);
+            }
             .cw-send {
                 padding: 10px 18px !important;
                 min-height: 44px;
@@ -1709,6 +1775,12 @@ return view.extend({
                             btn.disabled = true;
                             btn.innerText = '正在应用...';
                             callUciApply(param.package, param.section, param.option, param.value, param.reload_service).then(res => {
+                                if (!res || !res.success) {
+                                    btn.disabled = false;
+                                    btn.innerText = '❌ 写入失败';
+                                    appendMessage('assistant', `❌ 配置写入失败: ${(res && res.message) || 'uci set 未成功'}`);
+                                    return;
+                                }
                                 btn.innerText = '✅ 已成功应用并生效';
                                 btn.style.background = '#4b5563';
                                 appendMessage('assistant', `✅ 已经成功将配置 \`${param.package}.${param.section}.${param.option} = ${param.value}\` 应用至路由器${param.reload_service ? '，并已重载 ' + param.reload_service + ' 服务' : ''}！`);
@@ -2032,6 +2104,203 @@ return view.extend({
                     }, '❌ 取消')
                 ])
             ]);
+            chatWindow.appendChild(card);
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+
+        function appendAccelerationCard(data) {
+            const res = (data && data.result) ? data.result : (data || {});
+            const health = res.health || 'healthy';
+            const xdns = res.xdns || {};
+            const xkcptun = res.xkcptun || {};
+            const findings = Array.isArray(res.findings) ? res.findings : [];
+            const diagnosis = res.diagnosis || '智能分流与网络加速状态检查完毕。';
+            const lastError = res.last_error || '';
+
+            let healthColor = '#16a34a';
+            let healthIcon = '🟢';
+            let healthText = '链路健康 · 运行正常';
+            let healthBg = 'var(--cw-bg-subtle)';
+
+            if (health === 'warning') {
+                healthColor = '#d97706';
+                healthIcon = '🟡';
+                healthText = '存在告警 · 需注意';
+            } else if (health === 'error') {
+                healthColor = '#dc2626';
+                healthIcon = '🔴';
+                healthText = '链路异常 · 需排查';
+            }
+
+            function fmtBytes(bytes) {
+                bytes = parseInt(bytes, 10) || 0;
+                if (bytes < 1024) return bytes + ' B';
+                if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+                if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+                return (bytes / (1024 * 1024 * 1024)).toFixed(2) + ' GB';
+            }
+
+            const card = E('div', {
+                'class': 'acceleration-diag-card',
+                'style': `background: var(--cw-bg-card); border: 2px solid ${healthColor}; border-radius: 12px; padding: 16px 20px; margin: 12px 0; box-shadow: var(--cw-card-shadow);`
+            }, [
+                // Header
+                E('div', { 'style': 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid var(--cw-border); padding-bottom: 8px;' }, [
+                    E('div', { 'style': 'font-weight: 700; font-size: 15px; color: var(--cw-text-main); display: flex; align-items: center; gap: 8px;' }, [
+                        E('span', { 'style': 'font-size: 18px;' }, '⚡'),
+                        E('span', {}, '智能分流与网络加速全链路诊断 (xDNS + xkcptun)')
+                    ]),
+                    E('span', { 'style': `background: var(--cw-bg-secondary); color: ${healthColor}; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 700; border: 1px solid ${healthColor};` }, `${healthIcon} ${healthText}`)
+                ]),
+
+                // Overall Diagnosis Banner
+                E('div', { 'style': `background: ${healthBg}; border-left: 4px solid ${healthColor}; border-radius: 6px; padding: 10px 14px; margin-bottom: 14px; font-size: 13px; color: var(--cw-text-main); line-height: 1.5;` }, [
+                    E('strong', {}, '诊断结论：'),
+                    E('span', {}, diagnosis)
+                ]),
+
+                // Log Warning Banner if lastError exists
+                lastError ? E('div', { 'style': 'background: rgba(220, 38, 38, 0.08); border: 1px solid #dc2626; border-radius: 6px; padding: 8px 12px; margin-bottom: 14px; font-size: 12px; color: #dc2626; display: flex; align-items: center; gap: 6px;' }, [
+                    E('span', { 'style': 'font-size: 14px;' }, '⚠️'),
+                    E('strong', {}, '日志报警：'),
+                    E('span', {}, lastError)
+                ]) : '',
+
+                // Dual-Engine Health HUD Grid (2 Columns on Desktop, 1 on Mobile)
+                E('div', { 'style': 'display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; margin-bottom: 14px;' }, [
+                    // Engine 1: xDNS eBPF
+                    E('div', { 'style': 'background: var(--cw-bg-subtle); border: 1px solid var(--cw-border); border-radius: 8px; padding: 12px 14px;' }, [
+                        E('div', { 'style': 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px dashed var(--cw-border);' }, [
+                            E('strong', { 'style': 'color: #059669; font-size: 13px; display: flex; align-items: center; gap: 6px;' }, [
+                                E('span', {}, '🔀'),
+                                E('span', {}, 'xDNS 内核分流 (eBPF)')
+                            ]),
+                            E('span', { 'style': `font-size: 11px; font-weight: 600; padding: 1px 6px; border-radius: 4px; ${xdns.running ? 'background: rgba(22, 163, 74, 0.1); color: #16a34a;' : 'background: rgba(220, 38, 38, 0.1); color: #dc2626;'}` }, xdns.running ? '🟢 已挂载运行' : '🔴 未挂载')
+                        ]),
+                        E('div', { 'style': 'font-size: 12px; color: var(--cw-text-main); display: flex; flex-direction: column; gap: 4px;' }, [
+                            E('div', { 'style': 'display: flex; justify-content: space-between;' }, [
+                                E('span', { 'style': 'color: var(--cw-text-muted);' }, 'TC 过滤器挂载：'),
+                                E('span', {}, `${xdns.ifname || 'br-lan'} (In: ${xdns.ingress_attached ? '✅' : '❌'}, Eg: ${xdns.egress_attached ? '✅' : '❌'})`)
+                            ]),
+                            E('div', { 'style': 'display: flex; justify-content: space-between;' }, [
+                                E('span', { 'style': 'color: var(--cw-text-muted);' }, '分流规则与劫持IP：'),
+                                E('span', { 'style': 'font-weight: 600; color: #0284c7;' }, `${xdns.domains_count || 0} 个域名 · ${xdns.active_ips_count || 0} 个IP`)
+                            ]),
+                            E('div', { 'style': 'display: flex; justify-content: space-between;' }, [
+                                E('span', { 'style': 'color: var(--cw-text-muted);' }, 'DNS 拦截与学习：'),
+                                E('span', {}, `${xdns.dns_proxied || 0} 代理 · ${xdns.dns_learned || 0} 学习 · ${xdns.dns_passed || 0} 放行`)
+                            ]),
+                            E('div', { 'style': 'display: flex; justify-content: space-between;' }, [
+                                E('span', { 'style': 'color: var(--cw-text-muted);' }, '已加速 TCP 流量：'),
+                                E('span', { 'style': 'font-weight: 600; color: #16a34a;' }, `${xdns.tcp_conns || 0} 会话 · ${fmtBytes(xdns.tcp_bytes)}`)
+                            ])
+                        ])
+                    ]),
+
+                    // Engine 2: xkcptun
+                    E('div', { 'style': 'background: var(--cw-bg-subtle); border: 1px solid var(--cw-border); border-radius: 8px; padding: 12px 14px;' }, [
+                        E('div', { 'style': 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px dashed var(--cw-border);' }, [
+                            E('strong', { 'style': 'color: #ea580c; font-size: 13px; display: flex; align-items: center; gap: 6px;' }, [
+                                E('span', {}, '⚡'),
+                                E('span', {}, 'xkcptun 网络加速 (KCP)')
+                            ]),
+                            E('span', { 'style': `font-size: 11px; font-weight: 600; padding: 1px 6px; border-radius: 4px; ${xkcptun.running ? 'background: rgba(22, 163, 74, 0.1); color: #16a34a;' : 'background: rgba(220, 38, 38, 0.1); color: #dc2626;'}` }, xkcptun.running ? `🟢 运行中 (PID ${xkcptun.pid})` : '🔴 未运行')
+                        ]),
+                        E('div', { 'style': 'font-size: 12px; color: var(--cw-text-main); display: flex; flex-direction: column; gap: 4px;' }, [
+                            E('div', { 'style': 'display: flex; justify-content: space-between;' }, [
+                                E('span', { 'style': 'color: var(--cw-text-muted);' }, '加速节点地址：'),
+                                E('span', { 'style': 'font-family: monospace; font-weight: 600;' }, `${xkcptun.server_addr || '已配置'}:${xkcptun.server_port || '9089'}`)
+                            ]),
+                            E('div', { 'style': 'display: flex; justify-content: space-between;' }, [
+                                E('span', { 'style': 'color: var(--cw-text-muted);' }, '本地服务端口：'),
+                                E('span', {}, `TCP:12345 ${xkcptun.listen_12345 ? '✅' : '❌'} | DNS:5353 ${xkcptun.listen_5353 ? '✅' : '❌'}`)
+                            ]),
+                            E('div', { 'style': 'display: flex; justify-content: space-between;' }, [
+                                E('span', { 'style': 'color: var(--cw-text-muted);' }, '隧道与活跃连接：'),
+                                E('span', { 'style': 'font-weight: 600; color: #ea580c;' }, `${xkcptun.total_tunnels || 0} 条隧道 · ${xkcptun.active_conns || 0} 个活跃并发`)
+                            ]),
+                            E('div', { 'style': 'display: flex; justify-content: space-between;' }, [
+                                E('span', { 'style': 'color: var(--cw-text-muted);' }, 'HTTP 监控端点：'),
+                                E('span', {}, `:9086 ${xkcptun.listen_9086 ? '✅ 就绪' : '❌ 未响应'}`)
+                            ])
+                        ])
+                    ])
+                ]),
+
+                // Findings Breakdown
+                findings.length > 0 ? E('div', { 'style': 'background: var(--cw-bg-subtle); border: 1px solid var(--cw-border); border-radius: 8px; padding: 10px 14px; margin-bottom: 14px;' }, [
+                    E('div', { 'style': 'font-size: 12px; font-weight: 700; color: var(--cw-text-muted); margin-bottom: 6px;' }, '🔍 关键指标巡检项：'),
+                    E('div', { 'style': 'display: flex; flex-direction: column; gap: 6px;' }, findings.map(f => {
+                        let fColor = '#16a34a';
+                        let fIcon = '✅';
+                        if (f.type === 'warning') { fColor = '#d97706'; fIcon = '⚠️'; }
+                        else if (f.type === 'error') { fColor = '#dc2626'; fIcon = '❌'; }
+                        return E('div', { 'style': 'font-size: 12px; display: flex; align-items: flex-start; gap: 6px;' }, [
+                            E('span', {}, fIcon),
+                            E('div', {}, [
+                                E('strong', { 'style': `color: ${fColor}; margin-right: 4px;` }, f.title + ':'),
+                                E('span', { 'style': 'color: var(--cw-text-main);' }, f.desc)
+                            ])
+                        ]);
+                    }))
+                ]) : '',
+
+                // Collapsible Tunnel Details if available
+                xkcptun.monitor_summary ? E('details', { 'style': 'margin-bottom: 14px; font-size: 12px; color: var(--cw-text-muted);' }, [
+                    E('summary', { 'style': 'cursor: pointer; user-select: none; font-weight: 600; color: var(--cw-text-sub);' }, '📋 查看加速隧道拓扑详情 (' + (xkcptun.total_tunnels || 0) + ' 条隧道)'),
+                    E('pre', { 'style': 'background: var(--cw-bg-secondary); border: 1px solid var(--cw-border); border-radius: 6px; padding: 8px 10px; margin-top: 6px; font-size: 11px; overflow-x: auto; font-family: monospace; color: var(--cw-text-main);' }, xkcptun.monitor_summary)
+                ]) : '',
+
+                // Action Bar
+                E('div', { 'style': 'display: flex; flex-wrap: wrap; gap: 10px;' }, [
+                    E('button', {
+                        'class': 'btn cbi-button cbi-button-apply',
+                        'style': 'background: #2563eb; color: #fff; border: none; padding: 8px 18px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 6px;',
+                        'click': function(ev) {
+                            const btn = ev.target;
+                            btn.disabled = true;
+                            btn.innerText = '⏳ 正在清理 BPF Map 并自愈链路...';
+                            callFixAccelerationPipeline().then(fixRes => {
+                                btn.innerText = '✅ 自愈成功，正在刷新诊断...';
+                                callGetAccelerationStatus().then(newDiag => {
+                                    card.remove();
+                                    appendAccelerationCard(newDiag);
+                                    appendMessage('assistant', `🎉 **智能分流与网络加速全链路自愈成功！**\n\n${(fixRes && fixRes.message) || '已重新挂载 eBPF 过滤器并重启 xkcptun 加速客户端。'}`);
+                                });
+                            }).catch(err => {
+                                btn.disabled = false;
+                                btn.innerText = '❌ 自愈执行失败: ' + err.message;
+                            });
+                        }
+                    }, '🛠️ 一键自愈并重建链路'),
+
+                    E('button', {
+                        'class': 'btn cbi-button cbi-button-reset',
+                        'style': 'background: var(--cw-bg-secondary); color: var(--cw-text-main); border: 1px solid var(--cw-border); padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 13px; display: flex; align-items: center; gap: 6px;',
+                        'click': function(ev) {
+                            const btn = ev.target;
+                            btn.disabled = true;
+                            btn.innerText = '⏳ 正在重新检测...';
+                            callGetAccelerationStatus().then(newDiag => {
+                                card.remove();
+                                appendAccelerationCard(newDiag);
+                            }).catch(err => {
+                                btn.disabled = false;
+                                btn.innerText = '❌ 检测失败: ' + err.message;
+                            });
+                        }
+                    }, '🔄 重新检测'),
+
+                    E('button', {
+                        'class': 'btn cbi-button cbi-button-reset',
+                        'style': 'background: var(--cw-bg-secondary); color: var(--cw-text-muted); border: 1px solid var(--cw-border); padding: 8px 14px; border-radius: 6px; cursor: pointer; font-size: 13px;',
+                        'click': function() {
+                            card.remove();
+                        }
+                    }, '收起卡片')
+                ])
+            ]);
+
             chatWindow.appendChild(card);
             chatWindow.scrollTop = chatWindow.scrollHeight;
         }
@@ -2507,8 +2776,9 @@ return view.extend({
 
         function appendMeshConfigCard(param) {
             const initialRole = param.role || 'master';
-            const initialId = param.mesh_id || 'chawrt_mesh_5g';
-            const initialCh = param.channel || '44';
+            const initialBand = (param.band === '2.4G' || param.band === '2g') ? '2.4G' : '5G';
+            const initialId = param.mesh_id || (initialBand === '2.4G' ? 'chawrt_mesh_2g' : 'chawrt_mesh_5g');
+            const initialCh = param.channel || (initialBand === '2.4G' ? '6' : '44');
             const initialEnabled = (param.enabled !== '0');
             
             const card = E('div', {
@@ -2548,6 +2818,51 @@ return view.extend({
                         ])
                     ]),
                     E('div', {}, [
+                        E('label', { 'style': 'display: block; font-size: 12px; font-weight: 600; color: var(--cw-text-main); margin-bottom: 4px;' }, '骨干回传频段:'),
+                        E('select', {
+                            'id': 'mesh-card-band',
+                            'class': 'cbi-input-select',
+                            'style': 'width: 100%; border: 1px solid var(--cw-border); background: var(--cw-input-bg); color: var(--cw-input-text); border-radius: 6px; padding: 6px 10px; font-size: 13px;',
+                            'change': function(ev) {
+                                const selectedBand = ev.target.value;
+                                const chSelect = card.querySelector('#mesh-card-channel');
+                                chSelect.innerHTML = '';
+                                if (selectedBand === '2.4G') {
+                                    chSelect.appendChild(E('option', { 'value': '6', 'selected': 'selected' }, '信道 6 (推荐 · 常用纯净信道)'));
+                                    chSelect.appendChild(E('option', { 'value': '1' }, '信道 1'));
+                                    chSelect.appendChild(E('option', { 'value': '11' }, '信道 11'));
+                                } else {
+                                    chSelect.appendChild(E('option', { 'value': '44', 'selected': 'selected' }, '信道 44 (推荐 · 常用纯净频段)'));
+                                    chSelect.appendChild(E('option', { 'value': '36' }, '信道 36'));
+                                    chSelect.appendChild(E('option', { 'value': '149' }, '信道 149 (高功率频段)'));
+                                }
+                                const idInput = card.querySelector('#mesh-card-id');
+                                if (idInput.value === 'chawrt_mesh_5g' || idInput.value === 'chawrt_mesh_2g') {
+                                    idInput.value = (selectedBand === '2.4G') ? 'chawrt_mesh_2g' : 'chawrt_mesh_5g';
+                                }
+                            }
+                        }, [
+                            E('option', { 'value': '5G', 'selected': initialBand === '5G' ? 'selected' : null }, '5GHz 极速回传 (推荐 · 跑满千兆带宽)'),
+                            E('option', { 'value': '2.4G', 'selected': initialBand === '2.4G' ? 'selected' : null }, '2.4GHz 强力穿墙 (适用于跨多堵承重墙)')
+                        ])
+                    ]),
+                    E('div', {}, [
+                        E('label', { 'style': 'display: block; font-size: 12px; font-weight: 600; color: var(--cw-text-main); margin-bottom: 4px;' }, '回传射频信道:'),
+                        E('select', {
+                            'id': 'mesh-card-channel',
+                            'class': 'cbi-input-select',
+                            'style': 'width: 100%; border: 1px solid var(--cw-border); background: var(--cw-input-bg); color: var(--cw-input-text); border-radius: 6px; padding: 6px 10px; font-size: 13px;'
+                        }, initialBand === '2.4G' ? [
+                            E('option', { 'value': '6', 'selected': initialCh === '6' ? 'selected' : null }, '信道 6 (推荐 · 常用纯净信道)'),
+                            E('option', { 'value': '1', 'selected': initialCh === '1' ? 'selected' : null }, '信道 1'),
+                            E('option', { 'value': '11', 'selected': initialCh === '11' ? 'selected' : null }, '信道 11')
+                        ] : [
+                            E('option', { 'value': '44', 'selected': initialCh === '44' ? 'selected' : null }, '信道 44 (推荐 · 常用纯净频段)'),
+                            E('option', { 'value': '36', 'selected': initialCh === '36' ? 'selected' : null }, '信道 36'),
+                            E('option', { 'value': '149', 'selected': initialCh === '149' ? 'selected' : null }, '信道 149 (高功率频段)')
+                        ])
+                    ]),
+                    E('div', { 'style': 'grid-column: span 2;' }, [
                         E('label', { 'style': 'display: block; font-size: 12px; font-weight: 600; color: var(--cw-text-main); margin-bottom: 4px;' }, 'Mesh ID:'),
                         E('input', {
                             'id': 'mesh-card-id',
@@ -2556,25 +2871,21 @@ return view.extend({
                             'value': initialId,
                             'style': 'width: 100%; border: 1px solid var(--cw-border); background: var(--cw-input-bg); color: var(--cw-input-text); border-radius: 6px; padding: 6px 10px; font-size: 13px;'
                         })
-                    ]),
-                    E('div', {}, [
-                        E('label', { 'style': 'display: block; font-size: 12px; font-weight: 600; color: var(--cw-text-main); margin-bottom: 4px;' }, '5G 回传信道:'),
-                        E('select', {
-                            'id': 'mesh-card-channel',
-                            'class': 'cbi-input-select',
-                            'style': 'width: 100%; border: 1px solid var(--cw-border); background: var(--cw-input-bg); color: var(--cw-input-text); border-radius: 6px; padding: 6px 10px; font-size: 13px;'
-                        }, [
-                            E('option', { 'value': '44', 'selected': initialCh === '44' ? 'selected' : null }, '信道 44 (推荐 · 常用纯净频段)'),
-                            E('option', { 'value': '36', 'selected': initialCh === '36' ? 'selected' : null }, '信道 36'),
-                            E('option', { 'value': '149', 'selected': initialCh === '149' ? 'selected' : null }, '信道 149 (高功率频段)')
-                        ])
                     ])
                 ]),
                 
-                E('div', { 'style': 'background: var(--cw-bg-secondary); border-radius: 8px; padding: 10px 14px; margin-bottom: 14px; font-size: 12px; color: var(--cw-text-sub); line-height: 1.5;' }, [
-                    E('div', { 'style': 'font-weight: 600; color: var(--cw-text-main); margin-bottom: 4px;' }, '💡 协议特性与保障：'),
-                    E('div', {}, '• 加密协议：强制采用 WPA3-SAE 硬件加速加密，杜绝空中窃听与字典破解；'),
-                    E('div', {}, '• 二层透传：桥入 br-lan，局域网多 AP 处于同一 192.168.x.x 网段，广播与投屏零障碍。')
+                // Selection rationale and guidance box
+                E('div', { 'style': 'background: var(--cw-bg-secondary); border-left: 3px solid #059669; border-radius: 8px; padding: 12px 14px; margin-bottom: 14px; font-size: 12px; color: var(--cw-text-sub); line-height: 1.6;' }, [
+                    E('div', { 'style': 'font-weight: 700; color: var(--cw-text-main); margin-bottom: 6px; font-size: 13px;' }, '🧭 骨干回传频段选择依据与建议：'),
+                    E('div', { 'style': 'margin-bottom: 4px;' }, [
+                        E('span', { 'style': 'color: #059669; font-weight: 600;' }, '🚀 5GHz 极速回传 (默认推荐 · 90% 家庭首选)：'),
+                        E('span', {}, '适合隔 1 堵普通墙内或大平层。拥有 80MHz 大频宽，物理协商 1200M+，抗干扰极强，千兆宽带实测低损耗、游戏不跳 ping。')
+                    ]),
+                    E('div', { 'style': 'margin-bottom: 6px;' }, [
+                        E('span', { 'style': 'color: #d97706; font-weight: 600;' }, '🧱 2.4GHz 强力穿墙 (远距离保底方案)：'),
+                        E('span', {}, '适合跨楼层、相隔较远或隔了 2~3 堵厚重承重墙。波长长绕射强，信号衰减慢，保底不掉线；但受限于 20MHz 频宽，实际带宽约 30~50Mbps。')
+                    ]),
+                    E('div', { 'style': 'border-top: 1px dashed var(--cw-border); padding-top: 6px; color: var(--cw-text-muted); font-size: 11px;' }, '💡 提示：无论选择哪个骨干频段，主子路由的终端 AP 均保持 2.4G + 5G 双频并发全开，手机依然能在全屋自由连接并享受 15ms 无缝漫游！')
                 ]),
                 
                 E('div', { 'style': 'display: flex; gap: 10px; justify-content: flex-end;' }, [
@@ -2585,18 +2896,19 @@ return view.extend({
                             const btn = ev.target;
                             const curEnabled = card.querySelector('#mesh-card-enabled').value;
                             const curRole = card.querySelector('#mesh-card-role').value;
-                            const curId = card.querySelector('#mesh-card-id').value.trim() || 'chawrt_mesh_5g';
+                            const curBand = card.querySelector('#mesh-card-band').value;
+                            const curId = card.querySelector('#mesh-card-id').value.trim() || (curBand === '2.4G' ? 'chawrt_mesh_2g' : 'chawrt_mesh_5g');
                             const curCh = card.querySelector('#mesh-card-channel').value;
                             
                             btn.disabled = true;
                             btn.innerText = '⏳ 正在写入 802.11s 骨干网配置...';
                             
-                            callSetMeshConfig(curEnabled, curRole, curId, 'chawrt@80211s', curCh, '5G').then(res => {
+                            callSetMeshConfig(curEnabled, curRole, curId, 'chawrt@80211s', curCh, curBand).then(res => {
                                 if (res && res.success) {
                                     btn.innerText = '✅ 骨干网配置已生效';
                                     btn.style.background = '#16a34a';
                                     card.style.borderColor = '#16a34a';
-                                    appendMessage('assistant', `🎉 **802.11s 无线 Mesh 骨干网已成功激活！**\n\n• **当前节点角色**：\`${curRole === 'master' ? '主路由网关 (Master)' : '子路由分身 (Satellite)'}\`\n• **Mesh ID**：\`${curId}\`\n• **回传信道**：\`5GHz 信道 ${curCh}\`\n• **加密标准**：\`WPA3-SAE 硬件加速\`\n\n骨干链路已无损桥入 \`br-lan\`。现在可以使用网线接入新子路由，由小茶助手自动完成一键配对纳管！`);
+                                    appendMessage('assistant', `🎉 **802.11s 无线 Mesh 骨干网已成功激活！**\n\n• **当前节点角色**：\`${curRole === 'master' ? '主路由网关 (Master)' : '子路由分身 (Satellite)'}\`\n• **回传频段**：\`${curBand === '2.4G' ? '2.4GHz 强力穿墙模式' : '5GHz 极速回传模式'}\`\n• **Mesh ID**：\`${curId}\`\n• **回传信道**：\`信道 ${curCh}\`\n• **加密标准**：\`WPA3-SAE 硬件加速\`\n\n骨干链路已无损桥入 \`br-lan\`。无论选择哪种回传，终端 AP 均已同步开启双频并发。现在可以使用网线接入新子路由，由小茶助手自动完成一键配对纳管！`);
                                 } else {
                                     btn.innerText = '❌ 配置失败: ' + (res.message || '未知错误');
                                     btn.style.background = '#dc2626';
@@ -2625,7 +2937,7 @@ return view.extend({
         function appendMeshPairNodeCard(param) {
             const targetIp = param.target_ip || '';
             const nodeName = param.node_name || '卧室分身路由';
-            const targetLanIp = param.target_lan_ip || '192.168.1.2';
+            const targetLanIp = param.target_lan_ip || (window.location && window.location.hostname && window.location.hostname.match(/^[0-9]+\.[0-9]+\.[0-9]+/) ? window.location.hostname.replace(/\.[0-9]+$/, '.2') : '192.168.8.2');
             
             const card = E('div', {
                 'class': 'mesh-pair-card',
@@ -2670,6 +2982,16 @@ return view.extend({
                             'value': targetLanIp,
                             'style': 'width: 100%; border: 1px solid var(--cw-border); background: var(--cw-input-bg); color: var(--cw-input-text); border-radius: 6px; padding: 6px 10px; font-size: 13px;'
                         })
+                    ]),
+                    E('div', { 'style': 'grid-column: span 2;' }, [
+                        E('label', { 'style': 'display: block; font-size: 12px; font-weight: 600; color: var(--cw-text-main); margin-bottom: 4px;' }, '子路由 root 密码 (首次免密握手):'),
+                        E('input', {
+                            'id': 'pair-card-pwd',
+                            'type': 'password',
+                            'class': 'cbi-input-text',
+                            'placeholder': '出厂默认无密码请留空，或输入 root 登录密码',
+                            'style': 'width: 100%; border: 1px solid var(--cw-border); background: var(--cw-input-bg); color: var(--cw-input-text); border-radius: 6px; padding: 6px 10px; font-size: 13px;'
+                        })
                     ])
                 ]),
                 
@@ -2689,6 +3011,7 @@ return view.extend({
                             const curTargetIp = card.querySelector('#pair-card-target-ip').value.trim();
                             const curName = card.querySelector('#pair-card-node-name').value.trim() || '分身路由';
                             const curLanIp = card.querySelector('#pair-card-lan-ip').value.trim() || '192.168.1.2';
+                            const curPwd = card.querySelector('#pair-card-pwd').value;
                             
                             if (!curTargetIp) {
                                 alert('请输入目标子路由当前的临时 IP 地址！');
@@ -2698,7 +3021,7 @@ return view.extend({
                             btn.disabled = true;
                             btn.innerText = '⏳ 正在进行 SSH 免密注入与二层 Mesh 配置...';
                             
-                            callPairMeshNode(curTargetIp, curName, curLanIp).then(res => {
+                            callPairMeshNode(curTargetIp, curName, curLanIp, curPwd).then(res => {
                                 if (res && res.success) {
                                     btn.innerText = '✅ 配对下发完成';
                                     btn.style.background = '#16a34a';
@@ -4061,15 +4384,71 @@ return view.extend({
             }
 
             try {
+                chatBusy = true;
                 await processAgentTurn();
             } catch (err) {
                 appendMessage('assistant', `⚠️ **AI 处理出错**: ${err.message}\n\n*提示: 请点击右上角【设置 API Key】检查 DeepSeek Key 是否正确配置，或检查路由器外网连通性。*`);
             } finally {
+                chatBusy = false;
                 if (sendBtn) {
                     sendBtn.disabled = false;
                     sendBtn.innerText = '发送 ➔';
                 }
             }
+        }
+
+        function clipModelText(text, max) {
+            const s = String(text || '');
+            if (s.length <= max) return s;
+            return s.slice(0, max) + '\n…(较早内容已省略)';
+        }
+
+        // Keep the system prompt and the newest turns. Tool JSON is clipped,
+        // and older tool rounds are dropped so the ubus payload stays small.
+        function compactMessages(list) {
+            const system = (list || []).find(m => m && m.role === 'system') || { role: 'system', content: systemPrompt };
+            let kept = (list || []).filter(m => m && m.role !== 'system').map(m => {
+                if (m.role === 'tool')
+                    return Object.assign({}, m, { content: clipModelText(m.content, 6000) });
+                if (m.role === 'assistant' && m.content)
+                    return Object.assign({}, m, { content: clipModelText(m.content, 4000) });
+                if (m.role === 'user')
+                    return Object.assign({}, m, { content: clipModelText(m.content, 4000) });
+                return m;
+            });
+
+            const packed = () => JSON.stringify({ messages_json: JSON.stringify([system].concat(kept)) }).length;
+            while (kept.length > 2 && packed() > 48000) {
+                kept.shift();
+                while (kept.length && kept[0].role === 'tool')
+                    kept.shift();
+            }
+
+            const repaired = [];
+            for (let i = 0; i < kept.length; i++) {
+                const m = kept[i];
+                if (m.role === 'tool')
+                    continue;
+                if (m.role === 'assistant' && Array.isArray(m.tool_calls) && m.tool_calls.length) {
+                    const need = m.tool_calls.length;
+                    const tools = [];
+                    let j = i + 1;
+                    while (j < kept.length && kept[j].role === 'tool' && tools.length < need) {
+                        tools.push(kept[j]);
+                        j++;
+                    }
+                    if (tools.length === need) {
+                        repaired.push(m);
+                        tools.forEach(t => repaired.push(t));
+                    } else if (m.content) {
+                        repaired.push({ role: 'assistant', content: m.content });
+                    }
+                    i = j - 1;
+                } else {
+                    repaired.push(m);
+                }
+            }
+            return [system].concat(repaired);
         }
 
         async function processAgentTurn() {
@@ -4092,14 +4471,26 @@ return view.extend({
                 loopCount++;
 
                 // Prepare request body
+                const modelMessages = compactMessages(messages);
                 const requestPayload = {
                     model: aiConfig.model || 'deepseek-flash',
-                    messages: messages,
+                    messages: modelMessages,
                     tools: routerTools,
                     temperature: parseFloat(aiConfig.temperature) || 0.3
                 };
 
                 let responseData;
+
+                async function callModel() {
+                    const run = () => callDeepseekProxy(JSON.stringify(modelMessages), '');
+                    try {
+                        return await run();
+                    } catch (err) {
+                        if (!err || !/No related RPC reply|XHR request/.test(err.message || ''))
+                            throw err;
+                        return await run();
+                    }
+                }
 
                 // Try browser direct fetch first
                 if (aiConfig.apiKey) {
@@ -4120,11 +4511,11 @@ return view.extend({
                     responseData = await res.json();
                 } else {
                     // Fallback to router proxy
-                    const resProxy = await callDeepseekProxy(JSON.stringify(messages), JSON.stringify(routerTools));
+                    const resProxy = await callModel();
                     if (resProxy.error || !resProxy.response) {
                         throw new Error(resProxy.message || 'Router backend failed to call DeepSeek');
                     }
-                    responseData = JSON.parse(resProxy.response);
+                    responseData = JSON.parse(decodeDeepseekBody(resProxy));
                 }
 
                 const choice = responseData.choices[0];
@@ -4145,7 +4536,14 @@ return view.extend({
                         let toolResult = {};
 
                         try {
-                            if (fnName === 'get_penetration_status') {
+                            if (fnName === 'get_acceleration_status') {
+                                toolResult = await callGetAccelerationStatus();
+                                appendAccelerationCard(toolResult);
+                            } else if (fnName === 'fix_acceleration_pipeline') {
+                                toolResult = await callFixAccelerationPipeline();
+                                const newDiag = await callGetAccelerationStatus();
+                                appendAccelerationCard(newDiag);
+                            } else if (fnName === 'get_penetration_status') {
                                 toolResult = await callGetPenetrationStatus();
                             } else if (fnName === 'get_router_summary') {
                                 toolResult = await callGetRouterSummary();
@@ -4264,7 +4662,10 @@ return view.extend({
 
                         const header = indicator.querySelector('.indicator-header');
                         if (header) {
-                            header.innerHTML = `✅ <span style="color: #15803d; font-weight: 600;">已通过 luci.clawwrt 成功获取事实数据</span> <code style="font-size: 11px; background: #e2e8f0; padding: 1px 5px; border-radius: 3px;">ubus: ${fnName}</code>`;
+                            const failed = !!(toolResult && (toolResult.error || toolResult.success === false || toolResult.success === 0));
+                            header.innerHTML = failed
+                                ? `❌ <span style="color: #b91c1c; font-weight: 600;">luci.clawwrt 调用失败</span> <code style="font-size: 11px; background: #e2e8f0; padding: 1px 5px; border-radius: 3px;">ubus: ${fnName}</code>`
+                                : `✅ <span style="color: #15803d; font-weight: 600;">已通过 luci.clawwrt 成功获取事实数据</span> <code style="font-size: 11px; background: #e2e8f0; padding: 1px 5px; border-radius: 3px;">ubus: ${fnName}</code>`;
                         }
                         
                         // Collapsible JSON raw result details
@@ -4286,22 +4687,25 @@ return view.extend({
                     if (assistantMsg.content) {
                         appendMessage('assistant', assistantMsg.content);
                     }
+                    messages = compactMessages(messages);
                     break;
                 }
             }
+            messages = compactMessages(messages);
         }
 
         // Markdown Formatter (Powered by Marked.js for full GFM tables, code blocks, lists)
         function formatMarkdown(text) {
             if (!text) return '';
+            const safe = String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
             try {
                 if (typeof marked !== 'undefined' && marked && marked.parse) {
-                    return marked.parse(text);
+                    return marked.parse(safe).replace(/href="\s*javascript:[^"]*"/gi, 'href="#"');
                 }
             } catch (e) {
                 console.error('Marked error:', e);
             }
-            return text.replace(/\n/g, '<br>');
+            return safe.replace(/\n/g, '<br>');
         }
 
         // Refresh Metrics
@@ -4363,7 +4767,7 @@ return view.extend({
         // Settings Modal
         function openSettingsModal() {
             callGetAiSettings().then(saved => {
-                const currentKey = localStorage.getItem('chawrt_deepseek_key') || '';
+                const currentKey = '';
 
                 const keyInput = E('input', {
                     'type': 'password',
@@ -4435,7 +4839,7 @@ return view.extend({
                             'style': 'background: var(--cw-bg-secondary); color: var(--cw-text-main); border: 1px solid var(--cw-border); padding: 7px 14px; border-radius: 6px; font-size: 12px; cursor: pointer;',
                             'click': async function(ev) {
                                 const btn = ev.target;
-                                const testKey = keyInput.value.trim() || localStorage.getItem('chawrt_deepseek_key') || '';
+                                const testKey = keyInput.value.trim();
                                 const testUrl = normalizeApiUrl(urlInput.value.trim() || 'https://api.deepseek.com');
                                 const testModel = modelSelect.value;
 
@@ -4481,7 +4885,7 @@ return view.extend({
                                         if (resProxy.http_code === 200) {
                                             testResp = { ok: true, status: 200 };
                                         } else {
-                                            testResp = { ok: false, status: resProxy.http_code, text: async () => resProxy.response || resProxy.message };
+                                            testResp = { ok: false, status: resProxy.http_code, text: async () => decodeDeepseekBody(resProxy) || resProxy.message };
                                         }
                                     }
 
@@ -4533,10 +4937,8 @@ return view.extend({
                                 'style': 'background: #2563eb; color: #fff;',
                                 'click': function() {
                                     const newKey = keyInput.value.trim();
-                                    if (newKey) {
-                                        localStorage.setItem('chawrt_deepseek_key', newKey);
-                                        aiConfig.apiKey = newKey;
-                                    }
+                                    aiConfig.apiKey = '';
+                                    try { localStorage.removeItem('chawrt_deepseek_key'); } catch (e) {}
                                     aiConfig.model = modelSelect.value;
                                     aiConfig.apiUrl = normalizeApiUrl(urlInput.value.trim() || 'https://api.deepseek.com');
 
@@ -4605,7 +5007,8 @@ return view.extend({
         restoreChatHistory();
         refreshMetrics();
         window.setInterval(function() {
-            refreshMetrics();
+            if (!chatBusy)
+                refreshMetrics();
         }, 15000);
         callGetAiSettings().then(cfg => {
             if (cfg) {

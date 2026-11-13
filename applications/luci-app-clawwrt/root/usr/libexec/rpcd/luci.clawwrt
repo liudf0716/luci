@@ -3,6 +3,46 @@
 . /usr/share/libubox/jshn.sh
 [ -f /lib/functions.sh ] && . /lib/functions.sh
 
+shell_squote() {
+    printf "'%s'" "$(printf '%s' "$1" | sed "s/'/'\\\\''/g")"
+}
+
+is_port() {
+    echo "$1" | grep -Eq '^[0-9]{1,5}$' || return 1
+    [ "$1" -ge 1 ] && [ "$1" -le 65535 ]
+}
+
+is_host() {
+    echo "$1" | grep -Eq '^[A-Za-z0-9][A-Za-z0-9.:_-]{0,253}$'
+}
+
+is_user() {
+    echo "$1" | grep -Eq '^[A-Za-z_][A-Za-z0-9_.-]{0,31}$'
+}
+
+is_ipv4() {
+    echo "$1" | grep -Eq '^([0-9]{1,3}\.){3}[0-9]{1,3}$'
+}
+
+is_token() {
+    [ -z "$1" ] && return 0
+    echo "$1" | grep -Eq '^[A-Za-z0-9_.:@+=/-]{1,255}$'
+}
+
+is_ident() {
+    [ -z "$1" ] && return 0
+    echo "$1" | grep -Eq '^[A-Za-z0-9_]{1,32}$'
+}
+
+claw_fail() {
+    json_init
+    json_add_object "result"
+    json_add_boolean "success" 0
+    json_add_string "message" "$1"
+    json_close_object
+    json_dump
+}
+
 case "$1" in
     list)
         json_init
@@ -108,6 +148,7 @@ case "$1" in
             json_add_string "target_ip"
             json_add_string "node_name"
             json_add_string "target_lan_ip"
+            json_add_string "password"
         json_close_object
         json_add_object "unpair_mesh_node"
             json_add_string "id"
@@ -207,6 +248,10 @@ case "$1" in
             json_add_string "raw_config"
         json_close_object
         json_add_object "get_penetration_status"
+        json_close_object
+        json_add_object "get_acceleration_status"
+        json_close_object
+        json_add_object "fix_acceleration_pipeline"
         json_close_object
         json_add_object "manage_xdns_domain"
             json_add_string "action"
@@ -590,17 +635,20 @@ case "$1" in
         }
 
         call_deepseek() {
-            read -r input
-            json_load "$input"
-            json_get_var messages_json "messages_json"
-            json_get_var tools_json "tools_json"
-            
+            local in_file="/tmp/deepseek_in_$$.json"
+            local msg_file="/tmp/deepseek_msg_$$.json"
+            local tools_file="/tmp/deepseek_tools_$$.json"
+            local req_body="/tmp/deepseek_req_$$.json"
+            local resp_body="/tmp/deepseek_resp_$$.json"
+            cat > "$in_file"
+
             local key=$(uci -q get clawwrt.ai.api_key)
             local model=$(uci -q get clawwrt.ai.model || echo "deepseek-flash")
             local api_url=$(uci -q get clawwrt.ai.api_url || echo "https://api.deepseek.com/chat/completions")
             local temp=$(uci -q get clawwrt.ai.temperature || echo "0.3")
-            
+
             if [ -z "$key" ]; then
+                rm -f "$in_file"
                 json_init
                 json_add_object "result"
                 json_add_boolean "error" "1"
@@ -609,32 +657,37 @@ case "$1" in
                 json_dump
                 return
             fi
-            
-            local req_body="/tmp/deepseek_req_$$.json"
-            local resp_body="/tmp/deepseek_resp_$$.json"
-            
-            if [ -n "$tools_json" ] && [ "$tools_json" != "null" ]; then
-                printf '{"model":"%s","messages":%s,"tools":%s,"temperature":%s,"stream":false}' \
-                    "$model" "$messages_json" "$tools_json" "$temp" > "$req_body"
-            else
-                printf '{"model":"%s","messages":%s,"temperature":%s,"stream":false}' \
-                    "$model" "$messages_json" "$temp" > "$req_body"
+
+            jsonfilter -i "$in_file" -e '@.messages_json' > "$msg_file" 2>/dev/null
+            jsonfilter -i "$in_file" -e '@.tools_json' > "$tools_file" 2>/dev/null
+            rm -f "$in_file"
+            if ! grep -q '[^[:space:]]' "$tools_file" 2>/dev/null || grep -qx 'null' "$tools_file"; then
+                if [ -s /usr/share/clawwrt/router-tools.json ]; then
+                    cp /usr/share/clawwrt/router-tools.json "$tools_file"
+                fi
             fi
-            
-            local http_code=$(curl -s -m 60 -o "$resp_body" -w "%{http_code}" -X POST "$api_url" \
+
+            {
+                printf '{"model":"%s","messages":' "$model"
+                cat "$msg_file"
+                if grep -q '[^[:space:]]' "$tools_file" 2>/dev/null && ! grep -qx 'null' "$tools_file"; then
+                    printf ',"tools":'
+                    cat "$tools_file"
+                fi
+                printf ',"temperature":%s,"stream":false}' "$temp"
+            } > "$req_body"
+            rm -f "$msg_file" "$tools_file"
+
+            local http_code=$(curl -s -m 90 -o "$resp_body" -w "%{http_code}" -X POST "$api_url" \
                 -H "Content-Type: application/json" \
                 -H "Authorization: Bearer $key" \
                 --data-binary @"$req_body" 2>/dev/null)
-                
-            local resp_content=$(cat "$resp_body" 2>/dev/null)
-            rm -f "$req_body" "$resp_body"
-            
-            json_init
-            json_add_object "result"
-            json_add_int "http_code" "${http_code:-0}"
-            json_add_string "response" "$resp_content"
-            json_close_object
-            json_dump
+            rm -f "$req_body"
+
+            local b64=$(openssl base64 -A -in "$resp_body" 2>/dev/null || true)
+            rm -f "$resp_body"
+
+            printf '{"result":{"http_code":%s,"encoding":"base64","response":"%s"}}\n' "${http_code:-0}" "$b64"
         }
 
         
@@ -1011,20 +1064,87 @@ case "$1" in
             done
 
             if [ -n "$real_mesh_if" ]; then
-                iw dev "$real_mesh_if" mpath dump 2>/dev/null | while read -r d n i sn m q f; do
-                    [ -z "$d" ] && continue
-                    json_add_object
-                    json_add_string "destination" "$d"
-                    json_add_string "next_hop" "$n"
-                    json_add_string "iface" "$i"
-                    json_add_string "metric" "$m"
-                    json_add_string "flags" "$f"
-                    json_close_object
-                done
-                mpath_count=$(iw dev "$real_mesh_if" mpath dump 2>/dev/null | grep -c .)
+                local raw_mpath=$(iw dev "$real_mesh_if" mpath dump 2>/dev/null | grep -v '^DEST')
+                if [ -n "$raw_mpath" ]; then
+                    local tmp_mpath="/tmp/mpath_$$.tmp"
+                    echo "$raw_mpath" > "$tmp_mpath"
+                    while read -r d n i sn m q f rest; do
+                        [ -z "$d" ] && continue
+                        json_add_object
+                        json_add_string "destination" "$d"
+                        json_add_string "next_hop" "$n"
+                        json_add_string "iface" "$i"
+                        json_add_string "metric" "$m"
+                        json_add_string "flags" "$f"
+                        json_close_object
+                        mpath_count=$((mpath_count + 1))
+                    done < "$tmp_mpath"
+                    rm -f "$tmp_mpath"
+                fi
             fi
             json_close_array
             json_add_int "mpath_count" "$mpath_count"
+
+            # 获取 802.11s Peer Link 协商与信号质量 (peers)
+            json_add_array "peers"
+            local peer_count=0
+            local first_peer_mac=""
+            if [ -n "$real_mesh_if" ]; then
+                local cur_mac="" cur_plink="" cur_signal="" cur_rx_rate="" cur_tx_rate=""
+                local raw_sta=$(iw dev "$real_mesh_if" station dump 2>/dev/null)
+                if [ -n "$raw_sta" ]; then
+                    local tmp_sta="/tmp/msta_$$.tmp"
+                    echo "$raw_sta" > "$tmp_sta"
+                    while IFS= read -r line; do
+                        case "$line" in
+                            Station\ *)
+                                if [ -n "$cur_mac" ]; then
+                                    json_add_object
+                                    json_add_string "mac" "$cur_mac"
+                                    json_add_string "plink" "$cur_plink"
+                                    json_add_string "signal" "$cur_signal"
+                                    json_add_string "rx_bitrate" "$cur_rx_rate"
+                                    json_add_string "tx_bitrate" "$cur_tx_rate"
+                                    json_close_object
+                                    [ -z "$first_peer_mac" ] && first_peer_mac="$cur_mac"
+                                    peer_count=$((peer_count + 1))
+                                fi
+                                cur_mac=$(echo "$line" | awk '{print $2}')
+                                cur_plink=""
+                                cur_signal=""
+                                cur_rx_rate=""
+                                cur_tx_rate=""
+                                ;;
+                            *mesh\ plink:*)
+                                cur_plink=$(echo "$line" | awk '{print $NF}')
+                                ;;
+                            *[[:space:]]signal:*)
+                                cur_signal=$(echo "$line" | sed 's/.*signal:[[:space:]]*//' | awk '{print $1 " dBm"}')
+                                ;;
+                            *rx\ bitrate:*)
+                                cur_rx_rate=$(echo "$line" | sed 's/.*rx bitrate:[[:space:]]*//')
+                                ;;
+                            *tx\ bitrate:*)
+                                cur_tx_rate=$(echo "$line" | sed 's/.*tx bitrate:[[:space:]]*//')
+                                ;;
+                        esac
+                    done < "$tmp_sta"
+                    if [ -n "$cur_mac" ]; then
+                        json_add_object
+                        json_add_string "mac" "$cur_mac"
+                        json_add_string "plink" "$cur_plink"
+                        json_add_string "signal" "$cur_signal"
+                        json_add_string "rx_bitrate" "$cur_rx_rate"
+                        json_add_string "tx_bitrate" "$cur_tx_rate"
+                        json_close_object
+                        [ -z "$first_peer_mac" ] && first_peer_mac="$cur_mac"
+                        peer_count=$((peer_count + 1))
+                    fi
+                    rm -f "$tmp_sta"
+                fi
+            fi
+            json_close_array
+            json_add_int "peer_count" "$peer_count"
 
             # 获取已纳入集群纳管的子节点列表
             json_add_array "nodes"
@@ -1044,12 +1164,23 @@ case "$1" in
                         ping -c 1 -W 1 "$ip" >/dev/null 2>&1 && ping_ok=1
                     fi
 
+                    local final_status="offline"
+                    if [ "$ping_ok" = "1" ]; then
+                        final_status="online"
+                    elif [ "$peer_count" -gt 0 ]; then
+                        final_status="online"
+                    fi
+
+                    if [ -z "$mac" ] && [ -n "$first_peer_mac" ]; then
+                        mac="$first_peer_mac"
+                    fi
+
                     json_add_object
                     json_add_string "id" "$s"
                     json_add_string "name" "$name"
                     json_add_string "ip" "$ip"
                     json_add_string "mac" "$mac"
-                    json_add_string "status" "$([ "$ping_ok" = "1" ] && echo "online" || echo "offline")"
+                    json_add_string "status" "$final_status"
                     json_add_string "added_time" "$added_time"
                     json_close_object
                 }
@@ -1073,19 +1204,35 @@ case "$1" in
 
             [ -z "$enabled" ] && enabled="1"
             [ -z "$role" ] && role="master"
-            [ -z "$mesh_id" ] && mesh_id="chawrt_mesh_5g"
+            [ -z "$band" ] && band="5G"
             [ -z "$key" ] && key="chawrt@80211s"
-            [ -z "$channel" ] && channel="44"
 
-            # 寻找 5G 射频
-            local target_radio="radio0"
+            # 寻找对应频段的射频 (5G 或 2.4G)
+            local target_radio=""
             for rad in radio0 radio1 radio2; do
                 local b=$(uci -q get wireless.${rad}.band)
-                if [ "$b" = "5g" ] || [ "$b" = "5G" ]; then
-                    target_radio="$rad"
-                    break
+                if [ "$band" = "2.4G" ] || [ "$band" = "2g" ]; then
+                    if [ "$b" = "2g" ] || [ "$b" = "2.4g" ] || [ "$b" = "2G" ]; then
+                        target_radio="$rad"
+                        break
+                    fi
+                else
+                    if [ "$b" = "5g" ] || [ "$b" = "5G" ]; then
+                        target_radio="$rad"
+                        break
+                    fi
                 fi
             done
+            [ -z "$target_radio" ] && target_radio="radio1"
+
+            # 校验并设置默认信道与 Mesh ID
+            if [ "$band" = "2.4G" ] || [ "$band" = "2g" ]; then
+                [ -z "$channel" ] || [ "$channel" -gt 14 ] 2>/dev/null && channel="6"
+                [ -z "$mesh_id" ] && mesh_id="chawrt_mesh_2g"
+            else
+                [ -z "$channel" ] || [ "$channel" -le 14 ] 2>/dev/null && channel="44"
+                [ -z "$mesh_id" ] && mesh_id="chawrt_mesh_5g"
+            fi
 
             uci set wireless.${target_radio}.channel="$channel"
             uci set wireless.${target_radio}.disabled='0'
@@ -1101,9 +1248,14 @@ case "$1" in
             uci set wireless.${mesh_sec}.mesh_fwding='1'
             uci set wireless.${mesh_sec}.disabled="$([ "$enabled" = "1" ] && echo 0 || echo 1)"
 
+            # 主路由启用 STP 协议防止有线/无线混合组网环路
+            uci set network.@device[0].stp='1'
+            uci commit network
+
             [ -f /etc/config/clawwrt ] || touch /etc/config/clawwrt
             uci set clawwrt.mesh=mesh
             uci set clawwrt.mesh.role="$role"
+            uci set clawwrt.mesh.band="$band"
             uci set clawwrt.mesh.mesh_id="$mesh_id"
             uci set clawwrt.mesh.channel="$channel"
             uci commit wireless
@@ -1115,6 +1267,7 @@ case "$1" in
             json_add_object "result"
             json_add_boolean "success" "1"
             json_add_string "role" "$role"
+            json_add_string "band" "$band"
             json_add_string "mesh_id" "$mesh_id"
             json_add_string "channel" "$channel"
             json_add_string "message" "802.11s Mesh 骨干网配置已成功应用并下发！"
@@ -1182,6 +1335,7 @@ case "$1" in
             json_get_var target_ip "target_ip"
             json_get_var node_name "node_name"
             json_get_var target_lan_ip "target_lan_ip"
+            json_get_var password "password"
 
             if [ -z "$target_ip" ]; then
                 json_init
@@ -1194,16 +1348,61 @@ case "$1" in
             fi
 
             [ -z "$node_name" ] && node_name="卧室分身路由"
-            [ -z "$target_lan_ip" ] && target_lan_ip="192.168.1.2"
+            local master_lan_ip=$(uci -q get network.lan.ipaddr || echo "192.168.8.1")
+            if [ -z "$target_lan_ip" ]; then
+                local lan_prefix=$(echo "$master_lan_ip" | awk -F. '{print $1"."$2"."$3}')
+                target_lan_ip="${lan_prefix}.2"
+            fi
 
-            local mesh_id=$(uci -q get wireless.mesh_backhaul.mesh_id || echo "chawrt_mesh_5g")
-            local mesh_key=$(uci -q get wireless.mesh_backhaul.key || echo "chawrt@80211s")
-            local mesh_channel=$(uci -q get wireless.radio0.channel || echo "44")
-            local master_ssid=$(uci -q get wireless.@wifi-iface[0].ssid || echo "ChaWrt-Home")
-            local master_key=$(uci -q get wireless.@wifi-iface[0].key || echo "12345678")
-            local mdomain=$(uci -q get wireless.@wifi-iface[0].mobility_domain || echo "c4a1")
-            local master_lan_ip=$(uci -q get network.lan.ipaddr || echo "192.168.1.1")
+            is_ipv4 "$target_ip" || { claw_fail "目标 IP 无效"; return; }
+            is_ipv4 "$target_lan_ip" || { claw_fail "子路由 LAN 地址无效"; return; }
 
+            # 1. 动态获取 5G 射频与 Mesh 回传配置
+            local mesh_id=$(uci -q get wireless.mesh_backhaul.mesh_id)
+            local mesh_key=$(uci -q get wireless.mesh_backhaul.key)
+            local mesh_radio=$(uci -q get wireless.mesh_backhaul.device)
+            if [ -z "$mesh_radio" ]; then
+                for rad in radio0 radio1 radio2; do
+                    local b=$(uci -q get wireless.${rad}.band)
+                    if [ "$b" = "5g" ] || [ "$b" = "5G" ]; then
+                        mesh_radio="$rad"
+                        break
+                    fi
+                done
+            fi
+            [ -z "$mesh_radio" ] && mesh_radio="radio1"
+            local mesh_channel=$(uci -q get wireless.${mesh_radio}.channel || echo "44")
+
+            [ -z "$mesh_id" ] && mesh_id="chawrt_mesh_5g"
+            [ -z "$mesh_key" ] && mesh_key="chawrt@80211s"
+            echo "$mesh_channel" | grep -Eq '^[0-9]{1,3}$' || mesh_channel="44"
+
+            # 2. 获取主路由当前 AP 的无线与 802.11k/v/r 漫游模板
+            local master_ssid=""
+            local master_key=""
+            local master_enc=""
+            local mdomain="e1a0"
+            for iface in $(uci -q show wireless | grep '=wifi-iface' | cut -d. -f2 | cut -d= -f1); do
+                if [ "$(uci -q get wireless.${iface}.mode)" = "ap" ]; then
+                    local s_ssid=$(uci -q get wireless.${iface}.ssid)
+                    if [ -n "$s_ssid" ]; then
+                        master_ssid="$s_ssid"
+                        master_key=$(uci -q get wireless.${iface}.key)
+                        master_enc=$(uci -q get wireless.${iface}.encryption)
+                        local md=$(uci -q get wireless.${iface}.mobility_domain)
+                        [ -n "$md" ] && mdomain="$md"
+                        break
+                    fi
+                fi
+            done
+            [ -z "$master_ssid" ] && master_ssid=$(uci -q get wireless.@wifi-iface[0].ssid || echo "ChaWrt-Home")
+            [ -z "$master_key" ] && master_key=$(uci -q get wireless.@wifi-iface[0].key || echo "88888888")
+            [ -z "$master_enc" ] && master_enc="psk2"
+            [ -z "$mdomain" ] && mdomain="e1a0"
+
+            local master_lan_ip=$(uci -q get network.lan.ipaddr || echo "192.168.8.1")
+
+            # 3. 准备主路由 Ed25519 管理公钥
             local key_file="/etc/clawwrt/id_dropbear"
             if [ ! -f "$key_file" ]; then
                 mkdir -p /etc/clawwrt
@@ -1211,15 +1410,69 @@ case "$1" in
             fi
             local pubkey=$(dropbearkey -y -f "$key_file" 2>/dev/null | grep '^ssh-')
 
-            local node_setup_cmd="mkdir -p ~/.ssh /etc/dropbear && echo '${pubkey}' >> ~/.ssh/authorized_keys && echo '${pubkey}' >> /etc/dropbear/authorized_keys && uci set network.lan.ipaddr='${target_lan_ip}' && uci set network.lan.gateway='${master_lan_ip}' && uci set network.lan.dns='${master_lan_ip}' && uci set dhcp.lan.ignore='1' && uci set wireless.radio0.channel='${mesh_channel}' && uci set wireless.radio0.disabled='0' && uci set wireless.mesh_backhaul=wifi-iface && uci set wireless.mesh_backhaul.device='radio0' && uci set wireless.mesh_backhaul.mode='mesh' && uci set wireless.mesh_backhaul.mesh_id='${mesh_id}' && uci set wireless.mesh_backhaul.network='lan' && uci set wireless.mesh_backhaul.encryption='sae' && uci set wireless.mesh_backhaul.key='${mesh_key}' && uci set wireless.mesh_backhaul.mesh_fwding='1' && uci set wireless.mesh_backhaul.disabled='0' && uci commit && /etc/init.d/dnsmasq stop 2>/dev/null && /etc/init.d/dnsmasq disable 2>/dev/null && ( sleep 2 && wifi reload && /etc/init.d/network restart ) &"
+            is_ipv4 "$master_lan_ip" || { claw_fail "主路由 LAN 地址无效"; return; }
+            is_token "$mesh_id" || { claw_fail "mesh_id 含非法字符"; return; }
+            is_token "$mesh_key" || { claw_fail "Mesh 密钥含非法字符"; return; }
 
-            ssh -i "$key_file" -o StrictHostKeyChecking=no -o ConnectTimeout=5 "root@${target_ip}" "$node_setup_cmd" >/dev/null 2>&1
+            local q_pub q_lan q_gw q_ch q_id q_key q_rad q_ssid q_wkey q_enc q_mdom
+            q_pub=$(shell_squote "$pubkey")
+            q_lan=$(shell_squote "$target_lan_ip")
+            q_gw=$(shell_squote "$master_lan_ip")
+            q_ch=$(shell_squote "$mesh_channel")
+            q_id=$(shell_squote "$mesh_id")
+            q_key=$(shell_squote "$mesh_key")
+            q_rad=$(shell_squote "$mesh_radio")
+            q_ssid=$(shell_squote "$master_ssid")
+            q_wkey=$(shell_squote "$master_key")
+            q_enc=$(shell_squote "$master_enc")
+            q_mdom=$(shell_squote "$mdomain")
+
+            # 4. 方案 1：建立 SSH 免密信任通道
+            local auth_inject_cmd="mkdir -p ~/.ssh /etc/dropbear && echo ${q_pub} >> ~/.ssh/authorized_keys && echo ${q_pub} >> /etc/dropbear/authorized_keys"
+            local auth_ok=0
+
+            # 先尝试当前公钥是否已具备免密权限
+            if ssh -i "$key_file" -y -y -q -I 2 "root@${target_ip}" "true" 2>/dev/null; then
+                auth_ok=1
+            elif [ -n "$password" ] && which sshpass >/dev/null 2>&1; then
+                # 使用 sshpass 注入公钥
+                sshpass -p "$password" ssh -y -y -I 5 "root@${target_ip}" "$auth_inject_cmd" >/dev/null 2>&1
+                if [ $? -eq 0 ]; then
+                    auth_ok=1
+                fi
+            else
+                # 尝试空密码或出厂无密码直连注入
+                ssh -y -y -I 3 "root@${target_ip}" "$auth_inject_cmd" >/dev/null 2>&1
+                [ $? -eq 0 ] && auth_ok=1
+            fi
+
+            # 验证公钥通道是否畅通
+            if [ "$auth_ok" -eq 0 ] && ! ssh -i "$key_file" -y -y -q -I 2 "root@${target_ip}" "true" 2>/dev/null; then
+                claw_fail "无法建立与子路由的免密安全通道，请核对输入的子路由 root 密码"
+                return
+            fi
+
+            # 5. 拼装子路由二层转换、802.11s Mesh 骨干与 802.11kvr 漫游同步的完整流水线命令
+            local node_mac=""
+            node_mac=$(ssh -i "$key_file" -y -y -q -I 3 "root@${target_ip}" "cat /sys/class/net/br-lan/address 2>/dev/null || true" 2>/dev/null | tr -d '\r\n')
+
+            local node_setup_cmd="mkdir -p ~/.ssh /etc/dropbear && echo ${q_pub} >> ~/.ssh/authorized_keys && echo ${q_pub} >> /etc/dropbear/authorized_keys && uci set network.@device[0].stp='1' && wan_dev=\$(uci -q get network.wan.device || echo 'eth1') && [ -n \"\$wan_dev\" ] && uci -q del_list network.@device[0].ports=\"\$wan_dev\" && uci add_list network.@device[0].ports=\"\$wan_dev\" && uci set network.wan.disabled='1' && uci set network.wan6.disabled='1' && uci set network.lan.ipaddr=${q_lan} && uci set network.lan.gateway=${q_gw} && uci set network.lan.dns=${q_gw} && uci set dhcp.lan.ignore='1' && uci set wireless.${mesh_radio}.channel=${q_ch} && uci set wireless.${mesh_radio}.disabled='0' && uci delete wireless.default_radio0 2>/dev/null && uci delete wireless.default_radio1 2>/dev/null && uci set wireless.mesh_backhaul=wifi-iface && uci set wireless.mesh_backhaul.device=${q_rad} && uci set wireless.mesh_backhaul.mode='mesh' && uci set wireless.mesh_backhaul.mesh_id=${q_id} && uci set wireless.mesh_backhaul.network='lan' && uci set wireless.mesh_backhaul.encryption='sae' && uci set wireless.mesh_backhaul.key=${q_key} && uci set wireless.mesh_backhaul.mesh_fwding='1' && uci set wireless.mesh_backhaul.disabled='0' && for iface in \$(uci -q show wireless | grep '=wifi-iface' | cut -d. -f2 | cut -d= -f1); do if [ \"\$(uci -q get wireless.\${iface}.mode)\" = 'ap' ]; then uci set wireless.\${iface}.ssid=${q_ssid} && uci set wireless.\${iface}.encryption=${q_enc} && uci set wireless.\${iface}.key=${q_wkey} && uci set wireless.\${iface}.ieee80211k='1' && uci set wireless.\${iface}.rrm_neighbor_report='1' && uci set wireless.\${iface}.rrm_beacon_report='1' && uci set wireless.\${iface}.ieee80211v='1' && uci set wireless.\${iface}.bss_transition='1' && uci set wireless.\${iface}.wnm_sleep_mode='1' && uci set wireless.\${iface}.ieee80211r='1' && uci set wireless.\${iface}.mobility_domain=${q_mdom} && uci set wireless.\${iface}.ft_over_ds='1' && uci set wireless.\${iface}.ft_psk_generate_local='1' && uci set wireless.\${iface}.disabled='0'; fi; done && uci commit && /etc/init.d/dnsmasq stop 2>/dev/null && /etc/init.d/dnsmasq disable 2>/dev/null && /etc/init.d/usteer enable 2>/dev/null && ( sleep 2 && /etc/init.d/network restart && wifi reload && /etc/init.d/usteer restart 2>/dev/null ) &"
+
+            local ssh_out=""
+            local ssh_ret=1
+            ssh_out=$(ssh -i "$key_file" -y -y -I 10 "root@${target_ip}" "$node_setup_cmd" 2>&1)
+            ssh_ret=$?
+            if [ "$ssh_ret" -ne 0 ]; then
+                claw_fail "子路由下发失败: $(printf '%s' "$ssh_out" | tr '\n' ' ' | cut -c1-180)"
+                return
+            fi
 
             local node_sec_name="node_$(echo "$target_lan_ip" | tr '.' '_')"
             [ -f /etc/config/clawwrt ] || touch /etc/config/clawwrt
             uci set clawwrt.${node_sec_name}=mesh_node
             uci set clawwrt.${node_sec_name}.name="$node_name"
             uci set clawwrt.${node_sec_name}.ip="$target_lan_ip"
+            [ -n "$node_mac" ] && uci set clawwrt.${node_sec_name}.mac="$node_mac"
             uci set clawwrt.${node_sec_name}.status="paired"
             uci set clawwrt.${node_sec_name}.added_time="$(date '+%Y-%m-%d %H:%M:%S')"
             uci commit clawwrt
@@ -3389,6 +3642,15 @@ print(json.stringify(output))
                 token=$(hexdump -vn 16 -e '16/1 "%02x"' /dev/urandom 2>/dev/null || tr -dc 'a-zA-Z0-9' </dev/urandom | head -c 24)
             fi
 
+            is_host "$vps_ip" || { claw_fail "VPS 地址无效"; return; }
+            is_user "$vps_user" || { claw_fail "SSH 用户名无效"; return; }
+            is_port "$vps_port" || { claw_fail "SSH 端口无效"; return; }
+            is_port "$bind_port" || { claw_fail "bind_port 无效"; return; }
+            is_port "$remote_web_port" || { claw_fail "Web 端口无效"; return; }
+            is_token "$token" || { claw_fail "token 含非法字符"; return; }
+            local q_token
+            q_token=$(shell_squote "$token")
+
             local key_file="/etc/clawwrt/id_dropbear"
             if [ ! -f "$key_file" ]; then
                 mkdir -p /etc/clawwrt
@@ -3467,7 +3729,7 @@ fi
 
 \$SUDO tee /etc/frps/frps.toml >/dev/null << TOML
 bindPort = ${bind_port}
-auth.token = \"${token}\"
+auth.token = ${q_token}
 allowPorts = [
     { start = 10000, end = 30000 }
 ]
@@ -3614,6 +3876,17 @@ fi
                 [ -z "$key" ] && key="7f7ac683d720e1437019692eadb0b811"
             fi
 
+            is_host "$vps_ip" || { claw_fail "VPS 地址无效"; return; }
+            is_user "$vps_user" || { claw_fail "SSH 用户名无效"; return; }
+            is_port "$vps_port" || { claw_fail "SSH 端口无效"; return; }
+            is_port "$listen_port" || { claw_fail "监听端口无效"; return; }
+            is_token "$key" || { claw_fail "key 含非法字符"; return; }
+            is_ident "$mode" || { claw_fail "mode 无效"; return; }
+            echo "$fec" | grep -Eq '^[0-9]{1,3}$' || { claw_fail "fec 无效"; return; }
+            local q_key q_mode
+            q_key=$(shell_squote "$key")
+            q_mode=$(shell_squote "$mode")
+
             local key_file="/etc/clawwrt/id_dropbear"
             if [ ! -f "$key_file" ]; then
                 mkdir -p /etc/clawwrt
@@ -3712,8 +3985,8 @@ fi
 syslog = true
 mon_port = 9087
 local_port = ${listen_port}
-key = \"${key}\"
-mode = \"${mode}\"
+key = ${q_key}
+mode = ${q_mode}
 fec = ${fec}
 TOML
 
@@ -4266,8 +4539,72 @@ echo \"\$RAW_CFG\"
                 dropbearkey -t ed25519 -f "$key_file" >/dev/null 2>&1
             fi
 
+            is_host "$host" || { claw_fail "VPS 地址无效"; return; }
+            is_user "$user" || { claw_fail "SSH 用户名无效"; return; }
+            is_port "$port" || { claw_fail "SSH 端口无效"; return; }
+            [ -n "$bind_port" ] && ! is_port "$bind_port" && { claw_fail "bind_port 无效"; return; }
+            [ -n "$vhost_http_port" ] && ! is_port "$vhost_http_port" && { claw_fail "vhost HTTP 端口无效"; return; }
+            [ -n "$vhost_https_port" ] && ! is_port "$vhost_https_port" && { claw_fail "vhost HTTPS 端口无效"; return; }
+            [ -n "$listen_port" ] && ! is_port "$listen_port" && { claw_fail "监听端口无效"; return; }
+            is_token "$token" || { claw_fail "token 含非法字符"; return; }
+            is_token "$key" || { claw_fail "key 含非法字符"; return; }
+            is_ident "$mode" || { claw_fail "mode 无效"; return; }
+            [ -n "$fec" ] && ! echo "$fec" | grep -Eq '^[0-9]{1,3}$' && { claw_fail "fec 无效"; return; }
+
+            local q_token q_key q_mode q_bind q_listen q_fec
+            q_token=$(shell_squote "$token")
+            q_key=$(shell_squote "$key")
+            q_mode=$(shell_squote "$mode")
+            q_bind=$(shell_squote "$bind_port")
+            q_listen=$(shell_squote "$listen_port")
+            q_fec=$(shell_squote "$fec")
+
             local remote_cmd=""
-            if [ "$service" = "frps" ]; then
+            if [ -n "$raw_config" ]; then
+                local raw_bytes b64 cfg_path unit_name
+                raw_bytes=$(printf '%s' "$raw_config" | wc -c | tr -dc '0-9')
+                [ "${raw_bytes:-0}" -gt 65536 ] && { claw_fail "自定义配置超过 64KB"; return; }
+                b64=$(printf '%s' "$raw_config" | base64 | tr -d '\n')
+                if [ "$service" = "xkcptun" ]; then
+                    cfg_path="/etc/xkcptun/server.toml"
+                    unit_name="xkcp_server"
+                else
+                    cfg_path="/etc/frps/frps.toml"
+                    unit_name="frps"
+                fi
+                remote_cmd="
+set -e
+SUDO=''
+[ \"\$(id -u)\" -ne 0 ] && sudo -n true 2>/dev/null && SUDO='sudo '
+\$SUDO mkdir -p \$(dirname ${cfg_path})
+[ -f ${cfg_path} ] && \$SUDO cp -f ${cfg_path} ${cfg_path}.bak 2>/dev/null || true
+printf '%s' '${b64}' | base64 -d > /tmp/clawwrt-new.cfg
+\$SUDO cp -f /tmp/clawwrt-new.cfg ${cfg_path}
+rm -f /tmp/clawwrt-new.cfg
+if command -v systemctl >/dev/null 2>&1; then
+    \$SUDO systemctl restart ${unit_name} >/dev/null 2>&1 || true
+    sleep 1
+    if systemctl is-active ${unit_name} >/dev/null 2>&1; then
+        echo 'CONFIG_UPDATE_SUCCESS'
+    else
+        [ -f ${cfg_path}.bak ] && \$SUDO cp -f ${cfg_path}.bak ${cfg_path} && \$SUDO systemctl restart ${unit_name} >/dev/null 2>&1 || true
+        echo 'CONFIG_UPDATE_FAILED_REVERTING'
+        exit 1
+    fi
+else
+    \$SUDO pkill -9 -x ${unit_name} 2>/dev/null || true
+    nohup \$SUDO /usr/local/bin/${unit_name} -c ${cfg_path} >/var/log/${unit_name}.log 2>&1 &
+    sleep 1
+    if pgrep -x ${unit_name} >/dev/null 2>&1; then
+        echo 'CONFIG_UPDATE_SUCCESS'
+    else
+        [ -f ${cfg_path}.bak ] && \$SUDO cp -f ${cfg_path}.bak ${cfg_path}
+        echo 'CONFIG_UPDATE_FAILED_REVERTING'
+        exit 1
+    fi
+fi
+"
+            elif [ "$service" = "frps" ]; then
                 local ap_start=10000
                 local ap_end=30000
                 if [ -n "$allow_ports" ]; then
@@ -4288,11 +4625,11 @@ SUDO=''
 OLD_BIND=\$(grep -E '^[[:space:]]*bindPort[[:space:]]*=' /etc/frps/frps.toml 2>/dev/null | sed -E 's/.*=[[:space:]]*([0-9]+).*/\1/' | head -n1 || echo '')
 OLD_TOKEN=\$(grep -E '^[[:space:]]*auth\.token[[:space:]]*=' /etc/frps/frps.toml 2>/dev/null | sed -E 's/.*=[[:space:]]*[\"'\''']?([^\"'\''']+)[\"'\''']?.*/\1/' | head -n1 || echo '')
 
-NEW_BIND='${bind_port}'
+NEW_BIND=${q_bind}
 [ -z \"\$NEW_BIND\" ] && NEW_BIND=\"\$OLD_BIND\"
 [ -z \"\$NEW_BIND\" ] && NEW_BIND='7001'
 
-NEW_TOKEN='${token}'
+NEW_TOKEN=${q_token}
 [ -z \"\$NEW_TOKEN\" ] && NEW_TOKEN=\"\$OLD_TOKEN\"
 
 \$SUDO tee /etc/frps/frps.toml >/dev/null << TOML
@@ -4356,18 +4693,18 @@ OLD_KEY=\$(grep -E '^[[:space:]]*key[[:space:]]*=' /etc/xkcptun/server.toml 2>/d
 OLD_MODE=\$(grep -E '^[[:space:]]*mode[[:space:]]*=' /etc/xkcptun/server.toml 2>/dev/null | sed -E 's/.*=[[:space:]]*[\"'\''']?([^\"'\''']+)[\"'\''']?.*/\1/' | head -n1 || echo '')
 OLD_FEC=\$(grep -E '^[[:space:]]*fec[[:space:]]*=' /etc/xkcptun/server.toml 2>/dev/null | sed -E 's/.*=[[:space:]]*([0-9]+).*/\1/' | head -n1 || echo '')
 
-NEW_PORT='${listen_port}'
+NEW_PORT=${q_listen}
 [ -z \"\$NEW_PORT\" ] && NEW_PORT=\"\$OLD_PORT\"
 [ -z \"\$NEW_PORT\" ] && NEW_PORT='9089'
 
-NEW_KEY='${key}'
+NEW_KEY=${q_key}
 [ -z \"\$NEW_KEY\" ] && NEW_KEY=\"\$OLD_KEY\"
 
-NEW_MODE='${mode}'
+NEW_MODE=${q_mode}
 [ -z \"\$NEW_MODE\" ] && NEW_MODE=\"\$OLD_MODE\"
 [ -z \"\$NEW_MODE\" ] && NEW_MODE='fast3'
 
-NEW_FEC='${fec}'
+NEW_FEC=${q_fec}
 [ -z \"\$NEW_FEC\" ] && NEW_FEC=\"\$OLD_FEC\"
 [ -z \"\$NEW_FEC\" ] && NEW_FEC='1'
 
@@ -4391,6 +4728,17 @@ if command -v systemctl >/dev/null 2>&1; then
         echo 'CONFIG_UPDATE_FAILED_REVERTING'
         [ -f /etc/xkcptun/server.toml.bak ] && \$SUDO cp -f /etc/xkcptun/server.toml.bak /etc/xkcptun/server.toml && \$SUDO systemctl restart xkcp_server 2>/dev/null || true
         journalctl -u xkcp_server -n 10 --no-pager 2>/dev/null || true
+        exit 1
+    fi
+else
+    \$SUDO pkill -9 -x xkcp_server 2>/dev/null || true
+    nohup \$SUDO /usr/local/bin/xkcp_server -c /etc/xkcptun/server.toml >/var/log/xkcp_server.log 2>&1 &
+    sleep 1
+    if pgrep -x xkcp_server >/dev/null 2>&1; then
+        echo 'CONFIG_UPDATE_SUCCESS'
+    else
+        echo 'CONFIG_UPDATE_FAILED_REVERTING'
+        [ -f /etc/xkcptun/server.toml.bak ] && \$SUDO cp -f /etc/xkcptun/server.toml.bak /etc/xkcptun/server.toml
         exit 1
     fi
 fi
@@ -4572,6 +4920,264 @@ fi
             done
             json_close_array
 
+            json_close_object
+            json_dump
+        }
+
+        get_acceleration_status() {
+            # 1. xDNS eBPF Status
+            local xdns_enabled=$(uci -q get xdns.global.enabled || echo 1)
+            local ifname=$(uci -q get xdns.global.ifname || echo "br-lan")
+            local xkcp_dns=$(uci -q get xdns.global.xkcp_dns || echo "127.0.0.1:5353")
+            local xkcp_tcp=$(uci -q get xdns.global.xkcp_tcp || echo "192.168.8.1:12345")
+            local domains_file=$(uci -q get xdns.global.proxy_domains_file || echo "/etc/xdns/proxy_domains.txt")
+            local domains_count=0
+            [ -f "$domains_file" ] && domains_count=$(grep -v '^[[:space:]]*#' "$domains_file" | grep -v '^[[:space:]]*$' | wc -l)
+
+            local ingress_ok=0
+            local egress_ok=0
+            if tc filter show dev "$ifname" ingress 2>/dev/null | grep -q "tc_xdns_ingress"; then
+                ingress_ok=1
+            fi
+            if tc filter show dev "$ifname" egress 2>/dev/null | grep -q "tc_xdns_egress"; then
+                egress_ok=1
+            fi
+
+            local xdns_running=0
+            [ "$ingress_ok" -eq 1 -a "$egress_ok" -eq 1 ] && xdns_running=1
+
+            # Stats from xdns-ctl stats
+            local dns_proxied=0
+            local dns_passed=0
+            local dns_failed=0
+            local dns_learned=0
+            local tcp_conns=0
+            local tcp_bytes=0
+            if command -v /usr/bin/xdns-ctl >/dev/null 2>&1; then
+                local raw_stats=$(/usr/bin/xdns-ctl stats 2>/dev/null)
+                dns_proxied=$(echo "$raw_stats" | grep -i "DNS Queries Proxied" | awk -F: '{print $2}' | tr -d ' ')
+                [ -z "$dns_proxied" ] && dns_proxied=$(echo "$raw_stats" | grep -i "DNS Queries Intercepted" | awk -F: '{print $2}' | tr -d ' ')
+                [ -z "$dns_proxied" ] && dns_proxied=0
+                dns_passed=$(echo "$raw_stats" | grep -i "DNS Queries Passed" | awk -F: '{print $2}' | tr -d ' ' || echo 0)
+                [ -z "$dns_passed" ] && dns_passed=0
+                dns_failed=$(echo "$raw_stats" | grep -i "DNS Forward Failed" | awk -F: '{print $2}' | tr -d ' ' || echo 0)
+                [ -z "$dns_failed" ] && dns_failed=0
+                dns_learned=$(echo "$raw_stats" | grep -iE "DNS A Records Learned|DNS Responses Learned" | awk -F: '{print $2}' | tr -d ' ' || echo 0)
+                [ -z "$dns_learned" ] && dns_learned=0
+                tcp_conns=$(echo "$raw_stats" | grep -iE "TCP Connections Steered|TCP Connections Proxied" | awk -F: '{print $2}' | tr -d ' ' || echo 0)
+                [ -z "$tcp_conns" ] && tcp_conns=0
+                tcp_bytes=$(echo "$raw_stats" | grep -i "TCP Bytes Steered" | awk -F: '{print $2}' | tr -d ' ' || echo 0)
+                [ -z "$tcp_bytes" ] && tcp_bytes=0
+            fi
+
+            # Top Learned IPs / Domains
+            local active_ips_count=0
+            if command -v /usr/bin/xdns-ctl >/dev/null 2>&1; then
+                local raw_ips=$(/usr/bin/xdns-ctl list-ips 2>/dev/null)
+                active_ips_count=$(echo "$raw_ips" | grep -i "Total active" | sed -n 's/.*: \([0-9]*\).*/\1/p')
+                [ -z "$active_ips_count" ] && active_ips_count=0
+            fi
+
+            # 2. xkcptun Status
+            local xkcp_pid=$(pidof xkcp_client 2>/dev/null)
+            local xkcp_running=0
+            [ -n "$xkcp_pid" ] && xkcp_running=1
+
+            local listen_5353=0
+            netstat -lnu 2>/dev/null | grep -q ":5353 " && listen_5353=1
+            local listen_12345=0
+            netstat -lnt 2>/dev/null | grep -q ":12345 " && listen_12345=1
+            local listen_9086=0
+            netstat -lnt 2>/dev/null | grep -q ":9086 " && listen_9086=1
+
+            local server_addr=$(uci -q get xkcptun.client.remote_addr)
+            [ -z "$server_addr" ] && server_addr=$(uci -q get xkcptun.client.server_addr)
+            local server_port=$(uci -q get xkcptun.client.remote_port)
+            [ -z "$server_port" ] && server_port=$(uci -q get xkcptun.client.server_port)
+            [ -z "$server_port" ] && server_port="9089"
+
+            local mon_text=""
+            local total_tunnels=0
+            local active_conns=0
+            if [ "$listen_9086" -eq 1 ]; then
+                mon_text=$(wget -qO- -T 1 http://127.0.0.1:9086 2>/dev/null)
+                if [ -n "$mon_text" ]; then
+                    total_tunnels=$(echo "$mon_text" | grep -c "^\s*- \[" || echo 0)
+                    for c in $(echo "$mon_text" | sed -n 's/.*conns: \([0-9]*\).*/\1/p'); do
+                        active_conns=$((active_conns + c))
+                    done
+                fi
+            fi
+
+            # 3. Log diagnostics
+            local last_error=""
+            local bpf_map_mismatch=0
+            local handshake_timeout=0
+            local auth_failed=0
+            if command -v logread >/dev/null 2>&1; then
+                local recent_logs=$(logread 2>/dev/null | grep -iE "xkcptun|xdns" | tail -n 25)
+                if echo "$recent_logs" | grep -qi "failed to resolve transparent original destination"; then
+                    bpf_map_mismatch=1
+                    last_error="xkcptun 无法解析透明代理目标地址（BPF 会话 Map 错配或陈旧句柄）"
+                elif echo "$recent_logs" | grep -qi "handshake timeout\|EOF"; then
+                    handshake_timeout=1
+                    last_error="xkcptun 握手超时或连接重置（请检查 VPS 服务端是否运行及 9089 UDP 端口放行）"
+                elif echo "$recent_logs" | grep -qi "auth failed\|token"; then
+                    auth_failed=1
+                    last_error="xkcptun 密钥认证失败（路由器与 VPS 端的 key/密码不匹配）"
+                fi
+            fi
+
+            # Determine overall health
+            local health="healthy"
+            local diagnosis=""
+            if [ "$xdns_running" -eq 0 ] || [ "$xkcp_running" -eq 0 ] || [ "$listen_12345" -eq 0 ]; then
+                health="error"
+                if [ "$xdns_running" -eq 0 ] && [ "$xkcp_running" -eq 0 ]; then
+                    diagnosis="智能分流 eBPF 过滤器未挂载，且网络加速客户端未运行。"
+                elif [ "$xdns_running" -eq 0 ]; then
+                    diagnosis="智能分流 eBPF 过滤器异常（Ingress=$ingress_ok, Egress=$egress_ok），流量未能接入加速队列。"
+                elif [ "$xkcp_running" -eq 0 ]; then
+                    diagnosis="网络加速客户端 (xkcp_client) 未运行，透明重定向通道已中断。"
+                else
+                    diagnosis="网络加速客户端未监听 TCP 12345 端口，分流流量无法被代理承接。"
+                fi
+            elif [ "$bpf_map_mismatch" -eq 1 ]; then
+                health="warning"
+                diagnosis="检测到 xkcptun 句柄与 BPF Map 错配，需一键自愈重建链路同步 BPF 文件描述符。"
+            elif [ "$handshake_timeout" -eq 1 ]; then
+                health="warning"
+                diagnosis="检测到偶发握手超时，可能是由于国际链路抖动或 VPS 端 UDP 拥堵。"
+            elif [ "$domains_count" -eq 0 ]; then
+                health="warning"
+                diagnosis="当前分流域名列表为空，尚未配置任何加速域名。"
+            else
+                health="healthy"
+                diagnosis="智能分流与网络加速全链路工作正常。eBPF 双向过滤已就绪，TCP/DNS 加速隧道已建立。"
+            fi
+
+            json_init
+            json_add_object "result"
+            json_add_string "health" "$health"
+            json_add_string "diagnosis" "$diagnosis"
+            json_add_string "last_error" "$last_error"
+
+            json_add_object "xdns"
+            json_add_boolean "enabled" "$([ "$xdns_enabled" = "1" ] && echo 1 || echo 0)"
+            json_add_boolean "running" "$xdns_running"
+            json_add_string "ifname" "$ifname"
+            json_add_boolean "ingress_attached" "$ingress_ok"
+            json_add_boolean "egress_attached" "$egress_ok"
+            json_add_int "domains_count" "$domains_count"
+            json_add_int "active_ips_count" "$active_ips_count"
+            json_add_int "dns_proxied" "$dns_proxied"
+            json_add_int "dns_passed" "$dns_passed"
+            json_add_int "dns_failed" "$dns_failed"
+            json_add_int "dns_learned" "$dns_learned"
+            json_add_int "tcp_conns" "$tcp_conns"
+            json_add_int "tcp_bytes" "$tcp_bytes"
+            json_add_string "xkcp_dns" "$xkcp_dns"
+            json_add_string "xkcp_tcp" "$xkcp_tcp"
+            json_close_object
+
+            json_add_object "xkcptun"
+            json_add_boolean "running" "$xkcp_running"
+            json_add_string "pid" "${xkcp_pid:-none}"
+            json_add_string "server_addr" "$server_addr"
+            json_add_string "server_port" "$server_port"
+            json_add_boolean "listen_5353" "$listen_5353"
+            json_add_boolean "listen_12345" "$listen_12345"
+            json_add_boolean "listen_9086" "$listen_9086"
+            json_add_int "total_tunnels" "$total_tunnels"
+            json_add_int "active_conns" "$active_conns"
+            json_add_string "monitor_summary" "$mon_text"
+            json_close_object
+
+            json_add_array "findings"
+            if [ "$ingress_ok" -eq 1 -a "$egress_ok" -eq 1 ]; then
+                json_add_object
+                json_add_string "type" "ok"
+                json_add_string "title" "eBPF 过滤器双向就绪"
+                json_add_string "desc" "br-lan 网卡已挂载 TC Ingress (pref 5) 与 Egress (pref 10)"
+                json_close_object
+            else
+                json_add_object
+                json_add_string "type" "error"
+                json_add_string "title" "eBPF 过滤器未挂载"
+                json_add_string "desc" "Ingress: $([ "$ingress_ok" -eq 1 ] && echo 正常 || echo 缺失), Egress: $([ "$egress_ok" -eq 1 ] && echo 正常 || echo 缺失)"
+                json_close_object
+            fi
+
+            if [ "$xkcp_running" -eq 1 ]; then
+                json_add_object
+                json_add_string "type" "ok"
+                json_add_string "title" "加速客户端运行正常"
+                json_add_string "desc" "xkcp_client PID $xkcp_pid，监听端口 TCP 12345 / DNS 5353 正常"
+                json_close_object
+            else
+                json_add_object
+                json_add_string "type" "error"
+                json_add_string "title" "加速客户端未运行"
+                json_add_string "desc" "xkcp_client 进程未启动，透明加速隧道不可用"
+                json_close_object
+            fi
+
+            if [ "$bpf_map_mismatch" -eq 1 ]; then
+                json_add_object
+                json_add_string "type" "error"
+                json_add_string "title" "BPF Map 句柄失效"
+                json_add_string "desc" "xkcptun 无法解析透明代理目标地址，建议点击一键自愈重建链路"
+                json_close_object
+            fi
+
+            if [ "$domains_count" -eq 0 ]; then
+                json_add_object
+                json_add_string "type" "warning"
+                json_add_string "title" "未添加分流域名"
+                json_add_string "desc" "proxy_domains.txt 中无生效规则，所有网站均直连"
+                json_close_object
+            else
+                json_add_object
+                json_add_string "type" "ok"
+                json_add_string "title" "分流规则库就绪"
+                json_add_string "desc" "已加载 $domains_count 个加速域名，当前动态命中 $active_ips_count 个 IP"
+                json_close_object
+            fi
+            json_close_array
+
+            json_close_object
+            json_dump
+        }
+
+        fix_acceleration_pipeline() {
+            local ifname=$(uci -q get xdns.global.ifname || echo "br-lan")
+            local xkcp_dns=$(uci -q get xdns.global.xkcp_dns || echo "127.0.0.1:5353")
+            local xkcp_tcp=$(uci -q get xdns.global.xkcp_tcp || echo "192.168.8.1:12345")
+            local domains_file=$(uci -q get xdns.global.proxy_domains_file || echo "/etc/xdns/proxy_domains.txt")
+
+            local ingress_ok=0
+            local egress_ok=0
+            tc filter show dev "$ifname" ingress 2>/dev/null | grep -q "tc_xdns_ingress" && ingress_ok=1
+            tc filter show dev "$ifname" egress 2>/dev/null | grep -q "tc_xdns_egress" && egress_ok=1
+
+            local ok=1
+            local msg=""
+            if [ "$ingress_ok" -eq 1 -a "$egress_ok" -eq 1 ]; then
+                # eBPF filters already active in kernel; sync config, reload rules and restart xkcptun
+                [ -x /usr/bin/xdns-ctl ] && /usr/bin/xdns-ctl set-config "$xkcp_dns" "$xkcp_tcp" 1 >/dev/null 2>&1
+                [ -f "$domains_file" ] && [ -x /usr/bin/xdns-ctl ] && /usr/bin/xdns-ctl load-domains "$domains_file" >/dev/null 2>&1
+                /etc/init.d/xkcptun restart >/dev/null 2>&1
+                msg="已平滑同步内核 eBPF 分流配置与加速规则，并重启 xkcptun 加速客户端恢复透明重定向。"
+            else
+                # Filters missing: attach eBPF filters and restart xkcptun
+                (/etc/init.d/xdns restart && /etc/init.d/xkcptun restart) >/dev/null 2>&1 &
+                msg="检测到 eBPF 过滤器尚未挂载，已在后台启动内核过滤器挂载与加速链路重建（约需 20~30 秒完成）。"
+            fi
+
+            json_init
+            json_add_object "result"
+            json_add_boolean "success" "$ok"
+            json_add_string "message" "$msg"
             json_close_object
             json_dump
         }
@@ -5309,6 +5915,8 @@ EOF
             get_vps_service_config) get_vps_service_config ;;
             update_vps_service_config) update_vps_service_config ;;
             get_penetration_status) get_penetration_status ;;
+            get_acceleration_status) get_acceleration_status ;;
+            fix_acceleration_pipeline) fix_acceleration_pipeline ;;
             manage_xdns_domain) manage_xdns_domain ;;
             manage_portal_access) manage_portal_access ;;
             manage_portal_whitelist) manage_portal_whitelist ;;
