@@ -155,7 +155,15 @@ return view.extend({
 		var sessions = parseSessions(sessionsText);
 
 		/* Attached tc programs, not a procd process. xdns exits after loading BPF. */
-		var isRunning = /Running\s*:\s*yes/i.test(statusText || '');
+		var isRunning = false;
+		if (/Running\s*:\s*yes/i.test(statusText || '')) {
+			isRunning = true;
+		} else if (/Running\s*:\s*no/i.test(statusText || '')) {
+			isRunning = false;
+		} else if (statsText && /xdns-bpf Statistics/i.test(statsText)) {
+			/* Fallback: if xdns-ctl status is unavailable, check if BPF map statistics are accessible */
+			isRunning = true;
+		}
 
 		var svcBadge = E('span', {
 			'class': 'label ' + (isRunning ? 'success' : 'neutral'),
@@ -203,10 +211,12 @@ return view.extend({
 		}
 
 		function siteCell(site) {
-			var title = site.domain || _('还没记到网站名');
+			var title = site.domain || (site.ips && site.ips.length ? site.ips[0] : _('还没记到网站名'));
 			var extra = '';
 			if (site.domain && site.ips.length > 1)
 				extra = site.ips.length + _(' 台服务器');
+			else if (!site.domain && site.ips.length > 1)
+				extra = site.ips.slice(1).join(', ');
 			return E('div', {}, [
 				E('div', { 'style': 'font-weight: 650; font-size: 15px;' }, title),
 				extra ? E('div', { 'style': 'color: #888; font-size: 12px; margin-top: 2px;' }, extra) : ''
@@ -317,7 +327,7 @@ return view.extend({
 			var key = who + '\n' + (site || tip || '-');
 			var age = ageSeconds(s.lastSeen);
 			if (!sessionGroups[key]) {
-				sessionGroups[key] = { who: who, site: site, conns: 0, age: age, lastSeen: s.lastSeen || '' };
+				sessionGroups[key] = { who: who, site: site, tip: tip, conns: 0, age: age, lastSeen: s.lastSeen || '' };
 			}
 			var g = sessionGroups[key];
 			g.conns++;
@@ -347,9 +357,14 @@ return view.extend({
 			]));
 		} else {
 			sessionShown.forEach(function(g) {
+				var siteTitle = g.site || (g.tip ? g.tip : _('还没记到网站名'));
+				var siteSub = (!g.site && g.tip) ? E('div', { 'style': 'color: #888; font-size: 12px; margin-top: 2px;' }, _('未关联域名')) : '';
 				sessionTableRows.push(E('tr', { 'class': 'tr' }, [
 					td(g.who, _('谁在访问')),
-					td(E('div', { 'style': 'font-weight:650; font-size:15px; text-align:left !important' }, g.site || _('还没记到网站名')), _('正在加速的网站')),
+					td(E('div', { 'style': 'font-weight:650; font-size:15px; text-align:left !important' }, [
+						siteTitle,
+						siteSub
+					]), _('正在加速的网站')),
 					td(String(g.conns), _('连接数')),
 					td((g.lastSeen || '').replace('ago', _('前')), _('最近活动'))
 				]));
