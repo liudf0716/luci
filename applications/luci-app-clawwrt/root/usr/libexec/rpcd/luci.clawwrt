@@ -4633,10 +4633,19 @@ fi
 RAW_CFG=''
 [ -n \"\$CFG_FILE\" ] && RAW_CFG=\$(\$SUDO cat \"\$CFG_FILE\" 2>/dev/null || true)
 
+REDIRECT_RULES=''
+if command -v iptables >/dev/null 2>&1; then
+    REDIRECT_RULES=\$(\$SUDO iptables -t nat -S PREROUTING 2>/dev/null | grep -E 'REDIRECT.*--to-ports' || true)
+elif command -v nft >/dev/null 2>&1; then
+    REDIRECT_RULES=\$(\$SUDO nft list ruleset 2>/dev/null | grep -E 'redirect to' || true)
+fi
+
 echo '===STATUS==='
 echo \"\$STATUS\"
 echo '===CFG_FILE==='
 echo \"\$CFG_FILE\"
+echo '===REDIRECT_RULES==='
+echo \"\$REDIRECT_RULES\"
 echo '===RAW_CFG==='
 echo \"\$RAW_CFG\"
 "
@@ -4661,6 +4670,7 @@ echo \"\$RAW_CFG\"
 
             local r_status=$(echo "$out" | sed -n '/===STATUS===/{n;p;}')
             local r_file=$(echo "$out" | sed -n '/===CFG_FILE===/{n;p;}')
+            local r_redirs=$(echo "$out" | sed -n '/===REDIRECT_RULES===/,/===RAW_CFG===/{//!p}')
             local r_cfg=$(echo "$out" | sed -n '/===RAW_CFG===/,$p' | sed '1d')
 
             local r_cfg_sanitized=$(echo "$r_cfg" | sed -E 's/((auth\.token|token|key)[[:space:]]*=[[:space:]]*["'\'']?)[^"'\''[:space:]]+(["'\'']?)/\1********\3/g')
@@ -4698,13 +4708,44 @@ echo \"\$RAW_CFG\"
                 local l_key=$(echo "$r_cfg" | grep -E '^[[:space:]]*key[[:space:]]*=' | sed -E 's/.*=[[:space:]]*["'\'']?([^"'\'']+)["'\'']?.*/\1/' | head -n1)
                 local l_mode=$(echo "$r_cfg" | grep -E '^[[:space:]]*mode[[:space:]]*=' | sed -E 's/.*=[[:space:]]*["'\'']?([^"'\'']+)["'\'']?.*/\1/' | head -n1)
                 local l_fec=$(echo "$r_cfg" | grep -E '^[[:space:]]*fec[[:space:]]*=' | sed -E 's/.*=[[:space:]]*([0-9]+).*/\1/' | head -n1)
+                [ -z "$l_port" ] && l_port="9089"
+
+                local r_range=""
+                local r_target=""
+                if [ -n "$r_redirs" ]; then
+                    r_range=$(echo "$r_redirs" | grep -oE -- '--dport [0-9]+(:[0-9]+)?' | awk '{print $2}' | tr ':' '-' | head -n1)
+                    r_target=$(echo "$r_redirs" | grep -oE -- '--to-ports [0-9]+' | awk '{print $2}' | head -n1)
+                    [ -z "$r_range" ] && r_range=$(echo "$r_redirs" | grep -oE 'redirect to :[0-9]+-[0-9]+' | sed 's/redirect to ://' | head -n1)
+                fi
 
                 json_add_object "config"
-                json_add_string "listen_port" "${l_port:-9089}"
+                json_add_string "listen_port" "$l_port"
                 json_add_string "key" "$([ -n "$l_key" ] && echo "********" || echo "")"
                 json_add_boolean "has_key" "$([ -n "$l_key" ] && echo 1 || echo 0)"
                 json_add_string "mode" "${l_mode:-fast3}"
                 json_add_string "fec" "${l_fec:-1}"
+                if [ -n "$r_range" ]; then
+                    json_add_boolean "has_port_redirect" 1
+                    json_add_string "redirect_port_range" "$r_range"
+                    json_add_string "redirect_target_port" "${r_target:-$l_port}"
+                    json_add_string "redirect_explanation" "VPS 防火墙已配置 UDP 端口段重定向 ($r_range -> ${r_target:-$l_port})，支持客户端在范围内进行任意端口跳跃，客户端连接目标端口处于该范围内属于正常链路优化设计，并非配置错误。"
+
+                    # Synchronize discovered hop range to local xkcptun client if host matches
+                    local h_s=$(echo "$r_range" | cut -d- -f1)
+                    local h_e=$(echo "$r_range" | cut -d- -f2)
+                    local cur_remote=$(uci -q get xkcptun.client.remote_addr)
+                    if [ -n "$h_s" ] && [ -n "$h_e" ] && [ "$cur_remote" = "$host" ]; then
+                        local cur_hs=$(uci -q get xkcptun.client.hop_start)
+                        local cur_he=$(uci -q get xkcptun.client.hop_end)
+                        if [ "$cur_hs" != "$h_s" -o "$cur_he" != "$h_e" ]; then
+                            uci -q set xkcptun.client.hop_start="$h_s"
+                            uci -q set xkcptun.client.hop_end="$h_e"
+                            uci commit xkcptun 2>/dev/null
+                        fi
+                    fi
+                else
+                    json_add_boolean "has_port_redirect" 0
+                fi
                 json_close_object
             fi
 
@@ -4989,7 +5030,16 @@ fi
                 elif [ "$service" = "xkcptun" ]; then
                     local cur_remote=$(uci -q get xkcptun.client.remote_addr)
                     if [ "$cur_remote" = "$host" ]; then
-                        [ -n "$listen_port" ] && uci -q set xkcptun.client.remote_port="$listen_port"
+                        local cur_rport=$(uci -q get xkcptun.client.remote_port)
+                        local h_start=$(uci -q get xkcptun.client.hop_start)
+                        local h_end=$(uci -q get xkcptun.client.hop_end)
+                        local in_hop=0
+                        if [ -n "$h_start" ] && [ -n "$h_end" ] && [ -n "$cur_rport" ]; then
+                            [ "$cur_rport" -ge "$h_start" -a "$cur_rport" -le "$h_end" ] 2>/dev/null && in_hop=1
+                        fi
+                        if [ "$in_hop" -eq 0 ] && [ -n "$listen_port" ]; then
+                            uci -q set xkcptun.client.remote_port="$listen_port"
+                        fi
                         [ -n "$key" ] && uci -q set xkcptun.client.key="$key"
                         [ -n "$mode" ] && uci -q set xkcptun.client.mode="$mode"
                         uci commit xkcptun 2>/dev/null
@@ -5214,6 +5264,13 @@ fi
             [ -z "$server_port" ] && server_port=$(uci -q get xkcptun.client.server_port)
             [ -z "$server_port" ] && server_port="9089"
 
+            local hop_s=$(uci -q get xkcptun.client.hop_start)
+            local hop_e=$(uci -q get xkcptun.client.hop_end)
+            local is_hopped=0
+            if [ -n "$hop_s" ] && [ -n "$hop_e" ] && [ -n "$server_port" ]; then
+                [ "$server_port" -ge "$hop_s" -a "$server_port" -le "$hop_e" ] 2>/dev/null && is_hopped=1
+            fi
+
             local mon_text=""
             local total_tunnels=0
             local active_conns=0
@@ -5237,9 +5294,9 @@ fi
                 if echo "$recent_logs" | grep -qi "failed to resolve transparent original destination"; then
                     bpf_map_mismatch=1
                     last_error="xkcptun 无法解析透明代理目标地址（BPF 会话 Map 错配或陈旧句柄）"
-                elif echo "$recent_logs" | grep -qi "handshake timeout\|EOF"; then
+                elif echo "$recent_logs" | grep -qi "handshake timeout"; then
                     handshake_timeout=1
-                    last_error="xkcptun 握手超时或连接重置（请检查 VPS 服务端是否运行及 9089 UDP 端口放行）"
+                    last_error="xkcptun 握手超时或连接重置（请检查 VPS 服务端是否运行及 ${server_port} UDP 端口放行）"
                 elif echo "$recent_logs" | grep -qi "auth failed\|token"; then
                     auth_failed=1
                     last_error="xkcptun 密钥认证失败（路由器与 VPS 端的 key/密码不匹配）"
@@ -5271,7 +5328,11 @@ fi
                 diagnosis="当前分流域名列表为空，尚未配置任何加速域名。"
             else
                 health="healthy"
-                diagnosis="智能分流与网络加速全链路工作正常。eBPF 双向过滤已就绪，TCP/DNS 加速隧道已建立。"
+                if [ "$is_hopped" -eq 1 ]; then
+                    diagnosis="智能分流与网络加速全链路工作正常。eBPF 双向过滤已就绪，当前加速端口 $server_port 处于 VPS 规划的 ${hop_s}~${hop_e} 防火墙端口重定向池内，TCP/DNS 加速隧道已建立。"
+                else
+                    diagnosis="智能分流与网络加速全链路工作正常。eBPF 双向过滤已就绪，TCP/DNS 加速隧道已建立。"
+                fi
             fi
 
             json_init
@@ -5303,6 +5364,8 @@ fi
             json_add_string "pid" "${xkcp_pid:-none}"
             json_add_string "server_addr" "$server_addr"
             json_add_string "server_port" "$server_port"
+            json_add_boolean "is_hopped_port" "$is_hopped"
+            [ -n "$hop_s" -a -n "$hop_e" ] && json_add_string "hop_range" "${hop_s}~${hop_e}"
             json_add_boolean "listen_5353" "$listen_5353"
             json_add_boolean "listen_12345" "$listen_12345"
             json_add_boolean "listen_9086" "$listen_9086"
@@ -5312,6 +5375,13 @@ fi
             json_close_object
 
             json_add_array "findings"
+            if [ "$is_hopped" -eq 1 ]; then
+                json_add_object
+                json_add_string "type" "ok"
+                json_add_string "title" "端口跳跃重定向就绪"
+                json_add_string "desc" "目标端口 $server_port 处于 VPS 防火墙重定向池 (${hop_s}~${hop_e})，抗抖动优化正常"
+                json_close_object
+            fi
             if [ "$ingress_ok" -eq 1 -a "$egress_ok" -eq 1 ]; then
                 json_add_object
                 json_add_string "type" "ok"
@@ -5411,7 +5481,7 @@ fi
             [ -z "$hop_end" ] && hop_end=$((hop_start + 49))
 
             local span=$((hop_end - hop_start + 1))
-            [ "$span" -le 0 -o "$span" -gt 100 ] && span=50
+            [ "$span" -le 0 -o "$span" -gt 1000 ] && span=50
 
             if [ -z "$new_port" ] || [ "$new_port" = "random" ]; then
                 local rand_val=$(hexdump -n 2 -e '/2 "%u"' /dev/urandom 2>/dev/null || echo 1234)

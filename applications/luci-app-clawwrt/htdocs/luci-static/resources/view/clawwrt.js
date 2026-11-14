@@ -343,7 +343,7 @@ const routerTools = [
         type: 'function',
         function: {
             name: 'get_acceleration_status',
-            description: '深度检测智能分流 (xDNS - eBPF) 与网络加速 (xkcptun) 的全链路运行状况、健康度与问题排查：检查 br-lan TC Ingress (pref 5) 与 Egress (pref 10) eBPF 过滤器是否双向挂载、已生效分流域名规则数、内核动态劫持 IP 数、已加速流量与连接数、xkcptun 客户端进程、本地 TCP 12345/DNS 5353 监听状态、VPS 隧道连通性、实时日志异常（如 BPF Map 句柄失效、握手超时、认证失败等），并在界面中生成全链路诊断卡片',
+            description: '深度检测智能分流 (xDNS - eBPF) 与网络加速 (xkcptun) 的全链路运行状况、健康度与问题排查：检查 br-lan TC Ingress (pref 5) 与 Egress (pref 10) eBPF 过滤器双向挂载、已生效分流域名规则数、内核动态劫持 IP 数、已加速流量与会话数、xkcptun 客户端进程、本地 TCP 12345/DNS 5353 监听、VPS 隧道连通性与活跃连接、当前加速端口是否处于 VPS 防火墙重定向跳跃池内 (is_hopped_port, hop_range)、实时日志异常等，并在界面中生成全链路诊断卡片',
             parameters: { type: 'object', properties: {} }
         }
     },
@@ -871,7 +871,7 @@ const routerTools = [
         type: 'function',
         function: {
             name: 'get_vps_service_config',
-            description: '远程通过 SSH 免密通道查询受信任 Linux VPS 上运行的服务端配置与状态（支持 xkcptun 网络加速服务端 或 frps 内网穿透服务端）。返回服务端当前运行状态(running/stopped)、配置文件路径、当前监听端口(bindPort/listen_port)、认证Token或密钥、vhostHTTPPort 网页穿透端口、端口放行范围(allowPorts)以及原始配置文件文本。在用户询问服务器配置或提议修改前，先调用此接口获取事实数据',
+            description: '远程通过 SSH 免密通道查询受信任 Linux VPS 上运行的服务端配置与状态（支持 xkcptun 网络加速服务端 或 frps 内网穿透服务端）。返回服务端当前运行状态(running/stopped)、配置文件路径、当前监听端口(bindPort/listen_port)、认证Token或密钥、VPS 防火墙 NAT 端口重定向规则 (has_port_redirect, redirect_port_range, redirect_target_port，如 58100-58200 重定向至 9089 用于 UDP 端口跳跃抗封锁)、vhostHTTPPort 网页穿透端口、端口放行范围(allowPorts)以及原始配置文件文本。在用户询问服务器配置或提议修改前，先调用此接口获取事实数据',
             parameters: {
                 type: 'object',
                 properties: {
@@ -947,6 +947,7 @@ const systemPrompt = `你是一个专业的 OpenWrt / chaWrt 路由器专属 AI 
    - 当用户询问或需要管理加速隧道时，调用 manage_xkcptun_tunnel（支持 list, add, remove, enable, disable）；
    - 当用户询问智能分流、拦截统计、分流域名、动态劫持 IP 或活跃代理会话时，调用 get_service_detail('xdns') 或 manage_xdns_domain；
    - 当用户询问智能分流或网络加速是否正常、排查加速或分流问题、检查加速健康度、或者网页打不开需排查加速链路时，主动调用 get_acceleration_status 获取全链路诊断数据并在 UI 渲染全链路诊断卡片！若检测到异常或用户要求自愈修复时，主动提供或调用 fix_acceleration_pipeline 一键自愈重建链路；【特别约束】：严禁在常规排查、诊断或用户未明确提出换端口诉求时私自调用 switch_acceleration_port 篡改用户的远程通信端口！只有当用户明确要求“执行端口跳跃”、“切换UDP端口”、“换个端口优化”时方可调用该工具；
+   - 【极其重要的 VPS 防火墙重定向与 UDP 端口跳跃防误判准则】：当云端 VPS 使用防火墙 (iptables/nftables) 配置了 PREROUTING REDIRECT 端口段重定向时（例如将 UDP 58100-58200 重定向至 xkcptun 监听端口 9089 时，get_vps_service_config 会返回 has_port_redirect: true，get_acceleration_status 会返回 is_hopped_port: true 及 hop_range）：路由器端使用的目标端口处于重定向池内属于正规的 UDP 端口跳跃抗抖动设计，绝不是端口配置错误或端口不匹配！严禁误判为“端口不一致”、“加速未连接”或“配置异常”！只要隧道正常、存在活跃连接或连通性正常，全链路健康度即为正常 healthy；严禁在诊断中提议将路由器端口改回 9089，也不得在没有用户明确要求时调用 switch_acceleration_port；
    - 当用户需要添加/删除分流域名、清空分流 IP 缓存或重载规则时，调用 manage_xdns_domain；
    - 当用户询问门户认证状态、在线用户、踢人下线或管理黑白名单与免认证域名时，调用 get_service_detail('wifidogx') 或 manage_portal_access；
    - 当用户询问或需要管理内网穿透端口映射规则时，调用 manage_penetration_proxy（支持 list, add, remove, enable, disable）；
@@ -1033,6 +1034,8 @@ return view.extend({
         }
 
         let chatBusy = false;
+        let chatAbort = null;
+        let chatStopRequested = false;
 
         let aiConfig = {
             apiKey: '',
@@ -1344,14 +1347,17 @@ return view.extend({
                     'keydown': function(e) {
                         if (e.key === 'Enter' && !e.shiftKey) {
                             e.preventDefault();
-                            sendMessage();
+                            if (!chatBusy) sendMessage();
                         }
                     }
                 }),
                 E('button', {
                     'id': 'send-btn',
                     'class': 'btn cbi-button cbi-button-apply cw-send',
-                    'click': function() { sendMessage(); }
+                    'click': function() {
+                        if (chatBusy) stopGeneration();
+                        else sendMessage();
+                    }
                 }, '发送')
             ]),
             E('div', { 'class': 'cw-input-hint' }, '回车发送，Shift+回车换行')
@@ -2355,9 +2361,14 @@ return view.extend({
                             E('span', { 'style': `font-size: 11px; font-weight: 600; padding: 1px 6px; border-radius: 4px; ${xkcptun.running ? 'background: rgba(22, 163, 74, 0.1); color: #16a34a;' : 'background: rgba(220, 38, 38, 0.1); color: #dc2626;'}` }, xkcptun.running ? `🟢 运行中 (PID ${xkcptun.pid})` : '🔴 未运行')
                         ]),
                         E('div', { 'style': 'font-size: 12px; color: var(--cw-text-main); display: flex; flex-direction: column; gap: 4px;' }, [
-                            E('div', { 'style': 'display: flex; justify-content: space-between;' }, [
+                            E('div', { 'style': 'display: flex; justify-content: space-between; align-items: center;' }, [
                                 E('span', { 'style': 'color: var(--cw-text-muted);' }, '加速节点地址：'),
-                                E('span', { 'style': 'font-family: monospace; font-weight: 600;' }, `${xkcptun.server_addr || '已配置'}:${xkcptun.server_port || '9089'}`)
+                                E('span', { 'style': 'font-family: monospace; font-weight: 600; display: flex; align-items: center; gap: 6px;' }, [
+                                    E('span', {}, `${xkcptun.server_addr || '已配置'}:${xkcptun.server_port || '9089'}`),
+                                    xkcptun.is_hopped_port ? E('span', {
+                                        'style': 'font-size: 11px; color: #0284c7; background: rgba(2, 132, 199, 0.1); padding: 1px 6px; border-radius: 4px; font-weight: normal; font-family: sans-serif;'
+                                    }, `重定向池: ${xkcptun.hop_range || '已激活'}`) : ''
+                                ])
                             ]),
                             E('div', { 'style': 'display: flex; justify-content: space-between;' }, [
                                 E('span', { 'style': 'color: var(--cw-text-muted);' }, '本地服务端口：'),
@@ -4537,32 +4548,44 @@ return view.extend({
         }
 
         // Send Message & Tool Calling Loop
+        function setSendButtonBusy(busy) {
+            const sendBtn = document.getElementById('send-btn');
+            if (!sendBtn) return;
+            sendBtn.disabled = false;
+            sendBtn.innerText = busy ? '停止' : '发送';
+        }
+
+        function stopGeneration() {
+            chatStopRequested = true;
+            if (chatAbort) {
+                chatAbort.abort();
+                chatAbort = null;
+            }
+        }
+
         async function sendMessage() {
             const input = document.getElementById('chat-input');
-            const sendBtn = document.getElementById('send-btn');
-            if (!input || !input.value.trim()) return;
+            if (chatBusy || !input || !input.value.trim()) return;
 
             const userText = input.value.trim();
             input.value = '';
             appendMessage('user', userText);
             messages.push({ role: 'user', content: userText });
 
-            if (sendBtn) {
-                sendBtn.disabled = true;
-                sendBtn.innerText = '思考中...';
-            }
+            chatStopRequested = false;
+            chatBusy = true;
+            setSendButtonBusy(true);
 
             try {
-                chatBusy = true;
                 await processAgentTurn();
             } catch (err) {
-                appendMessage('assistant', `⚠️ **AI 处理出错**: ${err.message}\n\n*提示: 请点击右上角【设置 API Key】检查 DeepSeek Key 是否正确配置，或检查路由器外网连通性。*`);
+                if (!(err && (err.name === 'AbortError' || err.aborted))) {
+                    appendMessage('assistant', `⚠️ **AI 处理出错**: ${err.message}\n\n*提示: 请点击右上角【设置 API Key】检查 DeepSeek Key 是否正确配置，或检查路由器外网连通性。*`);
+                }
             } finally {
                 chatBusy = false;
-                if (sendBtn) {
-                    sendBtn.disabled = false;
-                    sendBtn.innerText = '发送 ➔';
-                }
+                chatAbort = null;
+                setSendButtonBusy(false);
             }
         }
 
@@ -4663,6 +4686,224 @@ return view.extend({
             return [system].concat(repaired);
         }
 
+        function beginLiveReply() {
+            const wrapper = E('div', {
+                'style': 'display: flex; gap: 12px; justify-content: flex-start;'
+            });
+            const avatar = E('div', {
+                'style': 'width: 34px; height: 34px; border-radius: 8px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 18px; background: #0f172a; color: white;'
+            }, '🍵');
+            const column = E('div', {
+                'style': 'max-width: 80%; display: flex; flex-direction: column; gap: 6px;'
+            });
+            const reason = E('details', {
+                'style': 'display: none; font-size: 12px; color: var(--cw-text-muted);'
+            }, [
+                E('summary', { 'style': 'cursor: pointer;' }, '思考过程'),
+                E('div', { 'class': 'cw-reason-body', 'style': 'white-space: pre-wrap; margin-top: 4px;' }, '')
+            ]);
+            const bubble = E('div', {
+                'class': 'chat-bubble assistant-bubble',
+                'style': 'padding: 12px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; word-break: break-word; background: var(--cw-bg-ai-msg); color: var(--cw-text-main); border-top-left-radius: 2px; border: 1px solid var(--cw-border);'
+            });
+            bubble.innerText = '思考中…';
+            column.appendChild(reason);
+            column.appendChild(bubble);
+            wrapper.appendChild(avatar);
+            wrapper.appendChild(column);
+            chatWindow.appendChild(wrapper);
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+            return {
+                wrapper: wrapper,
+                reason: reason,
+                reasonBody: reason.querySelector('.cw-reason-body'),
+                bubble: bubble,
+                sawContent: false
+            };
+        }
+
+        function paintLiveReply(live, content, reasoning) {
+            if (!live) return;
+            if (reasoning && live.reasonBody) {
+                live.reason.style.display = 'block';
+                live.reasonBody.textContent = reasoning;
+            }
+            if (content) {
+                live.sawContent = true;
+                live.bubble.innerHTML = formatMarkdown(content);
+            }
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+
+        // OpenAI-compatible SSE used by DeepSeek chat completions.
+        // Tool-call deltas are accumulated and not executed until the stream ends.
+        async function readChatSse(res) {
+            if (!res.ok) {
+                const errBody = await res.text();
+                const error = new Error('HTTP ' + res.status + ': ' + errBody);
+                if (res.status === 404 || res.status === 502)
+                    error.fallback = true;
+                throw error;
+            }
+            const ctype = (res.headers.get('content-type') || '').toLowerCase();
+            if (ctype.indexOf('application/json') !== -1) {
+                const errBody = await res.text();
+                let message = errBody;
+                try {
+                    const parsed = JSON.parse(errBody);
+                    if (parsed && parsed.message) message = parsed.message;
+                } catch (e) {}
+                throw new Error(message);
+            }
+            if (!res.body || !res.body.getReader)
+                return res.json();
+
+            const reader = res.body.getReader();
+            const decoder = new TextDecoder();
+            let buf = '';
+            const assistant = { role: 'assistant', content: '', reasoning_content: '' };
+            const toolMap = {};
+            const live = beginLiveReply();
+
+            function absorbDelta(delta) {
+                if (!delta) return;
+                if (delta.reasoning_content)
+                    assistant.reasoning_content += delta.reasoning_content;
+                if (delta.content)
+                    assistant.content += delta.content;
+                if (Array.isArray(delta.tool_calls)) {
+                    delta.tool_calls.forEach(function(tc) {
+                        const idx = tc.index != null ? tc.index : 0;
+                        if (!toolMap[idx]) {
+                            toolMap[idx] = {
+                                id: '',
+                                type: 'function',
+                                function: { name: '', arguments: '' }
+                            };
+                        }
+                        if (tc.id) toolMap[idx].id = tc.id;
+                        if (tc.function) {
+                            if (tc.function.name) toolMap[idx].function.name += tc.function.name;
+                            if (tc.function.arguments) toolMap[idx].function.arguments += tc.function.arguments;
+                        }
+                    });
+                }
+                const toolStarted = Object.keys(toolMap).length > 0;
+                paintLiveReply(live, toolStarted ? '' : assistant.content, assistant.reasoning_content);
+                if (toolStarted && !assistant.content)
+                    live.bubble.innerText = '正在准备查询…';
+            }
+
+            try {
+                while (true) {
+                    const chunk = await reader.read();
+                    if (chunk.done) break;
+                    buf += decoder.decode(chunk.value, { stream: true });
+                    const lines = buf.split('\n');
+                    buf = lines.pop();
+                    lines.forEach(function(line) {
+                        const trimmed = line.trim();
+                        if (trimmed.indexOf('data:') !== 0) return;
+                        const data = trimmed.slice(5).trim();
+                        if (!data || data === '[DONE]') return;
+                        try {
+                            const json = JSON.parse(data);
+                            const choice = json.choices && json.choices[0];
+                            if (choice && choice.delta) absorbDelta(choice.delta);
+                        } catch (e) {}
+                    });
+                }
+            } catch (err) {
+                if (!(err && err.name === 'AbortError')) throw err;
+                assistant.aborted = true;
+            }
+
+            const tools = Object.keys(toolMap).sort(function(a, b) { return a - b; }).map(function(k) {
+                return toolMap[k];
+            }).filter(function(t) { return t.function && t.function.name; });
+            if (tools.length) assistant.tool_calls = tools;
+            if (!assistant.content) delete assistant.content;
+            if (!assistant.reasoning_content) delete assistant.reasoning_content;
+            const aborted = !!(assistant.aborted || chatStopRequested);
+            delete assistant.aborted;
+            return { aborted: aborted, live: live, choices: [{ message: assistant }] };
+        }
+
+        async function streamChatCompletion(targetUrl, requestPayload) {
+            const ctrl = new AbortController();
+            chatAbort = ctrl;
+            let res;
+            try {
+                res = await fetch(targetUrl, {
+                    method: 'POST',
+                    signal: ctrl.signal,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + aiConfig.apiKey
+                    },
+                    body: JSON.stringify(Object.assign({}, requestPayload, { stream: true }))
+                });
+            } catch (err) {
+                if (err && err.name === 'AbortError')
+                    return { aborted: true, choices: [{ message: { role: 'assistant', content: '' } }] };
+                throw err;
+            }
+            return readChatSse(res);
+        }
+
+        async function streamViaRouter(modelMessages) {
+            const ctrl = new AbortController();
+            chatAbort = ctrl;
+            let res;
+            try {
+                res = await fetch('/cgi-bin/clawwrt-stream', {
+                    method: 'POST',
+                    signal: ctrl.signal,
+                    credentials: 'same-origin',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ messages: modelMessages })
+                });
+            } catch (err) {
+                if (err && err.name === 'AbortError')
+                    return { aborted: true, choices: [{ message: { role: 'assistant', content: '' } }] };
+                throw err;
+            }
+            return readChatSse(res);
+        }
+
+        function finishLiveReply(live, assistantMsg, aborted) {
+            if (!live) {
+                if (!aborted && assistantMsg && assistantMsg.content && !(assistantMsg.tool_calls && assistantMsg.tool_calls.length))
+                    appendMessage('assistant', assistantMsg.content);
+                return;
+            }
+            const text = (assistantMsg && assistantMsg.content) || '';
+            const hasTools = !!(assistantMsg && assistantMsg.tool_calls && assistantMsg.tool_calls.length);
+            if (aborted) {
+                const shown = text ? (text + '\n\n*（已停止）*') : '已停止生成。';
+                live.bubble.innerHTML = formatMarkdown(shown);
+                saveHistory('assistant', shown);
+                return;
+            }
+            if (hasTools) {
+                if (text) {
+                    live.bubble.innerHTML = formatMarkdown(text);
+                    saveHistory('assistant', text);
+                } else if (!live.reasonBody || !live.reasonBody.textContent) {
+                    live.wrapper.parentNode && live.wrapper.parentNode.removeChild(live.wrapper);
+                } else {
+                    live.bubble.style.display = 'none';
+                }
+                return;
+            }
+            if (text) {
+                live.bubble.innerHTML = formatMarkdown(text);
+                saveHistory('assistant', text);
+            } else {
+                live.wrapper.parentNode && live.wrapper.parentNode.removeChild(live.wrapper);
+            }
+        }
+
         async function processAgentTurn() {
             // Check API Key
             if (!aiConfig.apiKey) {
@@ -4680,6 +4921,10 @@ return view.extend({
             const maxLoops = 5;
 
             while (loopCount < maxLoops) {
+                if (chatStopRequested) {
+                    appendMessage('assistant', '已停止生成。');
+                    break;
+                }
                 loopCount++;
 
                 // Prepare request body
@@ -4704,34 +4949,37 @@ return view.extend({
                     }
                 }
 
-                // Try browser direct fetch first
+                // Browser key streams directly. Otherwise the router CGI streams SSE.
+                // call_deepseek remains the fallback when the CGI is not installed.
                 if (aiConfig.apiKey) {
-                    const targetUrl = normalizeApiUrl(aiConfig.apiUrl);
-                    const res = await fetch(targetUrl, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${aiConfig.apiKey}`
-                        },
-                        body: JSON.stringify(requestPayload)
-                    });
-
-                    if (!res.ok) {
-                        const errBody = await res.text();
-                        throw new Error(`HTTP ${res.status}: ${errBody}`);
-                    }
-                    responseData = await res.json();
+                    responseData = await streamChatCompletion(normalizeApiUrl(aiConfig.apiUrl), requestPayload);
                 } else {
-                    // Fallback to router proxy
-                    const resProxy = await callModel();
-                    if (resProxy.error || !resProxy.response) {
-                        throw new Error(resProxy.message || 'Router backend failed to call DeepSeek');
+                    try {
+                        responseData = await streamViaRouter(modelMessages);
+                    } catch (err) {
+                        if (!err || !err.fallback) throw err;
+                        const resProxy = await callModel();
+                        if (chatStopRequested) {
+                            appendMessage('assistant', '已停止生成。');
+                            break;
+                        }
+                        if (resProxy.error || !resProxy.response)
+                            throw new Error(resProxy.message || 'Router backend failed to call DeepSeek');
+                        responseData = JSON.parse(decodeDeepseekBody(resProxy));
                     }
-                    responseData = JSON.parse(decodeDeepseekBody(resProxy));
                 }
 
                 const choice = responseData.choices[0];
                 const assistantMsg = choice.message;
+                if (responseData.aborted) {
+                    finishLiveReply(responseData.live, assistantMsg, true);
+                    if (assistantMsg.content)
+                        messages.push({ role: 'assistant', content: assistantMsg.content });
+                    break;
+                }
+                finishLiveReply(responseData.live, assistantMsg, false);
+                if (!assistantMsg.content && !assistantMsg.tool_calls)
+                    assistantMsg.content = '';
                 messages.push(assistantMsg);
 
                 // Check for Tool Calls
@@ -4897,10 +5145,6 @@ return view.extend({
                     }
                     // Loop continues so DeepSeek can synthesize the tool result into natural language
                 } else {
-                    // Final text response
-                    if (assistantMsg.content) {
-                        appendMessage('assistant', assistantMsg.content);
-                    }
                     messages = compactMessages(messages);
                     break;
                 }

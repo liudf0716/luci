@@ -1,0 +1,68 @@
+#!/bin/sh
+# Stream DeepSeek chat completions to the logged-in LuCI session.
+# ubus cannot push partial replies, so this CGI writes SSE as curl receives it.
+
+fail() {
+	local code="$1"
+	local msg="$2"
+	printf 'Status: %s\r\n' "$code"
+	printf 'Content-Type: application/json\r\n'
+	printf 'Cache-Control: no-store\r\n\r\n'
+	printf '{"error":1,"message":"%s"}\n' "$msg"
+	exit 0
+}
+
+sid=$(printf '%s' "$HTTP_COOKIE" | tr ';' '\n' | sed -n 's/^[[:space:]]*sysauth[^=]*=//p' | head -n1 | tr -cd 'A-Fa-f0-9')
+[ ${#sid} -eq 32 ] || fail 403 "login required"
+
+access=$(ubus call session access "{\"ubus_rpc_session\":\"$sid\",\"scope\":\"ubus\",\"object\":\"luci.clawwrt\",\"function\":\"call_deepseek\"}" 2>/dev/null)
+printf '%s' "$access" | grep -Eq '"access":[[:space:]]*true' || fail 403 "forbidden"
+
+[ "$REQUEST_METHOD" = "POST" ] || fail 405 "POST required"
+
+umask 077
+in_file="/tmp/clawwrt-stream-in.$$"
+msg_file="/tmp/clawwrt-stream-msg.$$"
+req_file="/tmp/clawwrt-stream-req.$$"
+trap 'rm -f "$in_file" "$msg_file" "$req_file"' EXIT INT TERM
+
+cat > "$in_file"
+jsonfilter -i "$in_file" -e '@.messages' > "$msg_file" 2>/dev/null
+rm -f "$in_file"
+grep -q '^[[:space:]]*\[' "$msg_file" || fail 400 "messages required"
+bytes=$(wc -c < "$msg_file" | tr -cd '0-9')
+[ "${bytes:-0}" -le 600000 ] || fail 413 "messages too large"
+
+key=$(uci -q get clawwrt.ai.api_key)
+[ -n "$key" ] || fail 400 "API key is not configured"
+model=$(uci -q get clawwrt.ai.model || echo "deepseek-flash")
+api_url=$(uci -q get clawwrt.ai.api_url || echo "https://api.deepseek.com/chat/completions")
+temp=$(uci -q get clawwrt.ai.temperature || echo "0.3")
+printf '%s' "$model" | grep -Eq '^[A-Za-z0-9_.-]{1,64}$' || model="deepseek-flash"
+printf '%s' "$temp" | grep -Eq '^[0-9](\.[0-9]+)?$' || temp="0.3"
+case "$api_url" in
+	https://*) ;;
+	*) api_url="https://api.deepseek.com/chat/completions" ;;
+esac
+
+{
+	printf '{"model":"%s","messages":' "$model"
+	cat "$msg_file"
+	if [ -s /usr/share/clawwrt/router-tools.json ]; then
+		printf ',"tools":'
+		cat /usr/share/clawwrt/router-tools.json
+	fi
+	printf ',"temperature":%s,"stream":true}' "$temp"
+} > "$req_file"
+rm -f "$msg_file"
+
+printf 'Status: 200\r\n'
+printf 'Content-Type: text/event-stream\r\n'
+printf 'Cache-Control: no-cache\r\n'
+printf 'X-Accel-Buffering: no\r\n\r\n'
+
+curl -N -sS --no-buffer -m 120 -X POST "$api_url" \
+	-H "Content-Type: application/json" \
+	-H "Authorization: Bearer $key" \
+	--data-binary @"$req_file"
+exit $?

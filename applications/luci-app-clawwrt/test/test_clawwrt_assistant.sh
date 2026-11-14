@@ -157,6 +157,7 @@ assert_ubus "解除限速" "解除测试终端限速规则并清除内核限制 
 # ---------------------------------------------------------------------
 echo -e "\n${BOLD}${BLUE}【5. 网络加速 (xkcptun) 节点延迟、FEC与多隧道管理】${NC}"
 assert_ubus "加速遥测" "获取节点延迟(ping_ms)、FEC模式与多隧道" "get_service_detail" '{"service":"xkcptun"}' "service" "xkcptun"
+assert_ubus "全链路体检" "深度检测 eBPF 与 xkcptun 全链路健康度" "get_acceleration_status" "" "health" "healthy"
 assert_ubus "隧道清单" "查询所有 KCP 加速隧道与实时活跃连接数" "manage_xkcptun_tunnel" '{"action":"list"}' "status" "success"
 assert_ubus "新增隧道" "创建测试加速转发隧道 (端口 18999)" "manage_xkcptun_tunnel" '{"action":"add","tunnel_name":"ci_tunnel","proto":"tcp","local_port":"18999","target_addr":"127.0.0.1","target_port":"80"}' "success" "true"
 assert_ubus "停用隧道" "停用测试加速隧道" "manage_xkcptun_tunnel" '{"action":"disable","tunnel_name":"ci_tunnel"}' "success" "true"
