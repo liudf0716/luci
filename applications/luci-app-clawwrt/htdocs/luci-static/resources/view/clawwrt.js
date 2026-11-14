@@ -2128,6 +2128,134 @@ return view.extend({
             chatWindow.scrollTop = chatWindow.scrollHeight;
         }
 
+        function generateRandomHex(bytes) {
+            bytes = bytes || 16;
+            const arr = new Uint8Array(bytes);
+            if (window.crypto && window.crypto.getRandomValues) {
+                window.crypto.getRandomValues(arr);
+            } else {
+                for (let i = 0; i < bytes; i++) arr[i] = Math.floor(Math.random() * 256);
+            }
+            return Array.from(arr).map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        function sanitizeHtml(str) {
+            return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        }
+
+        function appendSwitchPortProposalCard(param) {
+            const newPort = param.new_port || '随机';
+            const card = E('div', {
+                'class': 'port-switch-proposal-card',
+                'style': 'background: var(--cw-bg-card); border: 2px solid #0284c7; border-radius: 12px; padding: 16px 20px; margin: 12px 0; box-shadow: var(--cw-card-shadow);'
+            }, [
+                E('div', { 'style': 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid var(--cw-border); padding-bottom: 8px;' }, [
+                    E('div', { 'style': 'font-weight: 700; font-size: 15px; color: var(--cw-text-main); display: flex; align-items: center; gap: 8px;' }, [
+                        E('span', { 'style': 'font-size: 18px;' }, '🔀'),
+                        E('span', {}, '网络加速 UDP 通信端口跳跃授权确认')
+                    ]),
+                    E('span', { 'style': 'background: #f0f9ff; color: #0284c7; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 700; border: 1px solid #bae6fd;' }, '需用户授权')
+                ]),
+                E('div', { 'style': 'font-size: 13px; color: var(--cw-text-sub); margin-bottom: 12px; line-height: 1.5;' },
+                    param.explanation || '小茶助手检测到当前网络加速端口存在高丢包或 QoS 限速，提议切换至新的可用 UDP 通信端口以改善连接质量。'
+                ),
+                E('div', { 'style': 'background: var(--cw-bg-subtle); border: 1px solid var(--cw-border); border-radius: 8px; padding: 10px 14px; margin-bottom: 14px; font-size: 13px; color: var(--cw-text-main);' }, [
+                    E('div', { 'style': 'display: flex; justify-content: space-between; margin-bottom: 4px;' }, [
+                        E('span', { 'style': 'color: var(--cw-text-muted);' }, '拟切换目标端口：'),
+                        E('code', { 'style': 'font-weight: 700; color: #0284c7;' }, newPort === 'random' ? '系统随机分配可用端口 (50000-60000)' : newPort)
+                    ])
+                ]),
+                E('div', { 'style': 'display: flex; gap: 10px;' }, [
+                    E('button', {
+                        'class': 'btn cbi-button cbi-button-apply',
+                        'style': 'background: #0284c7; color: #fff; border: none; padding: 8px 20px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;',
+                        'click': function(ev) {
+                            const btn = ev.target;
+                            btn.disabled = true;
+                            btn.innerText = '⏳ 正在切换端口...';
+                            callSwitchAccelerationPort(param.new_port || 'random').then(hopRes => {
+                                if (hopRes && hopRes.success) {
+                                    btn.innerText = '✅ 端口切换成功';
+                                    btn.style.background = '#16a34a';
+                                    callGetAccelerationStatus().then(newDiag => {
+                                        appendAccelerationCard(newDiag);
+                                    });
+                                } else {
+                                    btn.innerText = '❌ 切换失败: ' + ((hopRes && hopRes.message) || '未知错误');
+                                    btn.style.background = '#dc2626';
+                                    btn.disabled = false;
+                                }
+                            }).catch(err => {
+                                btn.innerText = '❌ 执行异常: ' + err.message;
+                                btn.style.background = '#dc2626';
+                                btn.disabled = false;
+                            });
+                        }
+                    }, '确认切换端口'),
+                    E('button', {
+                        'class': 'btn cbi-button cbi-button-reset',
+                        'style': 'background: var(--cw-bg-secondary); color: var(--cw-text-muted); border: 1px solid var(--cw-border); padding: 8px 14px; border-radius: 6px; cursor: pointer; font-size: 13px;',
+                        'click': function() { card.remove(); }
+                    }, '取消')
+                ])
+            ]);
+            chatWindow.appendChild(card);
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+
+        function appendFixAccelerationProposalCard(param) {
+            const card = E('div', {
+                'class': 'fix-acceleration-proposal-card',
+                'style': 'background: var(--cw-bg-card); border: 2px solid #2563eb; border-radius: 12px; padding: 16px 20px; margin: 12px 0; box-shadow: var(--cw-card-shadow);'
+            }, [
+                E('div', { 'style': 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid var(--cw-border); padding-bottom: 8px;' }, [
+                    E('div', { 'style': 'font-weight: 700; font-size: 15px; color: var(--cw-text-main); display: flex; align-items: center; gap: 8px;' }, [
+                        E('span', { 'style': 'font-size: 18px;' }, '🛠️'),
+                        E('span', {}, '智能分流与网络加速链路自愈授权确认')
+                    ]),
+                    E('span', { 'style': 'background: #eff6ff; color: #2563eb; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 700; border: 1px solid #bfdbfe;' }, '需用户授权')
+                ]),
+                E('div', { 'style': 'font-size: 13px; color: var(--cw-text-sub); margin-bottom: 12px; line-height: 1.5;' },
+                    param.explanation || '小茶助手检测到链路异常，提议一键清理失效内核 TC-eBPF 映射表并重启 xkcptun 守护进程以自愈链路。'
+                ),
+                E('div', { 'style': 'display: flex; gap: 10px;' }, [
+                    E('button', {
+                        'class': 'btn cbi-button cbi-button-apply',
+                        'style': 'background: #2563eb; color: #fff; border: none; padding: 8px 20px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;',
+                        'click': function(ev) {
+                            const btn = ev.target;
+                            btn.disabled = true;
+                            btn.innerText = '⏳ 正在自愈链路...';
+                            callFixAccelerationPipeline().then(fixRes => {
+                                if (fixRes && fixRes.success) {
+                                    btn.innerText = '✅ 自愈成功';
+                                    btn.style.background = '#16a34a';
+                                    callGetAccelerationStatus().then(newDiag => {
+                                        appendAccelerationCard(newDiag);
+                                    });
+                                } else {
+                                    btn.innerText = '❌ 自愈失败: ' + ((fixRes && fixRes.message) || '未知错误');
+                                    btn.style.background = '#dc2626';
+                                    btn.disabled = false;
+                                }
+                            }).catch(err => {
+                                btn.innerText = '❌ 执行异常: ' + err.message;
+                                btn.style.background = '#dc2626';
+                                btn.disabled = false;
+                            });
+                        }
+                    }, '确认执行链路自愈'),
+                    E('button', {
+                        'class': 'btn cbi-button cbi-button-reset',
+                        'style': 'background: var(--cw-bg-secondary); color: var(--cw-text-muted); border: 1px solid var(--cw-border); padding: 8px 14px; border-radius: 6px; cursor: pointer; font-size: 13px;',
+                        'click': function() { card.remove(); }
+                    }, '取消')
+                ])
+            ]);
+            chatWindow.appendChild(card);
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+
         function appendAccelerationCard(data) {
             const res = (data && data.result) ? data.result : (data || {});
             const health = res.health || 'healthy';
@@ -3684,7 +3812,7 @@ return view.extend({
                                     statusDiv.style.background = '#fef2f2';
                                     statusDiv.style.border = '1px solid #fecaca';
                                     statusDiv.style.color = '#991b1b';
-                                    statusDiv.innerHTML = `❌ <strong>连接失败：</strong>${(res && res.message) || '未知错误'}<br><span style="font-size: 12px; color: #b91c1c;">提示：请确保在 VPS 终端执行授权命令时的用户与填写的【SSH 用户名】一致，且安全组已放行 SSH 端口。</span>`;
+                                    statusDiv.innerHTML = `❌ <strong>连接失败：</strong>${sanitizeHtml((res && res.message) || '未知错误')}<br><span style="font-size: 12px; color: #b91c1c;">提示：请确保在 VPS 终端执行授权命令时的用户与填写的【SSH 用户名】一致，且安全组已放行 SSH 端口。</span>`;
                                 }
                             }).catch(err => {
                                 btn.disabled = false;
@@ -3692,7 +3820,7 @@ return view.extend({
                                 statusDiv.style.background = '#fef2f2';
                                 statusDiv.style.border = '1px solid #fecaca';
                                 statusDiv.style.color = '#991b1b';
-                                statusDiv.innerHTML = `❌ <strong>测试异常：</strong>${err.message}`;
+                                statusDiv.innerHTML = `❌ <strong>测试异常：</strong>${sanitizeHtml(err.message)}`;
                             });
                         }
                     }, '🔍 测试免密连接'),
@@ -3741,7 +3869,7 @@ return view.extend({
                                     statusDiv.style.background = '#fef2f2';
                                     statusDiv.style.border = '1px solid #fecaca';
                                     statusDiv.style.color = '#991b1b';
-                                    statusDiv.innerHTML = `❌ <strong>部署失败：</strong>${(res && res.message) || '未知错误'}`;
+                                    statusDiv.innerHTML = `❌ <strong>部署失败：</strong>${sanitizeHtml((res && res.message) || '未知错误')}`;
                                 }
                             }).catch(err => {
                                 btn.disabled = false;
@@ -3749,7 +3877,7 @@ return view.extend({
                                 statusDiv.style.background = '#fef2f2';
                                 statusDiv.style.border = '1px solid #fecaca';
                                 statusDiv.style.color = '#991b1b';
-                                statusDiv.innerHTML = `❌ <strong>部署过程发生异常：</strong>${err.message}`;
+                                statusDiv.innerHTML = `❌ <strong>部署过程发生异常：</strong>${sanitizeHtml(err.message)}`;
                             });
                         }
                     }, '🚀 一键自动部署服务端并拉通穿透'),
@@ -3961,7 +4089,7 @@ return view.extend({
                             E('input', {
                                 'id': 'xkcp-vps-input-key',
                                 'type': 'text',
-                                'value': '7f7ac683d720e1437019692eadb0b811',
+                                'value': generateRandomHex(16),
                                 'style': 'width: 100%; padding: 6px 10px; font-size: 12px; border-radius: 5px; border: 1px solid var(--cw-border); background: var(--cw-input-bg); color: var(--cw-input-text); font-family: monospace;'
                             })
                         ])
@@ -4013,7 +4141,7 @@ return view.extend({
                                     statusDiv.style.background = '#fef2f2';
                                     statusDiv.style.border = '1px solid #fecaca';
                                     statusDiv.style.color = '#991b1b';
-                                    statusDiv.innerHTML = `❌ <strong>连接失败：</strong>${(res && res.message) || '未知错误'}`;
+                                    statusDiv.innerHTML = `❌ <strong>连接失败：</strong>${sanitizeHtml((res && res.message) || '未知错误')}`;
                                 }
                             }).catch(err => {
                                 btn.disabled = false;
@@ -4021,7 +4149,7 @@ return view.extend({
                                 statusDiv.style.background = '#fef2f2';
                                 statusDiv.style.border = '1px solid #fecaca';
                                 statusDiv.style.color = '#991b1b';
-                                statusDiv.innerHTML = `❌ <strong>测试异常：</strong>${err.message}`;
+                                statusDiv.innerHTML = `❌ <strong>测试异常：</strong>${sanitizeHtml(err.message)}`;
                             });
                         }
                     }, '🔍 测试免密连接'),
@@ -4038,7 +4166,7 @@ return view.extend({
                             const port = (card.querySelector('#xkcp-vps-input-port').value || '22').trim();
                             const lPort = (card.querySelector('#xkcp-vps-input-lport').value || '9089').trim();
                             const lMode = (card.querySelector('#xkcp-vps-input-mode').value || 'fast3').trim();
-                            const lKey = (card.querySelector('#xkcp-vps-input-key').value || '7f7ac683d720e1437019692eadb0b811').trim();
+                            const lKey = (card.querySelector('#xkcp-vps-input-key').value || generateRandomHex(16)).trim();
                             const statusDiv = card.querySelector('#xkcp-vps-status-div');
 
                             if (!ip) {
@@ -4079,7 +4207,7 @@ return view.extend({
                                     statusDiv.style.background = '#fef2f2';
                                     statusDiv.style.border = '1px solid #fecaca';
                                     statusDiv.style.color = '#991b1b';
-                                    statusDiv.innerHTML = `❌ <strong>部署失败：</strong>${(res && res.message) || '未知错误'}`;
+                                    statusDiv.innerHTML = `❌ <strong>部署失败：</strong>${sanitizeHtml((res && res.message) || '未知错误')}`;
                                 }
                             }).catch(err => {
                                 clearInterval(timer);
@@ -4088,7 +4216,7 @@ return view.extend({
                                 statusDiv.style.background = '#fef2f2';
                                 statusDiv.style.border = '1px solid #fecaca';
                                 statusDiv.style.color = '#991b1b';
-                                statusDiv.innerHTML = `❌ <strong>执行异常：</strong>${err.message}`;
+                                statusDiv.innerHTML = `❌ <strong>执行异常：</strong>${sanitizeHtml(err.message)}`;
                             });
                         }
                     }, '🚀 一键安装部署 (deb)'),
@@ -4244,16 +4372,16 @@ return view.extend({
                                     statDiv.style.background = '#f0fdf4';
                                     statDiv.style.border = '1px solid #bbf7d0';
                                     statDiv.style.color = '#166534';
-                                    statDiv.innerHTML = `🎉 ${res.message || '远程服务已彻底清理，本地客户端已同步停用。'}`;
+                                    statDiv.innerHTML = `🎉 ${sanitizeHtml(res.message || '远程服务已彻底清理，本地客户端已同步停用。')}`;
                                 } else {
                                     btn.disabled = false;
                                     btn.innerText = '🛑 重试卸载';
-                                    statDiv.innerHTML = `❌ 卸载失败: ${(res && res.message) || '未知错误'}`;
+                                    statDiv.innerHTML = `❌ 卸载失败: ${sanitizeHtml((res && res.message) || '未知错误')}`;
                                 }
                             }).catch(err => {
                                 btn.disabled = false;
                                 btn.innerText = '🛑 重试卸载';
-                                statDiv.innerHTML = `❌ 连接或执行异常: ${err}`;
+                                statDiv.innerHTML = `❌ 连接或执行异常: ${sanitizeHtml(err)}`;
                             });
                         }
                     }, `🛑 确认并立即从 VPS 卸载 ${serviceType}`)
@@ -4379,7 +4507,7 @@ return view.extend({
                                     statDiv.style.background = '#f0fdf4';
                                     statDiv.style.border = '1px solid #bbf7d0';
                                     statDiv.style.color = '#166534';
-                                    statDiv.innerHTML = `🎉 ${res.message || '服务端配置已安全生效，平滑重启正常！'}`;
+                                    statDiv.innerHTML = `🎉 ${sanitizeHtml(res.message || '服务端配置已安全生效，平滑重启正常！')}`;
 
                                     appendMessage('assistant', `🎉 **VPS [${vpsTarget}] 上 ${svcTitle} 配置已成功安全更新并生效！**\n\n• **云端服务**：配置文件写入完成，systemd 守护进程平滑重启就绪\n• **路由器客户端**：已自动同步相应远端端口与参数，保持稳定连通！`);
                                 } else {
@@ -4388,7 +4516,7 @@ return view.extend({
                                     statDiv.style.background = '#fef2f2';
                                     statDiv.style.border = '1px solid #fecaca';
                                     statDiv.style.color = '#991b1b';
-                                    statDiv.innerHTML = `❌ 更新失败: ${(res && res.message) || '未知错误'}`;
+                                    statDiv.innerHTML = `❌ 更新失败: ${sanitizeHtml((res && res.message) || '未知错误')}`;
                                 }
                             }).catch(err => {
                                 clearInterval(timer);
@@ -4624,13 +4752,11 @@ return view.extend({
                                 toolResult = await callGetAccelerationStatus();
                                 appendAccelerationCard(toolResult);
                             } else if (fnName === 'fix_acceleration_pipeline') {
-                                toolResult = await callFixAccelerationPipeline();
-                                const newDiag = await callGetAccelerationStatus();
-                                appendAccelerationCard(newDiag);
+                                appendFixAccelerationProposalCard(fnArgs);
+                                toolResult = { status: 'proposed_to_user', message: '已在界面呈现全链路一键自愈与重建卡片，等待用户显式点击确认授权。' };
                             } else if (fnName === 'switch_acceleration_port') {
-                                toolResult = await callSwitchAccelerationPort(fnArgs.new_port || 'random');
-                                const newDiag = await callGetAccelerationStatus();
-                                appendAccelerationCard(newDiag);
+                                appendSwitchPortProposalCard(fnArgs);
+                                toolResult = { status: 'proposed_to_user', message: '已在界面呈现 UDP 端口跳跃优化确认卡片，等待用户显式点击确认授权。' };
                             } else if (fnName === 'get_penetration_status') {
                                 toolResult = await callGetPenetrationStatus();
                             } else if (fnName === 'get_router_summary') {
@@ -5001,14 +5127,14 @@ return view.extend({
                                         } else if (testResp.status === 402) {
                                             testResultDiv.innerHTML = `❌ <strong>余额不足 (HTTP 402)：</strong><br>您的 DeepSeek 账户余额不足或欠费，请前往 platform.deepseek.com 充值。`;
                                         } else {
-                                            testResultDiv.innerHTML = `❌ <strong>调用失败 (HTTP ${testResp.status})：</strong><br>${errDetail}`;
+                                            testResultDiv.innerHTML = `❌ <strong>调用失败 (HTTP ${testResp.status})：</strong><br>${sanitizeHtml(errDetail)}`;
                                         }
                                     }
                                 } catch (netErr) {
                                     testResultDiv.style.background = '#fef2f2';
                                     testResultDiv.style.border = '1px solid #fecaca';
                                     testResultDiv.style.color = '#991b1b';
-                                    testResultDiv.innerHTML = `❌ <strong>网络连接异常：</strong><br>${netErr.message}（请确认路由器是否能正常访问外网）`;
+                                    testResultDiv.innerHTML = `❌ <strong>网络连接异常：</strong><br>${sanitizeHtml(netErr.message)}（请确认路由器是否能正常访问外网）`;
                                 } finally {
                                     btn.disabled = false;
                                     btn.innerText = '🧪 测试连通性';

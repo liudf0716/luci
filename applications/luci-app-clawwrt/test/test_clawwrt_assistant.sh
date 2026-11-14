@@ -81,7 +81,8 @@ assert_ubus() {
 # 1. 系统概况与客户端管理
 # ---------------------------------------------------------------------
 echo -e "\n${BOLD}${BLUE}【1. 系统概要、状态与终端设备检测】${NC}"
-assert_ubus "系统概况" "获取路由器摘要遥测信息" "get_router_summary" "" "hostname" "chawrt"
+expected_hostname=$(uci -q get system.@system[0].hostname || echo "chawrt")
+assert_ubus "系统概况" "获取路由器摘要遥测信息" "get_router_summary" "" "hostname" "$expected_hostname"
 assert_ubus "系统状态" "获取 Copilot 进程及核心运行状态" "get_status" "" "running"
 assert_ubus "终端拓扑" "获取局域网已连接客户端列表" "list_clients" "" "clients"
 assert_ubus "服务矩阵" "获取五大核心服务聚合健康状态" "get_services_status" "" "xkcptun"
@@ -152,6 +153,19 @@ assert_ubus "无线状态" "获取当前 WiFi 频段、SSID 与安全状态" "ge
 assert_ubus "无线漫游" "获取 802.11k/v/r 漫游及 usteer 调度状态" "get_wifi_roaming" "" "hostapd_supports_kvr" "true"
 assert_ubus "漫游配置" "下发满血 802.11k/v/r 漫游与调度参数" "set_wifi_roaming" '{"band":"all","mode":"full_kvr","mobility_domain":"e1a0","usteer_enabled":"1"}' "success" "true"
 assert_ubus "SSH密钥" "获取路由器自动生成的穿透运维 SSH 公钥" "get_router_ssh_key" "" "pubkey"
+
+# ---------------------------------------------------------------------
+# 8. 安全沙箱、凭据脱敏与安全边界防御测试
+# ---------------------------------------------------------------------
+echo -e "\n${BOLD}${BLUE}【8. 安全沙箱、凭据脱敏与安全边界防御测试】${NC}"
+assert_ubus "沙箱隔离" "uci_read 越权访问 dropbear 拦截" "uci_read" '{"package":"dropbear"}' "success" "false"
+assert_ubus "敏感脱敏" "uci_read 读取配置密钥自动掩码脱敏" "uci_read" '{"package":"wireless"}' "package" "wireless"
+assert_ubus "凭据保护" "uci_apply 越权直接篡改 api_key 拦截" "uci_apply" '{"package":"clawwrt","section":"ai","option":"api_key","value":"hack"}' "success" "false"
+assert_ubus "服务防护" "uci_apply 阻止非白名单服务重载 (evil)" "uci_apply" '{"package":"clawwrt","section":"main","option":"log_level","value":"debug","reload_service":"evil"}' "success" "false"
+assert_ubus "参数安全" "run_diagnostics 拒绝 -f 标志参数注入" "run_diagnostics" '{"action":"ping","target":"-f"}' "success" "false"
+assert_ubus "参数安全" "run_diagnostics 拒绝非法诊断动作 (exploit)" "run_diagnostics" '{"action":"exploit","target":"8.8.8.8"}' "success" "false"
+assert_ubus "配对防御" "pair_mesh_node 拒绝公网节点 IP (8.8.8.8)" "pair_mesh_node" '{"target_ip":"8.8.8.8"}' "success" "false"
+assert_ubus "配对防御" "pair_mesh_node 拒绝空密码安全降级" "pair_mesh_node" '{"target_ip":"192.168.8.199","password":""}' "success" "false"
 
 END_TIME=$(date +%s)
 DURATION=$((END_TIME - START_TIME))

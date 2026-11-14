@@ -21,7 +21,24 @@ is_user() {
 }
 
 is_ipv4() {
-    echo "$1" | grep -Eq '^([0-9]{1,3}\.){3}[0-9]{1,3}$'
+    echo "$1" | grep -Eq '^([0-9]{1,3}\.){3}[0-9]{1,3}$' || return 1
+    local o1 o2 o3 o4
+    o1=$(echo "$1" | cut -d. -f1)
+    o2=$(echo "$1" | cut -d. -f2)
+    o3=$(echo "$1" | cut -d. -f3)
+    o4=$(echo "$1" | cut -d. -f4)
+    [ "$o1" -le 255 ] && [ "$o2" -le 255 ] && [ "$o3" -le 255 ] && [ "$o4" -le 255 ]
+}
+
+is_private_ipv4() {
+    is_ipv4 "$1" || return 1
+    local o1 o2
+    o1=$(echo "$1" | cut -d. -f1)
+    o2=$(echo "$1" | cut -d. -f2)
+    [ "$o1" -eq 10 ] && return 0
+    [ "$o1" -eq 172 ] && [ "$o2" -ge 16 ] && [ "$o2" -le 31 ] && return 0
+    [ "$o1" -eq 192 ] && [ "$o2" -eq 168 ] && return 0
+    return 1
 }
 
 is_token() {
@@ -78,7 +95,7 @@ case "$1" in
             json_add_string "api_url"
             json_add_string "temperature"
         json_close_object
-                                json_add_object "get_qos_status"
+        json_add_object "get_qos_status"
         json_close_object
         json_add_object "set_qos_limit"
             json_add_string "target"
@@ -508,11 +525,23 @@ case "$1" in
             json_get_var action "action"
             json_get_var target "target"
             
+            # Reject targets starting with '-' to block flag injection
+            if echo "$target" | grep -q '^-'; then
+                claw_fail "Invalid target: flag arguments are not allowed"
+                return
+            fi
+
+            # Validate target is safe hostname or IPv4
+            if [ -n "$target" ] && ! echo "$target" | grep -Eq '^[A-Za-z0-9][A-Za-z0-9.-]{0,253}$'; then
+                claw_fail "Invalid target: must be a valid host or IP address"
+                return
+            fi
+            
             local out=""
             case "$action" in
                 ping)
                     [ -z "$target" ] && target="223.5.5.5"
-                    out=$(ping -c 3 -W 2 "$target" 2>&1)
+                    out=$(ping -c 3 -W 2 -- "$target" 2>&1)
                     ;;
                 nslookup)
                     [ -z "$target" ] && target="github.com"
@@ -522,7 +551,8 @@ case "$1" in
                     out=$(ip route 2>&1)
                     ;;
                 *)
-                    out="Unknown action: $action"
+                    claw_fail "Unknown action: $action"
+                    return
                     ;;
             esac
             
@@ -540,9 +570,19 @@ case "$1" in
             json_load "$input"
             json_get_var package "package"
             
+            case "$package" in
+                clawwrt|xkcptun|xfrpc|xdns|network|firewall|wireless|dhcp|wifidogx|ipsec|aw-bpf|qos)
+                    ;;
+                *)
+                    claw_fail "Disallowed package for uci_read: $package"
+                    return
+                    ;;
+            esac
+            
             local out=""
             if [ -n "$package" ]; then
-                out=$(uci -q show "$package" 2>&1)
+                # Redact sensitive options like key, password, token, api_key, secret
+                out=$(uci -q show "$package" 2>&1 | sed -E 's/(\.(key|password|token|secret|api_key|psk|auth_key|auth_token)=).*/\1"********"/g')
             fi
             
             json_init
@@ -561,6 +601,41 @@ case "$1" in
             json_get_var option "option"
             json_get_var value "value"
             json_get_var reload_service "reload_service"
+            
+            case "$package" in
+                clawwrt|xkcptun|xfrpc|xdns|network|firewall|wireless|dhcp|wifidogx|ipsec|aw-bpf|qos)
+                    ;;
+                *)
+                    claw_fail "Disallowed package for uci_apply: $package"
+                    return
+                    ;;
+            esac
+
+            # Forbid editing sensitive credentials via generic uci_apply
+            case "$option" in
+                password|secret|api_key|auth_token)
+                    claw_fail "Direct mutation of credential option '$option' is forbidden"
+                    return
+                    ;;
+            esac
+
+            # Validate section and option names are safe identifiers
+            if ! echo "$section" | grep -Eq '^[][A-Za-z0-9_@.:-]+$' || ! echo "$option" | grep -Eq '^[A-Za-z0-9_.-]+$'; then
+                claw_fail "Invalid section or option identifier"
+                return
+            fi
+
+            # Validate reload_service
+            if [ -n "$reload_service" ]; then
+                case "$reload_service" in
+                    network|firewall|wireless|dnsmasq|dhcp|xkcptun|xfrpc|xdns|wifidogx|ipsec|usteer|qos)
+                        ;;
+                    *)
+                        claw_fail "Disallowed reload_service: $reload_service"
+                        return
+                        ;;
+                esac
+            fi
             
             local success=0
             local msg="OK"
@@ -641,11 +716,14 @@ case "$1" in
         }
 
         call_deepseek() {
+            local old_umask=$(umask)
+            umask 077
             local in_file="/tmp/deepseek_in_$$.json"
             local msg_file="/tmp/deepseek_msg_$$.json"
             local tools_file="/tmp/deepseek_tools_$$.json"
             local req_body="/tmp/deepseek_req_$$.json"
             local resp_body="/tmp/deepseek_resp_$$.json"
+            trap 'rm -f "$in_file" "$msg_file" "$tools_file" "$req_body" "$resp_body" 2>/dev/null' EXIT INT TERM
             cat > "$in_file"
 
             local key=$(uci -q get clawwrt.ai.api_key)
@@ -653,8 +731,25 @@ case "$1" in
             local api_url=$(uci -q get clawwrt.ai.api_url || echo "https://api.deepseek.com/chat/completions")
             local temp=$(uci -q get clawwrt.ai.temperature || echo "0.3")
 
+            # Validate api_url: must start with https:// and not point to metadata/localhost
+            case "$api_url" in
+                https://*)
+                    if echo "$api_url" | grep -Eq 'https://(127\.|169\.254\.|10\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[01])\.|localhost)'; then
+                        api_url="https://api.deepseek.com/chat/completions"
+                    fi
+                    ;;
+                *)
+                    api_url="https://api.deepseek.com/chat/completions"
+                    ;;
+            esac
+
+            # Sanitize model and temp
+            echo "$model" | grep -Eq '^[A-Za-z0-9_.-]{1,64}$' || model="deepseek-flash"
+            echo "$temp" | grep -Eq '^[0-9](\.[0-9]+)?$' || temp="0.3"
+
             if [ -z "$key" ]; then
                 rm -f "$in_file"
+                umask "$old_umask"
                 json_init
                 json_add_object "result"
                 json_add_boolean "error" "1"
@@ -692,6 +787,7 @@ case "$1" in
 
             local b64=$(openssl base64 -A -in "$resp_body" 2>/dev/null || true)
             rm -f "$resp_body"
+            umask "$old_umask"
 
             printf '{"result":{"http_code":%s,"encoding":"base64","response":"%s"}}\n' "${http_code:-0}" "$b64"
         }
@@ -725,7 +821,8 @@ case "$1" in
                         json_add_string "section" "$iface"
                         json_add_string "band" "$band"
                         json_add_string "ssid" "$ssid"
-                        json_add_string "key" "$key"
+                        json_add_string "key" "$([ -n "$key" ] && echo "********" || echo "")"
+                        json_add_boolean "has_key" "$([ -n "$key" ] && echo 1 || echo 0)"
                         json_add_string "encryption" "$enc"
                         json_add_string "channel" "$channel"
                         json_add_boolean "enabled" "$([ "$dis" = "0" ] && echo 1 || echo 0)"
@@ -1360,8 +1457,8 @@ case "$1" in
                 target_lan_ip="${lan_prefix}.2"
             fi
 
-            is_ipv4 "$target_ip" || { claw_fail "目标 IP 无效"; return; }
-            is_ipv4 "$target_lan_ip" || { claw_fail "子路由 LAN 地址无效"; return; }
+            is_private_ipv4 "$target_ip" || { claw_fail "目标 IP 必须为合法私网地址 (RFC1918)"; return; }
+            is_private_ipv4 "$target_lan_ip" || { claw_fail "子路由 LAN 地址必须为合法私网地址 (RFC1918)"; return; }
 
             # 1. 动态获取 5G 射频与 Mesh 回传配置
             local mesh_id=$(uci -q get wireless.mesh_backhaul.mesh_id)
@@ -1447,9 +1544,8 @@ case "$1" in
                     auth_ok=1
                 fi
             else
-                # 尝试空密码或出厂无密码直连注入
-                ssh -y -y -I 3 "root@${target_ip}" "$auth_inject_cmd" >/dev/null 2>&1
-                [ $? -eq 0 ] && auth_ok=1
+                claw_fail "首次配对必须提供有效的子路由 root 密码以安全注入公钥，拒绝空密码连接"
+                return
             fi
 
             # 验证公钥通道是否畅通
@@ -4513,6 +4609,8 @@ echo \"\$RAW_CFG\"
             local r_file=$(echo "$out" | sed -n '/===CFG_FILE===/{n;p;}')
             local r_cfg=$(echo "$out" | sed -n '/===RAW_CFG===/,$p' | sed '1d')
 
+            local r_cfg_sanitized=$(echo "$r_cfg" | sed -E 's/((auth\.token|token|key)[[:space:]]*=[[:space:]]*["'\'']?)[^"'\''[:space:]]+(["'\'']?)/\1********\3/g')
+
             json_init
             json_add_object "result"
             json_add_boolean "success" 1
@@ -4523,7 +4621,7 @@ echo \"\$RAW_CFG\"
             json_add_string "name" "$name"
             json_add_string "status" "$r_status"
             json_add_string "config_file" "$r_file"
-            json_add_string "raw_config" "$r_cfg"
+            json_add_string "raw_config" "$r_cfg_sanitized"
 
             if [ "$service" = "frps" ]; then
                 local b_port=$(echo "$r_cfg" | grep -E '^[[:space:]]*bindPort[[:space:]]*=' | sed -E 's/.*=[[:space:]]*([0-9]+).*/\1/' | head -n1)
@@ -4535,7 +4633,8 @@ echo \"\$RAW_CFG\"
 
                 json_add_object "config"
                 json_add_string "bind_port" "${b_port:-7001}"
-                json_add_string "token" "$tok"
+                json_add_string "token" "$([ -n "$tok" ] && echo "********" || echo "")"
+                json_add_boolean "has_token" "$([ -n "$tok" ] && echo 1 || echo 0)"
                 json_add_string "vhost_http_port" "$v_http"
                 json_add_string "vhost_https_port" "$v_https"
                 json_add_string "allow_ports" "$a_ports"
@@ -4548,7 +4647,8 @@ echo \"\$RAW_CFG\"
 
                 json_add_object "config"
                 json_add_string "listen_port" "${l_port:-9089}"
-                json_add_string "key" "$l_key"
+                json_add_string "key" "$([ -n "$l_key" ] && echo "********" || echo "")"
+                json_add_boolean "has_key" "$([ -n "$l_key" ] && echo 1 || echo 0)"
                 json_add_string "mode" "${l_mode:-fast3}"
                 json_add_string "fec" "${l_fec:-1}"
                 json_close_object
@@ -4608,6 +4708,8 @@ echo \"\$RAW_CFG\"
             [ -n "$vhost_http_port" ] && ! is_port "$vhost_http_port" && { claw_fail "vhost HTTP 端口无效"; return; }
             [ -n "$vhost_https_port" ] && ! is_port "$vhost_https_port" && { claw_fail "vhost HTTPS 端口无效"; return; }
             [ -n "$listen_port" ] && ! is_port "$listen_port" && { claw_fail "监听端口无效"; return; }
+            [ "$token" = "********" ] && token=""
+            [ "$key" = "********" ] && key=""
             is_token "$token" || { claw_fail "token 含非法字符"; return; }
             is_token "$key" || { claw_fail "key 含非法字符"; return; }
             is_ident "$mode" || { claw_fail "mode 无效"; return; }

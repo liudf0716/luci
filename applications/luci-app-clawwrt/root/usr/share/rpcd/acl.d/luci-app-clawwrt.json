@@ -7,15 +7,32 @@
                     "list"
                 ],
                 "luci.clawwrt": [
-                    "*"
-                ]
-            },
-            "file": {
-                "/etc/init.d/*": [
-                    "exec"
-                ],
-                "/usr/bin/aw-bpfctl": [
-                    "exec"
+                    "get_status",
+                    "get_wan_mac",
+                    "get_router_summary",
+                    "list_clients",
+                    "get_services_status",
+                    "run_diagnostics",
+                    "uci_read",
+                    "get_ai_settings",
+                    "get_qos_status",
+                    "get_l7_top",
+                    "get_service_detail",
+                    "get_wifi_info",
+                    "get_wifi_roaming",
+                    "get_mesh_status",
+                    "discover_mesh_nodes",
+                    "get_network_tune",
+                    "diagnose_wifi_performance",
+                    "call_deepseek",
+                    "get_hw_offload_status",
+                    "get_router_ssh_key",
+                    "get_vps_servers",
+                    "test_vps_server",
+                    "test_vps_ssh",
+                    "get_vps_service_config",
+                    "get_penetration_status",
+                    "get_acceleration_status"
                 ]
             },
             "uci": [
@@ -33,18 +50,39 @@
             ]
         },
         "write": {
+            "ubus": {
+                "luci.clawwrt": [
+                    "uci_apply",
+                    "save_ai_settings",
+                    "set_qos_limit",
+                    "set_service_detail",
+                    "set_wifi_config",
+                    "set_wifi_roaming",
+                    "set_mesh_config",
+                    "pair_mesh_node",
+                    "unpair_mesh_node",
+                    "apply_network_tune",
+                    "apply_wifi_tune",
+                    "set_hw_offload",
+                    "manage_vps_server",
+                    "deploy_vps_frps",
+                    "deploy_vps_xkcptun",
+                    "uninstall_vps_service",
+                    "update_vps_service_config",
+                    "fix_acceleration_pipeline",
+                    "switch_acceleration_port",
+                    "manage_xdns_domain",
+                    "manage_portal_access",
+                    "manage_portal_whitelist",
+                    "manage_penetration_proxy",
+                    "manage_xkcptun_tunnel"
+                ]
+            },
             "uci": [
                 "clawwrt",
                 "xkcptun",
                 "xfrpc",
-                "xdns",
-                "network",
-                "firewall",
-                "wireless",
-                "dhcp",
-                "wifidogx",
-                "ipsec",
-                "aw-bpf"
+                "xdns"
             ]
         }
     }

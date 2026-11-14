@@ -664,6 +664,21 @@ return view.extend({
             ]);
         }
 
+        function sanitizeHtml(str) {
+            return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        }
+
+        function generateRandomHex(bytes) {
+            bytes = bytes || 16;
+            const arr = new Uint8Array(bytes);
+            if (window.crypto && window.crypto.getRandomValues) {
+                window.crypto.getRandomValues(arr);
+            } else {
+                for (let i = 0; i < bytes; i++) arr[i] = Math.floor(Math.random() * 256);
+            }
+            return Array.from(arr).map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
         // Helper: Prompt Tip
         function renderPromptTip(title, prompt) {
             return E('div', {
@@ -697,9 +712,9 @@ return view.extend({
                         statusDiv.innerHTML = '<span style="color: #3b82f6;">已添加！正在发起免密 SSH 握手探测（最长 10 秒）...</span>';
                         callTestVpsServer(sid, host, port, user).then(tRes => {
                             if (tRes && tRes.connected) {
-                                statusDiv.innerHTML = '<span style="color: #10b981; font-weight: 600;">🎉 验证成功！' + (tRes.message || '免密握手成功') + '</span>';
+                                statusDiv.innerHTML = '<span style="color: #10b981; font-weight: 600;">🎉 验证成功！' + sanitizeHtml(tRes.message || '免密握手成功') + '</span>';
                             } else {
-                                statusDiv.innerHTML = '<span style="color: #ef4444; font-weight: 600;">⚠️ 已添加，但免密测试失败: ' + ((tRes && tRes.message) || '连接超时') + '</span>';
+                                statusDiv.innerHTML = '<span style="color: #ef4444; font-weight: 600;">⚠️ 已添加，但免密测试失败: ' + sanitizeHtml((tRes && tRes.message) || '连接超时') + '</span>';
                             }
                             refreshList();
                         });
@@ -711,7 +726,7 @@ return view.extend({
                     document.getElementById('new-vps-name').value = '';
                     document.getElementById('new-vps-host').value = '';
                 } else {
-                    statusDiv.innerHTML = '<span style="color: #ef4444;">添加失败: ' + ((res && res.message) || '未知错误') + '</span>';
+                    statusDiv.innerHTML = '<span style="color: #ef4444;">添加失败: ' + sanitizeHtml((res && res.message) || '未知错误') + '</span>';
                 }
             });
         }
@@ -842,17 +857,17 @@ return view.extend({
                             callDeployVpsFrps(srv.host, srv.port, srv.user, bPort, tok, wPort).then(res => {
                                 execBtn.disabled = false;
                                 if (res && res.success) {
-                                    statDiv.innerHTML = '<span style="color: #10b981; font-weight: 600;">🎉 部署成功！' + (res.message || '服务端已启动') + '</span>';
+                                    statDiv.innerHTML = '<span style="color: #10b981; font-weight: 600;">🎉 部署成功！' + sanitizeHtml(res.message || '服务端已启动') + '</span>';
                                     setTimeout(() => {
                                         ui.hideModal();
                                         refreshList();
                                     }, 2000);
                                 } else {
-                                    statDiv.innerHTML = '<span style="color: #ef4444; font-weight: 600;">部署遇到错误: ' + ((res && res.message) || '未知失败') + '</span>';
+                                    statDiv.innerHTML = '<span style="color: #ef4444; font-weight: 600;">部署遇到错误: ' + sanitizeHtml((res && res.message) || '未知失败') + '</span>';
                                 }
                             }).catch(err => {
                                 execBtn.disabled = false;
-                                statDiv.innerHTML = '<span style="color: #ef4444;">请求出错: ' + err + '</span>';
+                                statDiv.innerHTML = '<span style="color: #ef4444;">请求出错: ' + sanitizeHtml(err) + '</span>';
                             });
                         }
                     }, '🚀 开始自动部署')
@@ -865,7 +880,7 @@ return view.extend({
         // Actions: Deploy xkcptun (deb) Modal
         function openDeployXkcptunModal(srv) {
             const defaultPort = 9089;
-            const autoKey = '7f7ac683d720e1437019692eadb0b811';
+            const autoKey = generateRandomHex(16);
 
             const modalContent = E('div', { 'style': 'padding: 10px;' }, [
                 E('div', { 'style': 'font-size: 15px; font-weight: 700; margin-bottom: 8px;' }, `在 [${srv.name || srv.host}] 上通过 deb 部署 xkcptun 服务端`),
@@ -938,17 +953,17 @@ return view.extend({
                             callDeployVpsXkcptun(srv.host, srv.port, srv.user, lPort, lKey, lMode, lFec).then(res => {
                                 execBtn.disabled = false;
                                 if (res && res.success) {
-                                    statDiv.innerHTML = '<span style="color: #10b981; font-weight: 600;">🎉 部署成功！' + (res.message || '服务端已启动') + '</span>';
+                                    statDiv.innerHTML = '<span style="color: #10b981; font-weight: 600;">🎉 部署成功！' + sanitizeHtml(res.message || '服务端已启动') + '</span>';
                                     setTimeout(() => {
                                         ui.hideModal();
                                         refreshList();
                                     }, 2000);
                                 } else {
-                                    statDiv.innerHTML = '<span style="color: #ef4444; font-weight: 600;">部署遇到错误: ' + ((res && res.message) || '未知失败') + '</span>';
+                                    statDiv.innerHTML = '<span style="color: #ef4444; font-weight: 600;">部署遇到错误: ' + sanitizeHtml((res && res.message) || '未知失败') + '</span>';
                                 }
                             }).catch(err => {
                                 execBtn.disabled = false;
-                                statDiv.innerHTML = '<span style="color: #ef4444;">请求出错: ' + err + '</span>';
+                                statDiv.innerHTML = '<span style="color: #ef4444;">请求出错: ' + sanitizeHtml(err) + '</span>';
                             });
                         }
                     }, '🚀 一键安装部署 (deb)')
@@ -975,7 +990,7 @@ return view.extend({
                 if (!body) return;
 
                 if (!res || !res.success) {
-                    body.innerHTML = `<div style="color: #ef4444; padding: 10px 0;">❌ 读取远程配置失败: ${(res && res.message) || '无法连接'}</div>`;
+                    body.innerHTML = `<div style="color: #ef4444; padding: 10px 0;">❌ 读取远程配置失败: ${sanitizeHtml((res && res.message) || '无法连接')}</div>`;
                     return;
                 }
 
@@ -1146,17 +1161,17 @@ return view.extend({
                             ).then(uRes => {
                                 execBtn.disabled = false;
                                 if (uRes && uRes.success) {
-                                    statDiv.innerHTML = '<span style="color: #10b981; font-weight: 600;">🎉 ' + (uRes.message || '配置更新并重启成功！') + '</span>';
+                                    statDiv.innerHTML = '<span style="color: #10b981; font-weight: 600;">🎉 ' + sanitizeHtml(uRes.message || '配置更新并重启成功！') + '</span>';
                                     setTimeout(() => {
                                         ui.hideModal();
                                         refreshList();
                                     }, 1800);
                                 } else {
-                                    statDiv.innerHTML = '<span style="color: #ef4444; font-weight: 600;">❌ ' + ((uRes && uRes.message) || '更新失败') + '</span>';
+                                    statDiv.innerHTML = '<span style="color: #ef4444; font-weight: 600;">❌ ' + sanitizeHtml((uRes && uRes.message) || '更新失败') + '</span>';
                                 }
                             }).catch(err => {
                                 execBtn.disabled = false;
-                                statDiv.innerHTML = '<span style="color: #ef4444;">请求出错: ' + err + '</span>';
+                                statDiv.innerHTML = '<span style="color: #ef4444;">请求出错: ' + sanitizeHtml(err) + '</span>';
                             });
                         }
                     }, '🚀 保存配置并平滑重启服务')
@@ -1166,7 +1181,7 @@ return view.extend({
                 formElements.forEach(el => el && body.appendChild(el));
             }).catch(e => {
                 const body = document.getElementById('cfg-modal-body');
-                if (body) body.innerHTML = `<div style="color: #ef4444; padding: 10px 0;">❌ 连接出错: ${e}</div>`;
+                if (body) body.innerHTML = `<div style="color: #ef4444; padding: 10px 0;">❌ 连接出错: ${sanitizeHtml(e)}</div>`;
             });
         }
 
