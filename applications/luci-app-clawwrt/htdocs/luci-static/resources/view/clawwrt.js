@@ -2162,7 +2162,7 @@ return view.extend({
                 E('div', { 'style': 'background: var(--cw-bg-subtle); border: 1px solid var(--cw-border); border-radius: 8px; padding: 10px 14px; margin-bottom: 14px; font-size: 13px; color: var(--cw-text-main);' }, [
                     E('div', { 'style': 'display: flex; justify-content: space-between; margin-bottom: 4px;' }, [
                         E('span', { 'style': 'color: var(--cw-text-muted);' }, '拟切换目标端口：'),
-                        E('code', { 'style': 'font-weight: 700; color: #0284c7;' }, newPort === 'random' ? '系统随机分配可用端口 (50000-60000)' : newPort)
+                        E('code', { 'style': 'font-weight: 700; color: #0284c7;' }, newPort === 'random' ? '系统从规划端口池中随机选取 (默认 29050-29099)' : newPort)
                     ])
                 ]),
                 E('div', { 'style': 'display: flex; gap: 10px;' }, [

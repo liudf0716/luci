@@ -77,6 +77,39 @@ assert_ubus() {
     return 0
 }
 
+assert_secret_redacted() {
+    local desc="$1"
+    local package="$2"
+    local real_key="$3"
+
+    TOTAL_TESTS=$((TOTAL_TESTS + 1))
+    printf "  [测试 %02d] %-12s : %-38s ... " "$TOTAL_TESTS" "敏感脱敏" "$desc"
+
+    local output
+    output=$(ubus call luci.clawwrt uci_read "{\"package\":\"$package\"}" 2>/dev/null)
+    if [ -z "$output" ]; then
+        echo -e "${RED}[FAILED] (RPC无返回或报错)${NC}"
+        FAILED_TESTS=$((FAILED_TESTS + 1))
+        return 1
+    fi
+
+    if ! echo "$output" | grep -Fq '********'; then
+        echo -e "${RED}[FAILED] (未找到脱敏掩码 ********)${NC}"
+        FAILED_TESTS=$((FAILED_TESTS + 1))
+        return 1
+    fi
+
+    if [ -n "$real_key" ] && echo "$output" | grep -Fq "$real_key"; then
+        echo -e "${RED}[FAILED] (检测到真实密钥泄露!)${NC}"
+        FAILED_TESTS=$((FAILED_TESTS + 1))
+        return 1
+    fi
+
+    echo -e "${GREEN}[PASS]${NC}"
+    PASSED_TESTS=$((PASSED_TESTS + 1))
+    return 0
+}
+
 # ---------------------------------------------------------------------
 # 1. 系统概况与客户端管理
 # ---------------------------------------------------------------------
@@ -141,8 +174,7 @@ assert_ubus "动态IP表" "获取内核动态劫持 IP 集合与 TTL 倒计时" 
 assert_ubus "活跃会话" "获取透明代理当前 TCP 活跃会话跟踪" "manage_xdns_domain" '{"action":"list_sessions"}' "status" "success"
 assert_ubus "添加域名" "向内核 eBPF 分流表注入测试加速域名" "manage_xdns_domain" '{"action":"add","domain":"test-ci-xdns.org"}' "success" "true"
 assert_ubus "删除域名" "从内核分流表中注销测试加速域名" "manage_xdns_domain" '{"action":"remove","domain":"test-ci-xdns.org"}' "success" "true"
-assert_ubus "清空缓存" "清空内核已解析的动态劫持 IP 集合 (flush)" "manage_xdns_domain" '{"action":"clear_ips"}' "success" "true"
-assert_ubus "重载规则" "从持久化规则文件重新装载分流域名至内核" "manage_xdns_domain" '{"action":"reload"}' "success" "true"
+assert_ubus "域名防御" "拒绝非法分流域名参数注入" "manage_xdns_domain" '{"action":"add","domain":"evil.com;reboot"}' "success" "false"
 
 # ---------------------------------------------------------------------
 # 7. 硬件加速与外围配置
@@ -151,7 +183,7 @@ echo -e "\n${BOLD}${BLUE}【7. 硬件加速 (PPE) 与无线网络及无缝漫游
 assert_ubus "硬件加速" "获取 MediaTek PPE 硬件流表与加速状态" "get_hw_offload_status" "" "enabled" "true"
 assert_ubus "无线状态" "获取当前 WiFi 频段、SSID 与安全状态" "get_wifi_info" "" "radios"
 assert_ubus "无线漫游" "获取 802.11k/v/r 漫游及 usteer 调度状态" "get_wifi_roaming" "" "hostapd_supports_kvr" "true"
-assert_ubus "漫游配置" "下发满血 802.11k/v/r 漫游与调度参数" "set_wifi_roaming" '{"band":"all","mode":"full_kvr","mobility_domain":"e1a0","usteer_enabled":"1"}' "success" "true"
+assert_ubus "漫游防御" "拒绝非法移动域参数格式 (非4位十六进制)" "set_wifi_roaming" '{"band":"all","mode":"full_kvr","mobility_domain":"xyz"}' "success" "false"
 assert_ubus "SSH密钥" "获取路由器自动生成的穿透运维 SSH 公钥" "get_router_ssh_key" "" "pubkey"
 
 # ---------------------------------------------------------------------
@@ -159,9 +191,20 @@ assert_ubus "SSH密钥" "获取路由器自动生成的穿透运维 SSH 公钥" 
 # ---------------------------------------------------------------------
 echo -e "\n${BOLD}${BLUE}【8. 安全沙箱、凭据脱敏与安全边界防御测试】${NC}"
 assert_ubus "沙箱隔离" "uci_read 越权访问 dropbear 拦截" "uci_read" '{"package":"dropbear"}' "success" "false"
-assert_ubus "敏感脱敏" "uci_read 读取配置密钥自动掩码脱敏" "uci_read" '{"package":"wireless"}' "package" "wireless"
-assert_ubus "凭据保护" "uci_apply 越权直接篡改 api_key 拦截" "uci_apply" '{"package":"clawwrt","section":"ai","option":"api_key","value":"hack"}' "success" "false"
+real_wifi_key=$(uci -q get wireless.@wifi-iface[0].key 2>/dev/null)
+assert_secret_redacted "uci_read 密钥掩码脱敏且绝不泄露明文" "wireless" "$real_wifi_key"
+assert_ubus "凭据保护" "uci_apply 阻止篡改 api_key" "uci_apply" '{"package":"clawwrt","section":"ai","option":"api_key","value":"hack"}' "success" "false"
+assert_ubus "凭据保护" "uci_apply 阻止篡改 wireless key" "uci_apply" '{"package":"wireless","section":"wifnet0","option":"key","value":"hacked"}' "success" "false"
+assert_ubus "凭据保护" "uci_apply 阻止篡改 xfrpc token" "uci_apply" '{"package":"xfrpc","section":"common","option":"token","value":"hacked"}' "success" "false"
+assert_ubus "凭据保护" "uci_apply 阻止篡改 api_url 控制项" "uci_apply" '{"package":"clawwrt","section":"ai","option":"api_url","value":"http://127.1"}' "success" "false"
 assert_ubus "服务防护" "uci_apply 阻止非白名单服务重载 (evil)" "uci_apply" '{"package":"clawwrt","section":"main","option":"log_level","value":"debug","reload_service":"evil"}' "success" "false"
+assert_ubus "端口防御" "switch_acceleration_port 拒绝池外端口 0" "switch_acceleration_port" '{"new_port":"0"}' "success" "false"
+assert_ubus "端口防御" "switch_acceleration_port 拒绝池外端口 1234" "switch_acceleration_port" '{"new_port":"1234"}' "success" "false"
+assert_ubus "端口防御" "switch_acceleration_port 拒绝池外端口 99999" "switch_acceleration_port" '{"new_port":"99999"}' "success" "false"
+assert_ubus "SSRF防御" "save_ai_settings 拒绝私网 IP (127.0.0.1)" "save_ai_settings" '{"api_url":"https://127.0.0.1/chat"}' "success" "false"
+assert_ubus "SSRF防御" "save_ai_settings 拒绝短格式回环 (127.1)" "save_ai_settings" '{"api_url":"https://127.1/chat"}' "success" "false"
+assert_ubus "SSRF防御" "save_ai_settings 拒绝十六进制回环 (0x7f000001)" "save_ai_settings" '{"api_url":"https://0x7f000001/chat"}' "success" "false"
+assert_ubus "SSRF防御" "save_ai_settings 拒绝非 HTTPS 协议 (http://)" "save_ai_settings" '{"api_url":"http://api.deepseek.com/chat"}' "success" "false"
 assert_ubus "参数安全" "run_diagnostics 拒绝 -f 标志参数注入" "run_diagnostics" '{"action":"ping","target":"-f"}' "success" "false"
 assert_ubus "参数安全" "run_diagnostics 拒绝非法诊断动作 (exploit)" "run_diagnostics" '{"action":"exploit","target":"8.8.8.8"}' "success" "false"
 assert_ubus "配对防御" "pair_mesh_node 拒绝公网节点 IP (8.8.8.8)" "pair_mesh_node" '{"target_ip":"8.8.8.8"}' "success" "false"

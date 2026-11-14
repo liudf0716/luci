@@ -41,6 +41,62 @@ is_private_ipv4() {
     return 1
 }
 
+is_private_or_special_ip() {
+    local ip="$1"
+    case "$ip" in
+        ""|0.*|127.*|10.*|192.168.*|169.254.*|::1|::) return 0 ;;
+        172.1[6-9].*|172.2[0-9].*|172.3[01].*) return 0 ;;
+        fc*|fd*|fe8*|fe9*|fea*|feb*|ff*|::ffff:*) return 0 ;;
+    esac
+    if echo "$ip" | grep -Eq '^100\.(6[4-9]|[7-9][0-9]|1[01][0-9]|12[0-7])\.'; then
+        return 0
+    fi
+    if echo "$ip" | grep -Eq '^(22[4-9]|23[0-9]|24[0-9]|25[0-5])\.'; then
+        return 0
+    fi
+    return 1
+}
+
+validate_api_url() {
+    local url="$1"
+    case "$url" in
+        *@*|"") return 1 ;;
+        https://*) ;;
+        *) return 1 ;;
+    esac
+
+    local rest="${url#https://}"
+    local hostport="${rest%%/*}"
+    local host=""
+
+    case "$hostport" in
+        \[*\]*)
+            host="${hostport#\[}"
+            host="${host%%\]*}"
+            ;;
+        *:*)
+            host="${hostport%%:*}"
+            ;;
+        *)
+            host="$hostport"
+            ;;
+    esac
+
+    [ -z "$host" ] && return 1
+
+    local resolved_ips
+    resolved_ips=$(resolveip -t 2 "$host" 2>/dev/null)
+    [ -z "$resolved_ips" ] && return 1
+
+    local ip
+    for ip in $resolved_ips; do
+        if is_private_or_special_ip "$ip"; then
+            return 1
+        fi
+    done
+    return 0
+}
+
 is_token() {
     [ -z "$1" ] && return 0
     echo "$1" | grep -Eq '^[A-Za-z0-9_.:@+=/-]{1,255}$'
@@ -611,10 +667,10 @@ case "$1" in
                     ;;
             esac
 
-            # Forbid editing sensitive credentials via generic uci_apply
+            # Forbid editing sensitive credentials or dangerous control keys via generic uci_apply
             case "$option" in
-                password|secret|api_key|auth_token)
-                    claw_fail "Direct mutation of credential option '$option' is forbidden"
+                key|password|token|secret|api_key|psk|auth_key|auth_token|api_url|*_key|*_secret|*_token|*_password|*_psk)
+                    claw_fail "Direct mutation of credential/restricted option '$option' is forbidden"
                     return
                     ;;
             esac
@@ -699,6 +755,11 @@ case "$1" in
             
             local old_key=$(uci -q get clawwrt.ai.api_key)
             [ -z "$api_key" ] && api_key="$old_key"
+
+            if [ -n "$api_url" ] && ! validate_api_url "$api_url"; then
+                claw_fail "无效或受限的 API URL，仅支持公网 HTTPS 接口服务"
+                return
+            fi
             
             uci -q delete clawwrt.ai
             uci -q set clawwrt.ai=ai
@@ -731,17 +792,10 @@ case "$1" in
             local api_url=$(uci -q get clawwrt.ai.api_url || echo "https://api.deepseek.com/chat/completions")
             local temp=$(uci -q get clawwrt.ai.temperature || echo "0.3")
 
-            # Validate api_url: must start with https:// and not point to metadata/localhost
-            case "$api_url" in
-                https://*)
-                    if echo "$api_url" | grep -Eq 'https://(127\.|169\.254\.|10\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[01])\.|localhost)'; then
-                        api_url="https://api.deepseek.com/chat/completions"
-                    fi
-                    ;;
-                *)
-                    api_url="https://api.deepseek.com/chat/completions"
-                    ;;
-            esac
+            # Validate api_url: must be a valid public HTTPS endpoint, strictly blocking private/loopback/cloud-metadata addresses
+            if ! validate_api_url "$api_url"; then
+                api_url="https://api.deepseek.com/chat/completions"
+            fi
 
             # Sanitize model and temp
             echo "$model" | grep -Eq '^[A-Za-z0-9_.-]{1,64}$' || model="deepseek-flash"
@@ -3974,8 +4028,8 @@ fi
             fec="${fec:-1}"
 
             if [ -z "$key" ]; then
-                key=$(hexdump -vn 16 -e '16/1 "%02x"' /dev/urandom 2>/dev/null || tr -dc 'a-f0-9' </dev/urandom | head -c 32)
-                [ -z "$key" ] && key="7f7ac683d720e1437019692eadb0b811"
+                key=$(hexdump -vn 16 -e '16/1 "%02x"' /dev/urandom 2>/dev/null || tr -dc 'a-f0-9' </dev/urandom 2>/dev/null | head -c 32)
+                [ -z "$key" ] && { claw_fail "未能安全生成随机认证密钥，请手动指定 key"; return; }
             fi
 
             is_host "$vps_ip" || { claw_fail "VPS 地址无效"; return; }
@@ -5364,15 +5418,15 @@ fi
                 new_port=$((hop_start + (rand_val % span)))
             fi
 
-            echo "$new_port" | grep -Eq '^[0-9]{1,5}$' || {
+            if ! echo "$new_port" | grep -Eq '^[0-9]{1,5}$' || [ "$new_port" -lt "$hop_start" ] || [ "$new_port" -gt "$hop_end" ]; then
                 json_init
                 json_add_object "result"
                 json_add_boolean "success" 0
-                json_add_string "message" "目标端口无效: $new_port"
+                json_add_string "message" "目标端口无效或超出可用端口跳跃池范围 (${hop_start}~${hop_end}): $new_port"
                 json_close_object
                 json_dump
                 return
-            }
+            fi
 
             local cur_port=$(uci -q get xkcptun.client.remote_port || echo 9089)
             uci -q set xkcptun.client.remote_port="$new_port"
@@ -5442,6 +5496,8 @@ EOF
                 add)
                     if [ -z "$domain" ]; then
                         msg="域名不能为空"
+                    elif ! echo "$domain" | grep -Eq '^[A-Za-z0-9]([A-Za-z0-9.-]*[A-Za-z0-9])?$'; then
+                        msg="域名格式无效: $domain"
                     elif command -v /usr/bin/xdns-ctl >/dev/null 2>&1; then
                         local out=$(/usr/bin/xdns-ctl add-domain "$domain" 2>&1)
                         success=1
@@ -5455,6 +5511,8 @@ EOF
                 remove|del)
                     if [ -z "$domain" ]; then
                         msg="域名不能为空"
+                    elif ! echo "$domain" | grep -Eq '^[A-Za-z0-9]([A-Za-z0-9.-]*[A-Za-z0-9])?$'; then
+                        msg="域名格式无效: $domain"
                     elif command -v /usr/bin/xdns-ctl >/dev/null 2>&1; then
                         local out=$(/usr/bin/xdns-ctl del-domain "$domain" 2>&1)
                         success=1
