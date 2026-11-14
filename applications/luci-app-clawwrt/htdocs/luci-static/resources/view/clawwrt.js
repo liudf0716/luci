@@ -259,7 +259,7 @@ const callUninstallVpsService = rpc.declare({
 const callGetVpsServiceConfig = rpc.declare({
     object: 'luci.clawwrt',
     method: 'get_vps_service_config',
-    params: [ 'id', 'name', 'host', 'port', 'user', 'service' ],
+    params: [ 'id', 'name', 'host', 'port', 'user', 'service', 'vps_target' ],
     expect: { result: {} }
 });
 
@@ -871,14 +871,13 @@ const routerTools = [
         type: 'function',
         function: {
             name: 'get_vps_service_config',
-            description: '远程通过 SSH 免密通道查询受信任 Linux VPS (如 bwg) 上运行的服务端配置与状态（支持 frps 内网穿透服务端 或 xkcptun 网络加速服务端）。返回服务端当前运行状态(running/stopped)、配置文件路径、当前监听端口(bindPort/listen_port)、认证Token或密钥、vhostHTTPPort 网页穿透端口、端口放行范围(allowPorts)以及原始配置文件文本。在用户询问服务器配置或提议修改前，先调用此接口获取事实数据',
+            description: '远程通过 SSH 免密通道查询受信任 Linux VPS 上运行的服务端配置与状态（支持 xkcptun 网络加速服务端 或 frps 内网穿透服务端）。返回服务端当前运行状态(running/stopped)、配置文件路径、当前监听端口(bindPort/listen_port)、认证Token或密钥、vhostHTTPPort 网页穿透端口、端口放行范围(allowPorts)以及原始配置文件文本。在用户询问服务器配置或提议修改前，先调用此接口获取事实数据',
             parameters: {
                 type: 'object',
                 properties: {
-                    vps_target: { type: 'string', description: '目标 VPS 的别名（如 bwg）或公网 IP 地址' },
-                    service: { type: 'string', enum: ['frps', 'xkcptun'], description: '要查询的服务类型，默认为 frps' }
-                },
-                required: ['vps_target']
+                    vps_target: { type: 'string', description: '目标 VPS 的别名或公网 IP 地址。可省略，省略时将自动匹配当前服务绑定的 VPS' },
+                    service: { type: 'string', enum: ['xkcptun', 'frps'], description: '要查询的服务类型，默认为 xkcptun' }
+                }
             }
         }
     },
@@ -886,12 +885,12 @@ const routerTools = [
         type: 'function',
         function: {
             name: 'propose_vps_service_config',
-            description: '向用户提议修改远程受信任 Linux VPS (如 bwg) 上的服务端配置文件（如修改 frps 穿透服务端的 bindPort、auth.token、vhostHTTPPort、vhostHTTPSPort、allowPorts，或修改 xkcptun 加速服务端的 listen_port、key、mode、fec）。前端将渲染原配置与新配置的可视化对比预览卡片，由用户在界面点击确认授权后通过免密 SSH 写入并平滑重启服务，启动失败会自动回滚原配置并报警，若改动了端口或密钥还会自动同步路由器本地客户端。严禁私自直接修改，必须生成卡片供用户确认',
+            description: '向用户提议修改远程受信任 Linux VPS 上的服务端配置文件（如修改 frps 穿透服务端的 bindPort、auth.token、vhostHTTPPort、vhostHTTPSPort、allowPorts，或修改 xkcptun 加速服务端的 listen_port、key、mode、fec）。前端将渲染原配置与新配置的可视化对比预览卡片，由用户在界面点击确认授权后通过免密 SSH 写入并平滑重启服务，启动失败会自动回滚原配置并报警，若改动了端口或密钥还会自动同步路由器本地客户端。严禁私自直接修改，必须生成卡片供用户确认',
             parameters: {
                 type: 'object',
                 properties: {
-                    vps_target: { type: 'string', description: '目标 VPS 的别名（如 bwg）或公网 IP 地址' },
-                    service: { type: 'string', enum: ['frps', 'xkcptun'], description: '要修改的服务类型，默认为 frps' },
+                    vps_target: { type: 'string', description: '目标 VPS 的别名或公网 IP 地址。可省略，省略时将自动匹配当前服务绑定的 VPS' },
+                    service: { type: 'string', enum: ['xkcptun', 'frps'], description: '要修改的服务类型，默认为 xkcptun' },
                     bind_port: { type: 'string', description: '【frps】新的主监听端口，默认建议 7001' },
                     token: { type: 'string', description: '【frps】新的认证 Token 密钥' },
                     vhost_http_port: { type: 'string', description: '【frps】HTTP 域名反代虚拟主机端口，如 80 或 8080' },
@@ -904,7 +903,7 @@ const routerTools = [
                     raw_config: { type: 'string', description: '可选，自定义的完整 TOML 或 JSON 配置文件内容' },
                     explanation: { type: 'string', description: '向用户通俗解释为什么要修改这些配置项，以及修改后的预期效果' }
                 },
-                required: ['vps_target', 'explanation']
+                required: ['explanation']
             }
         }
     }
@@ -919,7 +918,7 @@ const systemPrompt = `你是一个专业的 OpenWrt / chaWrt 路由器专属 AI 
 1. 【只读操作自主执行】：当用户询问是否能正常上网、网络是否卡顿、连了哪些设备、或者排查故障时，自主调用工具获取事实数据，结论先行，不要胡乱猜测。
 2. 【配置修改强安全原则】：凡涉及修改路由器配置、WiFi、流控限速、开关硬件加速或在 VPS 上部署/卸载/修改服务端的意图，必须通过提议工具（propose_uci_change, propose_service_config, propose_wifi_config, propose_qos_limit, propose_hw_offload, propose_vps_penetration, propose_vps_xkcptun, propose_vps_service_uninstall, propose_vps_service_config）生成提议卡片，向用户通俗解释修改目的与影响，由用户在界面中点击确认授权。严禁在未经用户确认时宣称已完成修改！
 3. 【核心扩展服务与流控能力】：
-   - 远程 VPS 服务端配置管理与平滑热重载：通过 get_vps_service_config 读取云端 Linux VPS (如 bwg) 上的 frps 穿透服务端或 xkcptun 加速服务端真实配置（包括 bindPort 监听端口、auth.token、vhostHTTPPort 网页反代端口、allowPorts 端口范围、listen_port 等）；通过 propose_vps_service_config 向用户提议修改参数并生成可视化对比卡片，用户点击确认后自动通过免密通道写入并重启服务，失败自动回滚；
+   - 远程 VPS 服务端配置管理与平滑热重载：通过 get_vps_service_config 读取云端 Linux VPS 上的 frps 穿透服务端或 xkcptun 加速服务端真实配置（包括 bindPort 监听端口、auth.token、vhostHTTPPort 网页反代端口、allowPorts 端口范围、listen_port 等，若未指定服务器则自动识别当前服务绑定的 VPS）；通过 propose_vps_service_config 向用户提议修改参数并生成可视化对比卡片，用户点击确认后自动通过免密通道写入并重启服务，失败自动回滚；
    - 内网穿透与 VPS 自动化部署 (xfrpc & frps)：纯 C 高性能穿透，支持常规开启/关闭与参数配置；特别支持通过 get_penetration_status 深度检测穿透真实运行状况（绝不能只看 xfrpc 进程是否运行，必须检查 xfrpc 是否真正与远端 frps 建立了 ESTABLISHED 状态的连接、是否发生握手超时或鉴权失败，并列出各代理规则的公网访问 URL）；支持通过 manage_penetration_proxy 管理具体端口映射规则（查询列表 action: "list"、新增/修改 TCP/UDP/HTTP/HTTPS/SOCKS5 规则 action: "add"、启用规则 action: "enable"、临时禁用规则 action: "disable"、删除规则 action: "remove"，支持自定义域名 custom_domains 与远程子域名 subdomain，支持启用加密与压缩）；特别支持通过 SSH 免密公钥方式在用户云服务器 (VPS) 上全自动部署与配置 frps 服务端 (propose_vps_penetration) 与查询路由器公钥 (get_router_ssh_key)，实现双端一键拉通；
    - 硬件加速 (MediaTek PPE / Flow Offloading)：支持实时查询硬件加速状态 (get_hw_offload_status)，支持提议开启或关闭硬件加速 (propose_hw_offload)；基于芯片级 PPE 硬件网络处理单元，千兆转发 CPU 占用接近 0%，并结合 chaWrt 独家 Selective PPE 机制与 eBPF 智能流控无缝协同；
    - chaWrt eBPF 智能流控与 DPI (aw-bpf)：基于 Linux 内核 TC-eBPF 硬件级调度与 L7 深度报文检测。支持实时查看局域网各设备上下行速率（以 Mbps 及 MB/s 双单位展示）、MAC 地址、主机名、累计总流量、限速状态与定时生效时段 (get_qos_status)；查询 L7 应用协议与服务的实时流速 Top 10 排行榜及高频域名 (get_l7_top)；对指定终端设备（支持按 IP、MAC 或 "all" 全网设备）设置或解除流控限速（输入 0 代表解除限速），支持灵活配置定时生效时段 (propose_qos_limit)；
@@ -938,11 +937,11 @@ const systemPrompt = `你是一个专业的 OpenWrt / chaWrt 路由器专属 AI 
    - 当用户提出对设备进行限速、调整限速或解除限速时，主动调用 propose_qos_limit 生成流控确认卡片（支持 target 为 IP、MAC 或 "all"，支持限制下行/上行带宽 dl_mbps/ul_mbps，支持定时时段）；
    - 当用户询问内网穿透状态、穿透是否正常、xfrpc 是否连上了服务端、测试穿透等问题时，主动调用 get_penetration_status 获取全量事实数据，严禁仅看进程存在就草率得出正常结论！必须向用户详细汇报：1. xfrpc 客户端进程运行状态；2. 与远端 frps 服务端的真实套接字连接状态 (ESTABLISHED / SYN_SENT 握手超时 / 断开)；3. 最新日志中的异常或诊断建议；4. 各映射规则的外网访问直达链接；
    - 当用户提出希望在自己的 VPS 上配置/部署内网穿透服务端时，主动调用 propose_vps_penetration 生成免密向导卡片（参数包含 vps_ip, vps_user, vps_port, remote_web_port），引导用户在 VPS 终端执行一行授权命令后全自动一键部署；
-   - 当用户提出希望在自己的 VPS 上配置/安装/部署网络加速服务端（xkcptun server）时，若指定了服务器名称（如 bwg），必须先调用 get_vps_servers 获取真实 host 与特定端口（如 27334），再调用 propose_vps_xkcptun 生成免密向导卡片（参数包含 vps_ip, vps_user, vps_port, listen_port, mode），引导用户在 VPS 终端执行授权后全自动通过 deb 包一键安装并自动配置路由器客户端连通；明确告知目标系统必须为 Ubuntu 或 Debian（基于 deb 安装包）；
-   - 当用户提出希望在远端 VPS 上删除、卸载或清理加速服务端（xkcptun server）或穿透服务端（frps）时，若指定了服务器名称（如 bwg），先调用 get_vps_servers 获取真实 host，再主动调用 propose_vps_service_uninstall 生成卸载确认卡片（参数包含 vps_target 如 'bwg' 或 IP、service_type 为 'xkcptun' 或 'frps'），严禁私自宣称已删除，必须生成卡片供用户点击确认执行；
-   - 当用户提出查看或修改远端服务器配置（如 bwg 上的 frps 或 xkcptun 参数，如 bindPort, token, vhostHTTPPort, allowPorts 等）时：若用户未指定当前配置，必须先主动调用 get_vps_service_config 获取当前真实配置！若用户提出修改需求，调用 propose_vps_service_config 生成包含前后参数高亮对比的提议卡片！严禁回复“我没有修改服务端配置的工具”，小茶助手现已完全支持通过 SSH 免密通道精细化修改并平滑重启远端服务！
+   - 当用户提出希望在自己的 VPS 上配置/安装/部署网络加速服务端（xkcptun server）时，若指定了服务器别名或 IP，先调用 get_vps_servers 获取真实 host 与特定端口，再调用 propose_vps_xkcptun 生成免密向导卡片（参数包含 vps_ip, vps_user, vps_port, listen_port, mode），引导用户在 VPS 终端执行授权后全自动通过 deb 包一键安装并自动配置路由器客户端连通；明确告知目标系统必须为 Ubuntu 或 Debian（基于 deb 安装包）；
+   - 当用户提出希望在远端 VPS 上删除、卸载或清理加速服务端（xkcptun server）或穿透服务端（frps）时，若指定了服务器别名或 IP，先调用 get_vps_servers 获取真实 host，再主动调用 propose_vps_service_uninstall 生成卸载确认卡片（参数包含 vps_target 或 IP、service_type 为 'xkcptun' 或 'frps'），严禁私自宣称已删除，必须生成卡片供用户点击确认执行；
+   - 当用户提出查看或修改远端服务器配置（如 frps 或 xkcptun 参数，如 bindPort, token, vhostHTTPPort, allowPorts, listen_port 等）时：若用户未指定当前配置，必须先主动调用 get_vps_service_config 获取当前真实配置！若用户提出修改需求，调用 propose_vps_service_config 生成包含前后参数高亮对比的提议卡片！严禁回复“我没有修改服务端配置的工具”，小茶助手现已完全支持通过 SSH 免密通道精细化修改并平滑重启远端服务；
    - 【极其重要的服务器配置与系统限制准则】：
-     ① 当用户提到在某台服务器（如 "bwg" 或某名称）上安装/部署/卸载/修改服务（如 xkcptun 或 frps）时，你必须先主动调用 get_vps_servers 查询已纳管服务器列表！从返回结果中查阅该服务器的真实公网 IP (host)、特定的 SSH 端口 (port，例如 bwg 的 27334 端口而非默认的 22 端口) 与用户名 (user)，然后再将精确的真实 IP、端口和用户名填入 propose_vps_xkcptun / propose_vps_penetration / propose_vps_service_uninstall / propose_vps_service_config 工具参数中！严禁在未查询时盲目使用默认的 22 端口或占位 IP！
+     ① 当用户提到在某台服务器上安装/部署/卸载/修改服务（如 xkcptun 或 frps）时，你必须先主动调用 get_vps_servers 查询已纳管服务器列表！从返回结果中查阅该服务器的真实公网 IP (host)、特定的 SSH 端口 (port，例如非默认的 22 端口) 与用户名 (user)，然后再将精确的真实 IP、端口和用户名填入 propose_vps_xkcptun / propose_vps_penetration / propose_vps_service_uninstall / propose_vps_service_config 工具参数中！严禁在未查询时盲目使用默认的 22 端口或占位 IP！若用户未指定服务器，直接调用 get_vps_service_config 将自动匹配当前服务绑定的 VPS；
      ② 当前 xkcptun 服务端通过官方 deb 软件包进行自动化安装部署，明确限制目标服务器操作系统必须为 Ubuntu 或 Debian（支持 deb/dpkg 软件包）。在向用户解释提议卡片时，必须明确告知系统要求为 Ubuntu / Debian。
    - 当用户询问网络加速状态、节点延迟、KCP 连接或加速隧道时，调用 get_service_detail('xkcptun') 或 manage_xkcptun_tunnel('list')；
    - 当用户询问或需要管理加速隧道时，调用 manage_xkcptun_tunnel（支持 list, add, remove, enable, disable）；
@@ -4693,9 +4692,9 @@ return view.extend({
                                 appendVpsUninstallCard(fnArgs);
                                 toolResult = { status: 'proposed_to_user', message: 'VPS service uninstallation card rendered in UI. Awaiting user authorization and execution.' };
                             } else if (fnName === 'get_vps_service_config') {
-                                const vTarget = fnArgs.vps_target || fnArgs.host || fnArgs.name;
-                                const vSvc = fnArgs.service || 'frps';
-                                toolResult = await callGetVpsServiceConfig(null, vTarget, vTarget, null, null, vSvc);
+                                const vTarget = fnArgs.vps_target || fnArgs.host || fnArgs.name || '';
+                                const vSvc = fnArgs.service || 'xkcptun';
+                                toolResult = await callGetVpsServiceConfig('', vTarget, '', '', '', vSvc, vTarget);
                             } else if (fnName === 'propose_vps_service_config') {
                                 appendVpsServiceConfigCard(fnArgs);
                                 toolResult = { status: 'proposed_to_user', message: 'VPS service configuration update card rendered in UI. Awaiting user authorization and execution.' };

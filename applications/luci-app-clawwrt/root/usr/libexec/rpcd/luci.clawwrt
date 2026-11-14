@@ -220,6 +220,7 @@ case "$1" in
             json_add_string "port"
             json_add_string "user"
             json_add_string "service"
+            json_add_string "vps_target"
         json_close_object
         json_add_object "get_vps_service_config"
             json_add_string "id"
@@ -228,6 +229,7 @@ case "$1" in
             json_add_string "port"
             json_add_string "user"
             json_add_string "service"
+            json_add_string "vps_target"
         json_close_object
         json_add_object "update_vps_service_config"
             json_add_string "id"
@@ -236,6 +238,7 @@ case "$1" in
             json_add_string "port"
             json_add_string "user"
             json_add_string "service"
+            json_add_string "vps_target"
             json_add_string "bind_port"
             json_add_string "token"
             json_add_string "vhost_http_port"
@@ -4156,6 +4159,88 @@ fi
             json_dump
         }
 
+        resolve_vps_details() {
+            [ -z "$name" ] && [ -n "$vps_target" ] && name="$vps_target"
+
+            # 1. If id given, fetch from uci clawwrt
+            if [ -n "$id" ]; then
+                config_load clawwrt
+                config_get cfg_host "$id" host ""
+                config_get cfg_port "$id" port ""
+                config_get cfg_user "$id" user ""
+                config_get cfg_name "$id" name "$id"
+                [ -n "$cfg_host" ] && host="$cfg_host"
+                [ -z "$port" ] && port="$cfg_port"
+                [ -z "$user" ] && user="$cfg_user"
+                [ -z "$name" ] && name="$cfg_name"
+            fi
+
+            # 2. Match name, id, host, or vps_target against configured VPS sections in clawwrt
+            local search_key="${name:-$id}"
+            [ -z "$search_key" ] && search_key="$host"
+            [ -z "$search_key" ] && search_key="$vps_target"
+
+            if [ -n "$search_key" ]; then
+                for sid in $(uci -q show clawwrt | grep '=vps' | cut -d. -f2 | cut -d= -f1); do
+                    local s_name=$(uci -q get clawwrt.${sid}.name)
+                    local s_host=$(uci -q get clawwrt.${sid}.host)
+                    if [ "$sid" = "$search_key" ] || [ "$s_name" = "$search_key" ] || [ "$s_host" = "$search_key" ]; then
+                        id="$sid"
+                        name="${s_name:-$sid}"
+                        host="$s_host"
+                        [ -z "$port" ] && port=$(uci -q get clawwrt.${sid}.port)
+                        [ -z "$user" ] && user=$(uci -q get clawwrt.${sid}.user)
+                        break
+                    fi
+                done
+            fi
+
+            # 3. If service is xkcptun and host is still empty, auto-resolve from xkcptun.client.remote_addr
+            if [ -z "$host" ] && [ "$service" = "xkcptun" ] && [ -n "$raw_service_set" ]; then
+                local x_remote=$(uci -q get xkcptun.client.remote_addr)
+                if [ -n "$x_remote" ]; then
+                    for sid in $(uci -q show clawwrt | grep '=vps' | cut -d. -f2 | cut -d= -f1); do
+                        local s_name=$(uci -q get clawwrt.${sid}.name)
+                        local s_host=$(uci -q get clawwrt.${sid}.host)
+                        if [ "$s_host" = "$x_remote" ]; then
+                            id="$sid"
+                            name="${s_name:-$sid}"
+                            host="$s_host"
+                            [ -z "$port" ] && port=$(uci -q get clawwrt.${sid}.port)
+                            [ -z "$user" ] && user=$(uci -q get clawwrt.${sid}.user)
+                            break
+                        fi
+                    done
+                    [ -z "$host" ] && host="$x_remote"
+                fi
+            elif [ -z "$host" ] && [ "$service" = "frps" ] && [ -n "$raw_service_set" ]; then
+                local f_remote=$(uci -q get xfrpc.main.server_addr || uci -q get xfrpc.common.server_addr)
+                if [ -n "$f_remote" ]; then
+                    for sid in $(uci -q show clawwrt | grep '=vps' | cut -d. -f2 | cut -d= -f1); do
+                        local s_name=$(uci -q get clawwrt.${sid}.name)
+                        local s_host=$(uci -q get clawwrt.${sid}.host)
+                        if [ "$s_host" = "$f_remote" ]; then
+                            id="$sid"
+                            name="${s_name:-$sid}"
+                            host="$s_host"
+                            [ -z "$port" ] && port=$(uci -q get clawwrt.${sid}.port)
+                            [ -z "$user" ] && user=$(uci -q get clawwrt.${sid}.user)
+                            break
+                        fi
+                    done
+                    [ -z "$host" ] && host="$f_remote"
+                fi
+            fi
+
+            # 4. Fallback if search_key was an explicit IP/hostname not present in clawwrt
+            if [ -z "$host" ] && [ -n "$name" ]; then
+                host="$name"
+            fi
+
+            port="${port:-22}"
+            user="${user:-root}"
+        }
+
         uninstall_vps_service() {
             read -r input
             json_load "$input"
@@ -4165,45 +4250,13 @@ fi
             json_get_var port "port"
             json_get_var user "user"
             json_get_var service "service"
+            json_get_var vps_target "vps_target"
 
+            local raw_service_set=""
+            [ -n "$service" ] && raw_service_set="1"
             service="${service:-xkcptun}"
 
-            # If id provided, load from config
-            if [ -n "$id" ]; then
-                config_load clawwrt
-                config_get cfg_host "$id" host ""
-                config_get cfg_port "$id" port "22"
-                config_get cfg_user "$id" user "root"
-                config_get cfg_name "$id" name "$id"
-                [ -n "$cfg_host" ] && host="$cfg_host"
-                [ -n "$cfg_port" ] && port="$cfg_port"
-                [ -n "$cfg_user" ] && user="$cfg_user"
-                [ -n "$cfg_name" ] && name="$cfg_name"
-            fi
-
-            # If host still empty, search by name or match against all VPS entries
-            if [ -z "$host" ]; then
-                local search_key="${name:-$id}"
-                if [ -n "$search_key" ]; then
-                    for sid in $(uci -q show clawwrt | grep '=vps' | cut -d. -f2 | cut -d= -f1); do
-                        local s_name=$(uci -q get clawwrt.${sid}.name)
-                        local s_host=$(uci -q get clawwrt.${sid}.host)
-                        if [ "$s_name" = "$search_key" ] || [ "$s_host" = "$search_key" ]; then
-                            id="$sid"
-                            name="$s_name"
-                            host="$s_host"
-                            port=$(uci -q get clawwrt.${sid}.port || echo "22")
-                            user=$(uci -q get clawwrt.${sid}.user || echo "root")
-                            break
-                        fi
-                    done
-                fi
-            fi
-
-            # Fallback if search_key looks like an IP or hostname
-            if [ -z "$host" ] && [ -n "$name" ]; then
-                host="$name"
-            fi
+            resolve_vps_details
 
             [ -z "$host" ] && {
                 json_init
@@ -4214,9 +4267,6 @@ fi
                 json_dump
                 return
             }
-
-            port="${port:-22}"
-            user="${user:-root}"
 
             local key_file="/etc/clawwrt/id_dropbear"
             if [ ! -f "$key_file" ]; then
@@ -4357,42 +4407,13 @@ echo 'FRPS_UNINSTALL_OK'
             json_get_var port "port"
             json_get_var user "user"
             json_get_var service "service"
+            json_get_var vps_target "vps_target"
 
+            local raw_service_set=""
+            [ -n "$service" ] && raw_service_set="1"
             service="${service:-frps}"
 
-            if [ -n "$id" ]; then
-                config_load clawwrt
-                config_get cfg_host "$id" host ""
-                config_get cfg_port "$id" port "22"
-                config_get cfg_user "$id" user "root"
-                config_get cfg_name "$id" name "$id"
-                [ -n "$cfg_host" ] && host="$cfg_host"
-                [ -n "$cfg_port" ] && port="$cfg_port"
-                [ -n "$cfg_user" ] && user="$cfg_user"
-                [ -n "$cfg_name" ] && name="$cfg_name"
-            fi
-
-            if [ -z "$host" ]; then
-                local search_key="${name:-$id}"
-                if [ -n "$search_key" ]; then
-                    for sid in $(uci -q show clawwrt | grep '=vps' | cut -d. -f2 | cut -d= -f1); do
-                        local s_name=$(uci -q get clawwrt.${sid}.name)
-                        local s_host=$(uci -q get clawwrt.${sid}.host)
-                        if [ "$s_name" = "$search_key" ] || [ "$s_host" = "$search_key" ]; then
-                            id="$sid"
-                            name="$s_name"
-                            host="$s_host"
-                            port=$(uci -q get clawwrt.${sid}.port || echo "22")
-                            user=$(uci -q get clawwrt.${sid}.user || echo "root")
-                            break
-                        fi
-                    done
-                fi
-            fi
-
-            if [ -z "$host" ] && [ -n "$name" ]; then
-                host="$name"
-            fi
+            resolve_vps_details
 
             [ -z "$host" ] && {
                 json_init
@@ -4403,9 +4424,6 @@ echo 'FRPS_UNINSTALL_OK'
                 json_dump
                 return
             }
-
-            port="${port:-22}"
-            user="${user:-root}"
 
             local key_file="/etc/clawwrt/id_dropbear"
             if [ ! -f "$key_file" ]; then
@@ -4549,6 +4567,7 @@ echo \"\$RAW_CFG\"
             json_get_var port "port"
             json_get_var user "user"
             json_get_var service "service"
+            json_get_var vps_target "vps_target"
             json_get_var bind_port "bind_port"
             json_get_var token "token"
             json_get_var vhost_http_port "vhost_http_port"
@@ -4560,41 +4579,11 @@ echo \"\$RAW_CFG\"
             json_get_var fec "fec"
             json_get_var raw_config "raw_config"
 
+            local raw_service_set=""
+            [ -n "$service" ] && raw_service_set="1"
             service="${service:-frps}"
 
-            if [ -n "$id" ]; then
-                config_load clawwrt
-                config_get cfg_host "$id" host ""
-                config_get cfg_port "$id" port "22"
-                config_get cfg_user "$id" user "root"
-                config_get cfg_name "$id" name "$id"
-                [ -n "$cfg_host" ] && host="$cfg_host"
-                [ -n "$cfg_port" ] && port="$cfg_port"
-                [ -n "$cfg_user" ] && user="$cfg_user"
-                [ -n "$cfg_name" ] && name="$cfg_name"
-            fi
-
-            if [ -z "$host" ]; then
-                local search_key="${name:-$id}"
-                if [ -n "$search_key" ]; then
-                    for sid in $(uci -q show clawwrt | grep '=vps' | cut -d. -f2 | cut -d= -f1); do
-                        local s_name=$(uci -q get clawwrt.${sid}.name)
-                        local s_host=$(uci -q get clawwrt.${sid}.host)
-                        if [ "$s_name" = "$search_key" ] || [ "$s_host" = "$search_key" ]; then
-                            id="$sid"
-                            name="$s_name"
-                            host="$s_host"
-                            port=$(uci -q get clawwrt.${sid}.port || echo "22")
-                            user=$(uci -q get clawwrt.${sid}.user || echo "root")
-                            break
-                        fi
-                    done
-                fi
-            fi
-
-            if [ -z "$host" ] && [ -n "$name" ]; then
-                host="$name"
-            fi
+            resolve_vps_details
 
             [ -z "$host" ] && {
                 json_init
@@ -4605,9 +4594,6 @@ echo \"\$RAW_CFG\"
                 json_dump
                 return
             }
-
-            port="${port:-22}"
-            user="${user:-root}"
 
             local key_file="/etc/clawwrt/id_dropbear"
             if [ ! -f "$key_file" ]; then
