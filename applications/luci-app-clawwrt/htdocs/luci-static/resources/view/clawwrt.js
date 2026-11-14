@@ -359,7 +359,7 @@ const routerTools = [
         type: 'function',
         function: {
             name: 'switch_acceleration_port',
-            description: '执行网络加速 UDP 端口跳跃优化（Port Hopping）：当网络加速链路疑似遭遇运营商单端口 QoS 限速、网络抖动或丢包时，瞬时将路由器端连接 VPS 的目标端口平滑切换为一个新端口（可指定端口，或留空/输入 "random" 在自动精细规划的 50 个无冲突端口跳跃池中随机跳跃），利用 VPS 端的范围端口重定向直接恢复链路通畅，已自动规避 VPS 现有监听服务，服务端无需重启',
+            description: '执行网络加速 UDP 端口跳跃优化（Port Hopping）：瞬时将路由器端连接 VPS 的目标端口平滑切换为一个新端口（可指定端口，或留空/输入 "random" 在自动精细规划的 50 个无冲突端口跳跃池中随机跳跃），利用 VPS 端的范围端口重定向直接恢复链路通畅，已自动规避 VPS 现有监听服务，服务端无需重启。【重要约束】：此工具会实际写入配置修改远程端口并重启客户端，严禁在常规排查、链路诊断或用户仅询问问题时擅自调用！仅当用户明确下达“执行端口跳跃”、“换个端口”、“切换加速端口”等明确指令时方可调用',
             parameters: {
                 type: 'object',
                 properties: {
@@ -946,7 +946,7 @@ const systemPrompt = `你是一个专业的 OpenWrt / chaWrt 路由器专属 AI 
    - 当用户询问网络加速状态、节点延迟、KCP 连接或加速隧道时，调用 get_service_detail('xkcptun') 或 manage_xkcptun_tunnel('list')；
    - 当用户询问或需要管理加速隧道时，调用 manage_xkcptun_tunnel（支持 list, add, remove, enable, disable）；
    - 当用户询问智能分流、拦截统计、分流域名、动态劫持 IP 或活跃代理会话时，调用 get_service_detail('xdns') 或 manage_xdns_domain；
-   - 当用户询问智能分流或网络加速是否正常、排查加速或分流问题、检查加速健康度、或者网页打不开需排查加速链路时，主动调用 get_acceleration_status 获取全链路诊断数据并在 UI 渲染全链路诊断卡片！若检测到异常或用户要求自愈修复时，主动提供或调用 fix_acceleration_pipeline 一键自愈重建链路；
+   - 当用户询问智能分流或网络加速是否正常、排查加速或分流问题、检查加速健康度、或者网页打不开需排查加速链路时，主动调用 get_acceleration_status 获取全链路诊断数据并在 UI 渲染全链路诊断卡片！若检测到异常或用户要求自愈修复时，主动提供或调用 fix_acceleration_pipeline 一键自愈重建链路；【特别约束】：严禁在常规排查、诊断或用户未明确提出换端口诉求时私自调用 switch_acceleration_port 篡改用户的远程通信端口！只有当用户明确要求“执行端口跳跃”、“切换UDP端口”、“换个端口优化”时方可调用该工具；
    - 当用户需要添加/删除分流域名、清空分流 IP 缓存或重载规则时，调用 manage_xdns_domain；
    - 当用户询问门户认证状态、在线用户、踢人下线或管理黑白名单与免认证域名时，调用 get_service_detail('wifidogx') 或 manage_portal_access；
    - 当用户询问或需要管理内网穿透端口映射规则时，调用 manage_penetration_proxy（支持 list, add, remove, enable, disable）；
