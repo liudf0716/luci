@@ -359,11 +359,11 @@ const routerTools = [
         type: 'function',
         function: {
             name: 'switch_acceleration_port',
-            description: '执行网络加速 UDP 端口跳跃脱困（Port Hopping）：当网络加速疑似遭遇 GFW UDP 丢包、限速或端口封锁时，瞬时将路由器端连接 VPS 的目标端口切换为一个新端口（可指定端口如 24567，或留空/输入 "random" 在 20000~30000 端口池中随机跳跃），利用 VPS 端的范围端口重定向直接脱困，VPS 服务端无需重启',
+            description: '执行网络加速 UDP 端口跳跃脱困（Port Hopping）：当网络加速疑似遭遇 GFW UDP 丢包、限速或端口封锁时，瞬时将路由器端连接 VPS 的目标端口切换为一个新端口（可指定端口，或留空/输入 "random" 在自动精细规划的 50 个无冲突端口跳跃池中随机跳跃），利用 VPS 端的范围端口重定向直接脱困，已自动规避 VPS 现有监听服务，服务端无需重启',
             parameters: {
                 type: 'object',
                 properties: {
-                    new_port: { type: 'string', description: '目标 UDP 端口号（例如 25688，或输入 random 进行随机跳跃）' }
+                    new_port: { type: 'string', description: '目标 UDP 端口号（例如 29068，或输入 random 进行随机跳跃）' }
                 }
             }
         }

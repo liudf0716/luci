@@ -4002,8 +4002,41 @@ else
     nohup \$SUDO /usr/local/bin/xkcp_server -c /etc/xkcptun/server.toml -f >/var/log/xkcp_server.log 2>&1 &
 fi
 
-HOP_START=20000
-HOP_END=30000
+# Clean up any legacy broad 20000:30000 rules to avoid VPS port conflicts
+if command -v iptables >/dev/null 2>&1; then
+    \$SUDO iptables -t nat -D PREROUTING -p udp --dport 20000:30000 -j REDIRECT --to-ports ${listen_port} 2>/dev/null || true
+    \$SUDO iptables -D INPUT -p udp --dport 20000:30000 -j ACCEPT 2>/dev/null || true
+fi
+
+# Detect all active listening ports (TCP & UDP) on VPS to avoid collisions
+USED_PORTS=\$($SUDO ss -lntu 2>/dev/null | awk 'NR>1 {print \$5}' | sed -E 's/.*:([0-9]+)\$/\1/' | tr '\\n' ' ')
+
+# Find a conflict-free contiguous 50-port range (50 ports is safe & completely sufficient)
+HOP_SPAN=50
+CANDIDATE_START=29050
+if [ "${listen_port}" -ge 29000 ] && [ "${listen_port}" -le 29150 ]; then
+    CANDIDATE_START=39050
+fi
+
+HOP_START=0
+HOP_END=0
+S=\$CANDIDATE_START
+while [ "\$S" -le 64000 ]; do
+    CONFLICT=0
+    E=\$((S + HOP_SPAN - 1))
+    for P in \$(seq \$S \$E); do
+        case " \$USED_PORTS " in
+            *" \$P "*) CONFLICT=1; S=\$((P + 1)); break ;;
+        esac
+    done
+    if [ "\$CONFLICT" -eq 0 ]; then
+        HOP_START=\$S
+        HOP_END=\$E
+        break
+    fi
+done
+
+[ "\$HOP_START" -eq 0 ] && { HOP_START=29050; HOP_END=29099; }
 
 if command -v ufw >/dev/null 2>&1 && \$SUDO ufw status 2>/dev/null | grep -q 'active'; then
     \$SUDO ufw allow ${listen_port}/udp >/dev/null 2>&1 || true
@@ -4017,7 +4050,7 @@ elif command -v iptables >/dev/null 2>&1; then
     \$SUDO iptables -I INPUT -p udp --dport \${HOP_START}:\${HOP_END} -j ACCEPT 2>/dev/null || true
 fi
 
-# Enable UDP Port Hopping redirect (20000:30000 -> listen_port) for GFW avoidance
+# Enable UDP Port Hopping redirect (HOP_START:HOP_END -> listen_port) for GFW avoidance
 if command -v iptables >/dev/null 2>&1; then
     \$SUDO iptables -I INPUT -p udp --dport \${HOP_START}:\${HOP_END} -j ACCEPT 2>/dev/null || true
     if ! \$SUDO iptables -t nat -C PREROUTING -p udp --dport \${HOP_START}:\${HOP_END} -j REDIRECT --to-ports ${listen_port} 2>/dev/null; then
@@ -4027,13 +4060,13 @@ if command -v iptables >/dev/null 2>&1; then
     # Persistent Port Hopping service across VPS reboots
     \$SUDO tee /etc/systemd/system/xkcptun-port-hop.service >/dev/null << HOPEOF
 [Unit]
-Description=xkcptun UDP Port Hopping (20000-30000 -> ${listen_port})
+Description=xkcptun UDP Port Hopping (\${HOP_START}-\${HOP_END} -> ${listen_port})
 After=network.target
 
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=/bin/sh -c 'iptables -I INPUT -p udp --dport 20000:30000 -j ACCEPT 2>/dev/null || true; iptables -t nat -C PREROUTING -p udp --dport 20000:30000 -j REDIRECT --to-ports ${listen_port} 2>/dev/null || iptables -t nat -A PREROUTING -p udp --dport 20000:30000 -j REDIRECT --to-ports ${listen_port} 2>/dev/null || true'
+ExecStart=/bin/sh -c 'iptables -I INPUT -p udp --dport \${HOP_START}:\${HOP_END} -j ACCEPT 2>/dev/null || true; iptables -t nat -C PREROUTING -p udp --dport \${HOP_START}:\${HOP_END} -j REDIRECT --to-ports ${listen_port} 2>/dev/null || iptables -t nat -A PREROUTING -p udp --dport \${HOP_START}:\${HOP_END} -j REDIRECT --to-ports ${listen_port} 2>/dev/null || true'
 
 [Install]
 WantedBy=multi-user.target
@@ -4044,6 +4077,7 @@ fi
 
 sleep 1
 if pgrep -x xkcp_server >/dev/null 2>&1; then
+    echo "XKCP_HOP_RANGE:\${HOP_START}:\${HOP_END}"
     echo 'XKCP_DEPLOY_SUCCESS'
 else
     echo 'XKCP_START_FAILED'
@@ -4060,6 +4094,12 @@ fi
             local msg=""
 
             if [ $ret -eq 0 ] && echo "$out" | grep -q "XKCP_DEPLOY_SUCCESS"; then
+                local hop_s=$(echo "$out" | sed -n 's/.*XKCP_HOP_RANGE:\([0-9]*\):\([0-9]*\).*/\1/p')
+                local hop_e=$(echo "$out" | sed -n 's/.*XKCP_HOP_RANGE:\([0-9]*\):\([0-9]*\).*/\2/p')
+                [ -z "$hop_s" ] && hop_s="29050"
+                [ -z "$hop_e" ] && hop_e=$((hop_s + 49))
+                uci -q set xkcptun.client.hop_start="$hop_s"
+                uci -q set xkcptun.client.hop_end="$hop_e"
                 uci -q set xkcptun.client.enabled='1'
                 uci -q set xkcptun.client.remote_addr="$vps_ip"
                 uci -q set xkcptun.client.remote_port="$listen_port"
@@ -4076,13 +4116,15 @@ fi
                     if [ "$s_host" = "$vps_ip" ]; then
                         uci -q set clawwrt.${sid}.xkcptun_status="running"
                         uci -q set clawwrt.${sid}.xkcptun_port="$listen_port"
+                        uci -q set clawwrt.${sid}.hop_start="$hop_s"
+                        uci -q set clawwrt.${sid}.hop_end="$hop_e"
                         uci commit clawwrt
                         break
                     fi
                 done
 
                 success=1
-                msg="已成功在 VPS 上通过 deb 安装并启动 xkcptun-server，路由器加速客户端已自动连通！"
+                msg="已成功在 VPS 上安装并启动 xkcptun-server，自动检测并开通了 ${hop_s}~${hop_e}（共 50 个无冲突端口）的 UDP 跳跃池，路由器加速客户端已自动连通！"
             else
                 success=0
                 if echo "$out" | grep -q "ERR_SUDO_PASSWORD_REQUIRED"; then
@@ -5221,9 +5263,17 @@ fi
             json_load "$input"
             json_get_var new_port "new_port"
 
+            local hop_start=$(uci -q get xkcptun.client.hop_start)
+            [ -z "$hop_start" ] && hop_start="29050"
+            local hop_end=$(uci -q get xkcptun.client.hop_end)
+            [ -z "$hop_end" ] && hop_end=$((hop_start + 49))
+
+            local span=$((hop_end - hop_start + 1))
+            [ "$span" -le 0 -o "$span" -gt 100 ] && span=50
+
             if [ -z "$new_port" ] || [ "$new_port" = "random" ]; then
                 local rand_val=$(hexdump -n 2 -e '/2 "%u"' /dev/urandom 2>/dev/null || echo 1234)
-                new_port=$((20000 + (rand_val % 9999) + 1))
+                new_port=$((hop_start + (rand_val % span)))
             fi
 
             echo "$new_port" | grep -Eq '^[0-9]{1,5}$' || {
@@ -5246,7 +5296,8 @@ fi
             json_add_boolean "success" 1
             json_add_string "old_port" "$cur_port"
             json_add_string "new_port" "$new_port"
-            json_add_string "message" "已成功执行 UDP 端口跳跃脱困：将加速目标端口从 $cur_port 瞬时切换为 $new_port（命中 VPS 端 20000~30000 端口转发池，绕过 GFW 封锁，VPS 端无需重启）。"
+            json_add_string "hop_range" "${hop_start}~${hop_end}"
+            json_add_string "message" "已成功执行 UDP 端口跳跃脱困：将加速目标端口从 $cur_port 瞬时切换为 $new_port（命中 VPS 端精细规划的 ${hop_start}~${hop_end} 无冲突端口跳跃池，已自动避开 VPS 现有服务，免重启 VPS）。"
             json_close_object
             json_dump
         }
