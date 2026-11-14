@@ -288,6 +288,13 @@ const callFixAccelerationPipeline = rpc.declare({
     expect: { result: {} }
 });
 
+const callSwitchAccelerationPort = rpc.declare({
+    object: 'luci.clawwrt',
+    method: 'switch_acceleration_port',
+    params: [ 'new_port' ],
+    expect: { result: {} }
+});
+
 const callManageXdnsDomain = rpc.declare({
     object: 'luci.clawwrt',
     method: 'manage_xdns_domain',
@@ -346,6 +353,19 @@ const routerTools = [
             name: 'fix_acceleration_pipeline',
             description: '一键自愈并重建智能分流与网络加速链路：平滑清理陈旧 BPF Map，重新挂载 TC Ingress/Egress 过滤器，并重启 xkcptun 加速客户端恢复透明重定向，解决 BPF Map 句柄错配、会话丢失或过滤器脱钩等问题',
             parameters: { type: 'object', properties: {} }
+        }
+    },
+    {
+        type: 'function',
+        function: {
+            name: 'switch_acceleration_port',
+            description: '执行网络加速 UDP 端口跳跃脱困（Port Hopping）：当网络加速疑似遭遇 GFW UDP 丢包、限速或端口封锁时，瞬时将路由器端连接 VPS 的目标端口切换为一个新端口（可指定端口如 24567，或留空/输入 "random" 在 20000~30000 端口池中随机跳跃），利用 VPS 端的范围端口重定向直接脱困，VPS 服务端无需重启',
+            parameters: {
+                type: 'object',
+                properties: {
+                    new_port: { type: 'string', description: '目标 UDP 端口号（例如 25688，或输入 random 进行随机跳跃）' }
+                }
+            }
         }
     },
     {
@@ -1183,6 +1203,7 @@ return view.extend({
                 cards: [
                     { label: '🩺 全链路健康体检与诊断', query: '深度检测智能分流 (xDNS) 与网络加速 (xkcptun) 的全链路运行健康度，排查分流与加速是否存在异常，并在界面生成全链路诊断卡片' },
                     { label: '🛠️ 一键自愈加速链路', query: '帮我一键自愈并重建智能分流与网络加速链路，清理陈旧 BPF Map 并重启加速服务' },
+                    { label: '🔀 端口跳跃脱困 (绕过GFW)', query: '当前网络加速疑似遭遇 GFW UDP 丢包或端口封锁，请帮我执行端口跳跃切换一个全新的 UDP 端口脱困' },
                     { label: '⚡ 网络加速与隧道', query: '查看网络加速 xkcptun 当前连接的加速节点、模式、往返延迟以及所有活跃加速隧道与连接' },
                     { label: '🚀 VPS 安装 xkcptun 服务端 (deb)', query: '我想在我的远程 Linux VPS 上通过官方 deb 包自动安装并部署 xkcptun 加速服务端，并建立网络加速' },
                     { label: '🔀 智能分流与加速域名', query: '查看智能分流 xdns 的运行状态、eBPF 拦截统计、动态劫持 IP 以及当前分流加速的域名列表' },
@@ -2273,6 +2294,27 @@ return view.extend({
                             });
                         }
                     }, '🛠️ 一键自愈并重建链路'),
+
+                    E('button', {
+                        'class': 'btn cbi-button cbi-button-apply',
+                        'style': 'background: #0284c7; color: #fff; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 6px;',
+                        'click': function(ev) {
+                            const btn = ev.target;
+                            btn.disabled = true;
+                            btn.innerText = '⏳ 正在跳跃切换端口...';
+                            callSwitchAccelerationPort('random').then(hopRes => {
+                                btn.innerText = '✅ 跳跃完成，正在刷新诊断...';
+                                callGetAccelerationStatus().then(newDiag => {
+                                    card.remove();
+                                    appendAccelerationCard(newDiag);
+                                    appendMessage('assistant', `🎉 **UDP 端口跳跃脱困成功！**\n\n• **原端口**：\`${(hopRes && hopRes.old_port) || '-'}\`\n• **新目标端口**：\`${(hopRes && hopRes.new_port) || '-'}\`\n• **脱困说明**：${(hopRes && hopRes.message) || '已切换至全新 UDP 端口，避开 GFW 端口封锁。'}`);
+                                });
+                            }).catch(err => {
+                                btn.disabled = false;
+                                btn.innerText = '❌ 跳跃失败: ' + err.message;
+                            });
+                        }
+                    }, '🔀 端口跳跃脱困 (换UDP端口)'),
 
                     E('button', {
                         'class': 'btn cbi-button cbi-button-reset',
@@ -4541,6 +4583,10 @@ return view.extend({
                                 appendAccelerationCard(toolResult);
                             } else if (fnName === 'fix_acceleration_pipeline') {
                                 toolResult = await callFixAccelerationPipeline();
+                                const newDiag = await callGetAccelerationStatus();
+                                appendAccelerationCard(newDiag);
+                            } else if (fnName === 'switch_acceleration_port') {
+                                toolResult = await callSwitchAccelerationPort(fnArgs.new_port || 'random');
                                 const newDiag = await callGetAccelerationStatus();
                                 appendAccelerationCard(newDiag);
                             } else if (fnName === 'get_penetration_status') {

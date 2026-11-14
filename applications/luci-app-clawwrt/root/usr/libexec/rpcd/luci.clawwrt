@@ -253,6 +253,9 @@ case "$1" in
         json_close_object
         json_add_object "fix_acceleration_pipeline"
         json_close_object
+        json_add_object "switch_acceleration_port"
+            json_add_string "new_port"
+        json_close_object
         json_add_object "manage_xdns_domain"
             json_add_string "action"
             json_add_string "domain"
@@ -3999,13 +4002,44 @@ else
     nohup \$SUDO /usr/local/bin/xkcp_server -c /etc/xkcptun/server.toml -f >/var/log/xkcp_server.log 2>&1 &
 fi
 
+HOP_START=20000
+HOP_END=30000
+
 if command -v ufw >/dev/null 2>&1 && \$SUDO ufw status 2>/dev/null | grep -q 'active'; then
     \$SUDO ufw allow ${listen_port}/udp >/dev/null 2>&1 || true
+    \$SUDO ufw allow \${HOP_START}:\${HOP_END}/udp >/dev/null 2>&1 || true
 elif command -v firewall-cmd >/dev/null 2>&1 && systemctl is-active --quiet firewalld 2>/dev/null; then
     \$SUDO firewall-cmd --add-port=${listen_port}/udp --permanent >/dev/null 2>&1 || true
+    \$SUDO firewall-cmd --add-port=\${HOP_START}-\${HOP_END}/udp --permanent >/dev/null 2>&1 || true
     \$SUDO firewall-cmd --reload >/dev/null 2>&1 || true
 elif command -v iptables >/dev/null 2>&1; then
     \$SUDO iptables -I INPUT -p udp --dport ${listen_port} -j ACCEPT 2>/dev/null || true
+    \$SUDO iptables -I INPUT -p udp --dport \${HOP_START}:\${HOP_END} -j ACCEPT 2>/dev/null || true
+fi
+
+# Enable UDP Port Hopping redirect (20000:30000 -> listen_port) for GFW avoidance
+if command -v iptables >/dev/null 2>&1; then
+    \$SUDO iptables -I INPUT -p udp --dport \${HOP_START}:\${HOP_END} -j ACCEPT 2>/dev/null || true
+    if ! \$SUDO iptables -t nat -C PREROUTING -p udp --dport \${HOP_START}:\${HOP_END} -j REDIRECT --to-ports ${listen_port} 2>/dev/null; then
+        \$SUDO iptables -t nat -A PREROUTING -p udp --dport \${HOP_START}:\${HOP_END} -j REDIRECT --to-ports ${listen_port} 2>/dev/null || true
+    fi
+
+    # Persistent Port Hopping service across VPS reboots
+    \$SUDO tee /etc/systemd/system/xkcptun-port-hop.service >/dev/null << HOPEOF
+[Unit]
+Description=xkcptun UDP Port Hopping (20000-30000 -> ${listen_port})
+After=network.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/bin/sh -c 'iptables -I INPUT -p udp --dport 20000:30000 -j ACCEPT 2>/dev/null || true; iptables -t nat -C PREROUTING -p udp --dport 20000:30000 -j REDIRECT --to-ports ${listen_port} 2>/dev/null || iptables -t nat -A PREROUTING -p udp --dport 20000:30000 -j REDIRECT --to-ports ${listen_port} 2>/dev/null || true'
+
+[Install]
+WantedBy=multi-user.target
+HOPEOF
+    \$SUDO systemctl daemon-reload >/dev/null 2>&1 || true
+    \$SUDO systemctl enable xkcptun-port-hop.service >/dev/null 2>&1 || true
 fi
 
 sleep 1
@@ -5182,6 +5216,41 @@ fi
             json_dump
         }
 
+        switch_acceleration_port() {
+            read -r input
+            json_load "$input"
+            json_get_var new_port "new_port"
+
+            if [ -z "$new_port" ] || [ "$new_port" = "random" ]; then
+                local rand_val=$(hexdump -n 2 -e '/2 "%u"' /dev/urandom 2>/dev/null || echo 1234)
+                new_port=$((20000 + (rand_val % 9999) + 1))
+            fi
+
+            echo "$new_port" | grep -Eq '^[0-9]{1,5}$' || {
+                json_init
+                json_add_object "result"
+                json_add_boolean "success" 0
+                json_add_string "message" "目标端口无效: $new_port"
+                json_close_object
+                json_dump
+                return
+            }
+
+            local cur_port=$(uci -q get xkcptun.client.remote_port || echo 9089)
+            uci -q set xkcptun.client.remote_port="$new_port"
+            uci commit xkcptun 2>/dev/null
+            /etc/init.d/xkcptun restart >/dev/null 2>&1
+
+            json_init
+            json_add_object "result"
+            json_add_boolean "success" 1
+            json_add_string "old_port" "$cur_port"
+            json_add_string "new_port" "$new_port"
+            json_add_string "message" "已成功执行 UDP 端口跳跃脱困：将加速目标端口从 $cur_port 瞬时切换为 $new_port（命中 VPS 端 20000~30000 端口转发池，绕过 GFW 封锁，VPS 端无需重启）。"
+            json_close_object
+            json_dump
+        }
+
         manage_xdns_domain() {
             read -r input
             json_load "$input"
@@ -5917,6 +5986,7 @@ EOF
             get_penetration_status) get_penetration_status ;;
             get_acceleration_status) get_acceleration_status ;;
             fix_acceleration_pipeline) fix_acceleration_pipeline ;;
+            switch_acceleration_port) switch_acceleration_port ;;
             manage_xdns_domain) manage_xdns_domain ;;
             manage_portal_access) manage_portal_access ;;
             manage_portal_whitelist) manage_portal_whitelist ;;
