@@ -4053,7 +4053,7 @@ elif command -v iptables >/dev/null 2>&1; then
     \$SUDO iptables -I INPUT -p udp --dport \${HOP_START}:\${HOP_END} -j ACCEPT 2>/dev/null || true
 fi
 
-# Enable UDP Port Hopping redirect (HOP_START:HOP_END -> listen_port) for GFW avoidance
+# Enable UDP Port Hopping redirect (HOP_START:HOP_END -> listen_port) for anti-jitter and QoS optimization
 if command -v iptables >/dev/null 2>&1; then
     \$SUDO iptables -I INPUT -p udp --dport \${HOP_START}:\${HOP_END} -j ACCEPT 2>/dev/null || true
     if ! \$SUDO iptables -t nat -C PREROUTING -p udp --dport \${HOP_START}:\${HOP_END} -j REDIRECT --to-ports ${listen_port} 2>/dev/null; then
@@ -5283,7 +5283,7 @@ fi
             json_add_string "old_port" "$cur_port"
             json_add_string "new_port" "$new_port"
             json_add_string "hop_range" "${hop_start}~${hop_end}"
-            json_add_string "message" "已成功执行 UDP 端口跳跃脱困：将加速目标端口从 $cur_port 瞬时切换为 $new_port（命中 VPS 端精细规划的 ${hop_start}~${hop_end} 无冲突端口跳跃池，已自动避开 VPS 现有服务，免重启 VPS）。"
+            json_add_string "message" "已成功执行 UDP 端口跳跃优化：将加速目标端口从 $cur_port 瞬时切换为 $new_port（命中 VPS 端精细规划的 ${hop_start}~${hop_end} 无冲突端口跳跃池，已自动避开 VPS 现有服务，免重启 VPS，有效抵抗网络抖动与单端口丢包）。"
             json_close_object
             json_dump
         }

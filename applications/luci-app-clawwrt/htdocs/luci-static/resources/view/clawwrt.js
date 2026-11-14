@@ -359,7 +359,7 @@ const routerTools = [
         type: 'function',
         function: {
             name: 'switch_acceleration_port',
-            description: '执行网络加速 UDP 端口跳跃脱困（Port Hopping）：当网络加速疑似遭遇 GFW UDP 丢包、限速或端口封锁时，瞬时将路由器端连接 VPS 的目标端口切换为一个新端口（可指定端口，或留空/输入 "random" 在自动精细规划的 50 个无冲突端口跳跃池中随机跳跃），利用 VPS 端的范围端口重定向直接脱困，已自动规避 VPS 现有监听服务，服务端无需重启',
+            description: '执行网络加速 UDP 端口跳跃优化（Port Hopping）：当网络加速链路疑似遭遇运营商单端口 QoS 限速、网络抖动或丢包时，瞬时将路由器端连接 VPS 的目标端口平滑切换为一个新端口（可指定端口，或留空/输入 "random" 在自动精细规划的 50 个无冲突端口跳跃池中随机跳跃），利用 VPS 端的范围端口重定向直接恢复链路通畅，已自动规避 VPS 现有监听服务，服务端无需重启',
             parameters: {
                 type: 'object',
                 properties: {
@@ -1202,7 +1202,7 @@ return view.extend({
                 cards: [
                     { label: '🩺 全链路健康体检与诊断', query: '深度检测智能分流 (xDNS) 与网络加速 (xkcptun) 的全链路运行健康度，排查分流与加速是否存在异常，并在界面生成全链路诊断卡片' },
                     { label: '🛠️ 一键自愈加速链路', query: '帮我一键自愈并重建智能分流与网络加速链路，清理陈旧 BPF Map 并重启加速服务' },
-                    { label: '🔀 端口跳跃脱困 (绕过GFW)', query: '当前网络加速疑似遭遇 GFW UDP 丢包或端口封锁，请帮我执行端口跳跃切换一个全新的 UDP 端口脱困' },
+                    { label: '🔀 端口跳跃优化 (抗抖动防丢包)', query: '当前网络加速疑似遭遇运营商单端口 QoS 限速或 UDP 异常丢包，请帮我执行 UDP 端口跳跃，切换一个全新的通信端口优化链路' },
                     { label: '⚡ 网络加速与隧道', query: '查看网络加速 xkcptun 当前连接的加速节点、模式、往返延迟以及所有活跃加速隧道与连接' },
                     { label: '🚀 VPS 安装 xkcptun 服务端 (deb)', query: '我想在我的远程 Linux VPS 上通过官方 deb 包自动安装并部署 xkcptun 加速服务端，并建立网络加速' },
                     { label: '🔀 智能分流与加速域名', query: '查看智能分流 xdns 的运行状态、eBPF 拦截统计、动态劫持 IP 以及当前分流加速的域名列表' },
@@ -2306,14 +2306,14 @@ return view.extend({
                                 callGetAccelerationStatus().then(newDiag => {
                                     card.remove();
                                     appendAccelerationCard(newDiag);
-                                    appendMessage('assistant', `🎉 **UDP 端口跳跃脱困成功！**\n\n• **原端口**：\`${(hopRes && hopRes.old_port) || '-'}\`\n• **新目标端口**：\`${(hopRes && hopRes.new_port) || '-'}\`\n• **脱困说明**：${(hopRes && hopRes.message) || '已切换至全新 UDP 端口，避开 GFW 端口封锁。'}`);
+                                    appendMessage('assistant', `🎉 **UDP 端口跳跃优化成功！**\n\n• **原端口**：\`${(hopRes && hopRes.old_port) || '-'}\`\n• **新目标端口**：\`${(hopRes && hopRes.new_port) || '-'}\`\n• **优化说明**：${(hopRes && hopRes.message) || '已切换至全新 UDP 端口，有效规避单端口 QoS 限速与网络抖动。'}`);
                                 });
                             }).catch(err => {
                                 btn.disabled = false;
                                 btn.innerText = '❌ 跳跃失败: ' + err.message;
                             });
                         }
-                    }, '🔀 端口跳跃脱困 (换UDP端口)'),
+                    }, '🔀 端口跳跃优化 (换UDP通信端口)'),
 
                     E('button', {
                         'class': 'btn cbi-button cbi-button-reset',
