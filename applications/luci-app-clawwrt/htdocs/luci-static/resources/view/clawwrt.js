@@ -4438,19 +4438,48 @@ return view.extend({
             }
         }
 
+        function getUtf8Bytes(str) {
+            if (!str) return 0;
+            if (typeof TextEncoder !== 'undefined') {
+                return new TextEncoder().encode(str).length;
+            }
+            return encodeURI(str).split(/%..|./).length - 1;
+        }
+
         function clipModelText(text, max) {
             const s = String(text || '');
             if (s.length <= max) return s;
             return s.slice(0, max) + '\n…(较早内容已省略)';
         }
 
-        // Keep the system prompt and the newest turns. Tool JSON is clipped,
-        // and older tool rounds are dropped so the ubus payload stays small.
+        // Measure wire bytes when encoded inside JSON-RPC call params
+        function estimateUbusPostBytes(messages) {
+            try {
+                const messagesJson = JSON.stringify(messages);
+                const envelope = JSON.stringify([{
+                    jsonrpc: '2.0',
+                    id: 1,
+                    method: 'call',
+                    params: ['00000000000000000000000000000000', 'luci.clawwrt', 'call_deepseek', {
+                        messages_json: messagesJson,
+                        tools_json: ''
+                    }]
+                }]);
+                return getUtf8Bytes(envelope);
+            } catch (e) {
+                return 0;
+            }
+        }
+
+        // Keep the system prompt and newest turns. Tool JSON and message texts are clipped,
+        // older tool rounds are dropped, and progressive clipping is applied if payload is large.
+        // With 1MB uhttpd post buffer, safe limit is set to 500,000 bytes.
         function compactMessages(list) {
             const system = (list || []).find(m => m && m.role === 'system') || { role: 'system', content: systemPrompt };
+            let toolLimit = 4000;
             let kept = (list || []).filter(m => m && m.role !== 'system').map(m => {
                 if (m.role === 'tool')
-                    return Object.assign({}, m, { content: clipModelText(m.content, 6000) });
+                    return Object.assign({}, m, { content: clipModelText(m.content, toolLimit) });
                 if (m.role === 'assistant' && m.content)
                     return Object.assign({}, m, { content: clipModelText(m.content, 4000) });
                 if (m.role === 'user')
@@ -4458,11 +4487,25 @@ return view.extend({
                 return m;
             });
 
-            const packed = () => JSON.stringify({ messages_json: JSON.stringify([system].concat(kept)) }).length;
-            while (kept.length > 2 && packed() > 48000) {
+            const MAX_POST_SAFE_BYTES = 500000; // 500KB safe headroom for 1MB uhttpd
+
+            // 1. Drop older conversation turns when total wire size exceeds safe limit
+            while (kept.length > 2 && estimateUbusPostBytes([system].concat(kept)) > MAX_POST_SAFE_BYTES) {
                 kept.shift();
                 while (kept.length && kept[0].role === 'tool')
                     kept.shift();
+            }
+
+            // 2. Progressive tool compression fallback: if history is already minimal (<=2 items)
+            // or still exceeds limit, aggressively shrink tool result outputs down to 500 chars
+            while (estimateUbusPostBytes([system].concat(kept)) > MAX_POST_SAFE_BYTES && toolLimit > 500) {
+                toolLimit = Math.max(500, Math.floor(toolLimit / 2));
+                kept = kept.map(m => {
+                    if (m.role === 'tool' && m.content) {
+                        return Object.assign({}, m, { content: clipModelText(m.content, toolLimit) });
+                    }
+                    return m;
+                });
             }
 
             const repaired = [];
