@@ -184,6 +184,7 @@ assert_ubus "硬件加速" "获取 MediaTek PPE 硬件流表与加速状态" "ge
 assert_ubus "无线状态" "获取当前 WiFi 频段、SSID 与安全状态" "get_wifi_info" "" "radios"
 assert_ubus "无线漫游" "获取 802.11k/v/r 漫游及 usteer 调度状态" "get_wifi_roaming" "" "hostapd_supports_kvr" "true"
 assert_ubus "漫游防御" "拒绝非法移动域参数格式 (非4位十六进制)" "set_wifi_roaming" '{"band":"all","mode":"full_kvr","mobility_domain":"xyz"}' "success" "false"
+assert_ubus "Mesh状态" "获取 802.11s Mesh 组网拓扑与角色" "get_mesh_status" "" "role"
 assert_ubus "SSH密钥" "获取路由器自动生成的穿透运维 SSH 公钥" "get_router_ssh_key" "" "pubkey"
 
 # ---------------------------------------------------------------------

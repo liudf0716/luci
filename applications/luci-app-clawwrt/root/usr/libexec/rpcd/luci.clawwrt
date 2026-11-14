@@ -1412,9 +1412,9 @@ case "$1" in
             [ -f /etc/config/clawwrt ] || touch /etc/config/clawwrt
             uci set clawwrt.mesh=mesh
             uci set clawwrt.mesh.role="$role"
-            uci set clawwrt.mesh.band="$band"
-            uci set clawwrt.mesh.mesh_id="$mesh_id"
-            uci set clawwrt.mesh.channel="$channel"
+            uci -q delete clawwrt.mesh.band
+            uci -q delete clawwrt.mesh.mesh_id
+            uci -q delete clawwrt.mesh.channel
             uci commit wireless
             uci commit clawwrt
 
