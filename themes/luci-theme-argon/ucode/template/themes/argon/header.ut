@@ -130,6 +130,7 @@
 	class="lang_{{ dispatcher.lang }} {{ node?.title ? ` - ${striptags(node.title)}` : '' }} {% if (ctx.authsession): %}logged-in{% endif %}"
 	data-page="{{ entityencode(join('-', ctx.request_path), true) }}">
 
+	<a class="skip-link" href="#maincontent">{{ _('Skip to content') }}</a>
 	<div class="main">
 		<div class="main-left" id="mainmenu" style="display:none">
 			<div class="sidenav-header d-flex align-items-center">
@@ -155,7 +156,7 @@
 				<div class="fill">
 					<div class="container">
 						<div class="flex1">
-							<a class="showSide"></a>
+							<button type="button" class="showSide" aria-label="{{ entityencode(_('Toggle navigation'), true) }}" aria-controls="mainmenu" aria-expanded="false"></button>
 							<a class="brand" href="{{ dispatcher.build_url() }}">
 								<img src="{{ media }}/img/chawrt.svg" class="logo" alt="">
 								<span class="brand-text">{{ hostname }}</span>

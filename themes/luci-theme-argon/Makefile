@@ -7,9 +7,9 @@
 include $(TOPDIR)/rules.mk
 
 LUCI_TITLE:=Argon Theme
-LUCI_DEPENDS:=+wget +jsonfilter
-PKG_VERSION:=2.4.3
-PKG_RELEASE:=20250722
+LUCI_DEPENDS:=+luci-base +wget-ssl +ca-bundle +jsonfilter
+PKG_VERSION:=2.4.4
+PKG_RELEASE:=20261115
 
 CONFIG_LUCI_CSSTIDY:=
 
