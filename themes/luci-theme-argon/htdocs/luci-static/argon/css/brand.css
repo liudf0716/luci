@@ -1,0 +1,25 @@
+.sidenav-header .brand {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.55rem;
+	margin: 0 0.75rem;
+}
+
+.sidenav-header .brand .logo,
+header .brand .logo {
+	width: 36px;
+	height: 36px;
+	flex: 0 0 auto;
+}
+
+header .bg-primary .brand {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.45rem;
+}
+
+header .bg-primary .brand .logo {
+	width: 28px;
+	height: 28px;
+}
