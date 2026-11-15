@@ -4856,12 +4856,13 @@ return view.extend({
             chatAbort = ctrl;
             let res;
             try {
+                const sid = (typeof L !== 'undefined' && L.env && L.env.sessionid) || '';
                 res = await fetch('/cgi-bin/clawwrt-stream', {
                     method: 'POST',
                     signal: ctrl.signal,
                     credentials: 'same-origin',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ messages: modelMessages })
+                    body: JSON.stringify({ sessionid: sid, messages: modelMessages })
                 });
             } catch (err) {
                 if (err && err.name === 'AbortError')

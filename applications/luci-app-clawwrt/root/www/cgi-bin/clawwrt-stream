@@ -12,12 +12,6 @@ fail() {
 	exit 0
 }
 
-sid=$(printf '%s' "$HTTP_COOKIE" | tr ';' '\n' | sed -n 's/^[[:space:]]*sysauth[^=]*=//p' | head -n1 | tr -cd 'A-Fa-f0-9')
-[ ${#sid} -eq 32 ] || fail 403 "login required"
-
-access=$(ubus call session access "{\"ubus_rpc_session\":\"$sid\",\"scope\":\"ubus\",\"object\":\"luci.clawwrt\",\"function\":\"call_deepseek\"}" 2>/dev/null)
-printf '%s' "$access" | grep -Eq '"access":[[:space:]]*true' || fail 403 "forbidden"
-
 [ "$REQUEST_METHOD" = "POST" ] || fail 405 "POST required"
 
 umask 077
@@ -25,8 +19,19 @@ in_file="/tmp/clawwrt-stream-in.$$"
 msg_file="/tmp/clawwrt-stream-msg.$$"
 req_file="/tmp/clawwrt-stream-req.$$"
 trap 'rm -f "$in_file" "$msg_file" "$req_file"' EXIT INT TERM
-
 cat > "$in_file"
+
+# uhttpd does not export custom headers. The LuCI cookie is scoped to
+# /cgi-bin/luci, so the page sends the ubus session id in the JSON body.
+sid=$(jsonfilter -i "$in_file" -e '@.sessionid' 2>/dev/null | tr -cd 'A-Fa-f0-9')
+if [ ${#sid} -ne 32 ]; then
+	sid=$(printf '%s' "$HTTP_COOKIE" | tr ';' '\n' | sed -n 's/^[[:space:]]*sysauth[^=]*=//p' | head -n1 | tr -cd 'A-Fa-f0-9')
+fi
+[ ${#sid} -eq 32 ] || fail 403 "login required"
+
+access=$(ubus call session access "{\"ubus_rpc_session\":\"$sid\",\"scope\":\"ubus\",\"object\":\"luci.clawwrt\",\"function\":\"call_deepseek\"}" 2>/dev/null)
+printf '%s' "$access" | grep -Eq '"access":[[:space:]]*true' || fail 403 "forbidden"
+
 jsonfilter -i "$in_file" -e '@.messages' > "$msg_file" 2>/dev/null
 rm -f "$in_file"
 grep -q '^[[:space:]]*\[' "$msg_file" || fail 400 "messages required"
