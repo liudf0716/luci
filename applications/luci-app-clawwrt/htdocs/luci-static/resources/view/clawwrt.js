@@ -2153,12 +2153,16 @@ return view.extend({
                 confirmBtnText = '🗑️ 确认移除该域名';
                 detailDesc = '确认后将从内核分流表及规则文件中移除，恢复标准直连。';
             } else if (isAddIp) {
-                actionText = '添加静态重定向 IP';
+                const ttlSec = parseInt(param.ttl, 10);
+                const isTemp = (!isNaN(ttlSec) && ttlSec > 0);
+                actionText = isTemp ? '添加临时重定向 IP' : '添加静态重定向 IP';
                 actionColor = '#059669';
-                confirmBtnText = '✅ 确认添加 IP 重定向';
+                confirmBtnText = isTemp ? '✅ 确认添加临时重定向' : '✅ 确认添加静态重定向';
                 targetLabel = '重定向 IPv4：';
                 targetVal = param.ip || '';
-                detailDesc = '确认后将立即写入内核 eBPF 重定向表及 static_ips.txt，目标 IP 的所有 TCP SYN 流量将强制进入加速通道。' + (param.ttl ? (` (TTL: ${param.ttl} 秒)`) : ' (永久生效)');
+                detailDesc = isTemp
+                    ? `确认后将写入内核 eBPF 临时重定向表，有效期 ${ttlSec} 秒，到期自动失效，不写入持久化配置文件。`
+                    : '确认后将立即写入内核 eBPF 重定向表及持久化配置文件 (static_ips.txt)，目标 IP 的所有 TCP SYN 流量将永久进入加速通道。';
             } else if (isDelIp) {
                 actionText = '移除静态重定向 IP';
                 actionColor = '#dc2626';

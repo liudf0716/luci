@@ -5615,9 +5615,15 @@ EOF
                     elif ! echo "$domain" | grep -Eq '^[A-Za-z0-9]([A-Za-z0-9.-]*[A-Za-z0-9])?$'; then
                         msg="域名格式无效: $domain"
                     elif command -v /usr/bin/xdns-ctl >/dev/null 2>&1; then
-                        local out=$(/usr/bin/xdns-ctl add-domain "$domain" 2>&1)
-                        success=1
-                        msg="已成功将域名 [$domain] 添加至内核 eBPF 智能分流加速表及持久化配置文件，已立即生效"
+                        local out
+                        out=$(/usr/bin/xdns-ctl add-domain "$domain" "$domains_file" 2>&1)
+                        if [ $? -eq 0 ]; then
+                            success=1
+                            msg="已成功将域名 [$domain] 添加至内核 eBPF 智能分流加速表及持久化配置文件，已立即生效"
+                        else
+                            success=0
+                            msg="添加加速域名失败: $out"
+                        fi
                     else
                         [ -f "$domains_file" ] && echo "$domain" >> "$domains_file"
                         success=1
@@ -5630,9 +5636,15 @@ EOF
                     elif ! echo "$domain" | grep -Eq '^[A-Za-z0-9]([A-Za-z0-9.-]*[A-Za-z0-9])?$'; then
                         msg="域名格式无效: $domain"
                     elif command -v /usr/bin/xdns-ctl >/dev/null 2>&1; then
-                        local out=$(/usr/bin/xdns-ctl del-domain "$domain" 2>&1)
-                        success=1
-                        msg="已成功从内核 eBPF 智能分流表中移除域名 [$domain]，已立即生效"
+                        local out
+                        out=$(/usr/bin/xdns-ctl del-domain "$domain" "$domains_file" 2>&1)
+                        if [ $? -eq 0 ]; then
+                            success=1
+                            msg="已成功从内核 eBPF 智能分流表中移除域名 [$domain]，已立即生效"
+                        else
+                            success=0
+                            msg="移除加速域名失败: $out"
+                        fi
                     else
                         [ -f "$domains_file" ] && sed -i "/^${domain}$/d" "$domains_file"
                         success=1
@@ -5640,6 +5652,49 @@ EOF
                     fi
                     ;;
                 add_ip)
+                    if [ -z "$ip" ]; then
+                        msg="IP 地址不能为空"
+                    elif ! echo "$ip" | grep -Eq '^([0-9]{1,3}\.){3}[0-9]{1,3}$'; then
+                        msg="IPv4 地址格式无效: $ip"
+                    elif [ -n "$ttl" ] && ! echo "$ttl" | grep -Eq '^[0-9]+$'; then
+                        msg="TTL 参数无效，必须为非负整数 (秒)"
+                    else
+                        local valid_ip=1
+                        for octet in $(echo "$ip" | tr '.' ' '); do
+                            if [ "$octet" -gt 255 ]; then
+                                valid_ip=0
+                                break
+                            fi
+                        done
+                        if [ "$valid_ip" -ne 1 ]; then
+                            msg="IPv4 地址数值越界 (每段必须在 0-255): $ip"
+                        elif command -v /usr/bin/xdns-ctl >/dev/null 2>&1; then
+                            local out
+                            out=$(/usr/bin/xdns-ctl add-ip "$ip" "${ttl:-0}" "$ips_file" 2>&1)
+                            if [ $? -eq 0 ]; then
+                                success=1
+                                if [ -n "$ttl" ] && [ "$ttl" -gt 0 ] 2>/dev/null; then
+                                    msg="已成功将 IP [$ip] 添加至内核 eBPF 临时重定向表 (TTL: ${ttl}秒，临时生效未写入持久化文件)"
+                                else
+                                    msg="已成功将 IP [$ip] 添加至内核 eBPF 静态重定向分流表并持久化写入 $ips_file，已立即永久生效"
+                                fi
+                            else
+                                success=0
+                                msg="添加静态重定向 IP 失败: $out"
+                            fi
+                        else
+                            if [ -z "$ttl" ] || [ "$ttl" -eq 0 ] 2>/dev/null; then
+                                [ -f "$ips_file" ] && echo "$ip" >> "$ips_file"
+                                success=1
+                                msg="已将 IP [$ip] 追加至静态重定向列表 $ips_file"
+                            else
+                                success=0
+                                msg="未找到 xdns-ctl 命令，无法添加临时重定向 IP"
+                            fi
+                        fi
+                    fi
+                    ;;
+                remove_ip|del_ip)
                     if [ -z "$ip" ]; then
                         msg="IP 地址不能为空"
                     elif ! echo "$ip" | grep -Eq '^([0-9]{1,3}\.){3}[0-9]{1,3}$'; then
@@ -5655,29 +5710,23 @@ EOF
                         if [ "$valid_ip" -ne 1 ]; then
                             msg="IPv4 地址数值越界 (每段必须在 0-255): $ip"
                         elif command -v /usr/bin/xdns-ctl >/dev/null 2>&1; then
-                            local out=$(/usr/bin/xdns-ctl add-ip "$ip" "$ttl" 2>&1)
-                            success=1
-                            msg="已成功将 IP [$ip] 添加至内核 eBPF 静态重定向分流表及持久化配置文件，已立即生效"
+                            local out
+                            out=$(/usr/bin/xdns-ctl del-ip "$ip" "$ips_file" 2>&1)
+                            if [ $? -eq 0 ]; then
+                                success=1
+                                msg="已成功从内核 eBPF 分流表及持久化文件 $ips_file 中移除重定向 IP [$ip]"
+                            else
+                                success=0
+                                msg="移除重定向 IP 失败: $out"
+                            fi
                         else
-                            [ -f "$ips_file" ] && echo "$ip" >> "$ips_file"
-                            success=1
-                            msg="已将 IP [$ip] 追加至静态重定向列表"
+                            if [ -f "$ips_file" ]; then
+                                local escaped_ip=$(echo "$ip" | sed 's/\./\\./g')
+                                sed -i "/^[[:space:]]*${escaped_ip}[[:space:]]*$/d" "$ips_file"
+                                success=1
+                                msg="已从静态重定向文件 $ips_file 中删除 IP [$ip]"
+                            fi
                         fi
-                    fi
-                    ;;
-                remove_ip|del_ip)
-                    if [ -z "$ip" ]; then
-                        msg="IP 地址不能为空"
-                    elif ! echo "$ip" | grep -Eq '^([0-9]{1,3}\.){3}[0-9]{1,3}$'; then
-                        msg="IPv4 地址格式无效: $ip"
-                    elif command -v /usr/bin/xdns-ctl >/dev/null 2>&1; then
-                        local out=$(/usr/bin/xdns-ctl del-ip "$ip" 2>&1)
-                        success=1
-                        msg="已成功从内核 eBPF 分流表中移除静态重定向 IP [$ip]，已立即生效"
-                    else
-                        [ -f "$ips_file" ] && sed -i "/^${ip}$/d" "$ips_file"
-                        success=1
-                        msg="已从静态重定向列表中删除 IP [$ip]"
                     fi
                     ;;
                 clear_ips|flush)

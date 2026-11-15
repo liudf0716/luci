@@ -47,7 +47,15 @@ function formatBytes(n) {
 }
 
 function isIpv4(s) {
-	return /^(\d{1,3}\.){3}\d{1,3}$/.test(s || '');
+	if (!/^(\d{1,3}\.){3}\d{1,3}$/.test(s || ''))
+		return false;
+	var parts = s.split('.');
+	for (var i = 0; i < 4; i++) {
+		var n = parseInt(parts[i], 10);
+		if (isNaN(n) || n < 0 || n > 255)
+			return false;
+	}
+	return true;
 }
 
 function parseDomains(domainsText) {
@@ -598,10 +606,7 @@ return view.extend({
 				b.disabled = true;
 				b.textContent = _('添加中...');
 
-				var args = ['add-ip', ipVal];
-				if (ttlVal && /^\d+$/.test(ttlVal)) {
-					args.push(ttlVal);
-				}
+				var args = ['add-ip', ipVal, (ttlVal && /^\d+$/.test(ttlVal)) ? ttlVal : '0', '/etc/xdns/static_ips.txt'];
 
 				fs.exec_direct('/usr/bin/xdns-ctl', args).then(function() {
 					ui.addTimeLimitedNotification(null, E('p', _('重定向 IP「%s」已成功加入内核 eBPF 重定向表！').format(ipVal)), 3000, 'info');
@@ -674,7 +679,9 @@ return view.extend({
 					if (staticIpsList[j].ip === item.ip) {
 						staticIpsList[j].conns = item.conns || '0';
 						staticIpsList[j].bytes = item.bytes || '0';
-						staticIpsList[j].expires = item.expires || 'permanent';
+						if (staticIpsList[j].type !== '静态持久化') {
+							staticIpsList[j].expires = item.expires || 'permanent';
+						}
 						break;
 					}
 				}
@@ -699,6 +706,10 @@ return view.extend({
 			]));
 		} else {
 			staticIpsList.forEach(function(item, idx) {
+				var isPermanent = (item.type === '静态持久化');
+				var badgeStyle = isPermanent
+					? 'color: #155724; background-color: #d4edda; border: 1px solid #c3e6cb; padding: 2px 8px; border-radius: 3px;'
+					: 'color: #856404; background-color: #fff3cd; border: 1px solid #ffeeba; padding: 2px 8px; border-radius: 3px;';
 				var tr = E('tr', { 'class': 'tr ip-item-row', 'data-ip': item.ip.toLowerCase() }, [
 					E('td', { 'class': 'td center' }, String(idx + 1)),
 					E('td', { 'class': 'td' }, [
@@ -706,10 +717,10 @@ return view.extend({
 						E('strong', {}, item.ip)
 					]),
 					E('td', { 'class': 'td center' }, E('span', {
-						'class': 'badge success',
-						'style': 'color: #155724; background-color: #d4edda; border: 1px solid #c3e6cb; padding: 2px 8px; border-radius: 3px;'
+						'class': 'badge',
+						'style': badgeStyle
 					}, item.type || _('活跃'))),
-					E('td', { 'class': 'td center' }, item.expires === 'permanent' ? _('永久') : item.expires),
+					E('td', { 'class': 'td center' }, rememberText(item.expires)),
 					E('td', { 'class': 'td' }, formatBytes(item.bytes)),
 					E('td', { 'class': 'td center' }, [
 						E('button', {
@@ -720,7 +731,7 @@ return view.extend({
 									return;
 								var b = ev.target.closest('button');
 								b.disabled = true;
-								fs.exec_direct('/usr/bin/xdns-ctl', ['del-ip', item.ip]).then(function() {
+								fs.exec_direct('/usr/bin/xdns-ctl', ['del-ip', item.ip, '/etc/xdns/static_ips.txt']).then(function() {
 									ui.addTimeLimitedNotification(null, E('p', _('IP「%s」已成功从内核及规则文件中删除！').format(item.ip)), 3000, 'info');
 									location.reload();
 								}).catch(function(err) {
@@ -753,10 +764,10 @@ return view.extend({
 
 				// 1. Write to /etc/xdns/static_ips.txt
 				fs.write('/etc/xdns/static_ips.txt', content).then(function() {
-					// 2. Call xdns-ctl load-ips to load into kernel
-					return fs.exec_direct('/usr/bin/xdns-ctl', ['load-ips']);
+					// 2. Call xdns-ctl load-ips to load and sync into kernel
+					return fs.exec_direct('/usr/bin/xdns-ctl', ['load-ips', '/etc/xdns/static_ips.txt']);
 				}).then(function() {
-					ui.addTimeLimitedNotification(null, E('p', _('静态 IP 规则已成功保存并加载至内核 eBPF 模块！')), 3000, 'info');
+					ui.addTimeLimitedNotification(null, E('p', _('静态 IP 规则已成功保存并同步至内核 eBPF 模块！')), 3000, 'info');
 					location.reload();
 				}).catch(function(err) {
 					b.disabled = false;
