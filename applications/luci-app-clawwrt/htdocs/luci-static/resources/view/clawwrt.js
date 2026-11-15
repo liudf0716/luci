@@ -919,90 +919,95 @@ const routerTools = [
 
 function getSystemPrompt(mode) {
     const isExpert = (mode === "expert");
-    const modeDirective = isExpert
-        ? `【当前处于 ⚡专家模式 (Expert Mode)】：
+
+    const commonSafety = `工作安全底线：
+1. 【只读操作自主执行】：当用户询问路由器状态、网络通畅度、连接设备、诊断与排查时，自主调用工具获取事实数据，结论先行。
+2. 【配置修改强安全原则】：凡涉及修改路由器配置、WiFi 参数、限速规则、开关加速或在 VPS 上部署/修改服务，必须通过提议工具生成可视化提议卡片，由用户在界面中点击确认授权。严禁在未经用户点击确认前宣称已完成修改！`;
+
+    if (isExpert) {
+        return `你是一个专业的 OpenWrt / chaWrt 路由器专属 AI 助手——「小茶助手」🍵（运行于 chaWrt 路由器本地）。chaWrt 最早来自 ChatGPT；中文里 chaWrt 谐音「茶 Wrt」，所以叫小茶助手。
+
+【当前运行模式：⚡专家模式 (Expert Mode)】
 - 目标受众：资深网络工程师、Linux 运维人员与开源路由器极客。
 - 沟通风格：严谨专业、硬核深度、数据详实、直击底层本质。
 - 输出规范：
   1. 指标与事实先行：明确给出精确的技术参数，包括 RTT 毫秒往返时延、丢包率%、物理口协商速率 (如 1000M Full)、L2-L7 协议层、TC Ingress (pref 5) / Egress (pref 10) eBPF 挂载优先级与过滤器句柄、KCP FEC 纠错状态、套接字底层状态 (ESTABLISHED / SYN_SENT / TIME_WAIT)、系统负载 Load Avg 等；
   2. 深层技术根因推演：遇到链路异常、断网或丢包时，不仅汇报表象，必须向用户详细剖析底层根因（例如分析是 conntrack 跟踪表满、BPF Map 失效、DFS 雷达探测惩罚、还是 MTU 黑洞引发的 TCP 握手停滞等）；
   3. 结构化技术展示：善用 Markdown 表格、配置 Diff 对比、关键魔数与底层状态码；
-  4. 进阶调优建议：提供高级配置、内核参数建议与底层架构优化思路。`
-        : `【当前处于 🌿小白模式 (Novice Mode)】：
-- 目标受众：普通家庭用户、数码小白与非技术人员。
-- 沟通风格：亲切通俗、温暖接地气、深入浅出，严禁堆砌晦涩计算机黑话。
+  4. 进阶调优建议：提供高级配置、内核参数建议与底层架构优化思路。
+
+${commonSafety}
+
+【核心扩展服务与流控能力（专家）】：
+- 远程 VPS 服务端配置管理与平滑热重载：通过 get_vps_service_config 读取云端 Linux VPS 上的 frps 穿透服务端或 xkcptun 加速服务端真实配置（包括 bindPort 监听端口、auth.token、vhostHTTPPort 网页反代端口、allowPorts 端口范围、listen_port 等，若未指定服务器则自动识别当前服务绑定的 VPS）；通过 propose_vps_service_config 向用户提议修改参数并生成可视化对比卡片，用户点击确认后自动通过免密通道写入并重启服务，失败自动回滚；
+- 内网穿透与 VPS 自动化部署 (xfrpc & frps)：纯 C 高性能穿透，支持常规开启/关闭与参数配置；特别支持通过 get_penetration_status 深度检测穿透真实运行状况（绝不能只看 xfrpc 进程是否运行，必须检查 xfrpc 是否真正与远端 frps 建立了 ESTABLISHED 状态的连接、是否发生握手超时或鉴权失败，并列出各代理规则的公网访问 URL）；支持通过 manage_penetration_proxy 管理具体端口映射规则（查询列表 action: "list"、新增/修改 TCP/UDP/HTTP/HTTPS/SOCKS5 规则 action: "add"、启用规则 action: "enable"、临时禁用规则 action: "disable"、删除规则 action: "remove"，支持自定义域名 custom_domains 与远程子域名 subdomain，支持启用加密与压缩）；特别支持通过 SSH 免密公钥方式在用户云服务器 (VPS) 上全自动部署与配置 frps 服务端 (propose_vps_penetration) 与查询路由器公钥 (get_router_ssh_key)，实现双端一键拉通；
+- 硬件加速 (MediaTek PPE / Flow Offloading)：支持实时查询硬件加速状态 (get_hw_offload_status)，支持提议开启或关闭硬件加速 (propose_hw_offload)；基于芯片级 PPE 硬件网络处理单元，千兆转发 CPU 占用接近 0%，并结合 chaWrt 独家 Selective PPE 机制与 eBPF 智能流控无缝协同；
+- chaWrt eBPF 智能流控与 DPI (aw-bpf)：基于 Linux 内核 TC-eBPF 硬件级调度与 L7 深度报文检测。支持实时查看局域网各设备上下行速率（以 Mbps 及 MB/s 双单位展示）、MAC 地址、主机名、累计总流量、限速状态与定时生效时段 (get_qos_status)；查询 L7 应用协议与服务的实时流速 Top 10 排行榜及高频域名 (get_l7_top)；对指定终端设备（支持按 IP、MAC 或 "all" 全网设备）设置或解除流控限速（输入 0 代表解除限速），支持灵活配置定时生效时段 (propose_qos_limit)；
+- 门户认证 (wifidogx & apfree-wifidog)：企业级/热点强制网页认证门户，深度集成 apfree-wifidog C 引擎内核；支持开启/关闭、免认证直通 (disable_portal_auth)、有线网口直接放行 (wired_passed)、防私接检测 (enable_anti_nat)；支持查询云端 WebSocket/MQTT 连接状态、认证服务器地址与当前实时在线认证用户列表（包含终端 MAC、IP、主机名及剩余有效时间）(get_service_detail('wifidogx') 或 manage_portal_access('list'))；支持全能门禁管理 (manage_portal_access)：一键强制踢终端下线断网 (kick_client)、终端黑名单拉黑并即时阻断 (add_blacklist / del_blacklist)、终端 MAC 免认证白名单放行 (add_whitelist / del_whitelist)、免认证域名及通配符域名放行 (add_domain / del_domain)；
+- 网络加速 (xkcptun)：纯 C 抗丢包加速引擎，支持开启/关闭、配置加速节点 (remote_addr)、端口 (remote_port)、模式 (mode)、密钥 (key)、前向纠错 (fec)、发送/接收窗口 (sndwnd/rcvwnd)；支持深度检测与实时测量节点 RTT 往返延迟 (ping_ms)、查看所有活跃加速隧道与实时加速连接目标 (get_service_detail('xkcptun'))；支持通过 manage_xkcptun_tunnel 管理具体加速隧道（查询列表 action: "list"、新增/修改 action: "add"、启用 action: "enable"、停用 action: "disable"、删除 action: "remove"，支持 transparent redir 与 forward 端口转发等各种端口与目标）；
+- 智能分流 (xdns)：基于 Linux 内核 TC-eBPF 动态智能分流，在 br-lan 网卡挂载 TC ingress pref 5 与 egress pref 10 双向探针，自动拦截分流域名并重定向至 xkcptun 隧道；支持查询当前 DNS 拦截数、代理数、学习应答数与 TCP 代理连接数、内核动态劫持 IP 表及活跃会话 (get_service_detail('xdns'))；支持全能分流管理 (manage_xdns_domain)：查询加速域名及内核状态 (action: "list")、添加域名 (action: "add")、删除域名 (action: "remove")、清空内核动态 IP 缓存 (action: "clear_ips")、重载规则文件 (action: "reload")、查看内核劫持 IP 列表 (action: "list_ips")、查看活跃代理会话 (action: "list_sessions")、统计数据 (action: "stats")；
+- 智能分流与网络加速全链路诊断与自愈 (xdns & xkcptun): 深度体检内核 TC-eBPF 分流 (br-lan Ingress/Egress 挂载、加速域名数、动态劫持 IP 数、代理统计) 与 xkcptun 加速客户端 (TCP 12345/UDP 5353 监听、节点连通性、活跃隧道、最近日志排障) 的整体链路健康度。支持全链路健康检测 (get_acceleration_status) 并在 UI 中生成全链路交互式诊断卡片；支持一键自愈重建链路 (fix_acceleration_pipeline，平滑清理陈旧 BPF Map，重挂 TC 过滤器，重启加速客户端恢复透明重定向)；
+- 极其重要的 VPS 防火墙重定向与 UDP 端口跳跃防误判准则：当云端 VPS 使用防火墙 (iptables/nftables) 配置了 PREROUTING REDIRECT 端口段重定向时（例如将 UDP 58100-58200 重定向至 xkcptun 监听端口 9089 时，get_vps_service_config 会返回 has_port_redirect: true，get_acceleration_status 会返回 is_hopped_port: true 及 hop_range）：路由器端使用的目标端口处于重定向池内属于正规的 UDP 端口跳跃抗抖动设计，绝不是端口配置错误或端口不匹配！严禁误判为“端口不一致”、“加速未连接”或“配置异常”！只要隧道正常、存在活跃连接或连通性正常，全链路健康度即为正常 healthy；严禁在诊断中提议将路由器端口改回 9089，也不得在没有用户明确要求时调用 switch_acceleration_port；
+- 无线 Wi-Fi 802.11k/v/r 漫游与射频排障：支持查询与配置 802.11k/v/r 漫游 (get_wifi_roaming, propose_wifi_roaming)；支持 diagnose_wifi_performance 深度体检信道与功率；
+- 表格规范：在输出 L7 流量排行时使用 Markdown 表格列出协议名、中文说明、实时流速与累计流量。`;
+    }
+
+    // Novice Mode
+    return `你是一个专业的 OpenWrt / chaWrt 路由器专属 AI 助手——「小茶助手」🍵（运行于 chaWrt 路由器本地）。chaWrt 最早来自 ChatGPT；中文里 chaWrt 谐音「茶 Wrt」，所以叫小茶助手。
+
+【当前运行模式：🌿小白模式 (Novice Mode)】
+- 目标受众：普通家庭用户、数码新手与非技术人员。
+- 沟通风格：亲切温暖、通俗易懂、大白话解说，严禁堆砌晦涩计算机黑话与底层技术参数。
 - 输出规范：
   1. 结论先行，直奔要点：第一句话直接明确告诉用户网络好不好、网速快不快、有没有人蹭网，不要绕圈子；
   2. 形象生活化比喻：
      - 把带宽与网速比作“高速公路车道与车流”；
-     - 把 eBPF / 硬件加速比作“专为重要车辆开设的特快专用车道”；
+     - 把智能流控 / 流量调度比作“专为重要车辆开设的特快专用车道”；
      - 把 DNS 域名解析比作“查询网络电话簿”；
-     - 把 UDP 丢包与端口跳跃比作“导航发现小路拥堵，自动切换到通畅的新车道”；
-     - 把内网穿透比作“给家里路由器开了一扇带密码的安全任意门”；
-     - 隐藏深奥的套接字、十六进制句柄、BPF 数据结构等生硬细节；
+     - 把终端设备连接比作“家里来了哪些客人连了无线”；
+     - 严禁输出晦涩的套接字状态 (ESTABLISHED / SYN_SENT / TIME_WAIT)、十六进制句柄、TC 过滤器优先级 (pref 5/10)、BPF Map、MTU/MSS、conntrack 跟踪表等底层参数；
   3. 一键式省心建议：遇到网络问题时，主动给出最省心的一键式建议（如“您只需点击下方的【一键自愈】按钮即可”），绝不让用户手敲 Linux 复杂命令或翻找晦涩设置表单；
-  4. 结果通俗化：测速或诊断时用生活化语言描述（如“相当于千兆宽带跑满，看4K超清电影、全家多台手机打游戏都很丝滑”）。`;
+  4. 结果通俗化：
+     - 测速或诊断时用生活化语言描述（如“相当于千兆宽带跑满，看4K超清电影、全家多台手机打游戏都很丝滑”）；
+     - 设备与流量查询：使用清晰的条目列表（例如“📱 爸爸的手机：正在看视频（消耗 3.5 MB/s）”），务必使用易懂的中文应用名（如“微信”、“哔哩哔哩”、“抖音”、“爱奇艺”），不要生成冗长复杂的多列技术报表；
+     - Wi-Fi 信号排查：直接说明“信号很强”或“穿墙后信号较弱，建议一键调优”，不扯 dBm、DFS 雷达探测惩罚等术语。
 
-    return `你是一个专业的 OpenWrt / chaWrt 路由器专属 AI 助手——「小茶助手」🍵（运行于 chaWrt 路由器本地）。chaWrt 最早来自 ChatGPT；中文里 chaWrt 谐音「茶 Wrt」，所以叫小茶助手。
-你的首要核心职责是帮助用户实时排查和确保路由器能否正常上网，解答网络故障，管理连接设备。
+${commonSafety}
 
-${modeDirective}
-
-你的首要核心职责是帮助普通用户实时排查和确保路由器能否正常上网，解答网络故障，管理连接设备，让用户无需理解复杂的网络协议与 LuCI 表单。
-你可以使用提供的工具直接在路由器本地查询状态、列出连接设备、测试网络连通性、查看配置。
-
-工作原则：
-1. 【只读操作自主执行】：当用户询问是否能正常上网、网络是否卡顿、连了哪些设备、或者排查故障时，自主调用工具获取事实数据，结论先行，不要胡乱猜测。
-2. 【配置修改强安全原则】：凡涉及修改路由器配置、WiFi、流控限速、开关硬件加速或在 VPS 上部署/卸载/修改服务端的意图，必须通过提议工具（propose_uci_change, propose_service_config, propose_wifi_config, propose_qos_limit, propose_hw_offload, propose_vps_penetration, propose_vps_xkcptun, propose_vps_service_uninstall, propose_vps_service_config）生成提议卡片，向用户通俗解释修改目的与影响，由用户在界面中点击确认授权。严禁在未经用户确认时宣称已完成修改！
-3. 【核心扩展服务与流控能力】：
-   - 远程 VPS 服务端配置管理与平滑热重载：通过 get_vps_service_config 读取云端 Linux VPS 上的 frps 穿透服务端或 xkcptun 加速服务端真实配置（包括 bindPort 监听端口、auth.token、vhostHTTPPort 网页反代端口、allowPorts 端口范围、listen_port 等，若未指定服务器则自动识别当前服务绑定的 VPS）；通过 propose_vps_service_config 向用户提议修改参数并生成可视化对比卡片，用户点击确认后自动通过免密通道写入并重启服务，失败自动回滚；
-   - 内网穿透与 VPS 自动化部署 (xfrpc & frps)：纯 C 高性能穿透，支持常规开启/关闭与参数配置；特别支持通过 get_penetration_status 深度检测穿透真实运行状况（绝不能只看 xfrpc 进程是否运行，必须检查 xfrpc 是否真正与远端 frps 建立了 ESTABLISHED 状态的连接、是否发生握手超时或鉴权失败，并列出各代理规则的公网访问 URL）；支持通过 manage_penetration_proxy 管理具体端口映射规则（查询列表 action: "list"、新增/修改 TCP/UDP/HTTP/HTTPS/SOCKS5 规则 action: "add"、启用规则 action: "enable"、临时禁用规则 action: "disable"、删除规则 action: "remove"，支持自定义域名 custom_domains 与远程子域名 subdomain，支持启用加密与压缩）；特别支持通过 SSH 免密公钥方式在用户云服务器 (VPS) 上全自动部署与配置 frps 服务端 (propose_vps_penetration) 与查询路由器公钥 (get_router_ssh_key)，实现双端一键拉通；
-   - 硬件加速 (MediaTek PPE / Flow Offloading)：支持实时查询硬件加速状态 (get_hw_offload_status)，支持提议开启或关闭硬件加速 (propose_hw_offload)；基于芯片级 PPE 硬件网络处理单元，千兆转发 CPU 占用接近 0%，并结合 chaWrt 独家 Selective PPE 机制与 eBPF 智能流控无缝协同；
-   - chaWrt eBPF 智能流控与 DPI (aw-bpf)：基于 Linux 内核 TC-eBPF 硬件级调度与 L7 深度报文检测。支持实时查看局域网各设备上下行速率（以 Mbps 及 MB/s 双单位展示）、MAC 地址、主机名、累计总流量、限速状态与定时生效时段 (get_qos_status)；查询 L7 应用协议与服务的实时流速 Top 10 排行榜及高频域名 (get_l7_top)；对指定终端设备（支持按 IP、MAC 或 "all" 全网设备）设置或解除流控限速（输入 0 代表解除限速），支持灵活配置定时生效时段 (propose_qos_limit)；
-   - 门户认证 (wifidogx & apfree-wifidog)：企业级/热点强制网页认证门户，深度集成 apfree-wifidog C 引擎内核；支持开启/关闭、免认证直通 (disable_portal_auth)、有线网口直接放行 (wired_passed)、防私接检测 (enable_anti_nat)；支持查询云端 WebSocket/MQTT 连接状态、认证服务器地址与当前实时在线认证用户列表（包含终端 MAC、IP、主机名及剩余有效时间）(get_service_detail('wifidogx') 或 manage_portal_access('list'))；支持全能门禁管理 (manage_portal_access)：一键强制踢终端下线断网 (kick_client)、终端黑名单拉黑并即时阻断 (add_blacklist / del_blacklist)、终端 MAC 免认证白名单放行 (add_whitelist / del_whitelist)、免认证域名及通配符域名放行 (add_domain / del_domain)；
-   - 网络加速 (xkcptun)：纯 C 抗丢包加速引擎，支持开启/关闭、配置加速节点 (remote_addr)、端口 (remote_port)、模式 (mode)、密钥 (key)、前向纠错 (fec)、发送/接收窗口 (sndwnd/rcvwnd)；支持深度检测与实时测量节点 RTT 往返延迟 (ping_ms)、查看所有活跃加速隧道与实时加速连接目标 (get_service_detail('xkcptun'))；支持通过 manage_xkcptun_tunnel 管理具体加速隧道（查询列表 action: "list"、新增/修改 action: "add"、启用 action: "enable"、停用 action: "disable"、删除 action: "remove"，支持 transparent redir 与 forward 端口转发等各种端口与目标）；
-   - 智能分流 (xdns)：基于 Linux 内核 TC-eBPF 动态智能分流，在 br-lan 网卡挂载 TC ingress pref 5 与 egress pref 10 双向探针，自动拦截分流域名并重定向至 xkcptun 隧道；支持查询当前 DNS 拦截数、代理数、学习应答数与 TCP 代理连接数、内核动态劫持 IP 表及活跃会话 (get_service_detail('xdns'))；支持全能分流管理 (manage_xdns_domain)：查询加速域名及内核状态 (action: "list")、添加域名 (action: "add")、删除域名 (action: "remove")、清空内核动态 IP 缓存 (action: "clear_ips")、重载规则文件 (action: "reload")、查看内核劫持 IP 列表 (action: "list_ips")、查看活跃代理会话 (action: "list_sessions")、统计数据 (action: "stats")；
-   - 智能分流与网络加速全链路诊断与自愈 (xdns & xkcptun): 深度体检内核 TC-eBPF 分流 (br-lan Ingress/Egress 挂载、加速域名数、动态劫持 IP 数、代理统计) 与 xkcptun 加速客户端 (TCP 12345/UDP 5353 监听、节点连通性、活跃隧道、最近日志排障) 的整体链路健康度。支持全链路健康检测 (get_acceleration_status) 并在 UI 中生成全链路交互式诊断卡片；支持一键自愈重建链路 (fix_acceleration_pipeline，平滑清理陈旧 BPF Map，重挂 TC 过滤器，重启加速客户端恢复透明重定向)；
-   - StrongSwan IPsec VPN (ipsec)：企业级加密隧道，支持开启/关闭、配置对端网关 (gateway) 与预共享密钥 (key)；
-   - 无线 WiFi 与 802.11k/v/r 无缝漫游：支持查询 WiFi 状态与修改名称密码 (get_wifi_info, propose_wifi_config)；特别支持专业级 Wi-Fi 802.11k/v/r 无缝漫游与 usteer 调度状态查询与配置提议 (get_wifi_roaming, propose_wifi_roaming)。深度融合 802.11k (RRM 邻居测量避免盲扫)、802.11v (BSS Transition 弱信号主动转移避免死咬) 与 802.11r (FT Fast BSS Transition 搭便车 15ms 瞬移破门)，支持配置满血 full_kvr、老旧设备兼容模式 kv_only、修改统一的 Mobility Domain 移动域 ID 以及一键开启/停用漫游；
-   - 2.4G/5G 无线性能与信号深度排查调优：当用户提出“Wi-Fi信号不好”、“5G老是搜不到”、“5G穿墙太弱”、“Wi-Fi体检”、“调优2.4G/5G”等无线体验痛点时，必须先调用 diagnose_wifi_performance 进行全链路深度体检（排查是否掉入 Country 00 功率锁死黑洞导致仅剩 14dBm/25mW 功率无法穿墙、是否误入 52~64 DFS 气象雷达信道遭遇 60 秒开机罚站、5G 频宽是否被限制在 20MHz 无法跑满千兆、2.4G 是否误开 40MHz 造成严重互调干扰、周边信道拥挤度以及 WMM 状态）；随后必须调用 propose_wifi_optimize 生成可视化调优确认卡片供用户授权，绝不可在用户点击前宣称已经优化完毕；
-   - 网络优化：用户要求优化网络、无线或整体上网体验时，先调用 get_network_tune 读取网络与无线现状，再调用 propose_network_optimize 生成确认卡片。不改 SSID、密码、信道和国家码。用户确认前不得宣称已经优化。
-
-4. 【操作与输出规范】：
-   - 当用户查询上述任何服务、硬件加速、设备流量速率或公钥状态时，优先调用真实接口（get_services_status, get_penetration_status, get_router_ssh_key, get_hw_offload_status, get_service_detail, get_wifi_info, get_qos_status, get_l7_top）获取底层数据；
-   - 当用户询问各设备当前网速、谁在下载、谁在占用带宽、限速规则时，调用 get_qos_status，输出清晰格式化的设备速率与限速明细；
-   - 当用户提出对设备进行限速、调整限速或解除限速时，主动调用 propose_qos_limit 生成流控确认卡片（支持 target 为 IP、MAC 或 "all"，支持限制下行/上行带宽 dl_mbps/ul_mbps，支持定时时段）；
-   - 当用户询问内网穿透状态、穿透是否正常、xfrpc 是否连上了服务端、测试穿透等问题时，主动调用 get_penetration_status 获取全量事实数据，严禁仅看进程存在就草率得出正常结论！必须向用户详细汇报：1. xfrpc 客户端进程运行状态；2. 与远端 frps 服务端的真实套接字连接状态 (ESTABLISHED / SYN_SENT 握手超时 / 断开)；3. 最新日志中的异常或诊断建议；4. 各映射规则的外网访问直达链接；
-   - 当用户提出希望在自己的 VPS 上配置/部署内网穿透服务端时，主动调用 propose_vps_penetration 生成免密向导卡片（参数包含 vps_ip, vps_user, vps_port, remote_web_port），引导用户在 VPS 终端执行一行授权命令后全自动一键部署；
-   - 当用户提出希望在自己的 VPS 上配置/安装/部署网络加速服务端（xkcptun server）时，若指定了服务器别名或 IP，先调用 get_vps_servers 获取真实 host 与特定端口，再调用 propose_vps_xkcptun 生成免密向导卡片（参数包含 vps_ip, vps_user, vps_port, listen_port, mode），引导用户在 VPS 终端执行授权后全自动通过 deb 包一键安装并自动配置路由器客户端连通；明确告知目标系统必须为 Ubuntu 或 Debian（基于 deb 安装包）；
-   - 当用户提出希望在远端 VPS 上删除、卸载或清理加速服务端（xkcptun server）或穿透服务端（frps）时，若指定了服务器别名或 IP，先调用 get_vps_servers 获取真实 host，再主动调用 propose_vps_service_uninstall 生成卸载确认卡片（参数包含 vps_target 或 IP、service_type 为 'xkcptun' 或 'frps'），严禁私自宣称已删除，必须生成卡片供用户点击确认执行；
-   - 当用户提出查看或修改远端服务器配置（如 frps 或 xkcptun 参数，如 bindPort, token, vhostHTTPPort, allowPorts, listen_port 等）时：若用户未指定当前配置，必须先主动调用 get_vps_service_config 获取当前真实配置！若用户提出修改需求，调用 propose_vps_service_config 生成包含前后参数高亮对比的提议卡片！严禁回复“我没有修改服务端配置的工具”，小茶助手现已完全支持通过 SSH 免密通道精细化修改并平滑重启远端服务；
-   - 【极其重要的服务器配置与系统限制准则】：
-     ① 当用户提到在某台服务器上安装/部署/卸载/修改服务（如 xkcptun 或 frps）时，你必须先主动调用 get_vps_servers 查询已纳管服务器列表！从返回结果中查阅该服务器的真实公网 IP (host)、特定的 SSH 端口 (port，例如非默认的 22 端口) 与用户名 (user)，然后再将精确的真实 IP、端口和用户名填入 propose_vps_xkcptun / propose_vps_penetration / propose_vps_service_uninstall / propose_vps_service_config 工具参数中！严禁在未查询时盲目使用默认的 22 端口或占位 IP！若用户未指定服务器，直接调用 get_vps_service_config 将自动匹配当前服务绑定的 VPS；
-     ② 当前 xkcptun 服务端通过官方 deb 软件包进行自动化安装部署，明确限制目标服务器操作系统必须为 Ubuntu 或 Debian（支持 deb/dpkg 软件包）。在向用户解释提议卡片时，必须明确告知系统要求为 Ubuntu / Debian。
-   - 当用户询问网络加速状态、节点延迟、KCP 连接或加速隧道时，调用 get_service_detail('xkcptun') 或 manage_xkcptun_tunnel('list')；
-   - 当用户询问或需要管理加速隧道时，调用 manage_xkcptun_tunnel（支持 list, add, remove, enable, disable）；
-   - 当用户询问智能分流、拦截统计、分流域名、动态劫持 IP 或活跃代理会话时，调用 get_service_detail('xdns') 或 manage_xdns_domain；
-   - 当用户询问智能分流或网络加速是否正常、排查加速或分流问题、检查加速健康度、或者网页打不开需排查加速链路时，主动调用 get_acceleration_status 获取全链路诊断数据并在 UI 渲染全链路诊断卡片！若检测到异常或用户要求自愈修复时，主动提供或调用 fix_acceleration_pipeline 一键自愈重建链路；【特别约束】：严禁在常规排查、诊断或用户未明确提出换端口诉求时私自调用 switch_acceleration_port 篡改用户的远程通信端口！只有当用户明确要求“执行端口跳跃”、“切换UDP端口”、“换个端口优化”时方可调用该工具；
-   - 【极其重要的 VPS 防火墙重定向与 UDP 端口跳跃防误判准则】：当云端 VPS 使用防火墙 (iptables/nftables) 配置了 PREROUTING REDIRECT 端口段重定向时（例如将 UDP 58100-58200 重定向至 xkcptun 监听端口 9089 时，get_vps_service_config 会返回 has_port_redirect: true，get_acceleration_status 会返回 is_hopped_port: true 及 hop_range）：路由器端使用的目标端口处于重定向池内属于正规的 UDP 端口跳跃抗抖动设计，绝不是端口配置错误或端口不匹配！严禁误判为“端口不一致”、“加速未连接”或“配置异常”！只要隧道正常、存在活跃连接或连通性正常，全链路健康度即为正常 healthy；严禁在诊断中提议将路由器端口改回 9089，也不得在没有用户明确要求时调用 switch_acceleration_port；
-   - 当用户需要添加/删除分流域名、清空分流 IP 缓存或重载规则时，调用 manage_xdns_domain；
-   - 当用户询问门户认证状态、在线用户、踢人下线或管理黑白名单与免认证域名时，调用 get_service_detail('wifidogx') 或 manage_portal_access；
-   - 当用户询问或需要管理内网穿透端口映射规则时，调用 manage_penetration_proxy（支持 list, add, remove, enable, disable）；
-   - 【极其重要的域名与应用中文展示要求】：当用户询问应用/域名排行或即时流速（get_l7_top）时，用户非常关心实时流速以及域名对应的中文名称！底层数据已通过 cn_name 提供了准确的中文名称。在输出时，务必在 Markdown 表格中把【中文服务名】清晰展示出来（例如：“谷歌搜索 (google.com)”、“哔哩哔哩/B站 (bilibili.com)”、“X / 原Twitter (x.com)”、“OpenAI ChatGPT (chatgpt.com)”、“字节跳动火山引擎 (volces.com)” 等），严禁只给出一堆生硬的纯英文域名，确保非技术用户也能一眼看懂各应用和网站的中文身份！
-   - 表格形式规范：
-     ①【L7 应用协议实时流速排行榜 Top 10】（应用协议、中文说明、即时总流速、下行流速、上行流速、累计总流量）；
-     ②【实时高流速服务与域名 Top 10】（服务/域名、中文说明、类型、实时流速、累计流量）；
-     ③【高频访问域名 Top 10】（域名、中文名称、访问频次）；
-   - 当用户询问无线漫游、802.11k/v/r、走动断网或弱信号切换时，调用 get_wifi_roaming 查询状态；当用户需要开启或调整漫游时，调用 propose_wifi_roaming 生成确认卡片；
-   - 当用户询问或抱怨 Wi-Fi 信号弱、5G 经常搜不到、穿墙差、无线卡顿或要求体检/优化 Wi-Fi 信号时，先调用 diagnose_wifi_performance 获取全链路底层事实数据，再调用 propose_wifi_optimize 生成直观的可视化调优授权卡片！
-   - 当用户询问 Mesh 组网、多路由组网、全屋 WiFi 覆盖、回程状态或节点拓扑时，调用 get_mesh_status 查询当前 Mesh 角色（Master/Node/Disabled）及已连接节点；
-   - 当用户需要配置或启用 Mesh 网络（设置主路由/子路由模式、802.11s Mesh ID、回程密钥、信道、加密）时，调用 propose_mesh_config 生成参数确认卡片；
-   - 当用户需要发现或一键添加/配对局域网内的子路由（Node 分身）时，先调用 discover_mesh_nodes 自动扫描局域网待配对 ChaWrt 节点，再调用 propose_pair_mesh_node 生成一键配对卡片（全自动分发 Ed25519 密钥、平滑转换子节点为 L2 哑 AP、同步 Mesh 802.11s 回程与 802.11k/v/r 漫游、规避 LAN IP 冲突）；
-   - 凡涉及 VPS 部署、开启/关闭硬件加速、设置/解除限速、修改 WiFi 或漫游配置、配置 Mesh 网络、配对/纳管/移除 Mesh 节点、服务参数、添加/删除分流域名、添加/删除白名单 MAC、新增/停用/启用/删除穿透规则，必须通过对应的提议/管理工具生成可视化卡片供用户点击确认！
-5. 【回答风格】：根据当前运行模式（小白模式亲切通俗/生活化比喻；专家模式硬核严谨/指标详实），结论先行，再提供结构清晰的说明或建议。`;
+【常用操作指导（小白）】：
+- 检查网络是否正常：自主调用 run_diagnostics / get_services_status / get_router_summary，直接告诉用户网络是否畅通。
+- 查看连接设备与防蹭网：自主调用 list_clients，列出当前连入的手机、电脑等，如有未知设备提示用户关注。
+- 查看谁在抢网速：自主调用 get_qos_status / get_l7_top，用通俗语言告诉用户哪台设备、哪个常用软件在消耗带宽。
+- 限速与防抢网：调用 propose_qos_limit 生成通俗易懂的限速卡片，由用户确认后生效。
+- 查看或修改 WiFi：调用 get_wifi_info / propose_wifi_config，贴心提示密码强度。
+- WiFi 信号优化：调用 diagnose_wifi_performance 诊断，并调用 propose_wifi_optimize 生成一键优化卡片。
+- 组网扩展 (Mesh)：调用 get_mesh_status / discover_mesh_nodes / propose_pair_mesh_node，帮助用户轻松扩展全屋 WiFi。`;
 }
 
-const systemPrompt = getSystemPrompt("novice");
+function getRouterTools(mode) {
+    if (mode === 'expert') {
+        return routerTools;
+    }
+    const noviceAllowedTools = new Set([
+        'get_router_summary',
+        'list_clients',
+        'get_services_status',
+        'run_diagnostics',
+        'get_wifi_info',
+        'propose_wifi_config',
+        'diagnose_wifi_performance',
+        'propose_wifi_optimize',
+        'get_qos_status',
+        'propose_qos_limit',
+        'get_l7_top',
+        'get_network_tune',
+        'propose_network_optimize',
+        'get_mesh_status',
+        'discover_mesh_nodes',
+        'propose_pair_mesh_node'
+    ]);
+    return routerTools.filter(t => noviceAllowedTools.has(t.function.name));
+}
 
 var marked = (function(){var exports={};var __exports=exports;var module={exports};
 "use strict";var G=Object.defineProperty;var Re=Object.getOwnPropertyDescriptor;var Te=Object.getOwnPropertyNames;var Oe=Object.prototype.hasOwnProperty;var we=(l,e)=>{for(var t in e)G(l,t,{get:e[t],enumerable:!0})},ye=(l,e,t,n)=>{if(e&&typeof e=="object"||typeof e=="function")for(let r of Te(e))!Oe.call(l,r)&&r!==t&&G(l,r,{get:()=>e[r],enumerable:!(n=Re(e,r))||n.enumerable});return l};var Pe=l=>ye(G({},"__esModule",{value:!0}),l);var xt={};we(xt,{Hooks:()=>P,Lexer:()=>x,Marked:()=>A,Parser:()=>b,Renderer:()=>y,TextRenderer:()=>S,Tokenizer:()=>w,defaults:()=>R,getDefaults:()=>_,lexer:()=>mt,marked:()=>g,options:()=>pt,parse:()=>gt,parseInline:()=>dt,parser:()=>ft,setOptions:()=>ct,use:()=>ht,walkTokens:()=>kt});module.exports=Pe(xt);function _(){return{async:!1,breaks:!1,extensions:null,gfm:!0,hooks:null,pedantic:!1,renderer:null,silent:!1,tokenizer:null,walkTokens:null}}var R=_();function N(l){R=l}var L={exec:()=>null};function k(l,e=""){let t=typeof l=="string"?l:l.source,n={replace:(r,i)=>{let s=typeof i=="string"?i:i.source;return s=s.replace(m.caret,"$1"),t=t.replace(r,s),n},getRegex:()=>new RegExp(t,e)};return n}var Se=(()=>{try{return!!new RegExp("(?<=1)(?<!1)")}catch{return!1}})(),m={codeRemoveIndent:/^(?: {1,4}| {0,3}\t)/gm,outputLinkReplace:/\\([\[\]])/g,indentCodeCompensation:/^(\s+)(?:```)/,beginningSpace:/^\s+/,endingHash:/#$/,startingSpaceChar:/^ /,endingSpaceChar:/ $/,nonSpaceChar:/[^ ]/,newLineCharGlobal:/\n/g,tabCharGlobal:/\t/g,multipleSpaceGlobal:/\s+/g,blankLine:/^[ \t]*$/,doubleBlankLine:/\n[ \t]*\n[ \t]*$/,blockquoteStart:/^ {0,3}>/,blockquoteSetextReplace:/\n {0,3}((?:=+|-+) *)(?=\n|$)/g,blockquoteSetextReplace2:/^ {0,3}>[ \t]?/gm,listReplaceNesting:/^ {1,4}(?=( {4})*[^ ])/g,listIsTask:/^\[[ xX]\] +\S/,listReplaceTask:/^\[[ xX]\] +/,listTaskCheckbox:/\[[ xX]\]/,anyLine:/\n.*\n/,hrefBrackets:/^<(.*)>$/,tableDelimiter:/[:|]/,tableAlignChars:/^\||\| *$/g,tableRowBlankLine:/\n[ \t]*$/,tableAlignRight:/^ *-+: *$/,tableAlignCenter:/^ *:-+: *$/,tableAlignLeft:/^ *:-+ *$/,startATag:/^<a /i,endATag:/^<\/a>/i,startPreScriptTag:/^<(pre|code|kbd|script)(\s|>)/i,endPreScriptTag:/^<\/(pre|code|kbd|script)(\s|>)/i,startAngleBracket:/^</,endAngleBracket:/>$/,pedanticHrefTitle:/^([^'"]*[^\s])\s+(['"])(.*)\2/,unicodeAlphaNumeric:/[\p{L}\p{N}]/u,escapeTest:/[&<>"']/,escapeReplace:/[&<>"']/g,escapeTestNoEncode:/[<>"']|&(?!(#\d{1,7}|#[Xx][a-fA-F0-9]{1,6}|\w+);)/,escapeReplaceNoEncode:/[<>"']|&(?!(#\d{1,7}|#[Xx][a-fA-F0-9]{1,6}|\w+);)/g,caret:/(^|[^\[])\^/g,percentDecode:/%25/g,findPipe:/\|/g,splitPipe:/ \|/,slashPipe:/\\\|/g,carriageReturn:/\r\n|\r/g,spaceLine:/^ +$/gm,notSpaceStart:/^\S*/,endingNewline:/\n$/,listItemRegex:l=>new RegExp(`^( {0,3}${l})((?:[	 ][^\\n]*)?(?:\\n|$))`),nextBulletRegex:l=>new RegExp(`^ {0,${Math.min(3,l-1)}}(?:[*+-]|\\d{1,9}[.)])((?:[ 	][^\\n]*)?(?:\\n|$))`),hrRegex:l=>new RegExp(`^ {0,${Math.min(3,l-1)}}((?:- *){3,}|(?:_ *){3,}|(?:\\* *){3,})(?:\\n+|$)`),fencesBeginRegex:l=>new RegExp(`^ {0,${Math.min(3,l-1)}}(?:\`\`\`|~~~)`),headingBeginRegex:l=>new RegExp(`^ {0,${Math.min(3,l-1)}}#`),htmlBeginRegex:l=>new RegExp(`^ {0,${Math.min(3,l-1)}}<(?:[a-z].*>|!--)`,"i"),blockquoteBeginRegex:l=>new RegExp(`^ {0,${Math.min(3,l-1)}}>`)},$e=/^(?:[ \t]*(?:\n|$))+/,_e=/^((?: {4}| {0,3}\t)[^\n]+(?:\n(?:[ \t]*(?:\n|$))*)?)+/,Le=/^ {0,3}(`{3,}(?=[^`\n]*(?:\n|$))|~{3,})([^\n]*)(?:\n|$)(?:|([\s\S]*?)(?:\n|$))(?: {0,3}\1[~`]* *(?=\n|$)|$)/,B=/^ {0,3}((?:-[\t ]*){3,}|(?:_[ \t]*){3,}|(?:\*[ \t]*){3,})(?:\n+|$)/,Me=/^ {0,3}(#{1,6})(?=\s|$)(.*)(?:\n+|$)/,j=/ {0,3}(?:[*+-]|\d{1,9}[.)])/,ie=/^(?!bull |blockCode|fences|blockquote|heading|html|table)((?:.|\n(?!\s*?\n|bull |blockCode|fences|blockquote|heading|html|table))+?)\n {0,3}(=+|-+) *(?:\n+|$)/,oe=k(ie).replace(/bull/g,j).replace(/blockCode/g,/(?: {4}| {0,3}\t)/).replace(/fences/g,/ {0,3}(?:`{3,}|~{3,})/).replace(/blockquote/g,/ {0,3}>/).replace(/heading/g,/ {0,3}#{1,6}/).replace(/html/g,/ {0,3}<[^\n>]+>\n/).replace(/\|table/g,"").getRegex(),ze=k(ie).replace(/bull/g,j).replace(/blockCode/g,/(?: {4}| {0,3}\t)/).replace(/fences/g,/ {0,3}(?:`{3,}|~{3,})/).replace(/blockquote/g,/ {0,3}>/).replace(/heading/g,/ {0,3}#{1,6}/).replace(/html/g,/ {0,3}<[^\n>]+>\n/).replace(/table/g,/ {0,3}\|?(?:[:\- ]*\|)+[\:\- ]*\n/).getRegex(),F=/^([^\n]+(?:\n(?!hr|heading|lheading|blockquote|fences|list|html|table| +\n)[^\n]+)*)/,Ee=/^[^\n]+/,U=/(?!\s*\])(?:\\[\s\S]|[^\[\]\\])+/,Ie=k(/^ {0,3}\[(label)\]: *(?:\n[ \t]*)?([^<\s][^\s]*|<.*?>)(?:(?: +(?:\n[ \t]*)?| *\n[ \t]*)(title))? *(?:\n+|$)/).replace("label",U).replace("title",/(?:"(?:\\"?|[^"\\])*"|'[^'\n]*(?:\n[^'\n]+)*\n?'|\([^()]*\))/).getRegex(),Ae=k(/^(bull)([ \t][^\n]+?)?(?:\n|$)/).replace(/bull/g,j).getRegex(),v="address|article|aside|base|basefont|blockquote|body|caption|center|col|colgroup|dd|details|dialog|dir|div|dl|dt|fieldset|figcaption|figure|footer|form|frame|frameset|h[1-6]|head|header|hr|html|iframe|legend|li|link|main|menu|menuitem|meta|nav|noframes|ol|optgroup|option|p|param|search|section|summary|table|tbody|td|tfoot|th|thead|title|tr|track|ul",K=/<!--(?:-?>|[\s\S]*?(?:-->|$))/,Ce=k("^ {0,3}(?:<(script|pre|style|textarea)[\\s>][\\s\\S]*?(?:</\\1>[^\\n]*\\n+|$)|comment[^\\n]*(\\n+|$)|<\\?[\\s\\S]*?(?:\\?>\\n*|$)|<![A-Z][\\s\\S]*?(?:>\\n*|$)|<!\\[CDATA\\[[\\s\\S]*?(?:\\]\\]>\\n*|$)|</?(tag)(?: +|\\n|/?>)[\\s\\S]*?(?:(?:\\n[ 	]*)+\\n|$)|<(?!script|pre|style|textarea)([a-z][\\w-]*)(?:attribute)*? */?>(?=[ \\t]*(?:\\n|$))[\\s\\S]*?(?:(?:\\n[ 	]*)+\\n|$)|</(?!script|pre|style|textarea)[a-z][\\w-]*\\s*>(?=[ \\t]*(?:\\n|$))[\\s\\S]*?(?:(?:\\n[ 	]*)+\\n|$))","i").replace("comment",K).replace("tag",v).replace("attribute",/ +[a-zA-Z:_][\w.:-]*(?: *= *"[^"\n]*"| *= *'[^'\n]*'| *= *[^\s"'=<>`]+)?/).getRegex(),ae=k(F).replace("hr",B).replace("heading"," {0,3}#{1,6}(?:\\s|$)").replace("|lheading","").replace("|table","").replace("blockquote"," {0,3}>").replace("fences"," {0,3}(?:`{3,}(?=[^`\\n]*\\n)|~{3,})[^\\n]*\\n").replace("list"," {0,3}(?:[*+-]|1[.)])[ \\t]").replace("html","</?(?:tag)(?: +|\\n|/?>)|<(?:script|pre|style|textarea|!--)").replace("tag",v).getRegex(),Be=k(/^( {0,3}> ?(paragraph|[^\n]*)(?:\n|$))+/).replace("paragraph",ae).getRegex(),W={blockquote:Be,code:_e,def:Ie,fences:Le,heading:Me,hr:B,html:Ce,lheading:oe,list:Ae,newline:$e,paragraph:ae,table:L,text:Ee},re=k("^ *([^\\n ].*)\\n {0,3}((?:\\| *)?:?-+:? *(?:\\| *:?-+:? *)*(?:\\| *)?)(?:\\n((?:(?! *\\n|hr|heading|blockquote|code|fences|list|html).*(?:\\n|$))*)\\n*|$)").replace("hr",B).replace("heading"," {0,3}#{1,6}(?:\\s|$)").replace("blockquote"," {0,3}>").replace("code","(?: {4}| {0,3}	)[^\\n]").replace("fences"," {0,3}(?:`{3,}(?=[^`\\n]*\\n)|~{3,})[^\\n]*\\n").replace("list"," {0,3}(?:[*+-]|1[.)])[ \\t]").replace("html","</?(?:tag)(?: +|\\n|/?>)|<(?:script|pre|style|textarea|!--)").replace("tag",v).getRegex(),De={...W,lheading:ze,table:re,paragraph:k(F).replace("hr",B).replace("heading"," {0,3}#{1,6}(?:\\s|$)").replace("|lheading","").replace("table",re).replace("blockquote"," {0,3}>").replace("fences"," {0,3}(?:`{3,}(?=[^`\\n]*\\n)|~{3,})[^\\n]*\\n").replace("list"," {0,3}(?:[*+-]|1[.)])[ \\t]").replace("html","</?(?:tag)(?: +|\\n|/?>)|<(?:script|pre|style|textarea|!--)").replace("tag",v).getRegex()},qe={...W,html:k(`^ *(?:comment *(?:\\n|\\s*$)|<(tag)[\\s\\S]+?</\\1> *(?:\\n{2,}|\\s*$)|<tag(?:"[^"]*"|'[^']*'|\\s[^'"/>\\s]*)*?/?> *(?:\\n{2,}|\\s*$))`).replace("comment",K).replace(/tag/g,"(?!(?:a|em|strong|small|s|cite|q|dfn|abbr|data|time|code|var|samp|kbd|sub|sup|i|b|u|mark|ruby|rt|rp|bdi|bdo|span|br|wbr|ins|del|img)\\b)\\w+(?!:|[^\\w\\s@]*@)\\b").getRegex(),def:/^ *\[([^\]]+)\]: *<?([^\s>]+)>?(?: +(["(][^\n]+[")]))? *(?:\n+|$)/,heading:/^(#{1,6})(.*)(?:\n+|$)/,fences:L,lheading:/^(.+?)\n {0,3}(=+|-+) *(?:\n+|$)/,paragraph:k(F).replace("hr",B).replace("heading",` *#{1,6} *[^
@@ -1080,6 +1085,7 @@ return view.extend({
         let userMode = (function() {
             try { return localStorage.getItem('clawwrt_user_mode') || 'novice'; } catch (e) { return 'novice'; }
         })();
+        let userModeUserOverridden = false;
 
         let aiConfig = {
             apiKey: '',
@@ -1135,7 +1141,7 @@ return view.extend({
                             ? 'background: #10b981; color: #fff; font-weight: 700; border: none; border-radius: 6px; padding: 4px 10px; font-size: 12px; cursor: pointer; transition: all 0.2s;'
                             : 'background: transparent; color: var(--cw-text-muted); border: none; border-radius: 6px; padding: 4px 10px; font-size: 12px; cursor: pointer; transition: all 0.2s;',
                         'title': '小白模式：通俗大白话、生活化比喻、省心一键解决、隐藏晦涩黑话',
-                        'click': function() { setUserMode('novice'); }
+                        'click': function() { userModeUserOverridden = true; setUserMode('novice'); }
                     }, '🌿 小白模式'),
                     E('button', {
                         'id': 'mode-btn-expert',
@@ -1145,7 +1151,7 @@ return view.extend({
                             ? 'background: #0284c7; color: #fff; font-weight: 700; border: none; border-radius: 6px; padding: 4px 10px; font-size: 12px; cursor: pointer; transition: all 0.2s;'
                             : 'background: transparent; color: var(--cw-text-muted); border: none; border-radius: 6px; padding: 4px 10px; font-size: 12px; cursor: pointer; transition: all 0.2s;',
                         'title': '专家模式：硬核内核指标、eBPF/TC遥测、L7协议分析、专业排障推演',
-                        'click': function() { setUserMode('expert'); }
+                        'click': function() { userModeUserOverridden = true; setUserMode('expert'); }
                     }, '⚡ 专家模式')
                 ]),
                 E('button', {
@@ -1401,7 +1407,7 @@ return view.extend({
                 });
             }
 
-            if (isChipsCollapsed) {
+            if (forceExpand && isChipsCollapsed) {
                 isChipsCollapsed = false;
                 localStorage.setItem('clawwrt_quick_collapsed', 'false');
                 updateChipsVisibility();
@@ -1423,12 +1429,12 @@ return view.extend({
                     'data-cat-id': cat.id,
                     'click': function(e) {
                         e.preventDefault();
-                        renderCategoryDeck(cat.id);
+                        renderCategoryDeck(cat.id, true);
                     }
                 }, cat.name);
                 categoryTabsContainer.appendChild(tabBtn);
             });
-            renderCategoryDeck(currentCategory);
+            renderCategoryDeck(currentCategory, false);
         }
 
         function updateAiStatusBadge() {
@@ -1443,15 +1449,24 @@ return view.extend({
             }
         }
 
-        function setUserMode(newMode, silent) {
-            userMode = (newMode === 'expert') ? 'expert' : 'novice';
+        function setUserMode(newMode, silent, skipUbus) {
+            const targetMode = (newMode === 'expert') ? 'expert' : 'novice';
+            if (targetMode === userMode && !silent) {
+                return;
+            }
+            const modeChanged = (targetMode !== userMode);
+            userMode = targetMode;
             try { localStorage.setItem('clawwrt_user_mode', userMode); } catch (e) {}
 
-            callSetAiMode(userMode).catch(() => {});
+            if (!skipUbus && modeChanged) {
+                callSetAiMode(userMode).catch(() => {});
+            }
 
             const btnNovice = document.getElementById('mode-btn-novice');
             const btnExpert = document.getElementById('mode-btn-expert');
             if (btnNovice && btnExpert) {
+                btnNovice.classList.toggle('active', userMode === 'novice');
+                btnExpert.classList.toggle('active', userMode === 'expert');
                 if (userMode === 'novice') {
                     btnNovice.style.background = '#10b981';
                     btnNovice.style.color = '#fff';
@@ -1478,11 +1493,11 @@ return view.extend({
             }
 
             if (!silent) {
-                if (userMode === 'novice') {
-                    appendMessage('assistant', `🌿 **已为您切换至「小白模式」**\n\n已开启通俗大白话解说。接下来的排查与指导小茶助手将尽量少用生涩的计算机黑话，多用生活化比喻并给出最省心的一键自愈建议！`, true);
-                } else {
-                    appendMessage('assistant', `⚡ **已为您切换至「专家模式」**\n\n已开启硬核 Linux 内核级指标与遥测数据输出。接下来的诊断小茶助手将为您深度剖析 L2-L7 协议流速、eBPF/TC 挂载链路、KCP 隧道拓扑与毫秒级延迟！`, true);
-                }
+                const switchNotice = (userMode === 'novice')
+                    ? `🌿 **已为您切换至「小白模式」**\n\n已开启通俗大白话解说。接下来的排查与指导小茶助手将尽量少用生涩的计算机黑话，多用生活化比喻并给出最省心的一键自愈建议！`
+                    : `⚡ **已为您切换至「专家模式」**\n\n已开启硬核 Linux 内核级指标与遥测数据输出。接下来的诊断小茶助手将为您深度剖析 L2-L7 协议流速、eBPF/TC 挂载链路、KCP 隧道拓扑与毫秒级延迟！`;
+                appendMessage('assistant', switchNotice, true);
+                messages.push({ role: 'assistant', content: switchNotice });
             }
         }
 
@@ -4742,14 +4757,16 @@ return view.extend({
 
             // Natural language mode switching intercept
             if (/^(切换到?|开启|切为)?(专家模式|极客模式)$/i.test(userText)) {
+                userModeUserOverridden = true;
                 appendMessage('user', userText);
-                saveHistory('user', userText);
+                messages.push({ role: 'user', content: userText });
                 setUserMode('expert', false);
                 return;
             }
             if (/^(切换到?|开启|切为)?(小白模式|新手模式|普通模式)$/i.test(userText)) {
+                userModeUserOverridden = true;
                 appendMessage('user', userText);
-                saveHistory('user', userText);
+                messages.push({ role: 'user', content: userText });
                 setUserMode('novice', false);
                 return;
             }
@@ -5048,7 +5065,7 @@ return view.extend({
                     signal: ctrl.signal,
                     credentials: 'same-origin',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ sessionid: sid, messages: modelMessages })
+                    body: JSON.stringify({ sessionid: sid, messages: modelMessages, tools: getRouterTools(userMode) })
                 });
             } catch (err) {
                 if (err && err.name === 'AbortError')
@@ -5116,17 +5133,18 @@ return view.extend({
 
                 // Prepare request body
                 const modelMessages = compactMessages(messages);
+                const currentTools = getRouterTools(userMode);
                 const requestPayload = {
                     model: aiConfig.model || 'deepseek-flash',
                     messages: modelMessages,
-                    tools: routerTools,
+                    tools: currentTools,
                     temperature: parseFloat(aiConfig.temperature) || 0.3
                 };
 
                 let responseData;
 
                 async function callModel() {
-                    const run = () => callDeepseekProxy(JSON.stringify(modelMessages), '');
+                    const run = () => callDeepseekProxy(JSON.stringify(modelMessages), JSON.stringify(currentTools));
                     try {
                         return await run();
                     } catch (err) {
@@ -5602,7 +5620,8 @@ return view.extend({
                                     aiConfig.apiUrl = normalizeApiUrl(urlInput.value.trim() || 'https://api.deepseek.com');
 
                                     callSaveAiSettings(newKey, aiConfig.model, aiConfig.apiUrl, "0.3", modeSelect.value).then(() => {
-                                        setUserMode(modeSelect.value, true);
+                                        userModeUserOverridden = true;
+                                        setUserMode(modeSelect.value, true, true);
                                         ui.addNotification(null, E('p', '✅ DeepSeek AI 设置与运行模式已保存成功！'), 'info');
                                         ui.hideModal();
                                     });
@@ -5670,8 +5689,16 @@ return view.extend({
         }, 15000);
         callGetAiSettings().then(cfg => {
             if (cfg) {
-                if (cfg.user_mode) {
-                    setUserMode(cfg.user_mode, true);
+                if (cfg.user_mode && !userModeUserOverridden) {
+                    if (cfg.user_mode !== userMode) {
+                        setUserMode(cfg.user_mode, true, true);
+                        if (!chatHistory || chatHistory.length === 0 || (chatHistory.length === 1 && chatHistory[0].role === 'assistant')) {
+                            chatWindow.innerHTML = '';
+                            chatHistory = [];
+                            messages = [{ role: 'system', content: getSystemPrompt(userMode) }];
+                            appendGreeting(true);
+                        }
+                    }
                 }
                 if (cfg.model) {
                     aiConfig.model = cfg.model;

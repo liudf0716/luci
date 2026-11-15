@@ -797,14 +797,17 @@ case "$1" in
             if [ "$user_mode" != "expert" ]; then
                 user_mode="novice"
             fi
-            uci -q set clawwrt.ai.user_mode="$user_mode"
-            uci -q commit clawwrt
-            json_init
-            json_add_object "result"
-            json_add_boolean "success" "1"
-            json_add_string "user_mode" "$user_mode"
-            json_close_object
-            json_dump
+            uci -q get clawwrt.ai >/dev/null || uci -q set clawwrt.ai=ai
+            if uci -q set clawwrt.ai.user_mode="$user_mode" && uci -q commit clawwrt; then
+                json_init
+                json_add_object "result"
+                json_add_boolean "success" "1"
+                json_add_string "user_mode" "$user_mode"
+                json_close_object
+                json_dump
+            else
+                claw_fail "保存模式配置失败"
+            fi
         }
 
         call_deepseek() {

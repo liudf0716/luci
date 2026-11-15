@@ -211,9 +211,28 @@ assert_ubus "参数安全" "run_diagnostics 拒绝 -f 标志参数注入" "run_d
 assert_ubus "参数安全" "run_diagnostics 拒绝非法诊断动作 (exploit)" "run_diagnostics" '{"action":"exploit","target":"8.8.8.8"}' "success" "false"
 assert_ubus "配对防御" "pair_mesh_node 拒绝公网节点 IP (8.8.8.8)" "pair_mesh_node" '{"target_ip":"8.8.8.8"}' "success" "false"
 assert_ubus "配对防御" "pair_mesh_node 拒绝空密码安全降级" "pair_mesh_node" '{"target_ip":"192.168.8.199","password":""}' "success" "false"
+# Backup AI settings if present
+OLD_AI_KEY=$(uci -q get clawwrt.ai.api_key)
+OLD_AI_MODEL=$(uci -q get clawwrt.ai.model)
+OLD_AI_URL=$(uci -q get clawwrt.ai.api_url)
+
 assert_ubus "运行模式" "设置小茶助手为专家模式" "set_ai_mode" '{"user_mode":"expert"}' "user_mode" "expert"
 assert_ubus "运行模式" "获取小茶助手专家模式设置" "get_ai_settings" "" "user_mode" "expert"
 assert_ubus "运行模式" "切换回小白模式" "set_ai_mode" '{"user_mode":"novice"}' "user_mode" "novice"
+
+# Test set_ai_mode on empty/fresh configuration
+uci -q delete clawwrt.ai && uci -q commit clawwrt
+assert_ubus "模式空配置" "全新配置下初始化专家模式" "set_ai_mode" '{"user_mode":"expert"}' "user_mode" "expert"
+assert_ubus "模式空配置" "空配置初始化后读取专家模式" "get_ai_settings" "" "user_mode" "expert"
+assert_ubus "模式空配置" "切换回小白模式" "set_ai_mode" '{"user_mode":"novice"}' "user_mode" "novice"
+
+# Restore original AI settings
+if [ -n "$OLD_AI_KEY" ]; then
+    uci -q set clawwrt.ai.api_key="$OLD_AI_KEY"
+    [ -n "$OLD_AI_MODEL" ] && uci -q set clawwrt.ai.model="$OLD_AI_MODEL"
+    [ -n "$OLD_AI_URL" ] && uci -q set clawwrt.ai.api_url="$OLD_AI_URL"
+    uci -q commit clawwrt
+fi
 
 END_TIME=$(date +%s)
 DURATION=$((END_TIME - START_TIME))

@@ -17,8 +17,9 @@ fail() {
 umask 077
 in_file="/tmp/clawwrt-stream-in.$$"
 msg_file="/tmp/clawwrt-stream-msg.$$"
+tools_file="/tmp/clawwrt-stream-tools.$$"
 req_file="/tmp/clawwrt-stream-req.$$"
-trap 'rm -f "$in_file" "$msg_file" "$req_file"' EXIT INT TERM
+trap 'rm -f "$in_file" "$msg_file" "$tools_file" "$req_file"' EXIT INT TERM
 cat > "$in_file"
 
 # uhttpd does not export custom headers. The LuCI cookie is scoped to
@@ -33,6 +34,7 @@ access=$(ubus call session access "{\"ubus_rpc_session\":\"$sid\",\"scope\":\"ub
 printf '%s' "$access" | grep -Eq '"access":[[:space:]]*true' || fail 403 "forbidden"
 
 jsonfilter -i "$in_file" -e '@.messages' > "$msg_file" 2>/dev/null
+jsonfilter -i "$in_file" -e '@.tools' > "$tools_file" 2>/dev/null
 rm -f "$in_file"
 grep -q '^[[:space:]]*\[' "$msg_file" || fail 400 "messages required"
 bytes=$(wc -c < "$msg_file" | tr -cd '0-9')
@@ -53,13 +55,16 @@ esac
 {
 	printf '{"model":"%s","messages":' "$model"
 	cat "$msg_file"
-	if [ -s /usr/share/clawwrt/router-tools.json ]; then
+	if grep -q '[^[:space:]]' "$tools_file" 2>/dev/null && ! grep -qx 'null' "$tools_file"; then
+		printf ',"tools":'
+		cat "$tools_file"
+	elif [ -s /usr/share/clawwrt/router-tools.json ]; then
 		printf ',"tools":'
 		cat /usr/share/clawwrt/router-tools.json
 	fi
 	printf ',"temperature":%s,"stream":true}' "$temp"
 } > "$req_file"
-rm -f "$msg_file"
+rm -f "$msg_file" "$tools_file"
 
 printf 'Status: 200\r\n'
 printf 'Content-Type: text/event-stream\r\n'
