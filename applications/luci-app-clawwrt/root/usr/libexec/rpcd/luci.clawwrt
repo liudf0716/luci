@@ -150,6 +150,10 @@ case "$1" in
             json_add_string "model"
             json_add_string "api_url"
             json_add_string "temperature"
+            json_add_string "user_mode"
+        json_close_object
+        json_add_object "set_ai_mode"
+            json_add_string "user_mode"
         json_close_object
         json_add_object "get_qos_status"
         json_close_object
@@ -734,11 +738,15 @@ case "$1" in
                 fi
             fi
             
+            local user_mode=$(uci -q get clawwrt.ai.user_mode)
+            [ "$user_mode" != "expert" ] && user_mode="novice"
+
             json_init
             json_add_object "result"
             json_add_string "model" "$model"
             json_add_string "api_url" "$api_url"
             json_add_string "temperature" "$temp"
+            json_add_string "user_mode" "$user_mode"
             json_add_string "api_key_masked" "$masked_key"
             json_add_boolean "has_key" "$([ -n "$key" ] && echo 1 || echo 0)"
             json_close_object
@@ -752,9 +760,13 @@ case "$1" in
             json_get_var model "model"
             json_get_var api_url "api_url"
             json_get_var temperature "temperature"
+            json_get_var user_mode "user_mode"
             
             local old_key=$(uci -q get clawwrt.ai.api_key)
             [ -z "$api_key" ] && api_key="$old_key"
+            local old_user_mode=$(uci -q get clawwrt.ai.user_mode)
+            [ -z "$user_mode" ] && user_mode="$old_user_mode"
+            [ "$user_mode" != "expert" ] && user_mode="novice"
 
             if [ -n "$api_url" ] && ! validate_api_url "$api_url"; then
                 claw_fail "无效或受限的 API URL，仅支持公网 HTTPS 接口服务"
@@ -767,11 +779,30 @@ case "$1" in
             [ -n "$model" ] && uci -q set clawwrt.ai.model="$model" || uci -q set clawwrt.ai.model="deepseek-flash"
             [ -n "$api_url" ] && uci -q set clawwrt.ai.api_url="$api_url" || uci -q set clawwrt.ai.api_url="https://api.deepseek.com/chat/completions"
             [ -n "$temperature" ] && uci -q set clawwrt.ai.temperature="$temperature" || uci -q set clawwrt.ai.temperature="0.3"
+            uci -q set clawwrt.ai.user_mode="$user_mode"
             uci -q commit clawwrt
             
             json_init
             json_add_object "result"
             json_add_boolean "success" "1"
+            json_add_string "user_mode" "$user_mode"
+            json_close_object
+            json_dump
+        }
+
+        set_ai_mode() {
+            read -r input
+            json_load "$input"
+            json_get_var user_mode "user_mode"
+            if [ "$user_mode" != "expert" ]; then
+                user_mode="novice"
+            fi
+            uci -q set clawwrt.ai.user_mode="$user_mode"
+            uci -q commit clawwrt
+            json_init
+            json_add_object "result"
+            json_add_boolean "success" "1"
+            json_add_string "user_mode" "$user_mode"
             json_close_object
             json_dump
         }
@@ -6219,6 +6250,7 @@ EOF
             uci_apply) uci_apply ;;
             get_ai_settings) get_ai_settings ;;
             save_ai_settings) save_ai_settings ;;
+            set_ai_mode) set_ai_mode ;;
             call_deepseek) call_deepseek ;;
             get_qos_status) get_qos_status ;;
             set_qos_limit) set_qos_limit ;;

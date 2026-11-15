@@ -54,6 +54,7 @@
                 "luci.clawwrt": [
                     "uci_apply",
                     "save_ai_settings",
+                    "set_ai_mode",
                     "set_qos_limit",
                     "set_service_detail",
                     "set_wifi_config",

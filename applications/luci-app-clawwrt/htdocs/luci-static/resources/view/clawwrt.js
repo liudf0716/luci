@@ -191,7 +191,14 @@ const callGetAiSettings = rpc.declare({
 const callSaveAiSettings = rpc.declare({
     object: 'luci.clawwrt',
     method: 'save_ai_settings',
-    params: [ 'api_key', 'model', 'api_url', 'temperature' ],
+    params: [ 'api_key', 'model', 'api_url', 'temperature', 'user_mode' ],
+    expect: { result: {} }
+});
+
+const callSetAiMode = rpc.declare({
+    object: 'luci.clawwrt',
+    method: 'set_ai_mode',
+    params: [ 'user_mode' ],
     expect: { result: {} }
 });
 
@@ -910,7 +917,37 @@ const routerTools = [
 
 ];
 
-const systemPrompt = `你是一个专业的 OpenWrt / chaWrt 路由器专属 AI 助手——「小茶助手」🍵（运行于 chaWrt 路由器本地）。chaWrt 最早来自 ChatGPT；中文里 chaWrt 谐音「茶 Wrt」，所以叫小茶助手。
+function getSystemPrompt(mode) {
+    const isExpert = (mode === "expert");
+    const modeDirective = isExpert
+        ? `【当前处于 ⚡专家模式 (Expert Mode)】：
+- 目标受众：资深网络工程师、Linux 运维人员与开源路由器极客。
+- 沟通风格：严谨专业、硬核深度、数据详实、直击底层本质。
+- 输出规范：
+  1. 指标与事实先行：明确给出精确的技术参数，包括 RTT 毫秒往返时延、丢包率%、物理口协商速率 (如 1000M Full)、L2-L7 协议层、TC Ingress (pref 5) / Egress (pref 10) eBPF 挂载优先级与过滤器句柄、KCP FEC 纠错状态、套接字底层状态 (ESTABLISHED / SYN_SENT / TIME_WAIT)、系统负载 Load Avg 等；
+  2. 深层技术根因推演：遇到链路异常、断网或丢包时，不仅汇报表象，必须向用户详细剖析底层根因（例如分析是 conntrack 跟踪表满、BPF Map 失效、DFS 雷达探测惩罚、还是 MTU 黑洞引发的 TCP 握手停滞等）；
+  3. 结构化技术展示：善用 Markdown 表格、配置 Diff 对比、关键魔数与底层状态码；
+  4. 进阶调优建议：提供高级配置、内核参数建议与底层架构优化思路。`
+        : `【当前处于 🌿小白模式 (Novice Mode)】：
+- 目标受众：普通家庭用户、数码小白与非技术人员。
+- 沟通风格：亲切通俗、温暖接地气、深入浅出，严禁堆砌晦涩计算机黑话。
+- 输出规范：
+  1. 结论先行，直奔要点：第一句话直接明确告诉用户网络好不好、网速快不快、有没有人蹭网，不要绕圈子；
+  2. 形象生活化比喻：
+     - 把带宽与网速比作“高速公路车道与车流”；
+     - 把 eBPF / 硬件加速比作“专为重要车辆开设的特快专用车道”；
+     - 把 DNS 域名解析比作“查询网络电话簿”；
+     - 把 UDP 丢包与端口跳跃比作“导航发现小路拥堵，自动切换到通畅的新车道”；
+     - 把内网穿透比作“给家里路由器开了一扇带密码的安全任意门”；
+     - 隐藏深奥的套接字、十六进制句柄、BPF 数据结构等生硬细节；
+  3. 一键式省心建议：遇到网络问题时，主动给出最省心的一键式建议（如“您只需点击下方的【一键自愈】按钮即可”），绝不让用户手敲 Linux 复杂命令或翻找晦涩设置表单；
+  4. 结果通俗化：测速或诊断时用生活化语言描述（如“相当于千兆宽带跑满，看4K超清电影、全家多台手机打游戏都很丝滑”）。`;
+
+    return `你是一个专业的 OpenWrt / chaWrt 路由器专属 AI 助手——「小茶助手」🍵（运行于 chaWrt 路由器本地）。chaWrt 最早来自 ChatGPT；中文里 chaWrt 谐音「茶 Wrt」，所以叫小茶助手。
+你的首要核心职责是帮助用户实时排查和确保路由器能否正常上网，解答网络故障，管理连接设备。
+
+${modeDirective}
+
 你的首要核心职责是帮助普通用户实时排查和确保路由器能否正常上网，解答网络故障，管理连接设备，让用户无需理解复杂的网络协议与 LuCI 表单。
 你可以使用提供的工具直接在路由器本地查询状态、列出连接设备、测试网络连通性、查看配置。
 
@@ -962,7 +999,10 @@ const systemPrompt = `你是一个专业的 OpenWrt / chaWrt 路由器专属 AI 
    - 当用户需要配置或启用 Mesh 网络（设置主路由/子路由模式、802.11s Mesh ID、回程密钥、信道、加密）时，调用 propose_mesh_config 生成参数确认卡片；
    - 当用户需要发现或一键添加/配对局域网内的子路由（Node 分身）时，先调用 discover_mesh_nodes 自动扫描局域网待配对 ChaWrt 节点，再调用 propose_pair_mesh_node 生成一键配对卡片（全自动分发 Ed25519 密钥、平滑转换子节点为 L2 哑 AP、同步 Mesh 802.11s 回程与 802.11k/v/r 漫游、规避 LAN IP 冲突）；
    - 凡涉及 VPS 部署、开启/关闭硬件加速、设置/解除限速、修改 WiFi 或漫游配置、配置 Mesh 网络、配对/纳管/移除 Mesh 节点、服务参数、添加/删除分流域名、添加/删除白名单 MAC、新增/停用/启用/删除穿透规则，必须通过对应的提议/管理工具生成可视化卡片供用户点击确认！
-5. 【回答风格】：亲切自然、通俗易懂，结论先行，再提供结构清晰的 Markdown 表格说明或建议。`;
+5. 【回答风格】：根据当前运行模式（小白模式亲切通俗/生活化比喻；专家模式硬核严谨/指标详实），结论先行，再提供结构清晰的说明或建议。`;
+}
+
+const systemPrompt = getSystemPrompt("novice");
 
 var marked = (function(){var exports={};var __exports=exports;var module={exports};
 "use strict";var G=Object.defineProperty;var Re=Object.getOwnPropertyDescriptor;var Te=Object.getOwnPropertyNames;var Oe=Object.prototype.hasOwnProperty;var we=(l,e)=>{for(var t in e)G(l,t,{get:e[t],enumerable:!0})},ye=(l,e,t,n)=>{if(e&&typeof e=="object"||typeof e=="function")for(let r of Te(e))!Oe.call(l,r)&&r!==t&&G(l,r,{get:()=>e[r],enumerable:!(n=Re(e,r))||n.enumerable});return l};var Pe=l=>ye(G({},"__esModule",{value:!0}),l);var xt={};we(xt,{Hooks:()=>P,Lexer:()=>x,Marked:()=>A,Parser:()=>b,Renderer:()=>y,TextRenderer:()=>S,Tokenizer:()=>w,defaults:()=>R,getDefaults:()=>_,lexer:()=>mt,marked:()=>g,options:()=>pt,parse:()=>gt,parseInline:()=>dt,parser:()=>ft,setOptions:()=>ct,use:()=>ht,walkTokens:()=>kt});module.exports=Pe(xt);function _(){return{async:!1,breaks:!1,extensions:null,gfm:!0,hooks:null,pedantic:!1,renderer:null,silent:!1,tokenizer:null,walkTokens:null}}var R=_();function N(l){R=l}var L={exec:()=>null};function k(l,e=""){let t=typeof l=="string"?l:l.source,n={replace:(r,i)=>{let s=typeof i=="string"?i:i.source;return s=s.replace(m.caret,"$1"),t=t.replace(r,s),n},getRegex:()=>new RegExp(t,e)};return n}var Se=(()=>{try{return!!new RegExp("(?<=1)(?<!1)")}catch{return!1}})(),m={codeRemoveIndent:/^(?: {1,4}| {0,3}\t)/gm,outputLinkReplace:/\\([\[\]])/g,indentCodeCompensation:/^(\s+)(?:```)/,beginningSpace:/^\s+/,endingHash:/#$/,startingSpaceChar:/^ /,endingSpaceChar:/ $/,nonSpaceChar:/[^ ]/,newLineCharGlobal:/\n/g,tabCharGlobal:/\t/g,multipleSpaceGlobal:/\s+/g,blankLine:/^[ \t]*$/,doubleBlankLine:/\n[ \t]*\n[ \t]*$/,blockquoteStart:/^ {0,3}>/,blockquoteSetextReplace:/\n {0,3}((?:=+|-+) *)(?=\n|$)/g,blockquoteSetextReplace2:/^ {0,3}>[ \t]?/gm,listReplaceNesting:/^ {1,4}(?=( {4})*[^ ])/g,listIsTask:/^\[[ xX]\] +\S/,listReplaceTask:/^\[[ xX]\] +/,listTaskCheckbox:/\[[ xX]\]/,anyLine:/\n.*\n/,hrefBrackets:/^<(.*)>$/,tableDelimiter:/[:|]/,tableAlignChars:/^\||\| *$/g,tableRowBlankLine:/\n[ \t]*$/,tableAlignRight:/^ *-+: *$/,tableAlignCenter:/^ *:-+: *$/,tableAlignLeft:/^ *:-+ *$/,startATag:/^<a /i,endATag:/^<\/a>/i,startPreScriptTag:/^<(pre|code|kbd|script)(\s|>)/i,endPreScriptTag:/^<\/(pre|code|kbd|script)(\s|>)/i,startAngleBracket:/^</,endAngleBracket:/>$/,pedanticHrefTitle:/^([^'"]*[^\s])\s+(['"])(.*)\2/,unicodeAlphaNumeric:/[\p{L}\p{N}]/u,escapeTest:/[&<>"']/,escapeReplace:/[&<>"']/g,escapeTestNoEncode:/[<>"']|&(?!(#\d{1,7}|#[Xx][a-fA-F0-9]{1,6}|\w+);)/,escapeReplaceNoEncode:/[<>"']|&(?!(#\d{1,7}|#[Xx][a-fA-F0-9]{1,6}|\w+);)/g,caret:/(^|[^\[])\^/g,percentDecode:/%25/g,findPipe:/\|/g,splitPipe:/ \|/,slashPipe:/\\\|/g,carriageReturn:/\r\n|\r/g,spaceLine:/^ +$/gm,notSpaceStart:/^\S*/,endingNewline:/\n$/,listItemRegex:l=>new RegExp(`^( {0,3}${l})((?:[	 ][^\\n]*)?(?:\\n|$))`),nextBulletRegex:l=>new RegExp(`^ {0,${Math.min(3,l-1)}}(?:[*+-]|\\d{1,9}[.)])((?:[ 	][^\\n]*)?(?:\\n|$))`),hrRegex:l=>new RegExp(`^ {0,${Math.min(3,l-1)}}((?:- *){3,}|(?:_ *){3,}|(?:\\* *){3,})(?:\\n+|$)`),fencesBeginRegex:l=>new RegExp(`^ {0,${Math.min(3,l-1)}}(?:\`\`\`|~~~)`),headingBeginRegex:l=>new RegExp(`^ {0,${Math.min(3,l-1)}}#`),htmlBeginRegex:l=>new RegExp(`^ {0,${Math.min(3,l-1)}}<(?:[a-z].*>|!--)`,"i"),blockquoteBeginRegex:l=>new RegExp(`^ {0,${Math.min(3,l-1)}}>`)},$e=/^(?:[ \t]*(?:\n|$))+/,_e=/^((?: {4}| {0,3}\t)[^\n]+(?:\n(?:[ \t]*(?:\n|$))*)?)+/,Le=/^ {0,3}(`{3,}(?=[^`\n]*(?:\n|$))|~{3,})([^\n]*)(?:\n|$)(?:|([\s\S]*?)(?:\n|$))(?: {0,3}\1[~`]* *(?=\n|$)|$)/,B=/^ {0,3}((?:-[\t ]*){3,}|(?:_[ \t]*){3,}|(?:\*[ \t]*){3,})(?:\n+|$)/,Me=/^ {0,3}(#{1,6})(?=\s|$)(.*)(?:\n+|$)/,j=/ {0,3}(?:[*+-]|\d{1,9}[.)])/,ie=/^(?!bull |blockCode|fences|blockquote|heading|html|table)((?:.|\n(?!\s*?\n|bull |blockCode|fences|blockquote|heading|html|table))+?)\n {0,3}(=+|-+) *(?:\n+|$)/,oe=k(ie).replace(/bull/g,j).replace(/blockCode/g,/(?: {4}| {0,3}\t)/).replace(/fences/g,/ {0,3}(?:`{3,}|~{3,})/).replace(/blockquote/g,/ {0,3}>/).replace(/heading/g,/ {0,3}#{1,6}/).replace(/html/g,/ {0,3}<[^\n>]+>\n/).replace(/\|table/g,"").getRegex(),ze=k(ie).replace(/bull/g,j).replace(/blockCode/g,/(?: {4}| {0,3}\t)/).replace(/fences/g,/ {0,3}(?:`{3,}|~{3,})/).replace(/blockquote/g,/ {0,3}>/).replace(/heading/g,/ {0,3}#{1,6}/).replace(/html/g,/ {0,3}<[^\n>]+>\n/).replace(/table/g,/ {0,3}\|?(?:[:\- ]*\|)+[\:\- ]*\n/).getRegex(),F=/^([^\n]+(?:\n(?!hr|heading|lheading|blockquote|fences|list|html|table| +\n)[^\n]+)*)/,Ee=/^[^\n]+/,U=/(?!\s*\])(?:\\[\s\S]|[^\[\]\\])+/,Ie=k(/^ {0,3}\[(label)\]: *(?:\n[ \t]*)?([^<\s][^\s]*|<.*?>)(?:(?: +(?:\n[ \t]*)?| *\n[ \t]*)(title))? *(?:\n+|$)/).replace("label",U).replace("title",/(?:"(?:\\"?|[^"\\])*"|'[^'\n]*(?:\n[^'\n]+)*\n?'|\([^()]*\))/).getRegex(),Ae=k(/^(bull)([ \t][^\n]+?)?(?:\n|$)/).replace(/bull/g,j).getRegex(),v="address|article|aside|base|basefont|blockquote|body|caption|center|col|colgroup|dd|details|dialog|dir|div|dl|dt|fieldset|figcaption|figure|footer|form|frame|frameset|h[1-6]|head|header|hr|html|iframe|legend|li|link|main|menu|menuitem|meta|nav|noframes|ol|optgroup|option|p|param|search|section|summary|table|tbody|td|tfoot|th|thead|title|tr|track|ul",K=/<!--(?:-?>|[\s\S]*?(?:-->|$))/,Ce=k("^ {0,3}(?:<(script|pre|style|textarea)[\\s>][\\s\\S]*?(?:</\\1>[^\\n]*\\n+|$)|comment[^\\n]*(\\n+|$)|<\\?[\\s\\S]*?(?:\\?>\\n*|$)|<![A-Z][\\s\\S]*?(?:>\\n*|$)|<!\\[CDATA\\[[\\s\\S]*?(?:\\]\\]>\\n*|$)|</?(tag)(?: +|\\n|/?>)[\\s\\S]*?(?:(?:\\n[ 	]*)+\\n|$)|<(?!script|pre|style|textarea)([a-z][\\w-]*)(?:attribute)*? */?>(?=[ \\t]*(?:\\n|$))[\\s\\S]*?(?:(?:\\n[ 	]*)+\\n|$)|</(?!script|pre|style|textarea)[a-z][\\w-]*\\s*>(?=[ \\t]*(?:\\n|$))[\\s\\S]*?(?:(?:\\n[ 	]*)+\\n|$))","i").replace("comment",K).replace("tag",v).replace("attribute",/ +[a-zA-Z:_][\w.:-]*(?: *= *"[^"\n]*"| *= *'[^'\n]*'| *= *[^\s"'=<>`]+)?/).getRegex(),ae=k(F).replace("hr",B).replace("heading"," {0,3}#{1,6}(?:\\s|$)").replace("|lheading","").replace("|table","").replace("blockquote"," {0,3}>").replace("fences"," {0,3}(?:`{3,}(?=[^`\\n]*\\n)|~{3,})[^\\n]*\\n").replace("list"," {0,3}(?:[*+-]|1[.)])[ \\t]").replace("html","</?(?:tag)(?: +|\\n|/?>)|<(?:script|pre|style|textarea|!--)").replace("tag",v).getRegex(),Be=k(/^( {0,3}> ?(paragraph|[^\n]*)(?:\n|$))+/).replace("paragraph",ae).getRegex(),W={blockquote:Be,code:_e,def:Ie,fences:Le,heading:Me,hr:B,html:Ce,lheading:oe,list:Ae,newline:$e,paragraph:ae,table:L,text:Ee},re=k("^ *([^\\n ].*)\\n {0,3}((?:\\| *)?:?-+:? *(?:\\| *:?-+:? *)*(?:\\| *)?)(?:\\n((?:(?! *\\n|hr|heading|blockquote|code|fences|list|html).*(?:\\n|$))*)\\n*|$)").replace("hr",B).replace("heading"," {0,3}#{1,6}(?:\\s|$)").replace("blockquote"," {0,3}>").replace("code","(?: {4}| {0,3}	)[^\\n]").replace("fences"," {0,3}(?:`{3,}(?=[^`\\n]*\\n)|~{3,})[^\\n]*\\n").replace("list"," {0,3}(?:[*+-]|1[.)])[ \\t]").replace("html","</?(?:tag)(?: +|\\n|/?>)|<(?:script|pre|style|textarea|!--)").replace("tag",v).getRegex(),De={...W,lheading:ze,table:re,paragraph:k(F).replace("hr",B).replace("heading"," {0,3}#{1,6}(?:\\s|$)").replace("|lheading","").replace("table",re).replace("blockquote"," {0,3}>").replace("fences"," {0,3}(?:`{3,}(?=[^`\\n]*\\n)|~{3,})[^\\n]*\\n").replace("list"," {0,3}(?:[*+-]|1[.)])[ \\t]").replace("html","</?(?:tag)(?: +|\\n|/?>)|<(?:script|pre|style|textarea|!--)").replace("tag",v).getRegex()},qe={...W,html:k(`^ *(?:comment *(?:\\n|\\s*$)|<(tag)[\\s\\S]+?</\\1> *(?:\\n{2,}|\\s*$)|<tag(?:"[^"]*"|'[^']*'|\\s[^'"/>\\s]*)*?/?> *(?:\\n{2,}|\\s*$))`).replace("comment",K).replace(/tag/g,"(?!(?:a|em|strong|small|s|cite|q|dfn|abbr|data|time|code|var|samp|kbd|sub|sup|i|b|u|mark|ruby|rt|rp|bdi|bdo|span|br|wbr|ins|del|img)\\b)\\w+(?!:|[^\\w\\s@]*@)\\b").getRegex(),def:/^ *\[([^\]]+)\]: *<?([^\s>]+)>?(?: +(["(][^\n]+[")]))? *(?:\n+|$)/,heading:/^(#{1,6})(.*)(?:\n+|$)/,fences:L,lheading:/^(.+?)\n {0,3}(=+|-+) *(?:\n+|$)/,paragraph:k(F).replace("hr",B).replace("heading",` *#{1,6} *[^
@@ -1037,6 +1077,10 @@ return view.extend({
         let chatAbort = null;
         let chatStopRequested = false;
 
+        let userMode = (function() {
+            try { return localStorage.getItem('clawwrt_user_mode') || 'novice'; } catch (e) { return 'novice'; }
+        })();
+
         let aiConfig = {
             apiKey: '',
             apiUrl: 'https://api.deepseek.com/chat/completions',
@@ -1052,7 +1096,7 @@ return view.extend({
         } catch (e) {}
 
         let messages = [
-            { role: 'system', content: systemPrompt }
+            { role: 'system', content: getSystemPrompt(userMode) }
         ];
 
         // Container
@@ -1078,7 +1122,32 @@ return view.extend({
                     ])
                 ])
             ]),
-            E('div', { 'class': 'cw-header-actions' }, [
+            E('div', { 'class': 'cw-header-actions', 'style': 'display: flex; align-items: center; gap: 8px;' }, [
+                E('div', {
+                    'class': 'cw-mode-segmented',
+                    'style': 'display: inline-flex; background: var(--cw-bg-secondary); border: 1px solid var(--cw-border); border-radius: 8px; padding: 2px; user-select: none;'
+                }, [
+                    E('button', {
+                        'id': 'mode-btn-novice',
+                        'type': 'button',
+                        'class': 'cw-mode-pill' + (userMode === 'novice' ? ' active' : ''),
+                        'style': userMode === 'novice'
+                            ? 'background: #10b981; color: #fff; font-weight: 700; border: none; border-radius: 6px; padding: 4px 10px; font-size: 12px; cursor: pointer; transition: all 0.2s;'
+                            : 'background: transparent; color: var(--cw-text-muted); border: none; border-radius: 6px; padding: 4px 10px; font-size: 12px; cursor: pointer; transition: all 0.2s;',
+                        'title': '小白模式：通俗大白话、生活化比喻、省心一键解决、隐藏晦涩黑话',
+                        'click': function() { setUserMode('novice'); }
+                    }, '🌿 小白模式'),
+                    E('button', {
+                        'id': 'mode-btn-expert',
+                        'type': 'button',
+                        'class': 'cw-mode-pill' + (userMode === 'expert' ? ' active' : ''),
+                        'style': userMode === 'expert'
+                            ? 'background: #0284c7; color: #fff; font-weight: 700; border: none; border-radius: 6px; padding: 4px 10px; font-size: 12px; cursor: pointer; transition: all 0.2s;'
+                            : 'background: transparent; color: var(--cw-text-muted); border: none; border-radius: 6px; padding: 4px 10px; font-size: 12px; cursor: pointer; transition: all 0.2s;',
+                        'title': '专家模式：硬核内核指标、eBPF/TC遥测、L7协议分析、专业排障推演',
+                        'click': function() { setUserMode('expert'); }
+                    }, '⚡ 专家模式')
+                ]),
                 E('button', {
                     'class': 'btn cbi-button cw-header-btn',
                     'click': function() { openSettingsModal(); }
@@ -1140,105 +1209,135 @@ return view.extend({
             'class': 'cw-chat'
         });
 
-        // Categorized Quick Action Cards
-        const quickCategories = [
-            {
-                id: 'popular',
-                name: '🔥 常用精选',
-                cards: [
-                    { label: '📊 路由器健康体检', query: '对这台路由器进行健康巡检，汇报系统负载、内存剩余、开机时长与网络状态' },
-                    { label: '📡 2.4G/5G 满血信号调优', query: '帮我全面体检 2.4G 和 5G 无线信号与射频配置，排查是否存在 Country 00 功率锁死、DFS 雷达信道冲突、频宽错配与信道干扰，并给出满血调优建议' },
-                    { label: '🚀 一键创建全屋 Mesh 骨干网', query: '我想将这台路由器配置为全屋 802.11s Mesh 组网的 Master 主路由网关，回程信道设为 44，Mesh ID 设为 chawrt_mesh_5g，请帮我生成 Mesh 启用配置卡片' },
-                    { label: '🔄 开启 802.11k/v/r 漫游', query: '查看当前 Wi-Fi 802.11k/v/r 无缝漫游配置，帮我开启满血 15ms 快速漫游与 usteer 调度' },
-                    { label: '🌐 测试外网连通与延迟', query: '帮我全面测试路由器当前能否正常上网，检测外网延迟、丢包率与 DNS 解析情况' },
-                    { label: '📱 查看当前连接设备', query: '当前局域网连接了哪些手机、电脑或终端？列出它们的 IP、MAC 和主机名' },
-                    { label: '🩺 分流与加速全链路体检', query: '深度检测智能分流 (xDNS) 与网络加速 (xkcptun) 的全链路运行健康度，排查分流与加速是否存在异常，并在界面生成全链路诊断卡片' },
-                    { label: '🔍 穿透连通性深度检测', query: '帮我深度检测内网穿透当前是否正常运行，检查 xfrpc 是否已经真正连上了远端 frps 服务端，查看连接套接字、日志与公网访问链接' },
-                    { label: '⚡ 硬件加速状态', query: '查看当前路由器的硬件加速（MediaTek PPE 硬件流量分流）运行状态与硬件流表' },
-                    { label: '📶 优化网络与无线', query: '检查当前网络配置和无线配置，给出可以改进的项，并生成网络优化确认卡片' },
-                    { label: '🚀 实时流量与流控', query: '查看当前局域网各终端设备的实时上下行网速与智能流控限速状态' },
-                    { label: '🔀 智能分流与加速域名', query: '查看智能分流 xdns 的运行状态、eBPF 拦截统计、动态劫持 IP 以及当前分流加速的域名列表' },
-                    { label: '🛡️ 门户认证与白名单', query: '查看当前门户认证 wifidogx 的运行状态、云端连接、在线用户及免认证 MAC 白名单' }
-                ]
-            },
-            {
-                id: 'wifi_mesh',
-                name: '📡 无线调优与Mesh组网',
-                cards: [
-                    { label: '📡 2.4G/5G 满血信号调优', query: '帮我全面体检 2.4G 和 5G 无线信号与射频配置，排查是否存在 Country 00 功率锁死、DFS 雷达信道冲突、频宽错配与信道干扰，并给出满血调优建议' },
-                    { label: '📶 为什么 5G 信号穿墙弱或搜不到？', query: '帮我排查 5G 信号穿墙弱或搜不到的原因，排查是否掉进 Country 00 功率黑洞或遇到 DFS 雷达罚站，并给出满血优化方案' },
-                    { label: '🚀 一键创建全屋 Mesh 骨干网', query: '我想将这台路由器配置为全屋 802.11s Mesh 组网的 Master 主路由网关，回程信道设为 44，Mesh ID 设为 chawrt_mesh_5g，请帮我生成 Mesh 启用配置卡片' },
-                    { label: '➕ 给 Master 添加并配对 Node 子节点', query: '我想给这台 Master 主机添加并配对一台新的子路由器作为 Mesh Node 分身节点，请帮我扫描局域网待配对设备并准备一键配对' },
-                    { label: '🕸️ 查看 Mesh 拓扑与子节点状态', query: '查看当前路由器的 802.11s 无线 Mesh 骨干网运行状态、回程信道、HWMP 路由跳数及已纳管的所有子节点在线状态' },
-                    { label: '🔄 开启 802.11k/v/r 无缝快速漫游', query: '查看当前 Wi-Fi 802.11k/v/r 无缝漫游配置，帮我开启满血 15ms 快速漫游与 usteer 调度，解决房间走动断网与丢包' },
-                    { label: '🔍 周边 Wi-Fi 信道扫描与避堵', query: '扫描周边邻居的 Wi-Fi 信道占用情况，分析 2.4G 和 5G 干扰程度，并为我推荐最干净的黄金信道' },
-                    { label: '🔑 查看或修改 WiFi 密码', query: '查看当前路由器的 WiFi 名称与密码配置' }
-                ]
-            },
-            {
-                id: 'diagnostics',
-                name: '🌐 诊断与终端',
-                cards: [
-                    { label: '📊 路由器健康体检', query: '对这台路由器进行健康巡检，汇报系统负载、内存剩余、开机时长与网络状态' },
-                    { label: '🌐 测试外网连通与延迟', query: '帮我全面测试路由器当前能否正常上网，检测外网延迟、丢包率与 DNS 解析情况' },
-                    { label: '🛠️ 为什么部分网页打不开？', query: '如果遇到部分网页打不开或网络卡顿，请帮我排查原因并给出排查建议' },
-                    { label: '📱 查看当前连接设备', query: '当前局域网连接了哪些手机、电脑或终端？列出它们的 IP、MAC 和主机名' },
-                    { label: '📶 查看当前 WiFi 密码', query: '查看当前路由器的 WiFi 名称与密码配置' },
-                    { label: '🔧 修改 WiFi 密码', query: '帮我把 WiFi 密码修改为 12345678' }
-                ]
-            },
-            {
-                id: 'qos_ppe',
-                name: '🚀 流控与硬件加速',
-                cards: [
-                    { label: '⚡ 硬件加速状态', query: '查看当前路由器的硬件加速（MediaTek PPE 硬件流量分流）运行状态与硬件流表' },
-                    { label: '🚀 开启硬件加速', query: '帮我开启路由器的硬件加速功能，提升千兆转发吞吐并降低 CPU 占用' },
-                    { label: '🛑 关闭硬件加速', query: '帮我关闭硬件加速功能，让所有流量走标准协议栈与 eBPF 处理' },
-                    { label: '🚀 实时流量与流控', query: '查看当前局域网各终端设备的实时上下行网速与智能流控限速状态' },
-                    { label: '📊 Top 10 应用与流速排行', query: '查看当前路由器各 L7 应用协议的实时流速排行榜（如 SSH、HTTP、WebRTC、微信等）以及访问最多的域名 Top 10' },
-                    { label: '🛑 设备智能限速', query: '帮我把当前占用带宽的主机设置智能限速' }
-                ]
-            },
-            {
-                id: 'accel_divert',
-                name: '⚡ 网络加速与分流',
-                cards: [
-                    { label: '🩺 全链路健康体检与诊断', query: '深度检测智能分流 (xDNS) 与网络加速 (xkcptun) 的全链路运行健康度，排查分流与加速是否存在异常，并在界面生成全链路诊断卡片' },
-                    { label: '🛠️ 一键自愈加速链路', query: '帮我一键自愈并重建智能分流与网络加速链路，清理陈旧 BPF Map 并重启加速服务' },
-                    { label: '🔀 端口跳跃优化 (抗抖动防丢包)', query: '当前网络加速疑似遭遇运营商单端口 QoS 限速或 UDP 异常丢包，请帮我执行 UDP 端口跳跃，切换一个全新的通信端口优化链路' },
-                    { label: '⚡ 网络加速与隧道', query: '查看网络加速 xkcptun 当前连接的加速节点、模式、往返延迟以及所有活跃加速隧道与连接' },
-                    { label: '🚀 VPS 安装 xkcptun 服务端 (deb)', query: '我想在我的远程 Linux VPS 上通过官方 deb 包自动安装并部署 xkcptun 加速服务端，并建立网络加速' },
-                    { label: '🔀 智能分流与加速域名', query: '查看智能分流 xdns 的运行状态、eBPF 拦截统计、动态劫持 IP 以及当前分流加速的域名列表' },
-                    { label: '➕ 分流添加域名', query: '帮我把 claude.ai 添加到智能分流加速域名名单中' },
-                    { label: '🔄 刷新分流与重载', query: '帮我清空内核 eBPF 动态分流 IP 缓存并重新加载分流域名规则' },
-                    { label: '📈 分流拦截与统计', query: '查看当前智能分流 xdns 的实时 DNS 拦截与数据包转发统计' },
-                    { label: '🔍 透明代理活跃会话', query: '查看当前智能分流透明代理重定向的所有活跃 TCP 会话跟踪' }
-                ]
-            },
-            {
-                id: 'penetration',
-                name: '🌍 内网穿透与远程',
-                cards: [
-                    { label: '🔍 穿透连通性深度检测', query: '帮我深度检测内网穿透当前是否正常运行，检查 xfrpc 是否已经真正连上了远端 frps 服务端，查看连接套接字、日志与公网访问链接' },
-                    { label: '🖥️ 纳管远程免密服务器', query: '查看已纳管的远程免密服务器（VPS）列表与连通性状态，并指导我如何添加新的 VPS' },
-                    { label: '🔑 查看路由器 SSH 公钥', query: '查看路由器专属的 SSH 免密公钥与一键授权命令' },
-                    { label: '🌐 VPS 一键内网穿透', query: '我想把这台路由器穿透到我自己的 VPS 上，请帮我通过 SSH 免密方式在 VPS 上自动部署服务端并连通' },
-                    { label: '📋 穿透映射规则清单', query: '查看当前配置的所有内网穿透映射规则及对应的公网访问链接' },
-                    { label: '➕ 新建内网穿透映射', query: '帮我新增一条内网穿透映射规则，将本地 80 端口映射到公网' },
-                    { label: '🔐 IPsec VPN 状态', query: '查看 StrongSwan IPsec VPN 的配置与对端网关' }
-                ]
-            },
-            {
-                id: 'portal',
-                name: '🛡️ 门户认证与门禁',
-                cards: [
-                    { label: '🛡️ 门户认证与白名单', query: '查看当前门户认证 wifidogx 的运行状态、云端连接、在线用户及免认证 MAC 白名单' },
-                    { label: '🚪 门禁规则与在线终端', query: '查询当前门户认证在线认证客户端、黑白名单与免认证放行域名' },
-                    { label: '➕ 免认证放行域名', query: '帮我把 autoupdate.example.com 添加到门户免认证放行域名中' },
-                    { label: '➕ 添加免认证 MAC', query: '帮我把 MAC 地址 00:11:22:33:44:55 添加到免认证通行白名单中' }
-                ]
+        // Categorized Quick Action Cards (Mode-Aware)
+        function getQuickCategories(mode) {
+            if (mode === "novice") {
+                return [
+                    {
+                        id: "popular",
+                        name: "🔥 常用精选",
+                        cards: [
+                            { label: "📊 我家网络怎么样？", query: "对这台路由器进行健康巡检，用通俗语言汇报网络好不好、运行稳不稳定" },
+                            { label: "🌐 测一下能不能上网", query: "帮我全面测试路由器当前能否正常上网，延迟高不高、看视频卡不卡" },
+                            { label: "📱 查查谁在连路由器", query: "当前局域网连接了哪些手机、电脑或电视？用通俗列表告诉我" },
+                            { label: "📶 Wi-Fi 信号好不好？", query: "帮我全面体检家里 2.4G 和 5G Wi-Fi 信号，看看穿墙好不好，有没有受到邻居干扰" },
+                            { label: "🛠️ 为什么网页打不开？", query: "如果遇到部分网页打不开或网络卡顿，请帮我排查原因并给出简单的排查解决建议" },
+                            { label: "🚀 看看谁在悄悄占网速", query: "帮我看看当前哪台设备下载占网速最厉害，并告诉我怎么限速" },
+                            { label: "🩺 网络加速好不好用？", query: "帮我检查一下网络加速和分流是不是全绿正常运行" },
+                            { label: "🔑 查看或修改 WiFi 密码", query: "查看当前路由器的 WiFi 名称与密码配置" }
+                        ]
+                    },
+                    {
+                        id: "wifi_mesh",
+                        name: "📡 信号与全屋WiFi",
+                        cards: [
+                            { label: "📶 为什么 5G 信号穿墙变弱？", query: "帮我排查 5G 信号穿墙弱或搜不到的原因，并帮我优化调优" },
+                            { label: "🚀 一键开启全屋无缝漫游", query: "我想在家里走动时 Wi-Fi 不卡不断网，帮我开启 802.11k/v/r 快速漫游" },
+                            { label: "🕸️ 全屋一键 Mesh 组网", query: "我想把这台路由器作为主路由组建全屋 Mesh 网络，请帮我开启" },
+                            { label: "➕ 扫描并配对子路由", query: "我想给这台主路由添加一台新的子路由器扩展信号，请帮我扫描并配对" },
+                            { label: "🔍 周边 Wi-Fi 避堵调优", query: "扫描周边邻居的 Wi-Fi 信道占用情况，帮我推荐最干净不卡顿的无线信道" },
+                            { label: "🔑 查看当前 WiFi 密码", query: "查看当前路由器的 WiFi 名称与密码配置" },
+                            { label: "🔧 修改 WiFi 密码", query: "帮我把 WiFi 密码修改为 12345678" }
+                        ]
+                    },
+                    {
+                        id: "speed_accel",
+                        name: "⚡ 网速与加速优化",
+                        cards: [
+                            { label: "🚀 开启千兆极速直通", query: "帮我开启路由器的硬件加速功能，降低发热并让千兆宽带跑满" },
+                            { label: "🛑 给占用大网速的设备限速", query: "帮我把当前占用带宽的主机设置智能限速" },
+                            { label: "🩺 检查网络加速状态", query: "帮我深度检查网络加速与分流链路是否通畅" },
+                            { label: "🛠️ 一键自愈加速链路", query: "网络加速好像不太灵，帮我一键自愈并重建网络加速链路" },
+                            { label: "🔀 遇到卡顿换个端口优化", query: "网络加速遇到轻微丢包或限速，帮我执行 UDP 端口跳跃优化换个新端口" },
+                            { label: "🌍 路由器远程访问状态", query: "我想在外网也能安全访问这台路由器，帮我看看远程内网穿透状态" }
+                        ]
+                    }
+                ];
+            } else {
+                return [
+                    {
+                        id: "popular",
+                        name: "🔥 专家精选",
+                        cards: [
+                            { label: "🩺 xDNS+xkcptun 全链路健康体检", query: "深度检测智能分流 (xDNS) 与网络加速 (xkcptun) 的全链路运行健康度，排查分流与加速是否存在异常，并在界面生成全链路诊断卡片" },
+                            { label: "⚡ PPE 硬件加速与内核流表", query: "查看当前路由器的硬件加速（MediaTek PPE 硬件流量分流）运行状态与硬件流表" },
+                            { label: "📊 L7 DPI 协议实时流速 Top 10", query: "查看当前路由器各 L7 应用协议的实时流速排行榜（如 SSH、HTTP、WebRTC、微信等）以及访问最多的域名 Top 10" },
+                            { label: "🔍 穿透套接字 ESTABLISHED 检测", query: "帮我深度检测内网穿透当前是否正常运行，检查 xfrpc 是否已经真正连上了远端 frps 服务端，查看连接套接字、日志与公网访问链接" },
+                            { label: "📡 2.4G/5G 射频功率与DFS雷达体检", query: "帮我全面体检 2.4G 和 5G 无线信号与射频配置，排查是否存在 Country 00 功率锁死、DFS 雷达信道冲突、频宽错配与信道干扰，并给出满血调优建议" },
+                            { label: "🕸️ 802.11s Mesh 拓扑与 HWMP 路由", query: "查看当前路由器的 802.11s 无线 Mesh 骨干网运行状态、回程信道、HWMP 路由跳数及已纳管的所有子节点在线状态" },
+                            { label: "🔀 UDP 端口跳跃优化 (抗抖动防丢包)", query: "当前网络加速疑似遭遇运营商单端口 QoS 限速或 UDP 异常丢包，请帮我执行 UDP 端口跳跃，切换一个全新的通信端口优化链路" },
+                            { label: "🚀 eBPF 动态令牌桶智能限速", query: "帮我把当前占用带宽的主机设置智能限速" },
+                            { label: "🔄 开启 802.11k/v/r 漫游与 usteer", query: "查看当前 Wi-Fi 802.11k/v/r 无缝漫游配置，帮我开启满血 15ms 快速漫游与 usteer 调度" }
+                        ]
+                    },
+                    {
+                        id: "wifi_mesh",
+                        name: "📡 射频与802.11s Mesh",
+                        cards: [
+                            { label: "📡 2.4G/5G 满血信号调优", query: "帮我全面体检 2.4G 和 5G 无线信号与射频配置，排查是否存在 Country 00 功率锁死、DFS 雷达信道冲突、频宽错配与信道干扰，并给出满血调优建议" },
+                            { label: "📶 5G 穿墙与 DFS 罚站排查", query: "帮我排查 5G 信号穿墙弱或搜不到的原因，排查是否掉进 Country 00 功率黑洞或遇到 DFS 雷达罚站，并给出满血优化方案" },
+                            { label: "🚀 一键创建 802.11s Mesh 骨干网", query: "我想将这台路由器配置为全屋 802.11s Mesh 组网的 Master 主路由网关，回程信道设为 44，Mesh ID 设为 chawrt_mesh_5g，请帮我生成 Mesh 启用配置卡片" },
+                            { label: "➕ 添加配对 Mesh Node 子节点", query: "我想给这台 Master 主机添加并配对一台新的子路由器作为 Mesh Node 分身节点，请帮我扫描局域网待配对设备并准备一键配对" },
+                            { label: "🕸️ 查看 Mesh 拓扑与子节点状态", query: "查看当前路由器的 802.11s 无线 Mesh 骨干网运行状态、回程信道、HWMP 路由跳数及已纳管的所有子节点在线状态" },
+                            { label: "🔄 802.11k/v/r 漫游与 usteer 调度", query: "查看当前 Wi-Fi 802.11k/v/r 无缝漫游配置，帮我开启满血 15ms 快速漫游与 usteer 调度，解决房间走动断网与丢包" },
+                            { label: "🔍 周边 Wi-Fi 信道扫描与避堵", query: "扫描周边邻居的 Wi-Fi 信道占用情况，分析 2.4G 和 5G 干扰程度，并为我推荐最干净的黄金信道" },
+                            { label: "🔑 查看或修改 WiFi 密码", query: "查看当前路由器的 WiFi 名称与密码配置" }
+                        ]
+                    },
+                    {
+                        id: "qos_ppe",
+                        name: "🚀 eBPF流控与硬件PPE",
+                        cards: [
+                            { label: "⚡ 硬件加速状态与流表", query: "查看当前路由器的硬件加速（MediaTek PPE 硬件流量分流）运行状态与硬件流表" },
+                            { label: "🚀 开启硬件加速", query: "帮我开启路由器的硬件加速功能，提升千兆转发吞吐并降低 CPU 占用" },
+                            { label: "🛑 关闭硬件加速", query: "帮我关闭硬件加速功能，让所有流量走标准协议栈与 eBPF 处理" },
+                            { label: "🚀 实时流量与流控", query: "查看当前局域网各终端设备的实时上下行网速与智能流控限速状态" },
+                            { label: "📊 Top 10 应用与流速排行", query: "查看当前路由器各 L7 应用协议的实时流速排行榜（如 SSH、HTTP、WebRTC、微信等）以及访问最多的域名 Top 10" },
+                            { label: "🛑 设备智能限速", query: "帮我把当前占用带宽的主机设置智能限速" }
+                        ]
+                    },
+                    {
+                        id: "accel_divert",
+                        name: "⚡ xDNS分流与KCP加速",
+                        cards: [
+                            { label: "🩺 全链路健康体检与诊断", query: "深度检测智能分流 (xDNS) 与网络加速 (xkcptun) 的全链路运行健康度，排查分流与加速是否存在异常，并在界面生成全链路诊断卡片" },
+                            { label: "🛠️ 一键自愈加速链路", query: "帮我一键自愈并重建智能分流与网络加速链路，清理陈旧 BPF Map 并重启加速服务" },
+                            { label: "🔀 端口跳跃优化 (抗抖动防丢包)", query: "当前网络加速疑似遭遇运营商单端口 QoS 限速或 UDP 异常丢包，请帮我执行 UDP 端口跳跃，切换一个全新的通信端口优化链路" },
+                            { label: "⚡ 网络加速与隧道", query: "查看网络加速 xkcptun 当前连接的加速节点、模式、往返延迟以及所有活跃加速隧道与连接" },
+                            { label: "🚀 VPS 安装 xkcptun 服务端 (deb)", query: "我想在我的远程 Linux VPS 上通过官方 deb 包自动安装并部署 xkcptun 加速服务端，并建立网络加速" },
+                            { label: "🔀 智能分流与加速域名", query: "查看智能分流 xdns 的运行状态、eBPF 拦截统计、动态劫持 IP 以及当前分流加速的域名列表" },
+                            { label: "➕ 分流添加域名", query: "帮我把 claude.ai 添加到智能分流加速域名名单中" },
+                            { label: "🔄 刷新分流与重载", query: "帮我清空内核 eBPF 动态分流 IP 缓存并重新加载分流域名规则" },
+                            { label: "📈 分流拦截与统计", query: "查看当前智能分流 xdns 的实时 DNS 拦截与数据包转发统计" },
+                            { label: "🔍 透明代理活跃会话", query: "查看当前智能分流透明代理重定向的所有活跃 TCP 会话跟踪" }
+                        ]
+                    },
+                    {
+                        id: "penetration",
+                        name: "🌍 穿透与IPSec",
+                        cards: [
+                            { label: "🔍 穿透连通性深度检测", query: "帮我深度检测内网穿透当前是否正常运行，检查 xfrpc 是否已经真正连上了远端 frps 服务端，查看连接套接字、日志与公网访问链接" },
+                            { label: "🖥️ 纳管远程免密服务器", query: "查看已纳管的远程免密服务器（VPS）列表与连通性状态，并指导我如何添加新的 VPS" },
+                            { label: "🔑 查看路由器 SSH 公钥", query: "查看路由器专属的 SSH 免密公钥与一键授权命令" },
+                            { label: "🌐 VPS 一键内网穿透", query: "我想把这台路由器穿透到我自己的 VPS 上，请帮我通过 SSH 免密方式在 VPS 上自动部署服务端并连通" },
+                            { label: "📋 穿透映射规则清单", query: "查看当前配置的所有内网穿透映射规则及对应的公网访问链接" },
+                            { label: "➕ 新建内网穿透映射", query: "帮我新增一条内网穿透映射规则，将本地 80 端口映射到公网" },
+                            { label: "🔐 IPsec VPN 状态", query: "查看 StrongSwan IPsec VPN 的配置与对端网关" }
+                        ]
+                    },
+                    {
+                        id: "portal",
+                        name: "🛡️ 门户认证与门禁",
+                        cards: [
+                            { label: "🛡️ 门户认证与白名单", query: "查看当前门户认证 wifidogx 的运行状态、云端连接、在线用户及免认证 MAC 白名单" },
+                            { label: "🚪 门禁规则与在线终端", query: "查询当前门户认证在线认证客户端、黑白名单与免认证放行域名" },
+                            { label: "➕ 免认证放行域名", query: "帮我把 autoupdate.example.com 添加到门户免认证放行域名中" },
+                            { label: "➕ 添加免认证 MAC", query: "帮我把 MAC 地址 00:11:22:33:44:55 添加到免认证通行白名单中" }
+                        ]
+                    }
+                ];
             }
-        ];
+        }
 
         let currentCategory = localStorage.getItem('clawwrt_quick_category') || 'popular';
         let isChipsCollapsed = localStorage.getItem('clawwrt_quick_collapsed') === 'true';
@@ -1294,10 +1393,13 @@ return view.extend({
                 chipsDeck.removeChild(chipsDeck.firstChild);
             }
 
-            const cat = quickCategories.find(c => c.id === catId) || quickCategories[0];
-            cat.cards.forEach(card => {
-                chipsDeck.appendChild(renderChip(card.label, card.query));
-            });
+            const categories = getQuickCategories(userMode);
+            const cat = categories.find(c => c.id === catId) || categories[0];
+            if (cat && cat.cards) {
+                cat.cards.forEach(card => {
+                    chipsDeck.appendChild(renderChip(card.label, card.query));
+                });
+            }
 
             if (isChipsCollapsed) {
                 isChipsCollapsed = false;
@@ -1306,20 +1408,85 @@ return view.extend({
             }
         }
 
-        quickCategories.forEach(cat => {
-            const tabBtn = E('button', {
-                'class': 'quick-cat-tab' + (cat.id === currentCategory ? ' active' : ''),
-                'type': 'button',
-                'data-cat-id': cat.id,
-                'click': function(e) {
-                    e.preventDefault();
-                    renderCategoryDeck(cat.id);
-                }
-            }, cat.name);
-            categoryTabsContainer.appendChild(tabBtn);
-        });
+        function rebuildCategoryTabs() {
+            while (categoryTabsContainer.firstChild) {
+                categoryTabsContainer.removeChild(categoryTabsContainer.firstChild);
+            }
+            const categories = getQuickCategories(userMode);
+            if (!categories.some(c => c.id === currentCategory)) {
+                currentCategory = categories[0].id;
+            }
+            categories.forEach(cat => {
+                const tabBtn = E('button', {
+                    'class': 'quick-cat-tab' + (cat.id === currentCategory ? ' active' : ''),
+                    'type': 'button',
+                    'data-cat-id': cat.id,
+                    'click': function(e) {
+                        e.preventDefault();
+                        renderCategoryDeck(cat.id);
+                    }
+                }, cat.name);
+                categoryTabsContainer.appendChild(tabBtn);
+            });
+            renderCategoryDeck(currentCategory);
+        }
 
-        renderCategoryDeck(currentCategory);
+        function updateAiStatusBadge() {
+            const statusText = document.getElementById('ai-status-text');
+            const statusPill = document.getElementById('ai-status-pill');
+            if (statusText) {
+                const modeLabel = (userMode === 'expert') ? '⚡专家模式' : '🌿小白模式';
+                statusText.innerText = `本地就绪 · ${modeLabel} (${aiConfig.model || 'Flash'})`;
+            }
+            if (statusPill) {
+                statusPill.style.background = (userMode === 'expert') ? '#0284c7' : '#10b981';
+            }
+        }
+
+        function setUserMode(newMode, silent) {
+            userMode = (newMode === 'expert') ? 'expert' : 'novice';
+            try { localStorage.setItem('clawwrt_user_mode', userMode); } catch (e) {}
+
+            callSetAiMode(userMode).catch(() => {});
+
+            const btnNovice = document.getElementById('mode-btn-novice');
+            const btnExpert = document.getElementById('mode-btn-expert');
+            if (btnNovice && btnExpert) {
+                if (userMode === 'novice') {
+                    btnNovice.style.background = '#10b981';
+                    btnNovice.style.color = '#fff';
+                    btnNovice.style.fontWeight = '700';
+                    btnExpert.style.background = 'transparent';
+                    btnExpert.style.color = 'var(--cw-text-muted)';
+                    btnExpert.style.fontWeight = 'normal';
+                } else {
+                    btnExpert.style.background = '#0284c7';
+                    btnExpert.style.color = '#fff';
+                    btnExpert.style.fontWeight = '700';
+                    btnNovice.style.background = 'transparent';
+                    btnNovice.style.color = 'var(--cw-text-muted)';
+                    btnNovice.style.fontWeight = 'normal';
+                }
+            }
+
+            updateAiStatusBadge();
+
+            rebuildCategoryTabs();
+
+            if (messages.length > 0 && messages[0].role === 'system') {
+                messages[0].content = getSystemPrompt(userMode);
+            }
+
+            if (!silent) {
+                if (userMode === 'novice') {
+                    appendMessage('assistant', `🌿 **已为您切换至「小白模式」**\n\n已开启通俗大白话解说。接下来的排查与指导小茶助手将尽量少用生涩的计算机黑话，多用生活化比喻并给出最省心的一键自愈建议！`, true);
+                } else {
+                    appendMessage('assistant', `⚡ **已为您切换至「专家模式」**\n\n已开启硬核 Linux 内核级指标与遥测数据输出。接下来的诊断小茶助手将为您深度剖析 L2-L7 协议流速、eBPF/TC 挂载链路、KCP 隧道拓扑与毫秒级延迟！`, true);
+                }
+            }
+        }
+
+        rebuildCategoryTabs();
         updateChipsVisibility();
 
         // Quick action chips container
@@ -1710,9 +1877,12 @@ return view.extend({
             } catch (e) {}
         }
 
-        // Append initial greeting
+        // Append initial greeting (Mode-Aware)
         function appendGreeting(saveToStorage) {
-            const greetingText = `👋 **您好！我是您的路由器「小茶助手」🍵。**\n\n小茶助手来自 **chaWrt**。chaWrt 最早来自 **ChatGPT**，中文读起来像「茶 Wrt」，所以叫小茶助手。\n\n我已为您实时监控当前路由器的**外网上网状态**、**在线设备连接**与**系统健康状况**。当您遇到上不了网、网络卡顿，或者想查看连接设备与配置时，都可以直接在下方用日常口语吩咐我，无需去翻找复杂的 LuCI 菜单！\n\n您可以点击下方的快捷指令或直接提问开始体验：`;
+            const isExpert = (userMode === 'expert');
+            const greetingText = isExpert
+                ? `👋 **您好！我是您的路由器「小茶助手」🍵（⚡ 专家模式）。**\n\n小茶助手来自 **chaWrt**（最早源于 ChatGPT，谐音「茶 Wrt」）。当前已为您开启硬核技术遥测与 Linux 6.12 内核协议栈级深度排查模式，支持实时提取 MediaTek PPE 硬件流表、aw-bpf L7 协议分析、xDNS+xkcptun 隧道拓扑与全链路微秒级指标！\n\n您可以点击下方专家快捷指令或直接提问开始体验（顶栏可随时切换为 🌿小白模式）：`
+                : `👋 **您好！我是您的路由器「小茶助手」🍵（🌿 小白模式）。**\n\n小茶助手来自 **chaWrt**。chaWrt 最早来自 **ChatGPT**，中文读起来像「茶 Wrt」，所以叫小茶助手。\n\n当前已为您开启贴心生活化模式，我已实时监控当前路由器的**外网上网状态**、**在线设备连接**与**系统健康状况**。当您遇到上不了网、网络卡顿，或者想查看连接设备与配置时，都可以直接在下方用日常口语吩咐我，无需去翻找复杂的 LuCI 菜单！\n\n您可以点击下方的快捷指令或直接提问开始体验（顶栏可随时切换为 ⚡专家模式）：`;
             appendMessage('assistant', greetingText, saveToStorage);
         }
 
@@ -4569,6 +4739,21 @@ return view.extend({
 
             const userText = input.value.trim();
             input.value = '';
+
+            // Natural language mode switching intercept
+            if (/^(切换到?|开启|切为)?(专家模式|极客模式)$/i.test(userText)) {
+                appendMessage('user', userText);
+                saveHistory('user', userText);
+                setUserMode('expert', false);
+                return;
+            }
+            if (/^(切换到?|开启|切为)?(小白模式|新手模式|普通模式)$/i.test(userText)) {
+                appendMessage('user', userText);
+                saveHistory('user', userText);
+                setUserMode('novice', false);
+                return;
+            }
+
             appendMessage('user', userText);
             messages.push({ role: 'user', content: userText });
 
@@ -4626,7 +4811,8 @@ return view.extend({
         // older tool rounds are dropped, and progressive clipping is applied if payload is large.
         // With 1MB uhttpd post buffer, safe limit is set to 500,000 bytes.
         function compactMessages(list) {
-            const system = (list || []).find(m => m && m.role === 'system') || { role: 'system', content: systemPrompt };
+            const system = (list || []).find(m => m && m.role === 'system') || { role: 'system', content: getSystemPrompt(userMode) };
+            system.content = getSystemPrompt(userMode);
             let toolLimit = 4000;
             let kept = (list || []).filter(m => m && m.role !== 'system').map(m => {
                 if (m.role === 'tool')
@@ -5257,6 +5443,16 @@ return view.extend({
                     'value': aiConfig.apiUrl || 'https://api.deepseek.com/chat/completions'
                 });
 
+                let currentUserMode = (saved && saved.user_mode) || userMode || 'novice';
+                const modeSelect = E('select', {
+                    'class': 'cbi-input-select',
+                    'style': 'width: 100%; margin-top: 6px;'
+                }, [
+                    E('option', { 'value': 'novice', 'selected': (currentUserMode === 'novice') ? '' : null }, '🌿 小白模式 (默认 · 通俗大白话 / 生活化比喻 / 省心一键自愈)'),
+                    E('option', { 'value': 'expert', 'selected': (currentUserMode === 'expert') ? '' : null }, '⚡ 专家模式 (极客工程师 · 硬核内核指标 / L7 DPI 分析 / 底层架构推演)')
+                ]);
+                modeSelect.value = currentUserMode;
+
                 const testResultDiv = E('div', {
                     'id': 'api-test-result',
                     'style': 'display: none; padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-top: 14px; line-height: 1.5;'
@@ -5286,6 +5482,10 @@ return view.extend({
                     E('div', { 'style': 'margin-bottom: 12px;' }, [
                         E('label', { 'style': 'font-weight: 600; font-size: 13px; color: var(--cw-text-main);' }, 'Base URL / 端点地址:'),
                         urlInput
+                    ]),
+                    E('div', { 'style': 'margin-bottom: 12px;' }, [
+                        E('label', { 'style': 'font-weight: 600; font-size: 13px; color: var(--cw-text-main);' }, '助手运行模式 (User Mode):'),
+                        modeSelect
                     ]),
                     testResultDiv
                 ]);
@@ -5401,11 +5601,10 @@ return view.extend({
                                     aiConfig.model = modelSelect.value;
                                     aiConfig.apiUrl = normalizeApiUrl(urlInput.value.trim() || 'https://api.deepseek.com');
 
-                                    callSaveAiSettings(newKey, aiConfig.model, aiConfig.apiUrl, "0.3").then(() => {
-                                        ui.addNotification(null, E('p', '✅ DeepSeek AI 设置已保存成功！'), 'info');
+                                    callSaveAiSettings(newKey, aiConfig.model, aiConfig.apiUrl, "0.3", modeSelect.value).then(() => {
+                                        setUserMode(modeSelect.value, true);
+                                        ui.addNotification(null, E('p', '✅ DeepSeek AI 设置与运行模式已保存成功！'), 'info');
                                         ui.hideModal();
-                                        const statusText = document.getElementById('ai-status-text');
-                                        if (statusText) statusText.innerText = `就绪 · ${aiConfig.model}`;
                                     });
                                 }
                             }, '保存配置')
@@ -5421,7 +5620,7 @@ return view.extend({
             try {
                 localStorage.removeItem('chawrt_chat_history');
             } catch (e) {}
-            messages = [{ role: 'system', content: systemPrompt }];
+            messages = [{ role: 'system', content: getSystemPrompt(userMode) }];
             appendGreeting(true);
         }
 
@@ -5471,12 +5670,14 @@ return view.extend({
         }, 15000);
         callGetAiSettings().then(cfg => {
             if (cfg) {
+                if (cfg.user_mode) {
+                    setUserMode(cfg.user_mode, true);
+                }
                 if (cfg.model) {
                     aiConfig.model = cfg.model;
-                    const statusText = document.getElementById('ai-status-text');
-                    if (statusText) statusText.innerText = `就绪 · ${cfg.model}`;
                 }
                 if (cfg.api_url) aiConfig.apiUrl = cfg.api_url;
+                updateAiStatusBadge();
             }
         });
 
