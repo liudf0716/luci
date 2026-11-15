@@ -71,8 +71,8 @@ return view.extend({
             L.env.rpctimeout = 180;
         }
         return Promise.all([
-            callGetRouterSshKey(),
-            callGetVpsServers()
+            L.resolveDefault(callGetRouterSshKey(), {}),
+            L.resolveDefault(callGetVpsServers(), { servers: [], total: 0 })
         ]);
     },
 
