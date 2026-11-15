@@ -305,7 +305,7 @@ const callSwitchAccelerationPort = rpc.declare({
 const callManageXdnsDomain = rpc.declare({
     object: 'luci.clawwrt',
     method: 'manage_xdns_domain',
-    params: [ 'action', 'domain' ],
+    params: [ 'action', 'domain', 'ip', 'ttl' ],
     expect: { result: {} }
 });
 
@@ -497,16 +497,18 @@ const routerTools = [
         type: 'function',
         function: {
             name: 'manage_xdns_domain',
-            description: '管理内核 eBPF 智能分流（xdns）：查看所有加速域名及内核激活状态（action: "list"）；新增分流加速域名（action: "add"）；删除分流加速域名（action: "remove"）；清空内核动态分流 IP 缓存（action: "clear_ips"）；从持久化文件全量重载规则至内核并重置缓存（action: "reload"）；查看当前内核动态劫持加速 IP 表及过期时间（action: "list_ips"）；查看当前活跃透明代理 TCP 会话（action: "list_sessions"）；获取实时拦截与分流统计数据（action: "stats"）。注意：查询类操作（list/list_ips/list_sessions/stats）直接执行返回，配置变更类操作（add/remove/clear_ips/reload）将渲染可视化卡片供用户授权确认。',
+            description: '管理内核 eBPF 智能分流（xdns）：查看所有加速域名及内核激活状态（action: "list"）；新增分流加速域名（action: "add"）；删除分流加速域名（action: "remove"）；添加静态重定向 IPv4（action: "add_ip"，支持指定 IP 与可选 TTL）；移除静态重定向 IPv4（action: "remove_ip"）；清空内核动态分流 IP 缓存（action: "clear_ips"）；从持久化文件全量重载规则至内核并重置缓存（action: "reload"）；查看当前内核动态劫持加速 IP 表及过期时间（action: "list_ips"）；查看当前活跃透明代理 TCP 会话（action: "list_sessions"）；获取实时拦截与分流统计数据（action: "stats"）。注意：查询类操作（list/list_ips/list_sessions/stats）直接执行返回，配置变更类操作（add/remove/add_ip/remove_ip/clear_ips/reload）将渲染可视化卡片供用户授权确认。',
             parameters: {
                 type: 'object',
                 properties: {
                     action: { 
                         type: 'string', 
-                        enum: ['list', 'add', 'remove', 'clear_ips', 'reload', 'list_ips', 'list_sessions', 'stats'], 
-                        description: '操作类型：list(查看所有加速域名及内核状态), add(添加域名), remove(删除域名), clear_ips(清空动态分流IP缓存), reload(重载分流规则并清缓存), list_ips(查看动态劫持IP列表), list_sessions(查看活跃透明代理TCP会话), stats(拦截统计)' 
+                        enum: ['list', 'add', 'remove', 'add_ip', 'remove_ip', 'clear_ips', 'reload', 'list_ips', 'list_sessions', 'stats'], 
+                        description: '操作类型：list(查看所有加速域名及内核状态), add(添加域名), remove(删除域名), add_ip(添加静态重定向IP), remove_ip(移除静态重定向IP), clear_ips(清空动态分流IP缓存), reload(重载分流规则并清缓存), list_ips(查看动态劫持IP列表), list_sessions(查看活跃透明代理TCP会话), stats(拦截统计)' 
                     },
                     domain: { type: 'string', description: '要添加或删除的域名，如 claude.ai 或 gemini.google.com（add 或 remove 时必填）' },
+                    ip: { type: 'string', description: '要添加或移除的静态重定向 IPv4 地址，例如 8.8.8.8 或 104.21.5.12（action 为 add_ip 或 remove_ip 时必填）' },
+                    ttl: { type: 'integer', description: '重定向有效期秒数，0 或不传表示永久有效（仅在 add_ip 时有效）' },
                     explanation: { type: 'string', description: '操作原因与影响说明（对查询操作可选）' }
                 },
                 required: ['action']
@@ -945,7 +947,7 @@ ${commonSafety}
 - chaWrt eBPF 智能流控与 DPI (aw-bpf)：基于 Linux 内核 TC-eBPF 硬件级调度与 L7 深度报文检测。支持实时查看局域网各设备上下行速率（以 Mbps 及 MB/s 双单位展示）、MAC 地址、主机名、累计总流量、限速状态与定时生效时段 (get_qos_status)；查询 L7 应用协议与服务的实时流速 Top 10 排行榜及高频域名 (get_l7_top)；对指定终端设备（支持按 IP、MAC 或 "all" 全网设备）设置或解除流控限速（输入 0 代表解除限速），支持灵活配置定时生效时段 (propose_qos_limit)；
 - 门户认证 (wifidogx & apfree-wifidog)：企业级/热点强制网页认证门户，深度集成 apfree-wifidog C 引擎内核；支持开启/关闭、免认证直通 (disable_portal_auth)、有线网口直接放行 (wired_passed)、防私接检测 (enable_anti_nat)；支持查询云端 WebSocket/MQTT 连接状态、认证服务器地址与当前实时在线认证用户列表（包含终端 MAC、IP、主机名及剩余有效时间）(get_service_detail('wifidogx') 或 manage_portal_access('list'))；支持全能门禁管理 (manage_portal_access)：一键强制踢终端下线断网 (kick_client)、终端黑名单拉黑并即时阻断 (add_blacklist / del_blacklist)、终端 MAC 免认证白名单放行 (add_whitelist / del_whitelist)、免认证域名及通配符域名放行 (add_domain / del_domain)；
 - 网络加速 (xkcptun)：纯 C 抗丢包加速引擎，支持开启/关闭、配置加速节点 (remote_addr)、端口 (remote_port)、模式 (mode)、密钥 (key)、前向纠错 (fec)、发送/接收窗口 (sndwnd/rcvwnd)；支持深度检测与实时测量节点 RTT 往返延迟 (ping_ms)、查看所有活跃加速隧道与实时加速连接目标 (get_service_detail('xkcptun'))；支持通过 manage_xkcptun_tunnel 管理具体加速隧道（查询列表 action: "list"、新增/修改 action: "add"、启用 action: "enable"、停用 action: "disable"、删除 action: "remove"，支持 transparent redir 与 forward 端口转发等各种端口与目标）；
-- 智能分流 (xdns)：基于 Linux 内核 TC-eBPF 动态智能分流，在 br-lan 网卡挂载 TC ingress pref 5 与 egress pref 10 双向探针，自动拦截分流域名并重定向至 xkcptun 隧道；支持查询当前 DNS 拦截数、代理数、学习应答数与 TCP 代理连接数、内核动态劫持 IP 表及活跃会话 (get_service_detail('xdns'))；支持全能分流管理 (manage_xdns_domain)：查询加速域名及内核状态 (action: "list")、添加域名 (action: "add")、删除域名 (action: "remove")、清空内核动态 IP 缓存 (action: "clear_ips")、重载规则文件 (action: "reload")、查看内核劫持 IP 列表 (action: "list_ips")、查看活跃代理会话 (action: "list_sessions")、统计数据 (action: "stats")；
+- 智能分流 (xdns)：基于 Linux 内核 TC-eBPF 动态智能分流，在 br-lan 网卡挂载 TC ingress pref 5 与 egress pref 10 双向探针，自动拦截分流域名并重定向至 xkcptun 隧道；支持查询当前 DNS 拦截数、代理数、学习应答数与 TCP 代理连接数、内核动态劫持 IP 表及活跃会话 (get_service_detail('xdns'))；支持全能分流管理 (manage_xdns_domain)：查询加速域名及内核状态 (action: "list")、添加域名 (action: "add")、删除域名 (action: "remove")、添加静态重定向 IPv4 (action: "add_ip", ip: "...", ttl?: 0)、移除静态重定向 IPv4 (action: "remove_ip", ip: "...")、清空内核动态 IP 缓存 (action: "clear_ips")、重载规则文件 (action: "reload")、查看内核劫持 IP 列表 (action: "list_ips")、查看活跃代理会话 (action: "list_sessions")、统计数据 (action: "stats")；当用户需要针对纯 IP、特定服务器或测试场景绕过域名解析直接加速时，推荐使用 add_ip；
 - 智能分流与网络加速全链路诊断与自愈 (xdns & xkcptun): 深度体检内核 TC-eBPF 分流 (br-lan Ingress/Egress 挂载、加速域名数、动态劫持 IP 数、代理统计) 与 xkcptun 加速客户端 (TCP 12345/UDP 5353 监听、节点连通性、活跃隧道、最近日志排障) 的整体链路健康度。支持全链路健康检测 (get_acceleration_status) 并在 UI 中生成全链路交互式诊断卡片；支持一键自愈重建链路 (fix_acceleration_pipeline，平滑清理陈旧 BPF Map，重挂 TC 过滤器，重启加速客户端恢复透明重定向)；
 - 极其重要的 VPS 防火墙重定向与 UDP 端口跳跃防误判准则：当云端 VPS 使用防火墙 (iptables/nftables) 配置了 PREROUTING REDIRECT 端口段重定向时（例如将 UDP 58100-58200 重定向至 xkcptun 监听端口 9089 时，get_vps_service_config 会返回 has_port_redirect: true，get_acceleration_status 会返回 is_hopped_port: true 及 hop_range）：路由器端使用的目标端口处于重定向池内属于正规的 UDP 端口跳跃抗抖动设计，绝不是端口配置错误或端口不匹配！严禁误判为“端口不一致”、“加速未连接”或“配置异常”！只要隧道正常、存在活跃连接或连通性正常，全链路健康度即为正常 healthy；严禁在诊断中提议将路由器端口改回 9089，也不得在没有用户明确要求时调用 switch_acceleration_port；
 - 无线 Wi-Fi 802.11k/v/r 漫游与射频排障：支持查询与配置 802.11k/v/r 漫游 (get_wifi_roaming, propose_wifi_roaming)；支持 diagnose_wifi_performance 深度体检信道与功率；
@@ -2128,6 +2130,8 @@ return view.extend({
         function appendXdnsDomainCard(param) {
             const isAdd = (param.action === 'add');
             const isDel = (param.action === 'remove' || param.action === 'del');
+            const isAddIp = (param.action === 'add_ip');
+            const isDelIp = (param.action === 'remove_ip' || param.action === 'del_ip');
             const isClearIps = (param.action === 'clear_ips' || param.action === 'flush');
             const isReload = (param.action === 'reload');
 
@@ -2135,7 +2139,7 @@ return view.extend({
             let actionColor = '#059669';
             let confirmBtnText = '✅ 确认操作';
             let targetLabel = '目标域名：';
-            let targetVal = param.domain || '全量规则';
+            let targetVal = param.domain || (param.ip ? param.ip : '全量规则');
             let detailDesc = '';
 
             if (isAdd) {
@@ -2148,6 +2152,20 @@ return view.extend({
                 actionColor = '#dc2626';
                 confirmBtnText = '🗑️ 确认移除该域名';
                 detailDesc = '确认后将从内核分流表及规则文件中移除，恢复标准直连。';
+            } else if (isAddIp) {
+                actionText = '添加静态重定向 IP';
+                actionColor = '#059669';
+                confirmBtnText = '✅ 确认添加 IP 重定向';
+                targetLabel = '重定向 IPv4：';
+                targetVal = param.ip || '';
+                detailDesc = '确认后将立即写入内核 eBPF 重定向表及 static_ips.txt，目标 IP 的所有 TCP SYN 流量将强制进入加速通道。' + (param.ttl ? (` (TTL: ${param.ttl} 秒)`) : ' (永久生效)');
+            } else if (isDelIp) {
+                actionText = '移除静态重定向 IP';
+                actionColor = '#dc2626';
+                confirmBtnText = '🗑️ 确认移除 IP 重定向';
+                targetLabel = '目标 IPv4：';
+                targetVal = param.ip || '';
+                detailDesc = '确认后将从内核 eBPF 分流表及 static_ips.txt 中移除，恢复标准路由。';
             } else if (isClearIps) {
                 actionText = '清空内核分流 IP 缓存';
                 actionColor = '#d97706';
@@ -2191,11 +2209,14 @@ return view.extend({
                             const btn = ev.target;
                             btn.disabled = true;
                             btn.innerText = '⏳ 正在提交内核生效...';
-                            callManageXdnsDomain(param.action, param.domain || '').then(res => {
+                            callManageXdnsDomain(param.action, param.domain || '', param.ip || '', param.ttl || '').then(res => {
                                 if (res && res.success) {
                                     btn.innerText = '✅ 操作已生效';
                                     btn.style.background = '#16a34a';
-                                    appendMessage('assistant', `🎉 **智能分流管理操作成功！**\n\n• **目标**：\`${targetVal}\`\n• **动作**：${actionText}\n• **结果**：${res.message || '内核与持久化配置已同步更新。'}\n• **当前加速域名总数**：${res.total_domains !== undefined ? res.total_domains : '已更新'}`);
+                                    let extraStats = '';
+                                    if (res.total_domains !== undefined) extraStats += `\n• **当前加速域名总数**：${res.total_domains}`;
+                                    if (res.total_static_ips !== undefined) extraStats += `\n• **当前静态重定向 IP 数**：${res.total_static_ips}`;
+                                    appendMessage('assistant', `🎉 **智能分流管理操作成功！**\n\n• **目标**：\`${targetVal}\`\n• **动作**：${actionText}\n• **结果**：${res.message || '内核与持久化配置已同步更新。'}${extraStats}`);
                                 } else {
                                     btn.innerText = '❌ 执行失败: ' + (res.message || '未知错误');
                                     btn.style.background = '#dc2626';
@@ -5225,10 +5246,10 @@ return view.extend({
                                 toolResult = { status: 'proposed_to_user', message: 'Service configuration card rendered. Waiting for user authorization.' };
                             } else if (fnName === 'manage_xdns_domain') {
                                 if (['list', 'list_ips', 'list_sessions', 'stats'].indexOf(fnArgs.action) !== -1) {
-                                    toolResult = await callManageXdnsDomain(fnArgs.action, fnArgs.domain || '');
+                                    toolResult = await callManageXdnsDomain(fnArgs.action, fnArgs.domain || '', fnArgs.ip || '', fnArgs.ttl || '');
                                 } else {
                                     appendXdnsDomainCard(fnArgs);
-                                    toolResult = { status: 'proposed_to_user', message: 'Smart DNS domain modification card rendered in UI. Waiting for user authorization.' };
+                                    toolResult = { status: 'proposed_to_user', message: 'Smart DNS domain/IP modification card rendered in UI. Waiting for user authorization.' };
                                 }
                             } else if (fnName === 'manage_xkcptun_tunnel') {
                                 if (fnArgs.action === 'list') {

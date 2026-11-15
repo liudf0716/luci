@@ -339,6 +339,8 @@ case "$1" in
         json_add_object "manage_xdns_domain"
             json_add_string "action"
             json_add_string "domain"
+            json_add_string "ip"
+            json_add_string "ttl"
         json_close_object
         json_add_object "manage_portal_access"
             json_add_string "action"
@@ -2560,9 +2562,15 @@ EOF
                         total_sessions=$(/usr/bin/xdns-ctl list-sessions 2>/dev/null | grep -E '^[0-9]' | wc -l)
                     fi
 
+                    local ips_file=$(uci -q get xdns.global.static_ips_file || echo "/etc/xdns/static_ips.txt")
+                    local total_static=0
+                    if [ -f "$ips_file" ]; then
+                        total_static=$(grep -v '^[[:space:]]*#' "$ips_file" | grep -v '^[[:space:]]*$' | wc -l)
+                    fi
+
                     local total_ips=0
                     if command -v /usr/bin/xdns-ctl >/dev/null 2>&1; then
-                        total_ips=$(/usr/bin/xdns-ctl list-ips 2>/dev/null | grep -E '^[0-9]' | wc -l)
+                        total_ips=$(/usr/bin/xdns-ctl list-ips 2>/dev/null | grep -E '([0-9]{1,3}\.){3}[0-9]{1,3}' | grep -v 'IP Address' | grep -v 'Total active' | wc -l)
                     fi
 
                     json_add_boolean "running" "$run"
@@ -2576,6 +2584,7 @@ EOF
                     json_add_int "dns_responses_learned" "${dns_learned:-0}"
                     json_add_int "tcp_connections_proxied" "${tcp_proxied:-0}"
                     json_add_int "total_proxy_domains" "${total_domains:-0}"
+                    json_add_int "total_static_ips" "${total_static:-0}"
                     json_add_int "total_hijacked_ips" "${total_ips:-0}"
                     json_add_int "active_sessions" "${total_sessions:-0}"
 
@@ -5553,8 +5562,11 @@ fi
             json_load "$input"
             json_get_var action "action"
             json_get_var domain "domain"
+            json_get_var ip "ip"
+            json_get_var ttl "ttl"
 
             local domains_file=$(uci -q get xdns.global.proxy_domains_file || echo "/etc/xdns/proxy_domains.txt")
+            local ips_file=$(uci -q get xdns.global.static_ips_file || echo "/etc/xdns/static_ips.txt")
             local success=0
             local msg=""
 
@@ -5627,6 +5639,47 @@ EOF
                         msg="已从分流列表中删除域名 [$domain]"
                     fi
                     ;;
+                add_ip)
+                    if [ -z "$ip" ]; then
+                        msg="IP 地址不能为空"
+                    elif ! echo "$ip" | grep -Eq '^([0-9]{1,3}\.){3}[0-9]{1,3}$'; then
+                        msg="IPv4 地址格式无效: $ip"
+                    else
+                        local valid_ip=1
+                        for octet in $(echo "$ip" | tr '.' ' '); do
+                            if [ "$octet" -gt 255 ]; then
+                                valid_ip=0
+                                break
+                            fi
+                        done
+                        if [ "$valid_ip" -ne 1 ]; then
+                            msg="IPv4 地址数值越界 (每段必须在 0-255): $ip"
+                        elif command -v /usr/bin/xdns-ctl >/dev/null 2>&1; then
+                            local out=$(/usr/bin/xdns-ctl add-ip "$ip" "$ttl" 2>&1)
+                            success=1
+                            msg="已成功将 IP [$ip] 添加至内核 eBPF 静态重定向分流表及持久化配置文件，已立即生效"
+                        else
+                            [ -f "$ips_file" ] && echo "$ip" >> "$ips_file"
+                            success=1
+                            msg="已将 IP [$ip] 追加至静态重定向列表"
+                        fi
+                    fi
+                    ;;
+                remove_ip|del_ip)
+                    if [ -z "$ip" ]; then
+                        msg="IP 地址不能为空"
+                    elif ! echo "$ip" | grep -Eq '^([0-9]{1,3}\.){3}[0-9]{1,3}$'; then
+                        msg="IPv4 地址格式无效: $ip"
+                    elif command -v /usr/bin/xdns-ctl >/dev/null 2>&1; then
+                        local out=$(/usr/bin/xdns-ctl del-ip "$ip" 2>&1)
+                        success=1
+                        msg="已成功从内核 eBPF 分流表中移除静态重定向 IP [$ip]，已立即生效"
+                    else
+                        [ -f "$ips_file" ] && sed -i "/^${ip}$/d" "$ips_file"
+                        success=1
+                        msg="已从静态重定向列表中删除 IP [$ip]"
+                    fi
+                    ;;
                 clear_ips|flush)
                     if command -v /usr/bin/xdns-ctl >/dev/null 2>&1; then
                         local out=$(/usr/bin/xdns-ctl clear-ips 2>&1)
@@ -5653,13 +5706,24 @@ EOF
                     json_add_string "action" "list_ips"
                     json_add_array "ips"
                     if command -v /usr/bin/xdns-ctl >/dev/null 2>&1; then
-                        local ctl_ips=$(/usr/bin/xdns-ctl list-ips 2>/dev/null | grep -E '^[0-9]')
-                        while read -r ipline; do
-                            [ -z "$ipline" ] && continue
-                            local ip_addr=$(echo "$ipline" | awk '{print $1}')
-                            local exp_time=$(echo "$ipline" | awk '{print $2}')
+                        local ctl_ips=$(/usr/bin/xdns-ctl list-ips 2>/dev/null | grep -E '([0-9]{1,3}\.){3}[0-9]{1,3}' | grep -v 'IP Address' | grep -v 'Total active' || true)
+                        while read -r w d e c p b; do
+                            [ -z "$w" ] && continue
+                            local ip_addr=""
+                            local exp_time=""
+                            local site_name=""
+                            if echo "$d" | grep -Eq '^([0-9]{1,3}\.){3}[0-9]{1,3}$'; then
+                                site_name="$w"
+                                ip_addr="$d"
+                                exp_time="$e"
+                            elif echo "$w" | grep -Eq '^([0-9]{1,3}\.){3}[0-9]{1,3}$'; then
+                                ip_addr="$w"
+                                exp_time="$d"
+                            fi
+                            [ -z "$ip_addr" ] && continue
                             json_add_object ""
                             json_add_string "ip" "$ip_addr"
+                            json_add_string "website" "$site_name"
                             json_add_string "expires_in" "$exp_time"
                             json_close_object
                         done <<EOF
@@ -5667,7 +5731,10 @@ $ctl_ips
 EOF
                     fi
                     json_close_array
-                    local total_ips=$(/usr/bin/xdns-ctl list-ips 2>/dev/null | grep -E '^[0-9]' | wc -l)
+                    local total_ips=0
+                    if command -v /usr/bin/xdns-ctl >/dev/null 2>&1; then
+                        total_ips=$(/usr/bin/xdns-ctl list-ips 2>/dev/null | grep -E '([0-9]{1,3}\.){3}[0-9]{1,3}' | grep -v 'IP Address' | grep -v 'Total active' | wc -l)
+                    fi
                     json_add_int "total_ips" "${total_ips:-0}"
                     json_close_object
                     json_dump
@@ -5719,18 +5786,21 @@ EOF
                     return
                     ;;
                 *)
-                    msg="未知的操作动作: $action (支持: list, add, remove, clear_ips, reload, list_ips, list_sessions, stats)"
+                    msg="未知的操作动作: $action (支持: list, add, remove, add_ip, remove_ip, clear_ips, reload, list_ips, list_sessions, stats)"
                     ;;
             esac
 
             local total=$(grep -v '^[[:space:]]*#' "$domains_file" 2>/dev/null | grep -v '^[[:space:]]*$' | wc -l)
+            local total_static=$(grep -v '^[[:space:]]*#' "$ips_file" 2>/dev/null | grep -v '^[[:space:]]*$' | wc -l)
             json_init
             json_add_object "result"
             json_add_boolean "success" "$success"
             json_add_string "action" "$action"
-            json_add_string "domain" "$domain"
+            [ -n "$domain" ] && json_add_string "domain" "$domain"
+            [ -n "$ip" ] && json_add_string "ip" "$ip"
             json_add_string "message" "$msg"
             json_add_int "total_domains" "${total:-0}"
+            json_add_int "total_static_ips" "${total_static:-0}"
             json_close_object
             json_dump
         }

@@ -4,7 +4,8 @@
 		"read": {
 			"file": {
 				"/usr/bin/xdns-ctl": [ "exec" ],
-				"/etc/xdns/proxy_domains.txt": [ "read" ]
+				"/etc/xdns/proxy_domains.txt": [ "read" ],
+				"/etc/xdns/static_ips.txt": [ "read" ]
 			},
 			"ubus": {
 				"service": [ "list" ]
@@ -13,7 +14,8 @@
 		},
 		"write": {
 			"file": {
-				"/etc/xdns/proxy_domains.txt": [ "write" ]
+				"/etc/xdns/proxy_domains.txt": [ "write" ],
+				"/etc/xdns/static_ips.txt": [ "write" ]
 			},
 			"uci": [ "xdns" ]
 		}

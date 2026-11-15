@@ -176,6 +176,9 @@ assert_ubus "活跃会话" "获取透明代理当前 TCP 活跃会话跟踪" "ma
 assert_ubus "添加域名" "向内核 eBPF 分流表注入测试加速域名" "manage_xdns_domain" '{"action":"add","domain":"test-ci-xdns.org"}' "success" "true"
 assert_ubus "删除域名" "从内核分流表中注销测试加速域名" "manage_xdns_domain" '{"action":"remove","domain":"test-ci-xdns.org"}' "success" "true"
 assert_ubus "域名防御" "拒绝非法分流域名参数注入" "manage_xdns_domain" '{"action":"add","domain":"evil.com;reboot"}' "success" "false"
+assert_ubus "添加静态IP" "向内核 eBPF 分流表注入测试静态重定向 IP" "manage_xdns_domain" '{"action":"add_ip","ip":"198.51.100.77"}' "success" "true"
+assert_ubus "删除静态IP" "从内核分流表中注销测试静态重定向 IP" "manage_xdns_domain" '{"action":"remove_ip","ip":"198.51.100.77"}' "success" "true"
+assert_ubus "IP格式防御" "拒绝非法 IPv4 格式注入" "manage_xdns_domain" '{"action":"add_ip","ip":"999.999.1.1;reboot"}' "success" "false"
 
 # ---------------------------------------------------------------------
 # 7. 硬件加速与外围配置

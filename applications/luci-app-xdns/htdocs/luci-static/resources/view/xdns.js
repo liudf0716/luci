@@ -79,7 +79,7 @@ function parseIps(ipsText) {
 	var lines = ipsText.split('\n');
 	for (var i = 0; i < lines.length; i++) {
 		var line = lines[i].trim();
-		if (!line || line.indexOf('IP Address') === 0 || line.indexOf('----') === 0 || line.indexOf('Total active') === 0)
+		if (!line || line.indexOf('IP Address') === 0 || line.indexOf('Website') === 0 || line.indexOf('----') === 0 || line.indexOf('Total active') === 0)
 			continue;
 
 		var parts = line.split(/\s+/);
@@ -144,7 +144,8 @@ return view.extend({
 			L.resolveDefault(fs.exec_direct('/usr/bin/xdns-ctl', ['list-domains']), ''),
 			L.resolveDefault(fs.exec_direct('/usr/bin/xdns-ctl', ['list-ips']), ''),
 			L.resolveDefault(fs.exec_direct('/usr/bin/xdns-ctl', ['list-sessions']), ''),
-			L.resolveDefault(fs.read_direct('/etc/xdns/proxy_domains.txt'), '')
+			L.resolveDefault(fs.read_direct('/etc/xdns/proxy_domains.txt'), ''),
+			L.resolveDefault(fs.read_direct('/etc/xdns/static_ips.txt'), '')
 		]);
 	},
 
@@ -200,20 +201,27 @@ return view.extend({
 		sites.sort(function(a, b) { return b.bytes - a.bytes; });
 
 		function rememberText(sec) {
-			sec = parseInt(sec, 10) || 0;
-			if (sec <= 0)
+			if (sec === 'permanent' || sec === -1)
+				return _('永久 (静态)');
+			var n = parseInt(sec, 10);
+			if (isNaN(n) || n > 86400 * 365)
+				return _('永久 (静态)');
+			if (n <= 0)
 				return _('即将重新查询');
-			if (sec < 60)
-				return sec + _(' 秒');
-			if (sec < 3600)
-				return Math.round(sec / 60) + _(' 分钟');
-			return Math.round(sec / 3600) + _(' 小时');
+			if (n < 60)
+				return n + _(' 秒');
+			if (n < 3600)
+				return Math.round(n / 60) + _(' 分钟');
+			return Math.round(n / 3600) + _(' 小时');
 		}
 
 		function siteCell(site) {
-			var title = site.domain || (site.ips && site.ips.length ? site.ips[0] : _('还没记到网站名'));
+			var isStatic = (site.domain === '[static]');
+			var title = isStatic ? (site.ips && site.ips.length ? site.ips[0] : _('静态重定向')) : (site.domain || (site.ips && site.ips.length ? site.ips[0] : _('还没记到网站名')));
 			var extra = '';
-			if (site.domain && site.ips.length > 1)
+			if (isStatic)
+				extra = _('静态重定向 IP (免 DNS 劫持)');
+			else if (site.domain && site.ips.length > 1)
 				extra = site.ips.length + _(' 台服务器');
 			else if (!site.domain && site.ips.length > 1)
 				extra = site.ips.slice(1).join(', ');
@@ -559,6 +567,229 @@ return view.extend({
 		]);
 	},
 
+	renderIpsTab: function(ipsList, staticIpsContent) {
+		var self = this;
+
+		// 1. Quick Add IP Bar
+		var quickAddIpInput = E('input', {
+			'type': 'text',
+			'class': 'cbi-input-text',
+			'placeholder': _('输入 IPv4 地址，例如 8.8.8.8 或 104.21.5.12'),
+			'style': 'width: 320px; margin-right: 8px;'
+		});
+
+		var quickAddTtlInput = E('input', {
+			'type': 'text',
+			'class': 'cbi-input-text',
+			'placeholder': _('TTL秒数 (留空为永久)'),
+			'style': 'width: 160px; margin-right: 8px;'
+		});
+
+		var quickAddBtn = E('button', {
+			'class': 'btn cbi-button cbi-button-action',
+			'click': function(ev) {
+				var ipVal = quickAddIpInput.value.trim();
+				var ttlVal = quickAddTtlInput.value.trim();
+				if (!isIpv4(ipVal)) {
+					ui.addNotification(null, E('p', _('请输入有效的 IPv4 地址！')), 'warning');
+					return;
+				}
+				var b = ev.target.closest('button');
+				b.disabled = true;
+				b.textContent = _('添加中...');
+
+				var args = ['add-ip', ipVal];
+				if (ttlVal && /^\d+$/.test(ttlVal)) {
+					args.push(ttlVal);
+				}
+
+				fs.exec_direct('/usr/bin/xdns-ctl', args).then(function() {
+					ui.addTimeLimitedNotification(null, E('p', _('重定向 IP「%s」已成功加入内核 eBPF 重定向表！').format(ipVal)), 3000, 'info');
+					location.reload();
+				}).catch(function(err) {
+					b.disabled = false;
+					b.textContent = _('➕ 添加重定向 IP');
+					ui.addNotification(null, E('p', _('添加失败: %s').format(err.message || err)), 'error');
+				});
+			}
+		}, [ '➕ ', _('添加重定向 IP') ]);
+
+		var searchInput = E('input', {
+			'type': 'text',
+			'class': 'cbi-input-text',
+			'placeholder': _('搜索过滤 IP...'),
+			'style': 'width: 220px;',
+			'input': function(ev) {
+				var query = ev.target.value.toLowerCase().trim();
+				var table = document.getElementById('xdns-static-ips-table');
+				if (!table) return;
+				var trs = table.querySelectorAll('tbody tr.ip-item-row');
+				trs.forEach(function(tr) {
+					var ipName = tr.getAttribute('data-ip') || '';
+					if (!query || ipName.indexOf(query) !== -1) {
+						tr.style.display = '';
+					} else {
+						tr.style.display = 'none';
+					}
+				});
+			}
+		});
+
+		// Parse static IPs from static_ips.txt and cross-check with ipsList
+		var staticIpsList = [];
+		var seen = {};
+		if (staticIpsContent) {
+			var lines = staticIpsContent.split('\n');
+			for (var i = 0; i < lines.length; i++) {
+				var line = lines[i].trim();
+				if (!line || line.indexOf('#') === 0) continue;
+				var parts = line.split(/\s+/);
+				var ip = parts[0];
+				if (isIpv4(ip)) {
+					staticIpsList.push({
+						ip: ip,
+						type: '静态持久化',
+						expires: 'permanent',
+						conns: '0',
+						bytes: '0'
+					});
+					seen[ip] = true;
+				}
+			}
+		}
+
+		// Also check ipsList for any static IPs in kernel map that might have been added dynamically
+		(ipsList || []).forEach(function(item) {
+			if (item.domain === '[static]' && !seen[item.ip]) {
+				staticIpsList.push({
+					ip: item.ip,
+					type: '内核临时/动态',
+					expires: item.expires || 'permanent',
+					conns: item.conns || '0',
+					bytes: item.bytes || '0'
+				});
+				seen[item.ip] = true;
+			} else if (seen[item.ip]) {
+				for (var j = 0; j < staticIpsList.length; j++) {
+					if (staticIpsList[j].ip === item.ip) {
+						staticIpsList[j].conns = item.conns || '0';
+						staticIpsList[j].bytes = item.bytes || '0';
+						staticIpsList[j].expires = item.expires || 'permanent';
+						break;
+					}
+				}
+			}
+		});
+
+		// 2. IP Table Rows
+		var ipTableRows = [
+			E('tr', { 'class': 'tr table-titles' }, [
+				E('th', { 'class': 'th center', 'style': 'width: 60px;' }, '#'),
+				E('th', { 'class': 'th left' }, _('重定向 IPv4 地址')),
+				E('th', { 'class': 'th center', 'style': 'width: 140px;' }, _('生效状态')),
+				E('th', { 'class': 'th center', 'style': 'width: 120px;' }, _('剩余有效期')),
+				E('th', { 'class': 'th left', 'style': 'width: 140px;' }, _('加速流量')),
+				E('th', { 'class': 'th center', 'style': 'width: 100px;' }, _('操作'))
+			])
+		];
+
+		if (staticIpsList.length === 0) {
+			ipTableRows.push(E('tr', { 'class': 'tr placeholder' }, [
+				E('td', { 'class': 'td', 'colspan': '6' }, E('em', {}, _('暂无静态重定向 IP 规则，可在上方添加特定 IP 或使用批量编辑配置。')))
+			]));
+		} else {
+			staticIpsList.forEach(function(item, idx) {
+				var tr = E('tr', { 'class': 'tr ip-item-row', 'data-ip': item.ip.toLowerCase() }, [
+					E('td', { 'class': 'td center' }, String(idx + 1)),
+					E('td', { 'class': 'td' }, [
+						E('span', { 'style': 'margin-right: 6px;' }, '🎯'),
+						E('strong', {}, item.ip)
+					]),
+					E('td', { 'class': 'td center' }, E('span', {
+						'class': 'badge success',
+						'style': 'color: #155724; background-color: #d4edda; border: 1px solid #c3e6cb; padding: 2px 8px; border-radius: 3px;'
+					}, item.type || _('活跃'))),
+					E('td', { 'class': 'td center' }, item.expires === 'permanent' ? _('永久') : item.expires),
+					E('td', { 'class': 'td' }, formatBytes(item.bytes)),
+					E('td', { 'class': 'td center' }, [
+						E('button', {
+							'class': 'btn cbi-button cbi-button-remove',
+							'style': 'padding: 2px 8px; font-size: 85%;',
+							'click': function(ev) {
+								if (!confirm(_('确定从内核重定向表及规则文件中移除 IP「%s」？').format(item.ip)))
+									return;
+								var b = ev.target.closest('button');
+								b.disabled = true;
+								fs.exec_direct('/usr/bin/xdns-ctl', ['del-ip', item.ip]).then(function() {
+									ui.addTimeLimitedNotification(null, E('p', _('IP「%s」已成功从内核及规则文件中删除！').format(item.ip)), 3000, 'info');
+									location.reload();
+								}).catch(function(err) {
+									b.disabled = false;
+									ui.addNotification(null, E('p', _('删除失败: %s').format(err.message || err)), 'error');
+								});
+							}
+						}, [ '🗑️ ', _('删除') ])
+					])
+				]);
+				ipTableRows.push(tr);
+			});
+		}
+
+		// 3. Batch Editor Textarea
+		var textarea = E('textarea', {
+			'class': 'cbi-input-textarea',
+			'rows': 12,
+			'style': 'width: 100%; font-family: monospace; font-size: 13px; line-height: 1.5; padding: 8px;'
+		}, staticIpsContent || '');
+
+		var batchSaveBtn = E('button', {
+			'class': 'btn cbi-button cbi-button-save',
+			'style': 'margin-top: 10px; font-weight: bold;',
+			'click': function(ev) {
+				var content = textarea.value;
+				var b = ev.target.closest('button');
+				b.disabled = true;
+				b.textContent = _('保存并重载中...');
+
+				// 1. Write to /etc/xdns/static_ips.txt
+				fs.write('/etc/xdns/static_ips.txt', content).then(function() {
+					// 2. Call xdns-ctl load-ips to load into kernel
+					return fs.exec_direct('/usr/bin/xdns-ctl', ['load-ips']);
+				}).then(function() {
+					ui.addTimeLimitedNotification(null, E('p', _('静态 IP 规则已成功保存并加载至内核 eBPF 模块！')), 3000, 'info');
+					location.reload();
+				}).catch(function(err) {
+					b.disabled = false;
+					b.textContent = _('💾 保存并加载至内核');
+					ui.addNotification(null, E('p', _('保存重载失败: %s').format(err.message || err)), 'error');
+				});
+			}
+		}, [ '💾 ', _('保存并加载至内核') ]);
+
+		return E('div', {}, [
+			E('div', { 'class': 'cbi-section' }, [
+				E('h3', {}, [ _('🎯 静态重定向 IP 管理'), ' (', String(staticIpsList.length), ')' ]),
+				E('p', { 'class': 'cbi-section-descr' }, [
+					_('直接将指定的 IPv4 地址写入内核 eBPF 重定向表 (xdns_ip_set)。访问这些目标 IP 的 TCP SYN 流量将直接通过加速隧道转发，无需等待 DNS 动态解析，适合特定 IP 连通性测试与纯 IP 业务场景。')
+				]),
+				E('div', { 'style': 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;' }, [
+					E('div', { 'style': 'display: flex; align-items: center;' }, [ quickAddIpInput, quickAddTtlInput, quickAddBtn ]),
+					E('div', {}, [ searchInput ])
+				]),
+				E('table', { 'class': 'table', 'id': 'xdns-static-ips-table' }, ipTableRows)
+			]),
+
+			E('div', { 'class': 'cbi-section', 'style': 'margin-top: 30px;' }, [
+				E('h3', {}, _('📝 静态 IP 规则文件编辑 (/etc/xdns/static_ips.txt)')),
+				E('p', { 'class': 'cbi-section-descr' }, [
+					_('在此可直接批量粘贴或编辑静态重定向 IPv4 列表。每行输入一个 IP 地址，支持使用 # 注释。保存时将写入配置文件并同步加载至内核。')
+				]),
+				textarea,
+				E('div', { 'style': 'display: flex; justify-content: flex-end;' }, [ batchSaveBtn ])
+			])
+		]);
+	},
+
 	render: function(data) {
 		var self = this;
 		var statusText = data[2] || '';
@@ -567,8 +798,10 @@ return view.extend({
 		var ipsText = data[5] || '';
 		var sessionsText = data[6] || '';
 		var fileContent = data[7] || '';
+		var staticIpsContent = data[8] || '';
 
 		var domainsList = parseDomains(domainsText);
+		var ipsList = parseIps(ipsText);
 
 		// Build Settings Form Map
 		var m = new form.Map('xdns', _('xDNS 智能分流设置'),
@@ -609,6 +842,12 @@ return view.extend({
 		o.default = '/etc/xdns/proxy_domains.txt';
 		o.rmempty = false;
 
+		// static_ips_file
+		o = s.option(form.Value, 'static_ips_file', _('静态 IP 规则文件路径'),
+			_('持久化存储静态重定向 IP 的本地文件路径'));
+		o.default = '/etc/xdns/static_ips.txt';
+		o.rmempty = false;
+
 		// Render Form section container
 		var settingsContainer = E('div', {}, []);
 
@@ -622,6 +861,9 @@ return view.extend({
 				]),
 				E('div', { 'class': 'cbi-section', 'data-tab': 'domains', 'data-tab-title': _('分流域名规则管治') }, [
 					self.renderDomainsTab(domainsList, fileContent)
+				]),
+				E('div', { 'class': 'cbi-section', 'data-tab': 'ips', 'data-tab-title': _('静态重定向 IP') }, [
+					self.renderIpsTab(ipsList, staticIpsContent)
 				]),
 				E('div', { 'class': 'cbi-section', 'data-tab': 'settings', 'data-tab-title': _('基础服务设置') }, [
 					settingsContainer
