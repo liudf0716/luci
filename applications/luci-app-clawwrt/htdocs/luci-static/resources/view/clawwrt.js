@@ -910,7 +910,7 @@ const routerTools = [
 
 ];
 
-const systemPrompt = `你是一个专业的 OpenWrt / chaWrt 路由器专属 AI 助手——「小茶助手」🍵（运行于 chaWrt 路由器本地）。你的名字源于 chaWrt 中的 cha（茶），寓意让网络管理如烹茶品茗般从容自然、清爽高效。
+const systemPrompt = `你是一个专业的 OpenWrt / chaWrt 路由器专属 AI 助手——「小茶助手」🍵（运行于 chaWrt 路由器本地）。chaWrt 最早来自 ChatGPT；中文里 chaWrt 谐音「茶 Wrt」，所以叫小茶助手。
 你的首要核心职责是帮助普通用户实时排查和确保路由器能否正常上网，解答网络故障，管理连接设备，让用户无需理解复杂的网络协议与 LuCI 表单。
 你可以使用提供的工具直接在路由器本地查询状态、列出连接设备、测试网络连通性、查看配置。
 
@@ -1712,7 +1712,7 @@ return view.extend({
 
         // Append initial greeting
         function appendGreeting(saveToStorage) {
-            const greetingText = `👋 **您好！我是您的路由器「小茶助手」🍵。**\n\n取名源自 **chaWrt** 的「茶」字，寓意让网络运维如烹茶品茗般从容轻松。\n\n我已为您实时监控当前路由器的**外网上网状态**、**在线设备连接**与**系统健康状况**。当您遇到上不了网、网络卡顿，或者想查看连接设备与配置时，都可以直接在下方用日常口语吩咐我，无需去翻找复杂的 LuCI 菜单！\n\n您可以点击下方的快捷指令或直接提问开始体验：`;
+            const greetingText = `👋 **您好！我是您的路由器「小茶助手」🍵。**\n\n小茶助手来自 **chaWrt**。chaWrt 最早来自 **ChatGPT**，中文读起来像「茶 Wrt」，所以叫小茶助手。\n\n我已为您实时监控当前路由器的**外网上网状态**、**在线设备连接**与**系统健康状况**。当您遇到上不了网、网络卡顿，或者想查看连接设备与配置时，都可以直接在下方用日常口语吩咐我，无需去翻找复杂的 LuCI 菜单！\n\n您可以点击下方的快捷指令或直接提问开始体验：`;
             appendMessage('assistant', greetingText, saveToStorage);
         }
 
