@@ -1382,7 +1382,7 @@ return view.extend({
             }
         }
 
-        function renderCategoryDeck(catId) {
+        function renderCategoryDeck(catId, forceExpand) {
             currentCategory = catId;
             localStorage.setItem('clawwrt_quick_category', catId);
 
