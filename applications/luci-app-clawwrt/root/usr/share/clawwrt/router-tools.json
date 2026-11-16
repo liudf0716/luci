@@ -554,24 +554,26 @@
     "type": "function",
     "function": {
       "name": "manage_penetration_proxy",
-      "description": "管理内网穿透（xfrpc）的具体端口映射规则：支持列出所有映射规则（action: \"list\"）；新增或修改映射规则（action: \"add\"，可将局域网内任意 IP:端口通过 TCP/UDP/HTTP/HTTPS/SOCKS5 映射到公网远程端口、自定义域名 custom_domains 或远程子域名 subdomain）；临时停用/禁用规则（action: \"disable\"）；重新启用规则（action: \"enable\"）；删除映射规则（action: \"remove\"）。注意：添加、修改、启停或删除操作属于配置变更，前端将渲染可视化卡片供用户确认。",
+      "description": "管理内网穿透（xfrpc）服务及其具体端口映射规则：支持停止/停用整个内网穿透服务（action: \"stop_service\"）；启动/开启内网穿透服务（action: \"start_service\"）；列出所有映射规则与运行状态（action: \"list\"）；新增或修改映射规则（action: \"add\"，可将局域网内任意 IP:端口通过 TCP/UDP/HTTP/HTTPS/SOCKS5 映射到公网远程端口、自定义域名 custom_domains 或远程子域名 subdomain）；临时停用/禁用规则（action: \"disable\"）；重新启用规则（action: \"enable\"）；删除映射规则（action: \"remove\"）。注意：变更操作前端将渲染可视化卡片供用户确认。",
       "parameters": {
         "type": "object",
         "properties": {
           "action": {
             "type": "string",
             "enum": [
+              "stop_service",
+              "start_service",
               "list",
               "add",
               "remove",
               "enable",
               "disable"
             ],
-            "description": "操作类型：list(查看所有规则), add(新增/修改规则), remove(删除规则), enable(启用规则), disable(禁用规则)"
+            "description": "操作类型：stop_service(停止/禁用内网穿透总服务), start_service(启动/开启内网穿透总服务), list(查看所有规则与状态), add(新增/修改规则), remove(删除规则), enable(启用规则), disable(禁用规则)"
           },
           "rule_name": {
             "type": "string",
-            "description": "规则名称（英文数字下划线，如 aw_ssh, nas_web, game_udp）"
+            "description": "规则名称（停用或启动整个服务时可留空或填 common/all；操作具体规则时填写规则英文名称如 aw_ssh, nas_web）"
           },
           "proxy_type": {
             "type": "string",

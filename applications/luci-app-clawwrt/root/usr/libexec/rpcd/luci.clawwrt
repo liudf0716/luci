@@ -6127,9 +6127,23 @@ EOF
             local msg=""
 
             case "$action" in
-                list)
+                list|status)
                     get_penetration_status
                     return
+                    ;;
+                stop_service|stop|disable_service)
+                    uci -q set xfrpc.common.enabled="0"
+                    uci commit xfrpc
+                    /etc/init.d/xfrpc stop >/dev/null 2>&1
+                    success=1
+                    msg="已成功停止并禁用内网穿透 (xfrpc) 服务，外网穿透通道已关闭"
+                    ;;
+                start_service|start|enable_service)
+                    uci -q set xfrpc.common.enabled="1"
+                    uci commit xfrpc
+                    /etc/init.d/xfrpc restart >/dev/null 2>&1
+                    success=1
+                    msg="已成功启动并启用内网穿透 (xfrpc) 服务，外网穿透通道已建立"
                     ;;
                 add|set)
                     if [ -z "$rule_name" ]; then
@@ -6161,8 +6175,12 @@ EOF
                     fi
                     ;;
                 enable)
-                    if [ -z "$rule_name" ]; then
-                        msg="规则名称 (rule_name) 不能为空"
+                    if [ "$rule_name" = "all" -o "$rule_name" = "service" -o "$rule_name" = "xfrpc" -o "$rule_name" = "common" -o -z "$rule_name" ]; then
+                        uci -q set xfrpc.common.enabled="1"
+                        uci commit xfrpc
+                        /etc/init.d/xfrpc restart >/dev/null 2>&1
+                        success=1
+                        msg="已成功启动并启用内网穿透 (xfrpc) 服务，外网穿透通道已建立"
                     elif [ -z "$(uci -q get xfrpc.${rule_name})" ]; then
                         msg="未找到名称为 [${rule_name}] 的穿透规则"
                     else
@@ -6174,8 +6192,12 @@ EOF
                     fi
                     ;;
                 disable)
-                    if [ -z "$rule_name" ]; then
-                        msg="规则名称 (rule_name) 不能为空"
+                    if [ "$rule_name" = "all" -o "$rule_name" = "service" -o "$rule_name" = "xfrpc" -o "$rule_name" = "common" -o -z "$rule_name" ]; then
+                        uci -q set xfrpc.common.enabled="0"
+                        uci commit xfrpc
+                        /etc/init.d/xfrpc stop >/dev/null 2>&1
+                        success=1
+                        msg="已成功停止并禁用内网穿透 (xfrpc) 服务，外网穿透通道已关闭"
                     elif [ -z "$(uci -q get xfrpc.${rule_name})" ]; then
                         msg="未找到名称为 [${rule_name}] 的穿透规则"
                     else
@@ -6200,7 +6222,7 @@ EOF
                     fi
                     ;;
                 *)
-                    msg="未知的操作动作: $action (支持: list, add, remove, enable, disable)"
+                    msg="未知的操作动作: $action (支持: list, status, stop_service, start_service, add, remove, enable, disable)"
                     ;;
             esac
 

@@ -260,6 +260,15 @@ assert_ubus "WAN防御" "拒绝非法端口开关参数注入 (non-boolean)" "ma
 [ "$orig_https" = "true" ] && r_https="1" || r_https="0"
 ubus call luci.clawwrt manage_wan_access "{\"action\":\"set\",\"ssh\":\"$r_ssh\",\"http\":\"$r_http\",\"https\":\"$r_https\"}" >/dev/null 2>&1
 
+# ---------------------------------------------------------------------
+# 10. 内网穿透 (xfrpc) 全局服务停用与启动测试
+# ---------------------------------------------------------------------
+echo -e "\n${BOLD}${BLUE}【10. 内网穿透 (xfrpc) 全局服务停用与启动测试】${NC}"
+assert_ubus "穿透总控" "停用内网穿透服务 (stop_service)" "manage_penetration_proxy" '{"action":"stop_service"}' "success" "true"
+assert_ubus "穿透总控" "启动内网穿透服务 (start_service)" "manage_penetration_proxy" '{"action":"start_service"}' "success" "true"
+assert_ubus "穿透总控" "别名参数停用内网穿透 (disable, rule: common)" "manage_penetration_proxy" '{"action":"disable","rule_name":"common"}' "success" "true"
+assert_ubus "穿透总控" "别名参数启用内网穿透 (enable, rule: common)" "manage_penetration_proxy" '{"action":"enable","rule_name":"common"}' "success" "true"
+
 END_TIME=$(date +%s)
 DURATION=$((END_TIME - START_TIME))
 

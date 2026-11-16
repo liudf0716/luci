@@ -632,12 +632,12 @@ const routerTools = [
         type: 'function',
         function: {
             name: 'manage_penetration_proxy',
-            description: '管理内网穿透（xfrpc）的具体端口映射规则：支持列出所有映射规则（action: "list"）；新增或修改映射规则（action: "add"，可将局域网内任意 IP:端口通过 TCP/UDP/HTTP/HTTPS/SOCKS5 映射到公网远程端口、自定义域名 custom_domains 或远程子域名 subdomain）；临时停用/禁用规则（action: "disable"）；重新启用规则（action: "enable"）；删除映射规则（action: "remove"）。注意：添加、修改、启停或删除操作属于配置变更，前端将渲染可视化卡片供用户确认。',
+            description: '管理内网穿透（xfrpc）服务及其具体端口映射规则：支持停止/停用整个内网穿透服务（action: "stop_service"）；启动/开启内网穿透服务（action: "start_service"）；列出所有映射规则与运行状态（action: "list"）；新增或修改映射规则（action: "add"，可将局域网内任意 IP:端口通过 TCP/UDP/HTTP/HTTPS/SOCKS5 映射到公网远程端口、自定义域名 custom_domains 或远程子域名 subdomain）；临时停用/禁用规则（action: "disable"）；重新启用规则（action: "enable"）；删除映射规则（action: "remove"）。注意：变更操作前端将渲染可视化卡片供用户确认。',
             parameters: {
                 type: 'object',
                 properties: {
-                    action: { type: 'string', enum: ['list', 'add', 'remove', 'enable', 'disable'], description: '操作类型：list(查看所有规则), add(新增/修改规则), remove(删除规则), enable(启用规则), disable(禁用规则)' },
-                    rule_name: { type: 'string', description: '规则名称（英文数字下划线，如 aw_ssh, nas_web, game_udp）' },
+                    action: { type: 'string', enum: ['stop_service', 'start_service', 'list', 'add', 'remove', 'enable', 'disable'], description: '操作类型：stop_service(停止/禁用内网穿透总服务), start_service(启动/开启内网穿透总服务), list(查看所有规则与状态), add(新增/修改规则), remove(删除规则), enable(启用规则), disable(禁用规则)' },
+                    rule_name: { type: 'string', description: '规则名称（停用或启动整个服务时可留空或填 common/all；操作具体规则时填写规则英文名称如 aw_ssh, nas_web）' },
                     proxy_type: { type: 'string', enum: ['tcp', 'udp', 'http', 'https', 'socks5'], description: '协议类型，默认为 tcp' },
                     local_ip: { type: 'string', description: '局域网目标设备 IP，默认 127.0.0.1' },
                     local_port: { type: 'string', description: '本地服务端口，如 22, 80, 8080, 53（socks5 代理可不填）' },
@@ -1052,6 +1052,10 @@ ${commonSafety}
      - 什么时候开：出门在外确实需要临时远程管理路由器时才开（建议只开 HTTPS 网页）；
      - 什么时候关：用完必须马上关；人在家里日常使用一定要关上；
      - 怎么关：告诉用户可以直接点击屏幕卡片上的开关按钮关掉，或者直接对小茶说“关掉外网管理端口”；
+- 内网穿透 (xfrpc) 与远程访问管理 (get_penetration_status, manage_penetration_proxy)：
+  - 查看状态：调用 get_penetration_status 查看当前内网穿透是否连接上了远程服务器；
+  - 停掉/关闭穿透：当用户想停用、关闭内网穿透时，【必须调用 manage_penetration_proxy(action: "stop_service")】生成确认卡片，由用户确认后停掉穿透服务并切断外网连接；
+  - 开启/启动穿透：当用户想开启、恢复内网穿透时，【必须调用 manage_penetration_proxy(action: "start_service")】生成确认卡片；
 - 组网扩展 (Mesh)：调用 get_mesh_status / discover_mesh_nodes / propose_pair_mesh_node，帮助用户轻松扩展全屋 WiFi。`;
 }
 
@@ -1062,6 +1066,8 @@ function getRouterTools(mode) {
     const noviceAllowedTools = new Set([
         'get_security_check',
         'manage_wan_access',
+        'get_penetration_status',
+        'manage_penetration_proxy',
         'get_router_summary',
         'list_clients',
         'get_services_status',
@@ -1323,6 +1329,8 @@ return view.extend({
                             { label: "🛡️ 路由器全方位安全体检", query: "帮我给这台路由器做一个全面的安全体检，排查外网端口暴露和密码安全隐患" },
                             { label: "🔒 检查外网端口与开关", query: "查看当前路由器 WAN 口管理端口（SSH 22、HTTP 80、HTTPS 443）的开关状态，我想管理外网访问权限" },
                             { label: "🚫 一键关闭所有外网端口", query: "为了安全，帮我把外网暴露的 SSH、HTTP、HTTPS 管理端口全部关闭" },
+                            { label: "🛑 停用内网穿透服务", query: "帮我停掉内网穿透服务，关闭外网穿透连接" },
+                            { label: "🚀 启动内网穿透服务", query: "帮我启动内网穿透服务，恢复远程访问" },
                             { label: "🌐 什么时候开启外网端口？", query: "请告诉我路由器的外网管理端口什么时候该开启、什么时候该关闭？有什么安全风险？" },
                             { label: "🔑 检查 WiFi 密码安全", query: "查看当前路由器的 WiFi 名称与密码配置，帮我检查密码是否安全、是否存在弱口令" },
                             { label: "🛡️ 检查后台 Root 密码", query: "帮我检查当前路由器的超级管理员 Root 密码设置是否安全" }
@@ -1433,6 +1441,8 @@ return view.extend({
                         name: "🌍 穿透与IPSec",
                         cards: [
                             { label: "🔍 穿透连通性深度检测", query: "帮我深度检测内网穿透当前是否正常运行，检查 xfrpc 是否已经真正连上了远端 frps 服务端，查看连接套接字、日志与公网访问链接" },
+                            { label: "🛑 停用内网穿透服务", query: "帮我停掉内网穿透服务，关闭外网穿透连接" },
+                            { label: "🚀 启动内网穿透服务", query: "帮我启动内网穿透服务，恢复远程访问" },
                             { label: "🖥️ 纳管远程免密服务器", query: "查看已纳管的远程免密服务器（VPS）列表与连通性状态，并指导我如何添加新的 VPS" },
                             { label: "🔑 查看路由器 SSH 公钥", query: "查看路由器专属的 SSH 免密公钥与一键授权命令" },
                             { label: "🌐 VPS 一键内网穿透", query: "我想把这台路由器穿透到我自己的 VPS 上，请帮我通过 SSH 免密方式在 VPS 上自动部署服务端并连通" },
@@ -3213,17 +3223,31 @@ return view.extend({
         }
 
         function appendPenetrationProxyCard(param) {
+            const isStopService = (param.action === 'stop_service' || param.action === 'disable_service' || 
+                (param.action === 'disable' && (!param.rule_name || param.rule_name === 'common' || param.rule_name === 'service' || param.rule_name === 'all' || param.rule_name === 'xfrpc')));
+            const isStartService = (param.action === 'start_service' || param.action === 'enable_service' || 
+                (param.action === 'enable' && (!param.rule_name || param.rule_name === 'common' || param.rule_name === 'service' || param.rule_name === 'all' || param.rule_name === 'xfrpc')));
             const isAdd = (param.action === 'add' || param.action === 'set');
             const isDel = (param.action === 'remove' || param.action === 'del');
-            const isEnable = (param.action === 'enable');
-            const isDisable = (param.action === 'disable');
+            const isEnable = (param.action === 'enable') && !isStartService;
+            const isDisable = (param.action === 'disable') && !isStopService;
 
             let actionText = '管理穿透规则';
             let actionColor = '#7c3aed';
             let confirmBtnText = '✅ 确认操作';
             let icon = '🔗';
 
-            if (isAdd) {
+            if (isStopService) {
+                actionText = '停止内网穿透服务';
+                actionColor = '#dc2626';
+                confirmBtnText = '🛑 确认停止内网穿透';
+                icon = '🛑';
+            } else if (isStartService) {
+                actionText = '启动内网穿透服务';
+                actionColor = '#16a34a';
+                confirmBtnText = '🚀 确认启动内网穿透';
+                icon = '🚀';
+            } else if (isAdd) {
                 actionText = '新增/修改穿透映射';
                 actionColor = '#7c3aed';
                 confirmBtnText = '✅ 确认添加并应用';
@@ -3252,12 +3276,21 @@ return view.extend({
                 E('div', { 'style': 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px;' }, [
                     E('div', { 'style': 'font-weight: 700; font-size: 15px; color: #0f172a; display: flex; align-items: center; gap: 8px;' }, [
                         E('span', { 'style': 'font-size: 18px;' }, icon),
-                        E('span', {}, '内网穿透 (xfrpc) 规则变更')
+                        E('span', {}, isStopService || isStartService ? '内网穿透 (xfrpc) 服务控制' : '内网穿透 (xfrpc) 规则变更')
                     ]),
                     E('span', { 'style': `background: #f1f5f9; color: ${actionColor}; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 700; border: 1px solid #cbd5e1;` }, actionText)
                 ]),
                 E('div', { 'style': 'font-size: 13px; color: #475569; margin-bottom: 12px;' }, param.explanation || `用户请求${actionText}。`),
-                E('div', { 'style': 'background: var(--cw-bg-subtle); border: 1px solid var(--cw-border); border-radius: 8px; padding: 10px 14px; margin-bottom: 12px; font-size: 13px; color: var(--cw-text-main);' }, [
+                isStopService ? E('div', { 'style': 'background: rgba(220, 38, 38, 0.08); border: 1px solid rgba(220, 38, 38, 0.2); border-radius: 8px; padding: 10px 14px; margin-bottom: 12px; font-size: 13px; color: var(--cw-text-main); line-height: 1.6;' }, [
+                    E('div', { 'style': 'font-weight: 700; color: #dc2626; margin-bottom: 4px;' }, '⚠️ 停止穿透服务影响说明：'),
+                    E('div', {}, '• 将停止路由器上的 xfrpc 客户端守护进程，断开与远端 frps 穿透服务器的所有连接。'),
+                    E('div', {}, '• 外网将无法再通过远程端口或域名访问当前路由器的管理后台及局域网映射服务。'),
+                    E('div', {}, '• 现有穿透配置参数与映射规则仍将完整保留在配置中，后续可随时一键恢复启动。')
+                ]) : (isStartService ? E('div', { 'style': 'background: rgba(22, 163, 74, 0.08); border: 1px solid rgba(22, 163, 74, 0.2); border-radius: 8px; padding: 10px 14px; margin-bottom: 12px; font-size: 13px; color: var(--cw-text-main); line-height: 1.6;' }, [
+                    E('div', { 'style': 'font-weight: 700; color: #16a34a; margin-bottom: 4px;' }, '💡 启动穿透服务说明：'),
+                    E('div', {}, '• 重新启动路由器 xfrpc 客户端守护进程，自动连接远端 frps 服务端并建立稳定安全通道。'),
+                    E('div', {}, '• 恢复所有已启用的公网端口与域名映射，允许从外网安全访问内网服务。')
+                ]) : E('div', { 'style': 'background: var(--cw-bg-subtle); border: 1px solid var(--cw-border); border-radius: 8px; padding: 10px 14px; margin-bottom: 12px; font-size: 13px; color: var(--cw-text-main);' }, [
                     E('div', { 'style': 'margin-bottom: 4px;' }, [E('strong', {}, '规则名称：'), E('code', {}, param.rule_name || '新规则')]),
                     param.proxy_type ? E('div', { 'style': 'margin-bottom: 4px;' }, [E('strong', {}, '协议类型：'), E('span', { 'style': 'text-transform: uppercase; font-weight: 700;' }, param.proxy_type)]) : '',
                     param.local_port ? E('div', { 'style': 'margin-bottom: 4px;' }, [E('strong', {}, '本地目标：'), E('code', {}, `${param.local_ip || '127.0.0.1'}:${param.local_port}`)]) : '',
@@ -3268,7 +3301,7 @@ return view.extend({
                         param.use_encryption ? E('span', { 'style': 'background: #e0e7ff; color: #3730a3; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;' }, '🔒 已启用传输加密') : '',
                         param.use_compression ? E('span', { 'style': 'background: #ecfdf5; color: #065f46; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;' }, '🗜️ 已启用数据压缩') : ''
                     ]) : ''
-                ]),
+                ])),
                 E('div', { 'style': 'display: flex; gap: 10px;' }, [
                     E('button', {
                         'class': 'btn cbi-button cbi-button-apply',
@@ -3276,10 +3309,11 @@ return view.extend({
                         'click': function(ev) {
                             const btn = ev.target;
                             btn.disabled = true;
-                            btn.innerText = '⏳ 正在保存配置并重启穿透...';
+                            btn.innerText = '⏳ 正在保存配置并应用...';
+                            const act = isStopService ? 'stop_service' : (isStartService ? 'start_service' : param.action);
                             callManagePenetrationProxy(
-                                param.action,
-                                param.rule_name,
+                                act,
+                                param.rule_name || (isStopService || isStartService ? 'common' : ''),
                                 param.proxy_type || 'tcp',
                                 param.local_ip || '127.0.0.1',
                                 param.local_port,
@@ -3290,16 +3324,16 @@ return view.extend({
                                 param.use_compression ? '1' : '0'
                             ).then(res => {
                                 if (res && res.success) {
-                                    btn.innerText = '✅ 穿透规则已生效';
+                                    btn.innerText = '✅ 操作已生效';
                                     btn.style.background = '#16a34a';
-                                    appendMessage('assistant', `🎉 **内网穿透规则已成功应用！**\n\n• **规则名称**：\`${param.rule_name}\`\n• **动作**：${actionText}\n• **结果**：${res.message || '服务已重载运行。'}`);
+                                    appendMessage('assistant', `🎉 **内网穿透服务/规则已更新！**\n\n• **动作**：${actionText}\n• **结果**：${res.message || '服务状态已更新。'}`);
                                 } else {
                                     btn.innerText = '❌ 执行失败: ' + (res.message || '未知错误');
                                     btn.style.background = '#dc2626';
                                 }
                             }).catch(err => {
                                 btn.innerText = '❌ 写入失败';
-                                appendMessage('assistant', `❌ 穿透规则更新失败: ${err.message}`);
+                                appendMessage('assistant', `❌ 穿透操作失败: ${err.message}`);
                             });
                         }
                     }, confirmBtnText),
@@ -3308,7 +3342,7 @@ return view.extend({
                         'style': 'background: var(--cw-bg-secondary); color: var(--cw-text-main); border: 1px solid var(--cw-border); padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 13px;',
                         'click': function() {
                             card.remove();
-                            appendMessage('assistant', `已取消对穿透规则 [${param.rule_name}] 的操作。现有规则保持原样运行。`);
+                            appendMessage('assistant', `已取消对穿透服务/规则的操作。当前状态保持不变。`);
                         }
                     }, '❌ 取消')
                 ])
