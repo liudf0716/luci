@@ -1241,7 +1241,7 @@ return view.extend({
         // Metrics Bar: Focused on real-time Internet Connectivity & Status
         const metricsBar = E('div', {
             'id': 'metrics-bar',
-            'style': 'display: grid; grid-template-columns: minmax(320px, 2fr) repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 16px;'
+            'style': 'display: grid; grid-template-columns: minmax(280px, 1.8fr) repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 16px;'
         }, [
             // Card 1: Main Internet Status Card (Highlighted, Big Status)
             E('div', {
@@ -1279,7 +1279,15 @@ return view.extend({
             // Card 2: LAN & Connected Clients
             renderMetricCard('📱 在线终端设备', '检测中...', '网关: 192.168.8.1', 'devices'),
             // Card 3: Router Health & Hardware
-            renderMetricCard('🖥️ 路由器硬件与负载', '加载中...', 'CPU: - | 内存: -', 'hardware')
+            renderMetricCard('🖥️ 路由器硬件与负载', '加载中...', 'CPU: - | 内存: -', 'hardware'),
+            // Card 4: Security Audit & Protection Quick Card
+            renderMetricCard('🛡️ 安全体检与防护', '点击体检', '检测 WAN 暴露与安全基线', 'security', function() {
+                const input = document.getElementById('chat-input');
+                if (input) {
+                    input.value = '帮我给这台路由器做一个全面的安全体检，排查外网端口暴露和密码安全隐患';
+                    sendMessage();
+                }
+            })
         ]);
 
         // Chat Box
@@ -1296,6 +1304,8 @@ return view.extend({
                         id: "popular",
                         name: "🔥 常用精选",
                         cards: [
+                            { label: "🛡️ 路由器安全体检", query: "帮我给这台路由器做一个全面的安全体检，排查外网端口暴露和密码安全隐患" },
+                            { label: "🔒 检查外网端口开关", query: "检查一下路由器外网访问管理端口（SSH/HTTP/HTTPS）的开放状态并指导我管理" },
                             { label: "📊 我家网络怎么样？", query: "对这台路由器进行健康巡检，用通俗语言汇报网络好不好、运行稳不稳定" },
                             { label: "🌐 测一下能不能上网", query: "帮我全面测试路由器当前能否正常上网，延迟高不高、看视频卡不卡" },
                             { label: "📱 查查谁在连路由器", query: "当前局域网连接了哪些手机、电脑或电视？用通俗列表告诉我" },
@@ -1304,6 +1314,18 @@ return view.extend({
                             { label: "🚀 看看谁在悄悄占网速", query: "帮我看看当前哪台设备下载占网速最厉害，并告诉我怎么限速" },
                             { label: "🩺 网络加速好不好用？", query: "帮我检查一下网络加速和分流是不是全绿正常运行" },
                             { label: "🔑 查看或修改 WiFi 密码", query: "查看当前路由器的 WiFi 名称与密码配置" }
+                        ]
+                    },
+                    {
+                        id: "security",
+                        name: "🛡️ 安全与外网防护",
+                        cards: [
+                            { label: "🛡️ 路由器全方位安全体检", query: "帮我给这台路由器做一个全面的安全体检，排查外网端口暴露和密码安全隐患" },
+                            { label: "🔒 检查外网端口与开关", query: "查看当前路由器 WAN 口管理端口（SSH 22、HTTP 80、HTTPS 443）的开关状态，我想管理外网访问权限" },
+                            { label: "🚫 一键关闭所有外网端口", query: "为了安全，帮我把外网暴露的 SSH、HTTP、HTTPS 管理端口全部关闭" },
+                            { label: "🌐 什么时候开启外网端口？", query: "请告诉我路由器的外网管理端口什么时候该开启、什么时候该关闭？有什么安全风险？" },
+                            { label: "🔑 检查 WiFi 密码安全", query: "查看当前路由器的 WiFi 名称与密码配置，帮我检查密码是否安全、是否存在弱口令" },
+                            { label: "🛡️ 检查后台 Root 密码", query: "帮我检查当前路由器的超级管理员 Root 密码设置是否安全" }
                         ]
                     },
                     {
@@ -1338,6 +1360,8 @@ return view.extend({
                         id: "popular",
                         name: "🔥 专家精选",
                         cards: [
+                            { label: "🛡️ 路由器安全基线体检", query: "对路由器进行全方位安全体检，检查 WAN 口管理面暴露、SSH 凭据策略、HTTPS 加密与系统隔离" },
+                            { label: "🔒 WAN 远程管理端口开关", query: "查看当前 WAN 侧远程管理端口（SSH 22、HTTP 80、HTTPS 443）放行状态并进行开关控制" },
                             { label: "🩺 xDNS+xkcptun 全链路健康体检", query: "深度检测智能分流 (xDNS) 与网络加速 (xkcptun) 的全链路运行健康度，排查分流与加速是否存在异常，并在界面生成全链路诊断卡片" },
                             { label: "⚡ PPE 硬件加速与内核流表", query: "查看当前路由器的硬件加速（MediaTek PPE 硬件流量分流）运行状态与硬件流表" },
                             { label: "📊 L7 DPI 协议实时流速 Top 10", query: "查看当前路由器各 L7 应用协议的实时流速排行榜（如 SSH、HTTP、WebRTC、微信等）以及访问最多的域名 Top 10" },
@@ -1347,6 +1371,19 @@ return view.extend({
                             { label: "🔀 UDP 端口跳跃优化 (抗抖动防丢包)", query: "当前网络加速疑似遭遇运营商单端口 QoS 限速或 UDP 异常丢包，请帮我执行 UDP 端口跳跃，切换一个全新的通信端口优化链路" },
                             { label: "🚀 eBPF 动态令牌桶智能限速", query: "帮我把当前占用带宽的主机设置智能限速" },
                             { label: "🔄 开启 802.11k/v/r 漫游与 usteer", query: "查看当前 Wi-Fi 802.11k/v/r 无缝漫游配置，帮我开启满血 15ms 快速漫游与 usteer 调度" }
+                        ]
+                    },
+                    {
+                        id: "security",
+                        name: "🛡️ 安全基线与WAN防护",
+                        cards: [
+                            { label: "🛡️ 路由器安全基线体检", query: "对路由器进行全方位安全体检，检查 WAN 口管理面暴露、SSH 凭据策略、HTTPS 加密与系统隔离" },
+                            { label: "🔒 WAN 远程管理端口开关", query: "查看当前 WAN 侧远程管理端口（SSH 22、HTTP 80、HTTPS 443）放行状态并进行开关控制" },
+                            { label: "🚫 关闭所有 WAN 侧管理端口", query: "帮我把 WAN 口放行的 SSH 22、HTTP 80、HTTPS 443 远程管理端口全部关闭，保持外网零暴露" },
+                            { label: "🔑 SSH 认证策略加固排查", query: "检查当前 SSH Dropbear 认证策略，排查是否允许密码登录，并给出仅限密钥认证的加固方案" },
+                            { label: "🔐 Web 强制 HTTPS 跳转排查", query: "检查当前 Web 控制台 uhttpd 传输安全策略，排查是否开启了强制 HTTPS 重定向" },
+                            { label: "🛡️ ujail 守护进程沙箱隔离审计", query: "审计当前系统核心守护进程 (dnsmasq, hostapd, ntpd) 的 ujail 沙箱隔离与 Linux 权能约束状态" },
+                            { label: "🌐 DNS 防跨站重绑定防御审计", query: "审计当前 dnsmasq 的 RFC1918 局部私网地址防重绑定保护机制与安全状态" }
                         ]
                     },
                     {
@@ -1919,15 +1956,28 @@ return view.extend({
         container.appendChild(inputArea);
 
         // Helper: Metric Card
-        function renderMetricCard(title, val1, val2, type) {
-            return E('div', {
+        function renderMetricCard(title, val1, val2, type, clickFn) {
+            const tile = E('div', {
                 'class': 'metric-tile metric-tile-sub metric-tile-' + type,
-                'style': 'background: var(--cw-bg-card); border: 1px solid var(--cw-border); border-radius: 12px; padding: 14px 18px; box-shadow: var(--cw-card-shadow); display: flex; flex-direction: column; justify-content: center;'
+                'style': 'background: var(--cw-bg-card); border: 1px solid var(--cw-border); border-radius: 12px; padding: 14px 18px; box-shadow: var(--cw-card-shadow); display: flex; flex-direction: column; justify-content: center;' + (clickFn ? ' cursor: pointer; transition: all 0.2s;' : ''),
+                'title': clickFn ? '点击发起快捷安全体检' : ''
             }, [
                 E('div', { 'style': 'font-size: 12px; color: var(--cw-text-muted); font-weight: 600;' }, title),
                 E('div', { 'class': 'metric-val1', 'style': 'font-size: 16px; font-weight: 700; color: var(--cw-text-main); margin: 4px 0;' }, val1),
                 E('div', { 'class': 'metric-val2', 'style': 'font-size: 12px; color: var(--cw-text-muted);' }, val2)
             ]);
+            if (clickFn) {
+                tile.addEventListener('click', clickFn);
+                tile.addEventListener('mouseenter', function() {
+                    tile.style.transform = 'translateY(-2px)';
+                    tile.style.boxShadow = '0 6px 16px rgba(0,0,0,0.1)';
+                });
+                tile.addEventListener('mouseleave', function() {
+                    tile.style.transform = 'none';
+                    tile.style.boxShadow = 'var(--cw-card-shadow)';
+                });
+            }
+            return tile;
         }
 
         // Helper: Chip
@@ -5796,6 +5846,25 @@ return view.extend({
                     tiles[1].querySelector('.metric-val1').innerText = `${sum.board_model || 'chaWrt'}`;
                     const hwBadge = sum.hw_accel ? '⚡开启' : '关闭';
                     tiles[1].querySelector('.metric-val2').innerText = `CPU 负载: ${sum.cpu_load || '0.00'} | 内存: ${memUsed}% | 硬件加速: ${hwBadge}`;
+                }
+
+                if (tiles.length >= 3) {
+                    callGetSecurityCheck().then(sec => {
+                        if (!sec) return;
+                        const v1 = tiles[2].querySelector('.metric-val1');
+                        const v2 = tiles[2].querySelector('.metric-val2');
+                        if (!v1 || !v2) return;
+                        if (sec.level === 'danger') {
+                            v1.innerHTML = `<span style="color: #dc2626;">⚠️ ${sec.score} 分 · 存在隐患</span>`;
+                            v2.innerText = `WAN口暴露/风险 ${sec.danger_count} 项 · 点击排查`;
+                        } else if (sec.level === 'warning') {
+                            v1.innerHTML = `<span style="color: #d97706;">⚠️ ${sec.score} 分 · 建议加固</span>`;
+                            v2.innerText = `发现 ${sec.warning_count} 项建议 · 点击排查`;
+                        } else {
+                            v1.innerHTML = `<span style="color: #16a34a;">🟢 ${sec.score} 分 · 安全良好</span>`;
+                            v2.innerText = '8 项基线完备 · 点击体检';
+                        }
+                    }).catch(function() {});
                 }
             }).catch(e => {
                 if (btn) btn.innerText = '🔄 重新测速';
