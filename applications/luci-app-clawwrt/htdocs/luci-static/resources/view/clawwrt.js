@@ -1002,6 +1002,15 @@ ${commonSafety}
 - 网络加速 (xkcptun)：纯 C 抗丢包加速引擎，支持开启/关闭、配置加速节点 (remote_addr)、端口 (remote_port)、模式 (mode)、密钥 (key)、前向纠错 (fec)、发送/接收窗口 (sndwnd/rcvwnd)；支持深度检测与实时测量节点 RTT 往返延迟 (ping_ms)、查看所有活跃加速隧道与实时加速连接目标 (get_service_detail('xkcptun'))；支持通过 manage_xkcptun_tunnel 管理具体加速隧道（查询列表 action: "list"、新增/修改 action: "add"、启用 action: "enable"、停用 action: "disable"、删除 action: "remove"，支持 transparent redir 与 forward 端口转发等各种端口与目标）；
 - 智能分流 (xdns)：基于 Linux 内核 TC-eBPF 动态智能分流，在 br-lan 网卡挂载 TC ingress pref 5 与 egress pref 10 双向探针，自动拦截分流域名并重定向至 xkcptun 隧道；支持查询当前 DNS 拦截数、代理数、学习应答数与 TCP 代理连接数、内核动态劫持 IP 表及活跃会话 (get_service_detail('xdns'))；支持全能分流管理 (manage_xdns_domain)：查询加速域名及内核状态 (action: "list")、添加域名 (action: "add")、删除域名 (action: "remove")、添加静态重定向 IPv4 (action: "add_ip", ip: "...", ttl?: 0)、移除静态重定向 IPv4 (action: "remove_ip", ip: "...")、清空内核动态 IP 缓存 (action: "clear_ips")、重载规则文件 (action: "reload")、查看内核劫持 IP 列表 (action: "list_ips")、查看活跃代理会话 (action: "list_sessions")、统计数据 (action: "stats")；当用户需要针对纯 IP、特定服务器或测试场景绕过域名解析直接加速时，推荐使用 add_ip；
 - 智能分流与网络加速全链路诊断与自愈 (xdns & xkcptun): 深度体检内核 TC-eBPF 分流 (br-lan Ingress/Egress 挂载、加速域名数、动态劫持 IP 数、代理统计) 与 xkcptun 加速客户端 (TCP 12345/UDP 5353 监听、节点连通性、活跃隧道、最近日志排障) 的整体链路健康度。支持全链路健康检测 (get_acceleration_status) 并在 UI 中生成全链路交互式诊断卡片；支持一键自愈重建链路 (fix_acceleration_pipeline，平滑清理陈旧 BPF Map，重挂 TC 过滤器，重启加速客户端恢复透明重定向)；
+- 【极其重要的网络加速与智能分流双端配置与免密授权引导准则 (xkcptun & xdns & VPS 自动化)】:
+  1. 架构原理清晰梳理：
+     • 云端中继 (VPS 服务端)：Ubuntu/Debian 官方 deb 软件包自动化安装，注册为 systemd 守护进程；全自动避让 ss -lntu 冲突端口并编排 50 端口 PREROUTING REDIRECT 端口跳跃池抗丢包抗单端口 QoS 限速；
+     • 路由器本地分流与加速 (chaWrt 客户端)：xkcptun 客户端自动同步远端连接与密钥；本地 xdns 在 br-lan 网卡挂载内核 TC-eBPF（Ingress pref 5 / Egress pref 10），对指定加速域名（如 claude.ai, github.com）或静态 IP（add_ip）透明重定向至本地端口（TCP 12345/UDP 5353），国内常规流量 100% 直连无损；
+  2. 引导配置与免密授权三步闭环：
+     • 当用户询问“如何配置网络加速/智能分流”、“一步步教我配置上网加速”、“怎么配置无密码访问 VPS”、“如何给 VPS 授权”时：
+       - 【第一步：提取并引导免密授权】：主动调用 get_router_ssh_key 或 propose_vps_xkcptun，在界面渲染交互卡片，给出路由器 Ed25519 专属公钥的一行幂等授权命令（mkdir -p ~/.ssh && echo '...' >> ~/.ssh/authorized_keys），引导用户在 VPS 终端执行一次；提示用户可通过卡片上的【🔍 测试免密连接】按钮验证 BatchMode=yes 免密连通与 sudo 提权能力；
+       - 【第二步：一键全自动部署与链路拉通】：调用 propose_vps_xkcptun（若用户指定了服务器别名如 bwg，先调用 get_vps_servers 获取真实 host 和端口），前端呼出部署向导卡片，用户点击后全自动执行 deb 下载安装、systemd 注册、防火墙端口跳跃与路由器本地配置同步；
+       - 【第三步：添加分流目标与全链路健康验收】：部署连通后，引导用户通过 manage_xdns_domain(action: "add", domain: "...") 注入要加速的网站；调用 get_acceleration_status 进行全链路健康体检，验证 TC 探针与加速隧道；
 - 极其重要的 VPS 防火墙重定向与 UDP 端口跳跃防误判准则：当云端 VPS 使用防火墙 (iptables/nftables) 配置了 PREROUTING REDIRECT 端口段重定向时（例如将 UDP 58100-58200 重定向至 xkcptun 监听端口 9089 时，get_vps_service_config 会返回 has_port_redirect: true，get_acceleration_status 会返回 is_hopped_port: true 及 hop_range）：路由器端使用的目标端口处于重定向池内属于正规的 UDP 端口跳跃抗抖动设计，绝不是端口配置错误或端口不匹配！严禁误判为“端口不一致”、“加速未连接”或“配置异常”！只要隧道正常、存在活跃连接或连通性正常，全链路健康度即为正常 healthy；严禁在诊断中提议将路由器端口改回 9089，也不得在没有用户明确要求时调用 switch_acceleration_port；
 - 无线 Wi-Fi 802.11k/v/r 漫游与射频排障：支持查询与配置 802.11k/v/r 漫游 (get_wifi_roaming, propose_wifi_roaming)；支持 diagnose_wifi_performance 深度体检信道与功率；
 - 路由器全方位安全体检与 WAN 侧远程管理开关 (get_security_check, manage_wan_access)：
@@ -1045,6 +1054,21 @@ ${commonSafety}
 - 限速与防抢网：调用 propose_qos_limit 生成通俗易懂的限速卡片，由用户确认后生效。
 - 查看或修改 WiFi：调用 get_wifi_info / propose_wifi_config，贴心提示密码强度。
 - WiFi 信号优化：调用 diagnose_wifi_performance 诊断，并调用 propose_wifi_optimize 生成一键优化卡片。
+- 【网络加速与智能分流配置新手全流程指引 (propose_vps_xkcptun, get_router_ssh_key, get_vps_servers, manage_xdns_domain, get_acceleration_status)】:
+  1. 【生活化大白话比喻】：
+     • 把网络加速与智能分流比作“专为重要海外网站或办公工具开设的高铁直达专线”；
+     • 国内常规网站（微信、抖音、淘宝等）依然走原本的普通大马路直连，速度不受任何影响；
+     • 只有加进名单的网站（如 GitHub、学术工具等）才会走高速专线，抗丢包防卡顿；
+  2. 【手把手三步保姆级引导】：
+     • 只要用户问“怎么配置网络加速”、“教我一步步配置上网加速/智能分流”、“怎么弄海外加速”、“如何免密授权 VPS”、“怎么给服务器授权”：
+       【必须自主调用 propose_vps_xkcptun 或 get_router_ssh_key 生成可视化卡片】，并用通俗大白话逐步引导：
+       - 第 1 步：准备一台海外 Linux 服务器 (Ubuntu/Debian)，点击卡片上的【📋 复制授权命令】，在服务器终端粘贴回车一次（这相当于给小茶助手发放一把安全的数字门禁钥匙，小茶才能帮您全自动装好加速软件，中途无需输密码）；
+       - 第 2 步：在屏幕卡片上点击【🔍 测试免密连接】按钮，绿色打钩代表钥匙匹配成功；
+       - 第 3 步：点击【🚀 一键安装部署 (deb)】，小茶助手几秒内自动在服务器装好加速并连通路由器！
+  3. 【怎么添加想加速的网站】：
+     • 告诉用户如果想加速某个网站（如“帮我加速 github.com”），直接告诉小茶，小茶会自动调用 manage_xdns_domain 添加，秒级生效；
+  4. 【检查加速与自愈】：
+     • 问加速好不好用时调用 get_acceleration_status 检查链路，若有异常提示用户点击卡片上的【🛠️ 一键自愈】按钮；
 - 路由器安全体检与外网管理开关 (get_security_check, manage_wan_access)：
   1. 只要用户说“安全检查”、“做个体检”、“查查漏洞”或问路由器安不安全，【必须自主调用 get_security_check】！严禁只测网络通不通；
   2. 【重点用大白话提醒外网管理端口】：
@@ -1083,7 +1107,14 @@ function getRouterTools(mode) {
         'propose_network_optimize',
         'get_mesh_status',
         'discover_mesh_nodes',
-        'propose_pair_mesh_node'
+        'propose_pair_mesh_node',
+        'get_acceleration_status',
+        'fix_acceleration_pipeline',
+        'switch_acceleration_port',
+        'get_router_ssh_key',
+        'get_vps_servers',
+        'propose_vps_xkcptun',
+        'manage_xdns_domain'
     ]);
     return routerTools.filter(t => noviceAllowedTools.has(t.function.name));
 }
@@ -1353,6 +1384,9 @@ return view.extend({
                         id: "speed_accel",
                         name: "⚡ 网速与加速优化",
                         cards: [
+                            { label: "🚀 一步步教我配置网络加速与分流", query: "我想配置上网加速和智能分流，请一步步教我怎么配置，包括如何授权我的 VPS 服务器并一键部署" },
+                            { label: "🔑 查看路由器免密授权命令", query: "查看路由器专属的 SSH 免密公钥与一键授权命令，教我怎么在 VPS 终端完成授权" },
+                            { label: "➕ 添加加速网站 (如 Claude/GitHub)", query: "帮我把常用网站（如 claude.ai 和 github.com）添加到智能分流加速列表中" },
                             { label: "🚀 开启千兆极速直通", query: "帮我开启路由器的硬件加速功能，降低发热并让千兆宽带跑满" },
                             { label: "🛑 给占用大网速的设备限速", query: "帮我把当前占用带宽的主机设置智能限速" },
                             { label: "🩺 检查网络加速状态", query: "帮我深度检查网络加速与分流链路是否通畅" },
@@ -1424,11 +1458,12 @@ return view.extend({
                         id: "accel_divert",
                         name: "⚡ xDNS分流与KCP加速",
                         cards: [
+                            { label: "🔑 查看 Ed25519 公钥与免密授权命令", query: "查看路由器专属的 Ed25519 SSH 免密公钥与一键授权命令，指导我如何配置 VPS 免密访问" },
+                            { label: "🚀 部署 VPS xkcptun 服务端 (deb)", query: "我想在我的远程 Linux VPS 上通过官方 deb 包自动安装并部署 xkcptun 加速服务端，并建立网络加速" },
                             { label: "🩺 全链路健康体检与诊断", query: "深度检测智能分流 (xDNS) 与网络加速 (xkcptun) 的全链路运行健康度，排查分流与加速是否存在异常，并在界面生成全链路诊断卡片" },
                             { label: "🛠️ 一键自愈加速链路", query: "帮我一键自愈并重建智能分流与网络加速链路，清理陈旧 BPF Map 并重启加速服务" },
                             { label: "🔀 端口跳跃优化 (抗抖动防丢包)", query: "当前网络加速疑似遭遇运营商单端口 QoS 限速或 UDP 异常丢包，请帮我执行 UDP 端口跳跃，切换一个全新的通信端口优化链路" },
                             { label: "⚡ 网络加速与隧道", query: "查看网络加速 xkcptun 当前连接的加速节点、模式、往返延迟以及所有活跃加速隧道与连接" },
-                            { label: "🚀 VPS 安装 xkcptun 服务端 (deb)", query: "我想在我的远程 Linux VPS 上通过官方 deb 包自动安装并部署 xkcptun 加速服务端，并建立网络加速" },
                             { label: "🔀 智能分流与加速域名", query: "查看智能分流 xdns 的运行状态、eBPF 拦截统计、动态劫持 IP 以及当前分流加速的域名列表" },
                             { label: "➕ 分流添加域名", query: "帮我把 claude.ai 添加到智能分流加速域名名单中" },
                             { label: "🔄 刷新分流与重载", query: "帮我清空内核 eBPF 动态分流 IP 缓存并重新加载分流域名规则" },
@@ -4949,6 +4984,244 @@ return view.extend({
             chatWindow.scrollTop = chatWindow.scrollHeight;
         }
 
+        // Append Router SSH Public Key & VPS Authorization Wizard Card
+        function appendSshAuthKeyCard(data) {
+            const pubkey = (data && data.pubkey) || '';
+            const authCmd = (data && data.auth_cmd) || '';
+            const keyType = ((data && data.key_type) || 'ed25519').toUpperCase();
+
+            const card = E('div', {
+                'class': 'ssh-auth-key-card',
+                'style': 'background: var(--cw-bg-card); border: 2px solid #8b5cf6; border-radius: 12px; padding: 18px 20px; margin: 12px 0; box-shadow: var(--cw-card-shadow);'
+            }, [
+                E('div', { 'style': 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid var(--cw-border); padding-bottom: 8px;' }, [
+                    E('div', { 'style': 'font-weight: 700; font-size: 15px; color: var(--cw-text-main); display: flex; align-items: center; gap: 8px;' }, [
+                        E('span', { 'style': 'font-size: 18px;' }, '🔑'),
+                        E('span', {}, '路由器专属 SSH 免密公钥与 VPS 授权向导')
+                    ]),
+                    E('div', { 'style': 'display: flex; gap: 6px; align-items: center;' }, [
+                        E('span', { 'style': 'background: rgba(139,92,246,0.15); color: #8b5cf6; padding: 3px 8px; border-radius: 12px; font-size: 11.5px; font-weight: 700; border: 1px solid rgba(139,92,246,0.3);' }, `🔐 ${keyType} 高安全密钥`),
+                        E('span', { 'style': 'background: rgba(16,185,129,0.12); color: #059669; padding: 3px 8px; border-radius: 12px; font-size: 11.5px; font-weight: 700; border: 1px solid rgba(16,185,129,0.3);' }, '⚡ 密码免交互 · BatchMode')
+                    ])
+                ]),
+                E('div', { 'style': 'font-size: 13px; color: var(--cw-text-sub); margin-bottom: 14px; line-height: 1.5;' }, [
+                    E('div', {}, '本台路由器已自动生成专属的高安全级别椭圆曲线 (Ed25519) 密钥对（存放于 <code>/etc/clawwrt/id_dropbear</code>）。'),
+                    E('div', { 'style': 'margin-top: 4px; color: var(--cw-text-muted); font-size: 12px;' }, '💡 <strong>使用指引</strong>：请 SSH 登录您的 Linux VPS（云服务器）终端，将下方的一行授权命令粘贴并执行一次，小茶助手后续即可全自动为您部署加速与穿透服务，全程无需手动输入任何密码！')
+                ]),
+
+                // Section 1: One-click auth command
+                E('div', { 'style': 'background: var(--cw-bg-subtle); border: 1px solid var(--cw-border); border-radius: 8px; padding: 12px 14px; margin-bottom: 14px;' }, [
+                    E('div', { 'style': 'font-weight: 700; font-size: 12.5px; color: var(--cw-text-main); margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between;' }, [
+                        E('span', {}, '📋 VPS 终端一键授权指令 (推荐 · 自动创建 ~/.ssh 并追加公钥):'),
+                        E('span', { 'style': 'font-size: 11px; color: #10b981; font-weight: 600;' }, '目录与文件权限已自动设为 700/600')
+                    ]),
+                    E('div', { 'style': 'display: flex; gap: 8px; align-items: center;' }, [
+                        E('textarea', {
+                            'id': 'ssh-key-auth-cmd',
+                            'readonly': 'readonly',
+                            'style': 'flex: 1; height: 50px; font-family: monospace; font-size: 11px; background: var(--cw-input-bg); color: var(--cw-input-text); border: 1px solid var(--cw-border); border-radius: 6px; padding: 6px 10px; resize: none; outline: none;',
+                            'value': authCmd
+                        }),
+                        E('button', {
+                            'type': 'button',
+                            'class': 'btn cbi-button',
+                            'style': 'background: #8b5cf6; color: #fff; border: none; padding: 8px 14px; border-radius: 6px; font-size: 12px; cursor: pointer; white-space: nowrap; font-weight: 600;',
+                            'click': function(ev) {
+                                const ta = card.querySelector('#ssh-key-auth-cmd');
+                                if (ta && ta.value) {
+                                    if (window.isSecureContext && navigator.clipboard && navigator.clipboard.writeText) {
+                                        navigator.clipboard.writeText(ta.value);
+                                    } else {
+                                        ta.select();
+                                        document.execCommand('copy');
+                                    }
+                                    ev.target.innerText = '✅ 已复制授权命令！';
+                                    setTimeout(() => { ev.target.innerText = '📋 复制授权命令'; }, 2000);
+                                }
+                            }
+                        }, '📋 复制授权命令')
+                    ])
+                ]),
+
+                // Section 2: Pure public key
+                E('div', { 'style': 'background: var(--cw-bg-subtle); border: 1px solid var(--cw-border); border-radius: 8px; padding: 12px 14px; margin-bottom: 14px;' }, [
+                    E('div', { 'style': 'font-weight: 700; font-size: 12.5px; color: var(--cw-text-main); margin-bottom: 6px;' }, '🔑 路由器纯公钥 (id_dropbear.pub):'),
+                    E('div', { 'style': 'display: flex; gap: 8px; align-items: center;' }, [
+                        E('input', {
+                            'type': 'text',
+                            'readonly': 'readonly',
+                            'id': 'ssh-pure-pubkey',
+                            'style': 'flex: 1; font-family: monospace; font-size: 11px; background: var(--cw-input-bg); color: var(--cw-input-text); border: 1px solid var(--cw-border); border-radius: 6px; padding: 6px 10px; outline: none;',
+                            'value': pubkey
+                        }),
+                        E('button', {
+                            'type': 'button',
+                            'class': 'btn cbi-button',
+                            'style': 'background: var(--cw-bg-secondary); color: var(--cw-text-main); border: 1px solid var(--cw-border); padding: 6px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; white-space: nowrap;',
+                            'click': function(ev) {
+                                const inp = card.querySelector('#ssh-pure-pubkey');
+                                if (inp && inp.value) {
+                                    if (window.isSecureContext && navigator.clipboard && navigator.clipboard.writeText) {
+                                        navigator.clipboard.writeText(inp.value);
+                                    } else {
+                                        inp.select();
+                                        document.execCommand('copy');
+                                    }
+                                    ev.target.innerText = '✅ 已复制公钥！';
+                                    setTimeout(() => { ev.target.innerText = '📋 复制公钥'; }, 2000);
+                                }
+                            }
+                        }, '📋 复制公钥')
+                    ])
+                ]),
+
+                // Section 3: Live Verification Test
+                E('div', { 'style': 'background: var(--cw-bg-subtle); border: 1px solid var(--cw-border); border-radius: 8px; padding: 12px 14px; margin-bottom: 14px;' }, [
+                    E('div', { 'style': 'font-weight: 700; font-size: 12.5px; color: var(--cw-text-main); margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;' }, [
+                        E('span', {}, '🔍 实时免密连通性测试 (在 VPS 终端执行上方授权命令后，点击此处验证):'),
+                        E('div', { 'style': 'font-size: 11.5px; display: flex; align-items: center; gap: 4px;' }, [
+                            E('span', { 'style': 'color: var(--cw-text-muted);' }, '快捷载入:'),
+                            E('select', {
+                                'id': 'ssh-vps-server-select',
+                                'style': 'padding: 2px 6px; font-size: 11px; border-radius: 4px; border: 1px solid var(--cw-border); background: var(--cw-input-bg); color: var(--cw-input-text);'
+                            }, [
+                                E('option', { 'value': '' }, '-- 选择已有服务器 --')
+                            ])
+                        ])
+                    ]),
+                    E('div', { 'style': 'display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 8px; align-items: end;' }, [
+                        E('div', {}, [
+                            E('label', { 'style': 'display: block; font-size: 11px; color: var(--cw-text-muted); margin-bottom: 2px;' }, 'VPS IP:'),
+                            E('input', {
+                                'id': 'ssh-test-input-ip',
+                                'type': 'text',
+                                'placeholder': '如 43.159.xx.xx',
+                                'style': 'width: 100%; padding: 5px 8px; font-size: 12px; border-radius: 5px; border: 1px solid var(--cw-border); background: var(--cw-input-bg); color: var(--cw-input-text);'
+                            })
+                        ]),
+                        E('div', {}, [
+                            E('label', { 'style': 'display: block; font-size: 11px; color: var(--cw-text-muted); margin-bottom: 2px;' }, '用户:'),
+                            E('input', {
+                                'id': 'ssh-test-input-user',
+                                'type': 'text',
+                                'value': 'root',
+                                'style': 'width: 100%; padding: 5px 8px; font-size: 12px; border-radius: 5px; border: 1px solid var(--cw-border); background: var(--cw-input-bg); color: var(--cw-input-text);'
+                            })
+                        ]),
+                        E('div', {}, [
+                            E('label', { 'style': 'display: block; font-size: 11px; color: var(--cw-text-muted); margin-bottom: 2px;' }, '端口:'),
+                            E('input', {
+                                'id': 'ssh-test-input-port',
+                                'type': 'number',
+                                'value': '22',
+                                'style': 'width: 100%; padding: 5px 8px; font-size: 12px; border-radius: 5px; border: 1px solid var(--cw-border); background: var(--cw-input-bg); color: var(--cw-input-text);'
+                            })
+                        ]),
+                        E('button', {
+                            'id': 'btn-ssh-test-action',
+                            'type': 'button',
+                            'class': 'btn cbi-button',
+                            'style': 'background: #3b82f6; color: #fff; border: none; padding: 6px 14px; border-radius: 5px; font-size: 12px; cursor: pointer; font-weight: 600; height: 30px;',
+                            'click': function(ev) {
+                                const btn = ev.target;
+                                const ip = (card.querySelector('#ssh-test-input-ip').value || '').trim();
+                                const user = (card.querySelector('#ssh-test-input-user').value || 'root').trim();
+                                const port = (card.querySelector('#ssh-test-input-port').value || '22').trim();
+                                const statusDiv = card.querySelector('#ssh-test-status-div');
+
+                                if (!ip) {
+                                    alert('请先输入 VPS 公网 IP 地址！');
+                                    return;
+                                }
+
+                                btn.disabled = true;
+                                btn.innerText = '探测中...';
+                                statusDiv.style.display = 'block';
+                                statusDiv.style.background = '#eff6ff';
+                                statusDiv.style.border = '1px solid #bfdbfe';
+                                statusDiv.style.color = '#1e40af';
+                                statusDiv.innerHTML = `正在向 ${user}@${ip}:${port} 尝试通过 Ed25519 密钥连接...`;
+
+                                callTestVpsSsh(ip, port, user).then(res => {
+                                    btn.disabled = false;
+                                    btn.innerText = '🔍 测试免密连接';
+                                    if (res && res.connected) {
+                                        statusDiv.style.background = '#f0fdf4';
+                                        statusDiv.style.border = '1px solid #bbf7d0';
+                                        statusDiv.style.color = '#15803d';
+                                        statusDiv.innerHTML = `🎉 <strong>免密连接成功！</strong>${res.sudo_ok === false ? ' (未检测到 sudo 提权，若非 root 用户请确保有 sudo 权限)' : ' (已具备管理员权限，可随时进行一键部署)'}`;
+                                    } else {
+                                        statusDiv.style.background = '#fef2f2';
+                                        statusDiv.style.border = '1px solid #fecaca';
+                                        statusDiv.style.color = '#991b1b';
+                                        statusDiv.innerHTML = `❌ <strong>连接失败：</strong>${sanitizeHtml((res && res.message) || '未通过免密握手，请确认已在 VPS 执行授权命令')}`;
+                                    }
+                                }).catch(err => {
+                                    btn.disabled = false;
+                                    btn.innerText = '🔍 测试免密连接';
+                                    statusDiv.style.background = '#fef2f2';
+                                    statusDiv.style.border = '1px solid #fecaca';
+                                    statusDiv.style.color = '#991b1b';
+                                    statusDiv.innerHTML = `❌ <strong>异常：</strong>${sanitizeHtml(err.message)}`;
+                                });
+                            }
+                        }, '🔍 测试免密连接')
+                    ]),
+                    E('div', {
+                        'id': 'ssh-test-status-div',
+                        'style': 'display: none; padding: 8px 12px; border-radius: 6px; margin-top: 10px; font-size: 12px;'
+                    })
+                ]),
+
+                // Next Step Action: Deploy Acceleration
+                E('div', { 'style': 'display: flex; gap: 10px; align-items: center; justify-content: flex-end;' }, [
+                    E('button', {
+                        'type': 'button',
+                        'class': 'btn cbi-button cbi-button-apply',
+                        'style': 'background: #2563eb; color: #fff; border: none; padding: 8px 18px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;',
+                        'click': function() {
+                            const ip = (card.querySelector('#ssh-test-input-ip').value || '').trim();
+                            const user = (card.querySelector('#ssh-test-input-user').value || 'root').trim();
+                            const port = (card.querySelector('#ssh-test-input-port').value || '22').trim();
+                            appendVpsXkcptunCard({ vps_ip: ip, vps_user: user, vps_port: port, explanation: '已完成 VPS 免密授权，现在可以一键在 VPS 上部署 xkcptun 网络加速服务端。' });
+                        }
+                    }, '🚀 下一步：在 VPS 部署网络加速服务端 (deb)'),
+                    E('button', {
+                        'type': 'button',
+                        'class': 'btn cbi-button',
+                        'style': 'background: var(--cw-bg-secondary); color: var(--cw-text-main); border: 1px solid var(--cw-border); padding: 8px 14px; border-radius: 6px; cursor: pointer; font-size: 13px;',
+                        'click': function() { card.remove(); }
+                    }, '收起')
+                ])
+            ]);
+
+            // Populate managed servers
+            callGetVpsServers().then(res => {
+                const servers = (res && res.servers) || [];
+                const sel = card.querySelector('#ssh-vps-server-select');
+                if (sel && servers.length > 0) {
+                    servers.forEach(s => {
+                        const opt = E('option', { 'value': s.id }, `${s.name || '未命名'} (${s.host}:${s.port})`);
+                        sel.appendChild(opt);
+                    });
+                    sel.addEventListener('change', function() {
+                        const s = servers.find(item => item.id === this.value);
+                        if (s) {
+                            const ipInput = card.querySelector('#ssh-test-input-ip');
+                            const portInput = card.querySelector('#ssh-test-input-port');
+                            const userInput = card.querySelector('#ssh-test-input-user');
+                            if (ipInput) ipInput.value = s.host;
+                            if (portInput) portInput.value = s.port || '22';
+                            if (userInput) userInput.value = s.user || 'root';
+                        }
+                    });
+                }
+            }).catch(() => {});
+
+            chatWindow.appendChild(card);
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+
         // Append VPS Service Uninstall Confirmation Card (Safe Remote Teardown)
         function appendVpsUninstallCard(param) {
             const vpsTarget = param.vps_target || '';
@@ -5765,6 +6038,7 @@ return view.extend({
                                 toolResult = { status: 'proposed_to_user', message: 'Hardware acceleration card rendered in UI. Waiting for user authorization.' };
                             } else if (fnName === 'get_router_ssh_key') {
                                 toolResult = await callGetRouterSshKey();
+                                appendSshAuthKeyCard(toolResult);
                             } else if (fnName === 'get_vps_servers') {
                                 toolResult = await callGetVpsServers();
                             } else if (fnName === 'propose_vps_penetration') {
