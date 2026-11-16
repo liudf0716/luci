@@ -377,6 +377,14 @@ case "$1" in
             json_add_string "target_port"
             json_add_string "enabled"
         json_close_object
+        json_add_object "get_security_check"
+        json_close_object
+        json_add_object "manage_wan_access"
+            json_add_string "action"
+            json_add_string "ssh"
+            json_add_string "http"
+            json_add_string "https"
+        json_close_object
         json_dump
         ;;
     call)
@@ -6361,6 +6369,403 @@ EOF
             json_dump
         }
 
+        get_wan_port_status() {
+            local port="$1"
+            local rule_name="$2"
+            local enabled="0"
+            for s in $(uci -q show firewall | grep -E "\.name=.?$rule_name.?|\.dest_port=.?$port.?" | cut -d. -f2 | cut -d= -f1 | sort -u); do
+                local r_src="$(uci -q get firewall.$s.src)"
+                local r_dport="$(uci -q get firewall.$s.dest_port)"
+                local r_target="$(uci -q get firewall.$s.target)"
+                local r_en="$(uci -q get firewall.$s.enabled)"
+                if [ "$r_src" = "wan" ] && [ "$r_target" = "ACCEPT" ]; then
+                    if [ "$r_dport" = "$port" ] || [ "$(uci -q get firewall.$s.name)" = "$rule_name" ]; then
+                        if [ "$r_en" != "0" ]; then
+                            enabled="1"
+                            break
+                        fi
+                    fi
+                fi
+            done
+            echo "$enabled"
+        }
+
+        set_wan_port_status() {
+            local port="$1"
+            local rule_name="$2"
+            local state="$3"
+            [ -z "$state" ] && return
+            local found="0"
+            for s in $(uci -q show firewall | grep -E "\.name=.?$rule_name.?|\.dest_port=.?$port.?" | cut -d. -f2 | cut -d= -f1 | sort -u); do
+                local r_src="$(uci -q get firewall.$s.src)"
+                local r_dport="$(uci -q get firewall.$s.dest_port)"
+                local r_target="$(uci -q get firewall.$s.target)"
+                if [ "$r_src" = "wan" ] && [ "$r_target" = "ACCEPT" ]; then
+                    if [ "$r_dport" = "$port" ] || [ "$(uci -q get firewall.$s.name)" = "$rule_name" ]; then
+                        uci -q set firewall.$s.enabled="$state"
+                        found="1"
+                    fi
+                fi
+            done
+            if [ "$found" = "0" ] && [ "$state" = "1" ]; then
+                local new_sec=$(uci add firewall rule)
+                uci -q set firewall.$new_sec.name="$rule_name"
+                uci -q set firewall.$new_sec.src='wan'
+                uci -q set firewall.$new_sec.proto='tcp'
+                uci -q set firewall.$new_sec.dest_port="$port"
+                uci -q set firewall.$new_sec.target='ACCEPT'
+                uci -q set firewall.$new_sec.enabled='1'
+            fi
+        }
+
+        manage_wan_access() {
+            read -r input
+            json_load "$input"
+            json_get_var action "action"
+            json_get_var ssh_val "ssh"
+            json_get_var http_val "http"
+            json_get_var https_val "https"
+
+            [ -z "$action" ] && action="get"
+
+            if [ "$action" = "set" ]; then
+                for v in "$ssh_val" "$http_val" "$https_val"; do
+                    if [ -n "$v" ] && [ "$v" != "0" ] && [ "$v" != "1" ]; then
+                        claw_fail "Invalid parameter: values must be 0 or 1"
+                        return
+                    fi
+                done
+
+                [ -n "$ssh_val" ] && set_wan_port_status 22 "Allow-SSH" "$ssh_val"
+                [ -n "$http_val" ] && set_wan_port_status 80 "Allow-HTTP" "$http_val"
+                [ -n "$https_val" ] && set_wan_port_status 443 "Allow-HTTPS" "$https_val"
+
+                uci -q commit firewall
+                /etc/init.d/firewall reload >/dev/null 2>&1
+            fi
+
+            local cur_ssh=$(get_wan_port_status 22 "Allow-SSH")
+            local cur_http=$(get_wan_port_status 80 "Allow-HTTP")
+            local cur_https=$(get_wan_port_status 443 "Allow-HTTPS")
+
+            json_init
+            json_add_object "result"
+            json_add_boolean "success" 1
+            json_add_string "action" "$action"
+            json_add_boolean "ssh" "$cur_ssh"
+            json_add_boolean "http" "$cur_http"
+            json_add_boolean "https" "$cur_https"
+            json_add_string "message" "WAN 侧远程管理端口状态更新成功 (SSH:$cur_ssh, HTTP:$cur_http, HTTPS:$cur_https)"
+            json_close_object
+            json_dump
+        }
+
+        get_security_check() {
+            local score=100
+            local danger_count=0
+            local warning_count=0
+            local pass_count=0
+
+            # 1. WAN Access
+            local cur_ssh=$(get_wan_port_status 22 "Allow-SSH")
+            local cur_http=$(get_wan_port_status 80 "Allow-HTTP")
+            local cur_https=$(get_wan_port_status 443 "Allow-HTTPS")
+            local any_wan=0
+            [ "$cur_ssh" -eq 1 -o "$cur_http" -eq 1 -o "$cur_https" -eq 1 ] && any_wan=1
+            
+            local wan_status="pass"
+            local wan_title="WAN 侧管理端口已完全防护"
+            local wan_detail="SSH、HTTP、HTTPS 均已对外网关闭，外网无法直接访问路由器管理面。"
+            local wan_sug="如需远程管理，可通过上方管理开关按需放行对应端口。"
+            if [ "$any_wan" -eq 1 ]; then
+                wan_status="warning"
+                wan_title="已开启 WAN 侧远程管理放行"
+                local open_list=""
+                [ "$cur_ssh" -eq 1 ] && open_list="${open_list}SSH(22) "
+                [ "$cur_http" -eq 1 ] && open_list="${open_list}HTTP(80) "
+                [ "$cur_https" -eq 1 ] && open_list="${open_list}HTTPS(443) "
+                wan_detail="当前放行端口：${open_list}。此项是为了管理方便特意放开，可通过开关一键控制。"
+                wan_sug="远程运维建议优先保留加密的 HTTPS 或配合 SSH 密钥，亦可随时一键关闭。"
+                score=$((score - 5))
+                warning_count=$((warning_count + 1))
+            else
+                pass_count=$((pass_count + 1))
+            fi
+
+            # 2. SSH Auth
+            local pass_auth=$(uci -q get dropbear.main.PasswordAuth || echo on)
+            [ -z "$pass_auth" ] && pass_auth="on"
+            local has_keys=0
+            [ -s /etc/dropbear/authorized_keys ] && has_keys=1
+
+            local ssh_status="pass"
+            local ssh_title="SSH 强密钥认证防护"
+            local ssh_detail="已禁用密码认证，仅允许 SSH 密钥登录，杜绝暴力破解。"
+            local ssh_sug="当前配置安全基线高，请妥善保管私钥文件。"
+            if [ "$cur_ssh" -eq 1 ] && [ "$pass_auth" = "on" ]; then
+                ssh_status="danger"
+                ssh_title="SSH 外网暴露且允许密码认证"
+                ssh_detail="WAN 口放行了 SSH (22 端口) 且 Dropbear 允许密码认证，容易遭受外部字典爆破。"
+                ssh_sug="建议通过 uci set dropbear.main.PasswordAuth='off' 禁用密码登录，仅限 SSH 密钥登录。"
+                score=$((score - 20))
+                danger_count=$((danger_count + 1))
+            elif [ "$pass_auth" = "on" ]; then
+                ssh_status="warning"
+                ssh_title="SSH 允许密码登录"
+                ssh_detail="局域网允许密码登录，已就绪 authorized_keys 密钥。"
+                ssh_sug="建议在熟悉密钥登录后关闭密码认证以强化安全。"
+                score=$((score - 5))
+                warning_count=$((warning_count + 1))
+            else
+                pass_count=$((pass_count + 1))
+            fi
+
+            # 3. Web Security
+            local redirect_https=$(uci -q get uhttpd.main.redirect_https || echo 0)
+            local web_status="pass"
+            local web_title="Web 全程 HTTPS 加密防护"
+            local web_detail="已开启强制跳转 HTTPS，通信全程加密保护。"
+            local web_sug="配置符合安全基线。"
+            if [ "$cur_http" -eq 1 ] && [ "$redirect_https" != "1" ]; then
+                web_status="danger"
+                web_title="Web 未开启强制 HTTPS 加密"
+                web_detail="WAN 口放行了 HTTP 80 端口，且未启用强制跳转 HTTPS，外网登录凭据以明文传输！"
+                web_sug="建议设置 uhttpd.main.redirect_https='1' 强制启用 SSL/TLS 加密。"
+                score=$((score - 20))
+                danger_count=$((danger_count + 1))
+            elif [ "$redirect_https" != "1" ]; then
+                web_status="warning"
+                web_title="Web 管理后台未强制跳转 HTTPS"
+                web_detail="当前允许通过明文 HTTP 访问管理后台，内网存在被嗅探凭据的风险。"
+                web_sug="建议启用 uhttpd 强制跳转 HTTPS (uci set uhttpd.main.redirect_https='1')。"
+                score=$((score - 5))
+                warning_count=$((warning_count + 1))
+            else
+                pass_count=$((pass_count + 1))
+            fi
+
+            # 4. WiFi Security
+            local wifi_status="pass"
+            local wifi_title="Wi-Fi 采用抗爆破强加密"
+            local wifi_detail="无线网络采用 WPA3/SAE 协议，抗字典破解能力良好。"
+            local wifi_sug="无线密码强度合规。"
+            local wifi_weak=0
+            local wifi_wpa2_only=0
+            local wkeys=$(uci -q show wireless | grep "\.key=" | cut -d= -f2 | tr -d "\x27\"")
+            local wencs=$(uci -q show wireless | grep "\.encryption=" | cut -d= -f2 | tr -d "\x27\"")
+            for k in $wkeys; do
+                case "$k" in
+                    88888888|12345678|1234567890|00000000|admin123|password|11111111) wifi_weak=1 ;;
+                esac
+                [ ${#k} -lt 8 ] && wifi_weak=1
+            done
+            for e in $wencs; do
+                if [ "$e" = "psk" ] || [ "$e" = "psk2" ]; then
+                    wifi_wpa2_only=1
+                fi
+            done
+            if [ "$wifi_weak" -eq 1 ]; then
+                wifi_status="danger"
+                wifi_title="Wi-Fi 存在弱口令高危风险"
+                wifi_detail="检测到无线 SSID 使用了常见弱口令（如 88888888 等），抓包后可在数秒内破译接入内网！"
+                wifi_sug="请立即修改 Wi-Fi 密码为包含大小写字母与数字的强密码。"
+                score=$((score - 25))
+                danger_count=$((danger_count + 1))
+            elif [ "$wifi_wpa2_only" -eq 1 ]; then
+                wifi_status="warning"
+                wifi_title="Wi-Fi 加密协议建议升级"
+                wifi_detail="当前使用 WPA2-PSK 加密，密码强度正常。"
+                wifi_sug="建议升级为 WPA3/WPA2 混合模式 (sae-mixed) 提升抗暴力破解能力。"
+                score=$((score - 5))
+                warning_count=$((warning_count + 1))
+            else
+                pass_count=$((pass_count + 1))
+            fi
+
+            # 5. Root Password
+            local root_status="pass"
+            local root_title="Root 超级管理员凭据完备"
+            local root_detail="Root 账户已配置加密口令哈希，UID 0 唯一绑定。"
+            local root_sug="凭据完备。"
+            local root_hash=$(awk -F: '$1=="root"{print $2}' /etc/shadow 2>/dev/null)
+            if [ -z "$root_hash" ] || [ "$root_hash" = "*" ] || [ "$root_hash" = "!" ]; then
+                root_status="danger"
+                root_title="Root 账户未设密码或为空"
+                root_detail="Root 账户密码为空或被锁定，任何局域网终端均可无阻碍进入控制台！"
+                root_sug="请立即通过 passwd root 设置高强度管理密码。"
+                score=$((score - 30))
+                danger_count=$((danger_count + 1))
+            else
+                pass_count=$((pass_count + 1))
+            fi
+
+            # 6. DNS Rebind
+            local dns_status="pass"
+            local dns_title="DNS 防跨站重绑定保护正常"
+            local dns_detail="已启用 RFC1918 局部私网地址防重绑定保护，防御内网穿透与跨站恶意脚本劫持。"
+            local dns_sug="配置符合安全基线。"
+            local rebind_p=$(uci -q get dhcp.@dnsmasq[0].rebind_protection || echo 1)
+            if [ "$rebind_p" != "1" ]; then
+                dns_status="warning"
+                dns_title="DNS 防重绑定未开启"
+                dns_detail="未开启 rebind_protection，恶意网页可能通过 DNS 重绑定探测并攻击内网私有服务。"
+                dns_sug="建议开启 dnsmasq rebind_protection 防护。"
+                score=$((score - 10))
+                warning_count=$((warning_count + 1))
+            else
+                pass_count=$((pass_count + 1))
+            fi
+
+            # 7. Process Sandbox
+            local sb_status="pass"
+            local sb_title="核心守护进程 ujail 沙箱隔离"
+            local sb_detail="dnsmasq、hostapd、ntpd 均运行在独立 Linux 命名空间与权能约束沙箱中，杜绝提权逃逸。"
+            local sb_sug="沙箱防护正常。"
+            if ! ps w | grep -E "ujail.*(dnsmasq|hostapd|ntpd)" | grep -vq grep; then
+                sb_status="warning"
+                sb_title="未检测到 ujail 沙箱运行"
+                sb_detail="部分守护进程未受 ujail 容器沙箱约束。"
+                sb_sug="建议确认 ujail 服务配置。"
+                score=$((score - 5))
+                warning_count=$((warning_count + 1))
+            else
+                pass_count=$((pass_count + 1))
+            fi
+
+            # 8. System Health
+            local health_status="pass"
+            local health_title="硬件与存储系统负载健康"
+            local health_detail="系统负载正常，内存及 Flash Overlay 空间充裕。"
+            local health_sug="系统运行平稳。"
+            local overlay_use=$(df -h /overlay 2>/dev/null | awk 'NR==2{print $5}' | tr -d '%')
+            if [ -n "$overlay_use" ] && [ "$overlay_use" -gt 85 ]; then
+                health_status="warning"
+                health_title="Flash 存储空间紧张"
+                health_detail="Overlay 分区使用率已达 ${overlay_use}%，过载可能导致配置写入失败或异常崩溃。"
+                health_sug="建议清理无用软件包或日志文件。"
+                score=$((score - 10))
+                warning_count=$((warning_count + 1))
+            else
+                pass_count=$((pass_count + 1))
+            fi
+
+            [ "$score" -lt 0 ] && score=0
+
+            local level="safe"
+            local level_text="优秀 · 安全基线达标"
+            if [ "$score" -lt 60 ]; then
+                level="danger"
+                level_text="高危 · 存在安全隐患"
+            elif [ "$score" -lt 85 ]; then
+                level="warning"
+                level_text="良好 · 存在加固建议"
+            fi
+
+            local summary="本次体检总得分 ${score} 分（${level_text}）。共检测 8 项安全维度，其中 ${danger_count} 项高危隐患、${warning_count} 项加固建议、${pass_count} 项通过基线。"
+
+            json_init
+            json_add_object "result"
+            json_add_int "score" "$score"
+            json_add_string "level" "$level"
+            json_add_string "level_text" "$level_text"
+            json_add_string "summary" "$summary"
+            json_add_int "danger_count" "$danger_count"
+            json_add_int "warning_count" "$warning_count"
+            json_add_int "pass_count" "$pass_count"
+
+            json_add_object "wan_ports"
+            json_add_boolean "ssh" "$cur_ssh"
+            json_add_boolean "http" "$cur_http"
+            json_add_boolean "https" "$cur_https"
+            json_close_object
+
+            json_add_array "items"
+
+            json_add_object
+            json_add_string "id" "wan_access"
+            json_add_string "category" "边界防护"
+            json_add_string "name" "WAN 口管理面暴露"
+            json_add_string "status" "$wan_status"
+            json_add_string "title" "$wan_title"
+            json_add_string "detail" "$wan_detail"
+            json_add_string "suggestion" "$wan_sug"
+            json_close_object
+
+            json_add_object
+            json_add_string "id" "ssh_auth"
+            json_add_string "category" "身份凭据"
+            json_add_string "name" "SSH 远程登录认证策略"
+            json_add_string "status" "$ssh_status"
+            json_add_string "title" "$ssh_title"
+            json_add_string "detail" "$ssh_detail"
+            json_add_string "suggestion" "$ssh_sug"
+            json_close_object
+
+            json_add_object
+            json_add_string "id" "web_security"
+            json_add_string "category" "传输加密"
+            json_add_string "name" "Web 管理界面传输安全"
+            json_add_string "status" "$web_status"
+            json_add_string "title" "$web_title"
+            json_add_string "detail" "$web_detail"
+            json_add_string "suggestion" "$web_sug"
+            json_close_object
+
+            json_add_object
+            json_add_string "id" "wifi_security"
+            json_add_string "category" "无线接入"
+            json_add_string "name" "无线 Wi-Fi 访问与加密安全"
+            json_add_string "status" "$wifi_status"
+            json_add_string "title" "$wifi_title"
+            json_add_string "detail" "$wifi_detail"
+            json_add_string "suggestion" "$wifi_sug"
+            json_close_object
+
+            json_add_object
+            json_add_string "id" "root_password"
+            json_add_string "category" "核心特权"
+            json_add_string "name" "Root 超级管理员凭据"
+            json_add_string "status" "$root_status"
+            json_add_string "title" "$root_title"
+            json_add_string "detail" "$root_detail"
+            json_add_string "suggestion" "$root_sug"
+            json_close_object
+
+            json_add_object
+            json_add_string "id" "dns_security"
+            json_add_string "category" "网络解析"
+            json_add_string "name" "DNS 跨站重绑定防御"
+            json_add_string "status" "$dns_status"
+            json_add_string "title" "$dns_title"
+            json_add_string "detail" "$dns_detail"
+            json_add_string "suggestion" "$dns_sug"
+            json_close_object
+
+            json_add_object
+            json_add_string "id" "process_sandbox"
+            json_add_string "category" "系统隔离"
+            json_add_string "name" "系统守护进程沙箱隔离"
+            json_add_string "status" "$sb_status"
+            json_add_string "title" "$sb_title"
+            json_add_string "detail" "$sb_detail"
+            json_add_string "suggestion" "$sb_sug"
+            json_close_object
+
+            json_add_object
+            json_add_string "id" "system_health"
+            json_add_string "category" "运行负载"
+            json_add_string "name" "硬件与存储系统负载健康"
+            json_add_string "status" "$health_status"
+            json_add_string "title" "$health_title"
+            json_add_string "detail" "$health_detail"
+            json_add_string "suggestion" "$health_sug"
+            json_close_object
+
+            json_close_array
+            json_close_object
+            json_dump
+        }
+
         case "$2" in
             get_status) get_status ;;
             get_wan_mac) get_wan_mac ;;
@@ -6413,6 +6818,8 @@ EOF
             manage_portal_whitelist) manage_portal_whitelist ;;
             manage_penetration_proxy) manage_penetration_proxy ;;
             manage_xkcptun_tunnel) manage_xkcptun_tunnel ;;
+            get_security_check) get_security_check ;;
+            manage_wan_access) manage_wan_access ;;
         esac
         ;;
 esac

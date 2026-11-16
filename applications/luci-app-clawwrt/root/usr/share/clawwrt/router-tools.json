@@ -2,6 +2,49 @@
   {
     "type": "function",
     "function": {
+      "name": "get_security_check",
+      "description": "执行路由器全方位安全体检：深入检测 WAN 口管理面端口暴露（SSH 22、HTTP 80、HTTPS 443 放行状态）、SSH 认证策略（密码登录/密钥）、Web 传输安全（强制 HTTPS 跳转）、无线 Wi-Fi 弱口令与加密算法、Root 超级用户状态、DNS 防重绑定与系统沙箱隔离等核心安全维度，并在界面中生成包含综合安全评分与 WAN 远程端口开关的交互式体检诊断卡片",
+      "parameters": {
+        "type": "object",
+        "properties": {}
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "manage_wan_access",
+      "description": "管理 WAN 侧远程管理端口（SSH 22、HTTP 80、HTTPS 443）的放行开关：支持查看当前端口放行状态 (action: \"get\")，或开启/关闭指定管理端口 (action: \"set\", ssh: \"1\"/\"0\", http: \"1\"/\"0\", https: \"1\"/\"0\")。此功能是为了远程运维便利特意开放，支持按需一键开启或关闭",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "description": "操作动作：\"get\" 查询当前端口状态，\"set\" 切换配置开关（默认 get）",
+            "enum": ["get", "set"]
+          },
+          "ssh": {
+            "type": "string",
+            "description": "是否放行 WAN 口 SSH (22 端口)：\"1\" 为开启放行，\"0\" 为关闭防护",
+            "enum": ["1", "0"]
+          },
+          "http": {
+            "type": "string",
+            "description": "是否放行 WAN 口 HTTP (80 端口)：\"1\" 为开启放行，\"0\" 为关闭防护",
+            "enum": ["1", "0"]
+          },
+          "https": {
+            "type": "string",
+            "description": "是否放行 WAN 口 HTTPS (443 端口)：\"1\" 为开启放行，\"0\" 为关闭防护",
+            "enum": ["1", "0"]
+          }
+        }
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
       "name": "get_penetration_status",
       "description": "深度检测内网穿透（xfrpc）的真实运行状况与连通性：不仅检测客户端进程是否存活，还会通过底层网络套接字检测是否真正与远端 frps 服务端建立了 ESTABLISHED 状态的连接、套接字状态（如 SYN_SENT 握手超时、断开等）、内核实时日志报错、当前生效的穿透映射规则及对应的公网访问链接",
       "parameters": {

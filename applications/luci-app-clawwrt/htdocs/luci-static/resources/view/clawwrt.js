@@ -277,6 +277,19 @@ const callUpdateVpsServiceConfig = rpc.declare({
     expect: { result: {} }
 });
 
+const callGetSecurityCheck = rpc.declare({
+    object: 'luci.clawwrt',
+    method: 'get_security_check',
+    expect: { result: {} }
+});
+
+const callManageWanAccess = rpc.declare({
+    object: 'luci.clawwrt',
+    method: 'manage_wan_access',
+    params: [ 'action', 'ssh', 'http', 'https' ],
+    expect: { result: {} }
+});
+
 const callGetPenetrationStatus = rpc.declare({
     object: 'luci.clawwrt',
     method: 'get_penetration_status',
@@ -338,6 +351,46 @@ const callManageXkcptunTunnel = rpc.declare({
 });
 
 const routerTools = [
+    {
+        type: 'function',
+        function: {
+            name: 'get_security_check',
+            description: '执行路由器全方位安全体检：深入检测 WAN 口管理面端口暴露（SSH 22、HTTP 80、HTTPS 443 放行状态）、SSH 认证策略（密码登录/密钥）、Web 传输安全（强制 HTTPS 跳转）、无线 Wi-Fi 弱口令与加密算法、Root 超级用户状态、DNS 防重绑定与系统沙箱隔离等核心安全维度，并在界面中生成包含综合安全评分与 WAN 远程端口开关的交互式体检诊断卡片',
+            parameters: { type: 'object', properties: {} }
+        }
+    },
+    {
+        type: 'function',
+        function: {
+            name: 'manage_wan_access',
+            description: '管理 WAN 侧远程管理端口（SSH 22、HTTP 80、HTTPS 443）的放行开关：支持查看当前端口放行状态 (action: "get")，或开启/关闭指定管理端口 (action: "set", ssh: "1"/"0", http: "1"/"0", https: "1"/"0")。此功能是为了远程运维便利特意开放，支持按需一键开启或关闭',
+            parameters: {
+                type: 'object',
+                properties: {
+                    action: {
+                        type: 'string',
+                        description: '操作动作："get" 查询当前端口状态，"set" 切换配置开关（默认 get）',
+                        enum: ['get', 'set']
+                    },
+                    ssh: {
+                        type: 'string',
+                        description: '是否放行 WAN 口 SSH (22 端口)："1" 为开启放行，"0" 为关闭防护',
+                        enum: ['1', '0']
+                    },
+                    http: {
+                        type: 'string',
+                        description: '是否放行 WAN 口 HTTP (80 端口)："1" 为开启放行，"0" 为关闭防护',
+                        enum: ['1', '0']
+                    },
+                    https: {
+                        type: 'string',
+                        description: '是否放行 WAN 口 HTTPS (443 端口)："1" 为开启放行，"0" 为关闭防护',
+                        enum: ['1', '0']
+                    }
+                }
+            }
+        }
+    },
     {
         type: 'function',
         function: {
@@ -951,6 +1004,7 @@ ${commonSafety}
 - 智能分流与网络加速全链路诊断与自愈 (xdns & xkcptun): 深度体检内核 TC-eBPF 分流 (br-lan Ingress/Egress 挂载、加速域名数、动态劫持 IP 数、代理统计) 与 xkcptun 加速客户端 (TCP 12345/UDP 5353 监听、节点连通性、活跃隧道、最近日志排障) 的整体链路健康度。支持全链路健康检测 (get_acceleration_status) 并在 UI 中生成全链路交互式诊断卡片；支持一键自愈重建链路 (fix_acceleration_pipeline，平滑清理陈旧 BPF Map，重挂 TC 过滤器，重启加速客户端恢复透明重定向)；
 - 极其重要的 VPS 防火墙重定向与 UDP 端口跳跃防误判准则：当云端 VPS 使用防火墙 (iptables/nftables) 配置了 PREROUTING REDIRECT 端口段重定向时（例如将 UDP 58100-58200 重定向至 xkcptun 监听端口 9089 时，get_vps_service_config 会返回 has_port_redirect: true，get_acceleration_status 会返回 is_hopped_port: true 及 hop_range）：路由器端使用的目标端口处于重定向池内属于正规的 UDP 端口跳跃抗抖动设计，绝不是端口配置错误或端口不匹配！严禁误判为“端口不一致”、“加速未连接”或“配置异常”！只要隧道正常、存在活跃连接或连通性正常，全链路健康度即为正常 healthy；严禁在诊断中提议将路由器端口改回 9089，也不得在没有用户明确要求时调用 switch_acceleration_port；
 - 无线 Wi-Fi 802.11k/v/r 漫游与射频排障：支持查询与配置 802.11k/v/r 漫游 (get_wifi_roaming, propose_wifi_roaming)；支持 diagnose_wifi_performance 深度体检信道与功率；
+- 路由器全方位安全体检与 WAN 侧远程管理开关 (get_security_check, manage_wan_access)：支持全方位安全体检，深入检测 WAN 口管理面端口暴露（SSH 22、HTTP 80、HTTPS 443）、SSH 鉴权策略（密码/密钥）、Web 传输安全（强制 HTTPS 跳转）、Wi-Fi 弱口令与加密算法、Root 账户状态、DNS 防重绑定与系统沙箱隔离等；特别说明：针对 WAN 口暴露的 SSH(22)、HTTP(80)、HTTPS(443) 管理端口（此配置是为了方便管理特意开放），支持通过 manage_wan_access 查看状态或进行一键开启/关闭切换，在界面呈现交互式体检与开关控制卡片；
 - 表格规范：在输出 L7 流量排行时使用 Markdown 表格列出协议名、中文说明、实时流速与累计流量。`;
     }
 
@@ -983,6 +1037,7 @@ ${commonSafety}
 - 限速与防抢网：调用 propose_qos_limit 生成通俗易懂的限速卡片，由用户确认后生效。
 - 查看或修改 WiFi：调用 get_wifi_info / propose_wifi_config，贴心提示密码强度。
 - WiFi 信号优化：调用 diagnose_wifi_performance 诊断，并调用 propose_wifi_optimize 生成一键优化卡片。
+- 路由器安全体检与外网管理开关：调用 get_security_check 为路由器做全方位安全体检，或调用 manage_wan_access 方便地开关外网远程管理端口。
 - 组网扩展 (Mesh)：调用 get_mesh_status / discover_mesh_nodes / propose_pair_mesh_node，帮助用户轻松扩展全屋 WiFi。`;
 }
 
@@ -2690,6 +2745,270 @@ return view.extend({
                     }, '收起卡片')
                 ])
             ]);
+
+            chatWindow.appendChild(card);
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+
+        function appendSecurityCheckCard(data) {
+            const res = (data && data.result) ? data.result : (data || {});
+            const score = res.score !== undefined ? res.score : 85;
+            const level = res.level || 'safe';
+            const levelText = res.level_text || '安全';
+            const summary = res.summary || '';
+            const wanPorts = res.wan_ports || { ssh: false, http: false, https: false };
+            const items = Array.isArray(res.items) ? res.items : [];
+
+            let scoreColor = '#16a34a';
+            let scoreIcon = '🟢';
+            let cardBorder = '#16a34a';
+            if (level === 'warning') {
+                scoreColor = '#d97706';
+                scoreIcon = '🟡';
+                cardBorder = '#d97706';
+            } else if (level === 'danger') {
+                scoreColor = '#dc2626';
+                scoreIcon = '🔴';
+                cardBorder = '#dc2626';
+            }
+
+            let currentSsh = !!wanPorts.ssh;
+            let currentHttp = !!wanPorts.http;
+            let currentHttps = !!wanPorts.https;
+
+            const card = E('div', {
+                'class': 'security-check-card',
+                'style': `background: var(--cw-bg-card); border: 2px solid ${cardBorder}; border-radius: 12px; padding: 18px 20px; margin: 12px 0; box-shadow: var(--cw-card-shadow);`
+            });
+
+            // 1. Header
+            const header = E('div', { 'style': 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; border-bottom: 1px solid var(--cw-border); padding-bottom: 10px;' }, [
+                E('div', { 'style': 'font-weight: 700; font-size: 16px; color: var(--cw-text-main); display: flex; align-items: center; gap: 8px;' }, [
+                    E('span', { 'style': 'font-size: 20px;' }, '🛡️'),
+                    E('span', {}, '路由器全方位安全体检')
+                ]),
+                E('div', { 'style': 'display: flex; align-items: center; gap: 10px;' }, [
+                    E('div', { 'style': `font-size: 24px; font-weight: 800; color: ${scoreColor}; font-family: monospace;` }, [
+                        E('span', {}, String(score)),
+                        E('span', { 'style': 'font-size: 13px; font-weight: normal; color: var(--cw-text-muted);' }, ' / 100分')
+                    ]),
+                    E('span', { 'style': `font-size: 12px; font-weight: 600; padding: 3px 8px; border-radius: 6px; background: ${level === 'danger' ? 'rgba(220, 38, 38, 0.15)' : (level === 'warning' ? 'rgba(217, 119, 6, 0.15)' : 'rgba(22, 163, 74, 0.15)')}; color: ${scoreColor};` }, `${scoreIcon} ${levelText}`)
+                ])
+            ]);
+
+            // Summary Text
+            const summaryDiv = E('div', { 'style': 'font-size: 13px; color: var(--cw-text-sub); margin-bottom: 14px; line-height: 1.5;' }, summary);
+
+            // 2. WAN Management Remote Access Switch Panel
+            const wanControlPanel = E('div', {
+                'style': 'background: var(--cw-bg-secondary); border: 1px solid var(--cw-border); border-radius: 10px; padding: 12px 14px; margin-bottom: 16px;'
+            });
+
+            const wanHeader = E('div', { 'style': 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;' }, [
+                E('div', { 'style': 'font-weight: 700; font-size: 13px; color: var(--cw-text-main); display: flex; align-items: center; gap: 6px;' }, [
+                    E('span', {}, '🌐'),
+                    E('span', {}, 'WAN 侧远程管理开关 (SSH / Web 端口放行)')
+                ]),
+                E('span', { 'style': 'font-size: 11px; color: var(--cw-text-muted);' }, '点击按钮即时开关')
+            ]);
+
+            const wanTip = E('div', { 'style': 'font-size: 11px; color: var(--cw-text-muted); margin-bottom: 10px; line-height: 1.4;' },
+                '💡 说明：WAN 口暴露 SSH/Web 是为了远程管理便利特意开放。关闭时仅限局域网访问，开启时放行外网访问。'
+            );
+
+            const wanBtnsContainer = E('div', { 'style': 'display: flex; flex-wrap: wrap; gap: 10px;' });
+
+            function createPortToggleBtn(portName, portNum, initialActive, onToggle) {
+                let active = initialActive;
+                const btn = E('button', {
+                    'class': 'btn cbi-button',
+                    'style': `padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px; border: 1px solid ${active ? '#16a34a' : 'var(--cw-border)'}; background: ${active ? 'rgba(22, 163, 74, 0.12)' : 'var(--cw-bg-subtle)'}; color: ${active ? '#16a34a' : 'var(--cw-text-muted)'};`,
+                    'click': function() {
+                        btn.disabled = true;
+                        btn.innerText = '⏳ 保存中...';
+                        const newState = active ? '0' : '1';
+                        onToggle(newState).then(res => {
+                            btn.disabled = false;
+                            active = !active;
+                            btn.style.border = `1px solid ${active ? '#16a34a' : 'var(--cw-border)'}`;
+                            btn.style.background = active ? 'rgba(22, 163, 74, 0.12)' : 'var(--cw-bg-subtle)';
+                            btn.style.color = active ? '#16a34a' : 'var(--cw-text-muted)';
+                            btn.innerHTML = `${active ? '🟢' : '⚪'} ${portName} (${portNum}): <strong>${active ? '外网已开启' : '外网已关闭'}</strong>`;
+                            appendMessage('assistant', `🛠️ **WAN 口管理端口已更新**：[${portName}] 端口 ${portNum} 当前状态为 **${active ? '放行开启 (允许外网访问)' : '安全关闭 (仅限内网访问)'}**。`);
+                        }).catch(err => {
+                            btn.disabled = false;
+                            btn.innerText = '❌ 失败: ' + err.message;
+                        });
+                    }
+                });
+                btn.innerHTML = `${active ? '🟢' : '⚪'} ${portName} (${portNum}): <strong>${active ? '外网已开启' : '外网已关闭'}</strong>`;
+                return btn;
+            }
+
+            const sshBtn = createPortToggleBtn('SSH 管理', '22', currentSsh, function(targetState) {
+                currentSsh = (targetState === '1');
+                return callManageWanAccess('set', targetState, '', '');
+            });
+
+            const httpBtn = createPortToggleBtn('HTTP 网页', '80', currentHttp, function(targetState) {
+                currentHttp = (targetState === '1');
+                return callManageWanAccess('set', '', targetState, '');
+            });
+
+            const httpsBtn = createPortToggleBtn('HTTPS 网页', '443', currentHttps, function(targetState) {
+                currentHttps = (targetState === '1');
+                return callManageWanAccess('set', '', '', targetState);
+            });
+
+            wanBtnsContainer.appendChild(sshBtn);
+            wanBtnsContainer.appendChild(httpBtn);
+            wanBtnsContainer.appendChild(httpsBtn);
+
+            wanControlPanel.appendChild(wanHeader);
+            wanControlPanel.appendChild(wanTip);
+            wanControlPanel.appendChild(wanBtnsContainer);
+
+            // 3. Items Breakdown List
+            const itemsList = E('div', { 'style': 'display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px;' });
+
+            items.forEach(it => {
+                let itemColor = '#16a34a';
+                let itemIcon = '🟢';
+                let itemBg = 'var(--cw-bg-card)';
+                if (it.status === 'danger') {
+                    itemColor = '#dc2626';
+                    itemIcon = '🔴';
+                    itemBg = 'rgba(220, 38, 38, 0.04)';
+                } else if (it.status === 'warning') {
+                    itemColor = '#d97706';
+                    itemIcon = '🟡';
+                    itemBg = 'rgba(217, 119, 6, 0.04)';
+                }
+
+                const itemRow = E('div', {
+                    'style': `background: ${itemBg}; border: 1px solid var(--cw-border); border-left: 4px solid ${itemColor}; border-radius: 6px; padding: 10px 12px;`
+                }, [
+                    E('div', { 'style': 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;' }, [
+                        E('div', { 'style': 'font-weight: 700; font-size: 13px; color: var(--cw-text-main); display: flex; align-items: center; gap: 6px;' }, [
+                            E('span', {}, itemIcon),
+                            E('span', { 'style': `color: ${itemColor};` }, it.title || it.name),
+                            E('span', { 'style': 'font-size: 10px; color: var(--cw-text-muted); background: var(--cw-bg-subtle); padding: 1px 5px; border-radius: 4px;' }, it.category || '')
+                        ]),
+                        E('span', { 'style': `font-size: 11px; font-weight: 600; color: ${itemColor};` }, it.status === 'danger' ? '高危隐患' : (it.status === 'warning' ? '需加固' : '安全合规'))
+                    ]),
+                    E('div', { 'style': 'font-size: 12px; color: var(--cw-text-sub); margin-bottom: 4px; line-height: 1.4;' }, it.detail || ''),
+                    it.suggestion ? E('div', { 'style': 'font-size: 11px; color: var(--cw-text-muted); display: flex; align-items: center; gap: 4px;' }, [
+                        E('strong', { 'style': 'color: var(--cw-text-sub);' }, '💡 建议：'),
+                        E('span', {}, it.suggestion)
+                    ]) : ''
+                ]);
+
+                itemsList.appendChild(itemRow);
+            });
+
+            // 4. Action buttons
+            const actions = E('div', { 'style': 'display: flex; justify-content: flex-end; gap: 10px;' }, [
+                E('button', {
+                    'class': 'btn cbi-button cbi-button-apply',
+                    'style': 'background: #2563eb; color: #fff; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;',
+                    'click': function(ev) {
+                        const btn = ev.target;
+                        btn.disabled = true;
+                        btn.innerText = '⏳ 正在重新体检...';
+                        callGetSecurityCheck().then(newCheck => {
+                            card.remove();
+                            appendSecurityCheckCard(newCheck);
+                        }).catch(err => {
+                            btn.disabled = false;
+                            btn.innerText = '❌ 体检失败: ' + err.message;
+                        });
+                    }
+                }, '🔄 重新体检'),
+                E('button', {
+                    'class': 'btn cbi-button cbi-button-reset',
+                    'style': 'background: var(--cw-bg-secondary); color: var(--cw-text-muted); border: 1px solid var(--cw-border); padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;',
+                    'click': function() { card.remove(); }
+                }, '收起卡片')
+            ]);
+
+            card.appendChild(header);
+            card.appendChild(summaryDiv);
+            card.appendChild(wanControlPanel);
+            card.appendChild(itemsList);
+            card.appendChild(actions);
+
+            chatWindow.appendChild(card);
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+
+        function appendWanAccessCard(data) {
+            const res = (data && data.result) ? data.result : (data || {});
+            let currentSsh = !!res.ssh;
+            let currentHttp = !!res.http;
+            let currentHttps = !!res.https;
+
+            const card = E('div', {
+                'class': 'wan-access-card',
+                'style': 'background: var(--cw-bg-card); border: 2px solid #0284c7; border-radius: 12px; padding: 16px 18px; margin: 12px 0; box-shadow: var(--cw-card-shadow);'
+            });
+
+            const header = E('div', { 'style': 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px solid var(--cw-border); padding-bottom: 8px;' }, [
+                E('div', { 'style': 'font-weight: 700; font-size: 15px; color: var(--cw-text-main); display: flex; align-items: center; gap: 8px;' }, [
+                    E('span', { 'style': 'font-size: 18px;' }, '🌐'),
+                    E('span', {}, 'WAN 侧远程管理端口开关')
+                ]),
+                E('span', { 'style': 'font-size: 11px; color: #0284c7; font-weight: 600;' }, '远程管理策略')
+            ]);
+
+            const desc = E('div', { 'style': 'font-size: 12px; color: var(--cw-text-sub); margin-bottom: 12px; line-height: 1.5;' },
+                '说明：放行端口允许从上级网络或外网直接访问路由器管理控制台。此功能方便远程运维管理，请根据安全需求灵活开启或关闭：'
+            );
+
+            const btnsContainer = E('div', { 'style': 'display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 14px;' });
+
+            function createBtn(name, port, activeState, toggleFn) {
+                let state = activeState;
+                const b = E('button', {
+                    'class': 'btn cbi-button',
+                    'style': `padding: 8px 14px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; border: 1px solid ${state ? '#16a34a' : 'var(--cw-border)'}; background: ${state ? 'rgba(22, 163, 74, 0.12)' : 'var(--cw-bg-subtle)'}; color: ${state ? '#16a34a' : 'var(--cw-text-muted)'};`,
+                    'click': function() {
+                        b.disabled = true;
+                        b.innerText = '⏳ 正在切换...';
+                        const nState = state ? '0' : '1';
+                        toggleFn(nState).then(() => {
+                            b.disabled = false;
+                            state = !state;
+                            b.style.border = `1px solid ${state ? '#16a34a' : 'var(--cw-border)'}`;
+                            b.style.background = state ? 'rgba(22, 163, 74, 0.12)' : 'var(--cw-bg-subtle)';
+                            b.style.color = state ? '#16a34a' : 'var(--cw-text-muted)';
+                            b.innerHTML = `${state ? '🟢' : '⚪'} ${name} (${port}): <strong>${state ? '外网已开启' : '外网已关闭'}</strong>`;
+                            appendMessage('assistant', `🛠️ **已切换 WAN 口 ${name} (${port}) 状态为**：**${state ? '开启放行' : '安全关闭'}**。`);
+                        }).catch(err => {
+                            b.disabled = false;
+                            b.innerText = '❌ 失败: ' + err.message;
+                        });
+                    }
+                });
+                b.innerHTML = `${state ? '🟢' : '⚪'} ${name} (${port}): <strong>${state ? '外网已开启' : '外网已关闭'}</strong>`;
+                return b;
+            }
+
+            btnsContainer.appendChild(createBtn('SSH 管理', '22', currentSsh, s => { currentSsh = (s === '1'); return callManageWanAccess('set', s, '', ''); }));
+            btnsContainer.appendChild(createBtn('HTTP 网页', '80', currentHttp, s => { currentHttp = (s === '1'); return callManageWanAccess('set', '', s, ''); }));
+            btnsContainer.appendChild(createBtn('HTTPS 网页', '443', currentHttps, s => { currentHttps = (s === '1'); return callManageWanAccess('set', '', '', s); }));
+
+            const foot = E('div', { 'style': 'display: flex; justify-content: flex-end;' }, [
+                E('button', {
+                    'class': 'btn cbi-button cbi-button-reset',
+                    'style': 'background: var(--cw-bg-secondary); color: var(--cw-text-muted); border: 1px solid var(--cw-border); padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;',
+                    'click': function() { card.remove(); }
+                }, '收起卡片')
+            ]);
+
+            card.appendChild(header);
+            card.appendChild(desc);
+            card.appendChild(btnsContainer);
+            card.appendChild(foot);
 
             chatWindow.appendChild(card);
             chatWindow.scrollTop = chatWindow.scrollHeight;
@@ -5226,7 +5545,13 @@ return view.extend({
                         let toolResult = {};
 
                         try {
-                            if (fnName === 'get_acceleration_status') {
+                            if (fnName === 'get_security_check') {
+                                toolResult = await callGetSecurityCheck();
+                                appendSecurityCheckCard(toolResult);
+                            } else if (fnName === 'manage_wan_access') {
+                                toolResult = await callManageWanAccess(fnArgs.action || 'get', fnArgs.ssh || '', fnArgs.http || '', fnArgs.https || '');
+                                appendWanAccessCard(toolResult);
+                            } else if (fnName === 'get_acceleration_status') {
                                 toolResult = await callGetAccelerationStatus();
                                 appendAccelerationCard(toolResult);
                             } else if (fnName === 'fix_acceleration_pipeline') {

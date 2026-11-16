@@ -32,7 +32,9 @@
                     "test_vps_ssh",
                     "get_vps_service_config",
                     "get_penetration_status",
-                    "get_acceleration_status"
+                    "get_acceleration_status",
+                    "get_security_check",
+                    "manage_wan_access"
                 ]
             },
             "uci": [
@@ -76,7 +78,8 @@
                     "manage_portal_access",
                     "manage_portal_whitelist",
                     "manage_penetration_proxy",
-                    "manage_xkcptun_tunnel"
+                    "manage_xkcptun_tunnel",
+                    "manage_wan_access"
                 ]
             },
             "uci": [

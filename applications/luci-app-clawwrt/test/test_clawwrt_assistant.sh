@@ -237,6 +237,29 @@ if [ -n "$OLD_AI_KEY" ]; then
     uci -q commit clawwrt
 fi
 
+# ---------------------------------------------------------------------
+# 9. 路由器全方位安全体检与 WAN 远程管理开关测试
+# ---------------------------------------------------------------------
+echo -e "\n${BOLD}${BLUE}【9. 路由器全方位安全体检与 WAN 远程管理开关测试】${NC}"
+assert_ubus "安全体检" "执行路由器全方位安全基线体检" "get_security_check" "" "level"
+assert_ubus "安全体检" "验证安全体检包含评分字段" "get_security_check" "" "score"
+assert_ubus "WAN端口" "获取当前 WAN 远程管理端口放行状态" "manage_wan_access" '{"action":"get"}' "success" "true"
+
+# Save original WAN access states
+orig_ssh=$(ubus call luci.clawwrt manage_wan_access '{"action":"get"}' 2>/dev/null | jsonfilter -e '@.result.ssh' 2>/dev/null)
+orig_http=$(ubus call luci.clawwrt manage_wan_access '{"action":"get"}' 2>/dev/null | jsonfilter -e '@.result.http' 2>/dev/null)
+orig_https=$(ubus call luci.clawwrt manage_wan_access '{"action":"get"}' 2>/dev/null | jsonfilter -e '@.result.https' 2>/dev/null)
+
+assert_ubus "WAN端口" "测试关闭 WAN 口 SSH 远程放行" "manage_wan_access" '{"action":"set","ssh":"0"}' "ssh" "false"
+assert_ubus "WAN端口" "测试开启 WAN 口 SSH 远程放行" "manage_wan_access" '{"action":"set","ssh":"1"}' "ssh" "true"
+assert_ubus "WAN防御" "拒绝非法端口开关参数注入 (non-boolean)" "manage_wan_access" '{"action":"set","ssh":"hack"}' "success" "false"
+
+# Restore original states
+[ "$orig_ssh" = "true" ] && r_ssh="1" || r_ssh="0"
+[ "$orig_http" = "true" ] && r_http="1" || r_http="0"
+[ "$orig_https" = "true" ] && r_https="1" || r_https="0"
+ubus call luci.clawwrt manage_wan_access "{\"action\":\"set\",\"ssh\":\"$r_ssh\",\"http\":\"$r_http\",\"https\":\"$r_https\"}" >/dev/null 2>&1
+
 END_TIME=$(date +%s)
 DURATION=$((END_TIME - START_TIME))
 
