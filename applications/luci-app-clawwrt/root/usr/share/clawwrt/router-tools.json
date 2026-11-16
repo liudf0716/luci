@@ -2,6 +2,17 @@
   {
     "type": "function",
     "function": {
+      "name": "get_temperature",
+      "description": "获取路由器当前各芯片与模块的实时温度遥测数据：包括 CPU 核心温度、2.4G Wi-Fi 射频芯片温度与 5G Wi-Fi 射频芯片温度，并评估发热健康状态（正常、偏温、过热警报）与散热建议。界面将渲染芯片温度健康仪表卡片",
+      "parameters": {
+        "type": "object",
+        "properties": {}
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
       "name": "get_security_check",
       "description": "执行路由器全方位安全体检：深入检测 WAN 口管理面端口暴露（SSH 22、HTTP 80、HTTPS 443 放行状态）、SSH 认证策略（密码登录/密钥）、Web 传输安全（强制 HTTPS 跳转）、无线 Wi-Fi 弱口令与加密算法、Root 超级用户状态、DNS 防重绑定与系统沙箱隔离等核心安全维度，并在界面中生成包含综合安全评分与 WAN 远程端口开关的交互式体检诊断卡片",
       "parameters": {

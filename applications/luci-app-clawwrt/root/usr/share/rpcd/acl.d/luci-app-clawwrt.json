@@ -33,6 +33,7 @@
                     "get_vps_service_config",
                     "get_penetration_status",
                     "get_acceleration_status",
+                    "get_temperature",
                     "get_security_check",
                     "manage_wan_access"
                 ]

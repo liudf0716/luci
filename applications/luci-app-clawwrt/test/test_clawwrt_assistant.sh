@@ -116,6 +116,8 @@ assert_secret_redacted() {
 echo -e "\n${BOLD}${BLUE}【1. 系统概要、状态与终端设备检测】${NC}"
 expected_hostname=$(uci -q get system.@system[0].hostname || echo "chawrt")
 assert_ubus "系统概况" "获取路由器摘要遥测信息" "get_router_summary" "" "hostname" "$expected_hostname"
+assert_ubus "硬件温度" "获取芯片温度 (CPU/2.4G/5G)" "get_temperature" "" "cpu_temp"
+assert_ubus "温度健康" "验证温度状态评估 (thermal_status)" "get_temperature" "" "thermal_status"
 assert_ubus "系统状态" "获取 Copilot 进程及核心运行状态" "get_status" "" "running"
 assert_ubus "终端拓扑" "获取局域网已连接客户端列表" "list_clients" "" "clients"
 assert_ubus "服务矩阵" "获取五大核心服务聚合健康状态" "get_services_status" "" "xkcptun"

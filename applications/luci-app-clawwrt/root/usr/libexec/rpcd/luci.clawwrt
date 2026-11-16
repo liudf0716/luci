@@ -125,6 +125,8 @@ case "$1" in
         json_close_object
         json_add_object "get_router_summary"
         json_close_object
+        json_add_object "get_temperature"
+        json_close_object
         json_add_object "list_clients"
         json_close_object
         json_add_object "get_services_status"
@@ -471,6 +473,10 @@ case "$1" in
             local sw_offload=$(uci -q get firewall.@defaults[0].flow_offloading || echo "0")
             local hw_accel=0
             [ "$sw_offload" = "1" ] && [ "$hw_offload" = "1" ] && hw_accel=1
+
+            local cpu_temp=""
+            local cpu_milli=$(cat /sys/class/thermal/thermal_zone0/temp 2>/dev/null)
+            [ -n "$cpu_milli" ] && cpu_temp=$(awk -v v="$cpu_milli" 'BEGIN {printf "%.1f", v/1000}')
             
             json_init
             json_add_object "result"
@@ -479,6 +485,7 @@ case "$1" in
             json_add_int "mem_total_kb" "${mem_total:-0}"
             json_add_int "mem_free_kb" "${mem_free:-0}"
             json_add_string "cpu_load" "$cpu_load"
+            json_add_string "cpu_temp" "${cpu_temp:-未知}"
             json_add_string "board_model" "$board_model"
             json_add_string "kernel_version" "$kernel_ver"
             json_add_string "wan_ip" "${wan_ip:-Disconnected}"
@@ -488,6 +495,95 @@ case "$1" in
             json_add_string "latency" "$latency"
             json_add_int "client_count" "${client_count:-0}"
             json_add_boolean "hw_accel" "$hw_accel"
+            json_close_object
+            json_dump
+        }
+
+        get_temperature() {
+            local cpu_temp=""
+            local cpu_milli=""
+            local w24_temp=""
+            local w24_milli=""
+            local w5g_temp=""
+            local w5g_milli=""
+
+            # Check thermal zones
+            for tz in /sys/class/thermal/thermal_zone*; do
+                [ -d "$tz" ] || continue
+                local t_type=$(cat "$tz/type" 2>/dev/null)
+                local t_val=$(cat "$tz/temp" 2>/dev/null)
+                if [ -n "$t_val" ] && [ -z "$cpu_milli" ]; then
+                    case "$t_type" in
+                        *cpu*|*soc*)
+                            cpu_milli="$t_val"
+                            ;;
+                    esac
+                fi
+            done
+
+            # Check hwmon devices (e.g. cpu_thermal, mt7915_phy0, mt7915_phy1, mt7981, etc.)
+            for h in /sys/class/hwmon/hwmon*; do
+                [ -d "$h" ] || continue
+                local h_name=$(cat "$h/name" 2>/dev/null)
+                local h_val=$(cat "$h/temp1_input" 2>/dev/null)
+                [ -z "$h_val" ] && continue
+
+                case "$h_name" in
+                    *cpu*)
+                        [ -z "$cpu_milli" ] && cpu_milli="$h_val"
+                        ;;
+                    *phy0*|*2g*|*24g*)
+                        [ -z "$w24_milli" ] && w24_milli="$h_val"
+                        ;;
+                    *phy1*|*5g*)
+                        [ -z "$w5g_milli" ] && w5g_milli="$h_val"
+                        ;;
+                    mt7915*|mt798*|mt76*)
+                        if [ -z "$w24_milli" ]; then
+                            w24_milli="$h_val"
+                        elif [ -z "$w5g_milli" ]; then
+                            w5g_milli="$h_val"
+                        fi
+                        ;;
+                esac
+            done
+
+            # Fallback if cpu_milli was not found above
+            if [ -z "$cpu_milli" ] && [ -f /sys/class/thermal/thermal_zone0/temp ]; then
+                cpu_milli=$(cat /sys/class/thermal/thermal_zone0/temp 2>/dev/null)
+            fi
+
+            # Format to human readable (X.X°C)
+            [ -n "$cpu_milli" ] && cpu_temp=$(awk -v v="$cpu_milli" 'BEGIN {printf "%.1f", v/1000}')
+            [ -n "$w24_milli" ] && w24_temp=$(awk -v v="$w24_milli" 'BEGIN {printf "%.1f", v/1000}')
+            [ -n "$w5g_milli" ] && w5g_temp=$(awk -v v="$w5g_milli" 'BEGIN {printf "%.1f", v/1000}')
+
+            # Overall thermal status evaluation
+            local status_text="normal"
+            local status_desc="🟢 各芯片散热良好（均低于 75°C），运行稳定健康。"
+            local max_val=0
+            [ -n "$cpu_milli" ] && [ "$cpu_milli" -gt "$max_val" ] && max_val="$cpu_milli"
+            [ -n "$w24_milli" ] && [ "$w24_milli" -gt "$max_val" ] && max_val="$w24_milli"
+            [ -n "$w5g_milli" ] && [ "$w5g_milli" -gt "$max_val" ] && max_val="$w5g_milli"
+
+            if [ "$max_val" -ge 85000 ]; then
+                status_text="critical"
+                status_desc="⚠️ 检测到芯片温度达到 85°C 以上，接近过热降频门限，建议清理灰尘并改善放置环境通风！"
+            elif [ "$max_val" -ge 75000 ]; then
+                status_text="warm"
+                status_desc="🟡 路由器当前温度略高（75°C~85°C），属于较高负载发热，建议避免放在密闭弱电箱中。"
+            fi
+
+            json_init
+            json_add_object "result"
+            json_add_string "cpu_temp" "${cpu_temp:-未知}"
+            json_add_string "wifi_24g_temp" "${w24_temp:-未知}"
+            json_add_string "wifi_5g_temp" "${w5g_temp:-未知}"
+            json_add_string "thermal_status" "$status_text"
+            json_add_string "status_desc" "$status_desc"
+            json_add_int "cpu_raw" "${cpu_milli:-0}"
+            json_add_int "wifi_24g_raw" "${w24_milli:-0}"
+            json_add_int "wifi_5g_raw" "${w5g_milli:-0}"
             json_close_object
             json_dump
         }
@@ -6890,6 +6986,7 @@ EOF
             manage_portal_whitelist) manage_portal_whitelist ;;
             manage_penetration_proxy) manage_penetration_proxy ;;
             manage_xkcptun_tunnel) manage_xkcptun_tunnel ;;
+            get_temperature) get_temperature ;;
             get_security_check) get_security_check ;;
             manage_wan_access) manage_wan_access ;;
         esac

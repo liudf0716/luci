@@ -350,7 +350,21 @@ const callManageXkcptunTunnel = rpc.declare({
     expect: { result: {} }
 });
 
+const callGetTemperature = rpc.declare({
+    object: 'luci.clawwrt',
+    method: 'get_temperature',
+    expect: { result: {} }
+});
+
 const routerTools = [
+    {
+        type: 'function',
+        function: {
+            name: 'get_temperature',
+            description: '获取路由器当前各芯片与模块的实时温度遥测数据：包括 CPU 核心温度、2.4G Wi-Fi 射频芯片温度与 5G Wi-Fi 射频芯片温度，并评估发热健康状态（正常、偏温、过热警报）与散热建议。界面将渲染芯片温度健康仪表卡片',
+            parameters: { type: 'object', properties: {} }
+        }
+    },
     {
         type: 'function',
         function: {
@@ -1013,6 +1027,7 @@ ${commonSafety}
        - 【第三步：添加分流目标与全链路健康验收】：部署连通后，引导用户通过 manage_xdns_domain(action: "add", domain: "...") 注入要加速的网站；调用 get_acceleration_status 进行全链路健康体检，验证 TC 探针与加速隧道；
 - 极其重要的 VPS 防火墙重定向与 UDP 端口跳跃防误判准则：当云端 VPS 使用防火墙 (iptables/nftables) 配置了 PREROUTING REDIRECT 端口段重定向时（例如将 UDP 58100-58200 重定向至 xkcptun 监听端口 9089 时，get_vps_service_config 会返回 has_port_redirect: true，get_acceleration_status 会返回 is_hopped_port: true 及 hop_range）：路由器端使用的目标端口处于重定向池内属于正规的 UDP 端口跳跃抗抖动设计，绝不是端口配置错误或端口不匹配！严禁误判为“端口不一致”、“加速未连接”或“配置异常”！只要隧道正常、存在活跃连接或连通性正常，全链路健康度即为正常 healthy；严禁在诊断中提议将路由器端口改回 9089，也不得在没有用户明确要求时调用 switch_acceleration_port；
 - 无线 Wi-Fi 802.11k/v/r 漫游与射频排障：支持查询与配置 802.11k/v/r 漫游 (get_wifi_roaming, propose_wifi_roaming)；支持 diagnose_wifi_performance 深度体检信道与功率；
+- 芯片温度与热遥测 (get_temperature)：获取 SoC CPU (thermal_zone0) 以及 2.4G (phy0) / 5G (phy1) 射频前端硬件热敏电阻实时遥测数据，评估芯片温度健康度与过热降频门限，界面将渲染硬件温度卡片；
 - 路由器全方位安全体检与 WAN 侧远程管理开关 (get_security_check, manage_wan_access)：
   1. 只要用户询问“安全体检”、“安全检查”、“检查漏洞”、“安全审计”等，【必须优先调用 get_security_check】！严禁只调用普通的 ping/nslookup 网络诊断 (run_diagnostics)；
   2. 【极其重要的 WAN 口管理面 (SSH 22, HTTP 80, HTTPS 443) 风险提示与开关时机准则】：
@@ -1069,6 +1084,7 @@ ${commonSafety}
      • 告诉用户如果想加速某个网站（如“帮我加速 github.com”），直接告诉小茶，小茶会自动调用 manage_xdns_domain 添加，秒级生效；
   4. 【检查加速与自愈】：
      • 问加速好不好用时调用 get_acceleration_status 检查链路，若有异常提示用户点击卡片上的【🛠️ 一键自愈】按钮；
+- 芯片温度与发热情况 (get_temperature)：当用户询问路由器温度、发热状况、烫不烫、散热好不好时，【必须自主调用 get_temperature】！界面会生成直观的芯片温度健康仪表卡片，用大白话向用户说明当前各芯片发热是否健康、是否需要通风降温；
 - 路由器安全体检与外网管理开关 (get_security_check, manage_wan_access)：
   1. 只要用户说“安全检查”、“做个体检”、“查查漏洞”或问路由器安不安全，【必须自主调用 get_security_check】！严禁只测网络通不通；
   2. 【重点用大白话提醒外网管理端口】：
@@ -1088,6 +1104,7 @@ function getRouterTools(mode) {
         return routerTools;
     }
     const noviceAllowedTools = new Set([
+        'get_temperature',
         'get_security_check',
         'manage_wan_access',
         'get_penetration_status',
@@ -1316,7 +1333,13 @@ return view.extend({
             // Card 2: LAN & Connected Clients
             renderMetricCard('📱 在线终端设备', '检测中...', '网关: 192.168.8.1', 'devices'),
             // Card 3: Router Health & Hardware
-            renderMetricCard('🖥️ 路由器硬件与负载', '加载中...', 'CPU: - | 内存: -', 'hardware'),
+            renderMetricCard('🖥️ 路由器硬件与温度', '加载中...', 'CPU: - | 内存: -', 'hardware', function() {
+                const input = document.getElementById('chat-input');
+                if (input) {
+                    input.value = '帮我查看一下当前路由器 CPU 和 5G/2.4G 无线芯片的实时温度与发热状况';
+                    sendMessage();
+                }
+            }),
             // Card 4: Security Audit & Protection Quick Card
             renderMetricCard('🛡️ 安全体检与防护', '点击体检', '检测 WAN 暴露与安全基线', 'security', function() {
                 const input = document.getElementById('chat-input');
@@ -1341,6 +1364,7 @@ return view.extend({
                         id: "popular",
                         name: "🔥 常用精选",
                         cards: [
+                            { label: "🌡️ 芯片发热与温度体检", query: "帮我查看一下当前路由器 CPU 和 5G/2.4G 无线芯片的实时温度与发热状况" },
                             { label: "🛡️ 路由器安全体检", query: "帮我给这台路由器做一个全面的安全体检，排查外网端口暴露和密码安全隐患" },
                             { label: "🔒 检查外网端口开关", query: "检查一下路由器外网访问管理端口（SSH/HTTP/HTTPS）的开放状态并指导我管理" },
                             { label: "📊 我家网络怎么样？", query: "对这台路由器进行健康巡检，用通俗语言汇报网络好不好、运行稳不稳定" },
@@ -1384,6 +1408,7 @@ return view.extend({
                         id: "speed_accel",
                         name: "⚡ 网速与加速优化",
                         cards: [
+                            { label: "🌡️ 芯片发热与温度", query: "帮我查看一下当前路由器 CPU 和 5G/2.4G 无线芯片的实时温度与发热状况" },
                             { label: "🚀 一步步教我配置网络加速与分流", query: "我想配置上网加速和智能分流，请一步步教我怎么配置，包括如何授权我的 VPS 服务器并一键部署" },
                             { label: "🔑 查看路由器免密授权命令", query: "查看路由器专属的 SSH 免密公钥与一键授权命令，教我怎么在 VPS 终端完成授权" },
                             { label: "➕ 添加加速网站 (如 Claude/GitHub)", query: "帮我把常用网站（如 claude.ai 和 github.com）添加到智能分流加速列表中" },
@@ -1402,6 +1427,7 @@ return view.extend({
                         id: "popular",
                         name: "🔥 专家精选",
                         cards: [
+                            { label: "🌡️ CPU与双频射频硬件温度", query: "查看当前路由器 CPU 核心及 2.4G/5G 射频前端 (MT7976) 硬件温度与散热状态" },
                             { label: "🛡️ 路由器安全基线体检", query: "对路由器进行全方位安全体检，检查 WAN 口管理面暴露、SSH 凭据策略、HTTPS 加密与系统隔离" },
                             { label: "🔒 WAN 远程管理端口开关", query: "查看当前 WAN 侧远程管理端口（SSH 22、HTTP 80、HTTPS 443）放行状态并进行开关控制" },
                             { label: "🩺 xDNS+xkcptun 全链路健康体检", query: "深度检测智能分流 (xDNS) 与网络加速 (xkcptun) 的全链路运行健康度，排查分流与加速是否存在异常，并在界面生成全链路诊断卡片" },
@@ -2858,6 +2884,236 @@ return view.extend({
                             card.remove();
                         }
                     }, '收起卡片')
+                ])
+            ]);
+
+            chatWindow.appendChild(card);
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+
+        // Append Temperature & Thermal Telemetry Card
+        function appendTemperatureCard(data) {
+            const res = (data && data.result) ? data.result : (data || {});
+            const cpuTemp = res.cpu_temp || '未知';
+            const w24Temp = res.wifi_24g_temp || '未知';
+            const w5gTemp = res.wifi_5g_temp || '未知';
+            const status = res.thermal_status || 'normal';
+            const statusDesc = res.status_desc || '各芯片温度正常';
+
+            const cpuNum = parseFloat(cpuTemp) || 0;
+            const w24Num = parseFloat(w24Temp) || 0;
+            const w5gNum = parseFloat(w5gTemp) || 0;
+
+            const getTempColor = function(t) {
+                if (t >= 85) return '#dc2626';
+                if (t >= 75) return '#d97706';
+                return '#16a34a';
+            };
+
+            const getTempBg = function(t) {
+                if (t >= 85) return 'rgba(239, 68, 68, 0.1)';
+                if (t >= 75) return 'rgba(245, 158, 11, 0.1)';
+                return 'rgba(22, 163, 74, 0.1)';
+            };
+
+            let badgeText = '🟢 散热良好 · 状态正常';
+            let badgeBg = 'rgba(16, 185, 129, 0.12)';
+            let badgeColor = '#059669';
+            let cardBorder = '#10b981';
+
+            if (status === 'critical' || cpuNum >= 85 || w24Num >= 85 || w5gNum >= 85) {
+                badgeText = '🔴 过热警报 · 建议降温';
+                badgeBg = 'rgba(239, 68, 68, 0.15)';
+                badgeColor = '#dc2626';
+                cardBorder = '#ef4444';
+            } else if (status === 'warm' || cpuNum >= 75 || w24Num >= 75 || w5gNum >= 75) {
+                badgeText = '🟡 温度偏高 · 负载较大';
+                badgeBg = 'rgba(245, 158, 11, 0.15)';
+                badgeColor = '#d97706';
+                cardBorder = '#f59e0b';
+            }
+
+            const card = E('div', {
+                'class': 'temperature-card',
+                'style': `background: var(--cw-bg-card); border: 2px solid ${cardBorder}; border-radius: 12px; padding: 18px 20px; margin: 12px 0; box-shadow: var(--cw-card-shadow); transition: all 0.3s;`
+            }, [
+                E('div', { 'style': 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; border-bottom: 1px solid var(--cw-border); padding-bottom: 10px;' }, [
+                    E('div', { 'style': 'font-weight: 700; font-size: 15px; color: var(--cw-text-main); display: flex; align-items: center; gap: 8px;' }, [
+                        E('span', { 'style': 'font-size: 20px;' }, '🌡️'),
+                        E('span', {}, '路由器芯片实时温度与发热遥测')
+                    ]),
+                    E('div', { 'style': 'display: flex; gap: 6px; align-items: center;' }, [
+                        E('span', {
+                            'id': 'temp-status-badge',
+                            'style': `background: ${badgeBg}; color: ${badgeColor}; padding: 3px 10px; border-radius: 12px; font-size: 11.5px; font-weight: 700; border: 1px solid ${badgeColor}33;`
+                        }, badgeText),
+                        E('span', { 'style': 'background: var(--cw-chip-bg); color: var(--cw-chip-text); padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: 600;' }, 'MediaTek MT7981 + MT7976')
+                    ])
+                ]),
+
+                // 3 Gauges Grid
+                E('div', { 'style': 'display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 14px;' }, [
+                    // CPU Box
+                    E('div', {
+                        'id': 'box-cpu-temp',
+                        'style': `background: ${getTempBg(cpuNum)}; border: 1px solid ${getTempColor(cpuNum)}40; border-radius: 10px; padding: 12px 14px;`
+                    }, [
+                        E('div', { 'style': 'font-size: 12px; color: var(--cw-text-muted); display: flex; justify-content: space-between; align-items: center;' }, [
+                            E('span', {}, '🔥 CPU 处理器 (双核 A53)'),
+                            E('span', { 'style': 'font-size: 10.5px; color: var(--cw-text-muted);' }, 'SoC 核心')
+                        ]),
+                        E('div', {
+                            'id': 'val-cpu-temp',
+                            'style': `font-size: 24px; font-weight: 800; color: ${getTempColor(cpuNum)}; margin: 6px 0 4px 0; font-family: monospace;`
+                        }, `${cpuTemp}°C`),
+                        E('div', { 'style': 'background: rgba(0,0,0,0.06); height: 6px; border-radius: 3px; overflow: hidden; margin-top: 6px;' }, [
+                            E('div', {
+                                'id': 'bar-cpu-temp',
+                                'style': `width: ${Math.min(100, Math.max(10, cpuNum)) % 100}%; height: 100%; background: ${getTempColor(cpuNum)}; transition: width 0.4s ease;`
+                            })
+                        ]),
+                        E('div', { 'style': 'font-size: 10.5px; color: var(--cw-text-muted); margin-top: 5px; display: flex; justify-content: space-between;' }, [
+                            E('span', {}, '0°C'),
+                            E('span', {}, '安全门限 < 85°C'),
+                            E('span', {}, '100°C')
+                        ])
+                    ]),
+
+                    // 2.4G Box
+                    E('div', {
+                        'id': 'box-w24-temp',
+                        'style': `background: ${getTempBg(w24Num)}; border: 1px solid ${getTempColor(w24Num)}40; border-radius: 10px; padding: 12px 14px;`
+                    }, [
+                        E('div', { 'style': 'font-size: 12px; color: var(--cw-text-muted); display: flex; justify-content: space-between; align-items: center;' }, [
+                            E('span', {}, '📶 2.4G 射频前端芯片'),
+                            E('span', { 'style': 'font-size: 10.5px; color: var(--cw-text-muted);' }, 'phy0 (MT7976)')
+                        ]),
+                        E('div', {
+                            'id': 'val-w24-temp',
+                            'style': `font-size: 24px; font-weight: 800; color: ${getTempColor(w24Num)}; margin: 6px 0 4px 0; font-family: monospace;`
+                        }, `${w24Temp}°C`),
+                        E('div', { 'style': 'background: rgba(0,0,0,0.06); height: 6px; border-radius: 3px; overflow: hidden; margin-top: 6px;' }, [
+                            E('div', {
+                                'id': 'bar-w24-temp',
+                                'style': `width: ${Math.min(100, Math.max(10, w24Num)) % 100}%; height: 100%; background: ${getTempColor(w24Num)}; transition: width 0.4s ease;`
+                            })
+                        ]),
+                        E('div', { 'style': 'font-size: 10.5px; color: var(--cw-text-muted); margin-top: 5px; display: flex; justify-content: space-between;' }, [
+                            E('span', {}, '0°C'),
+                            E('span', {}, 'PA 射频工作温区'),
+                            E('span', {}, '100°C')
+                        ])
+                    ]),
+
+                    // 5G Box
+                    E('div', {
+                        'id': 'box-w5g-temp',
+                        'style': `background: ${getTempBg(w5gNum)}; border: 1px solid ${getTempColor(w5gNum)}40; border-radius: 10px; padding: 12px 14px;`
+                    }, [
+                        E('div', { 'style': 'font-size: 12px; color: var(--cw-text-muted); display: flex; justify-content: space-between; align-items: center;' }, [
+                            E('span', {}, '🚀 5G 高频射频芯片'),
+                            E('span', { 'style': 'font-size: 10.5px; color: var(--cw-text-muted);' }, 'phy1 (MT7976)')
+                        ]),
+                        E('div', {
+                            'id': 'val-w5g-temp',
+                            'style': `font-size: 24px; font-weight: 800; color: ${getTempColor(w5gNum)}; margin: 6px 0 4px 0; font-family: monospace;`
+                        }, `${w5gTemp}°C`),
+                        E('div', { 'style': 'background: rgba(0,0,0,0.06); height: 6px; border-radius: 3px; overflow: hidden; margin-top: 6px;' }, [
+                            E('div', {
+                                'id': 'bar-w5g-temp',
+                                'style': `width: ${Math.min(100, Math.max(10, w5gNum)) % 100}%; height: 100%; background: ${getTempColor(w5gNum)}; transition: width 0.4s ease;`
+                            })
+                        ]),
+                        E('div', { 'style': 'font-size: 10.5px; color: var(--cw-text-muted); margin-top: 5px; display: flex; justify-content: space-between;' }, [
+                            E('span', {}, '0°C'),
+                            E('span', {}, '160MHz 满血温区'),
+                            E('span', {}, '100°C')
+                        ])
+                    ])
+                ]),
+
+                // Health advice box
+                E('div', {
+                    'id': 'temp-status-desc-box',
+                    'style': 'background: var(--cw-bg-subtle); border: 1px solid var(--cw-border); border-radius: 8px; padding: 10px 14px; margin-bottom: 14px; font-size: 12.5px; color: var(--cw-text-main); line-height: 1.6;'
+                }, [
+                    E('div', { 'id': 'temp-status-desc-text', 'style': 'font-weight: 600; margin-bottom: 4px;' }, statusDesc),
+                    E('div', { 'style': 'font-size: 11.5px; color: var(--cw-text-muted);' }, '💡 科普小贴士：Wi-Fi 路由器各芯片（CPU及射频）在 50°C~75°C 区间均属于完全正常的合理工作温度。若置于封闭弱电箱，请尽量保持机身四周通风。')
+                ]),
+
+                // Action buttons
+                E('div', { 'style': 'display: flex; justify-content: flex-end; gap: 10px; align-items: center;' }, [
+                    E('button', {
+                        'type': 'button',
+                        'class': 'btn cbi-button',
+                        'style': 'background: var(--cw-chip-bg); color: var(--cw-chip-text); border: 1px solid var(--cw-chip-border); padding: 7px 14px; border-radius: 6px; font-size: 12.5px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 4px;',
+                        'click': function(ev) {
+                            const btn = ev.target;
+                            btn.disabled = true;
+                            btn.innerText = '⏳ 正在测温...';
+                            callGetTemperature().then(tRes => {
+                                btn.disabled = false;
+                                btn.innerText = '🔄 实时刷新';
+                                const d = (tRes && tRes.result) ? tRes.result : (tRes || {});
+                                const cT = d.cpu_temp || '未知';
+                                const w24T = d.wifi_24g_temp || '未知';
+                                const w5gT = d.wifi_5g_temp || '未知';
+                                const cN = parseFloat(cT) || 0;
+                                const w24N = parseFloat(w24T) || 0;
+                                const w5gN = parseFloat(w5gT) || 0;
+
+                                const elCpu = card.querySelector('#val-cpu-temp');
+                                const elW24 = card.querySelector('#val-w24-temp');
+                                const elW5g = card.querySelector('#val-w5g-temp');
+                                const barCpu = card.querySelector('#bar-cpu-temp');
+                                const barW24 = card.querySelector('#bar-w24-temp');
+                                const barW5g = card.querySelector('#bar-w5g-temp');
+                                const boxCpu = card.querySelector('#box-cpu-temp');
+                                const boxW24 = card.querySelector('#box-w24-temp');
+                                const boxW5g = card.querySelector('#box-w5g-temp');
+                                const descEl = card.querySelector('#temp-status-desc-text');
+                                const badgeEl = card.querySelector('#temp-status-badge');
+
+                                if (elCpu) { elCpu.innerText = `${cT}°C`; elCpu.style.color = getTempColor(cN); }
+                                if (elW24) { elW24.innerText = `${w24T}°C`; elW24.style.color = getTempColor(w24N); }
+                                if (elW5g) { elW5g.innerText = `${w5gT}°C`; elW5g.style.color = getTempColor(w5gN); }
+                                if (barCpu) { barCpu.style.width = `${Math.min(100, Math.max(10, cN))}%`; barCpu.style.background = getTempColor(cN); }
+                                if (barW24) { barW24.style.width = `${Math.min(100, Math.max(10, w24N))}%`; barW24.style.background = getTempColor(w24N); }
+                                if (barW5g) { barW5g.style.width = `${Math.min(100, Math.max(10, w5gN))}%`; barW5g.style.background = getTempColor(w5gN); }
+                                if (boxCpu) { boxCpu.style.background = getTempBg(cN); boxCpu.style.borderColor = `${getTempColor(cN)}40`; }
+                                if (boxW24) { boxW24.style.background = getTempBg(w24N); boxW24.style.borderColor = `${getTempColor(w24N)}40`; }
+                                if (boxW5g) { boxW5g.style.background = getTempBg(w5gN); boxW5g.style.borderColor = `${getTempColor(w5gN)}40`; }
+                                if (descEl && d.status_desc) descEl.innerText = d.status_desc;
+                                if (badgeEl) {
+                                    if (d.thermal_status === 'critical') {
+                                        badgeEl.innerText = '🔴 过热警报 · 建议降温';
+                                        badgeEl.style.color = '#dc2626';
+                                        badgeEl.style.background = 'rgba(239, 68, 68, 0.15)';
+                                        card.style.borderColor = '#ef4444';
+                                    } else if (d.thermal_status === 'warm') {
+                                        badgeEl.innerText = '🟡 温度偏高 · 负载较大';
+                                        badgeEl.style.color = '#d97706';
+                                        badgeEl.style.background = 'rgba(245, 158, 11, 0.15)';
+                                        card.style.borderColor = '#f59e0b';
+                                    } else {
+                                        badgeEl.innerText = '🟢 散热良好 · 状态正常';
+                                        badgeEl.style.color = '#059669';
+                                        badgeEl.style.background = 'rgba(16, 185, 129, 0.12)';
+                                        card.style.borderColor = '#10b981';
+                                    }
+                                }
+                            }).catch(() => {
+                                btn.disabled = false;
+                                btn.innerText = '🔄 实时刷新';
+                            });
+                        }
+                    }, '🔄 实时刷新'),
+                    E('button', {
+                        'type': 'button',
+                        'class': 'btn cbi-button',
+                        'style': 'background: var(--cw-bg-secondary); color: var(--cw-text-main); border: 1px solid var(--cw-border); padding: 7px 14px; border-radius: 6px; font-size: 12.5px; cursor: pointer;',
+                        'click': function() { card.remove(); }
+                    }, '收起')
                 ])
             ]);
 
@@ -5931,7 +6187,10 @@ return view.extend({
                         let toolResult = {};
 
                         try {
-                            if (fnName === 'get_security_check') {
+                            if (fnName === 'get_temperature') {
+                                toolResult = await callGetTemperature();
+                                appendTemperatureCard(toolResult);
+                            } else if (fnName === 'get_security_check') {
                                 toolResult = await callGetSecurityCheck();
                                 appendSecurityCheckCard(toolResult);
                             } else if (fnName === 'manage_wan_access') {
@@ -6157,7 +6416,8 @@ return view.extend({
                     const memUsed = sum.mem_total_kb ? Math.round((sum.mem_total_kb - sum.mem_free_kb) / sum.mem_total_kb * 100) : 0;
                     tiles[1].querySelector('.metric-val1').innerText = `${sum.board_model || 'chaWrt'}`;
                     const hwBadge = sum.hw_accel ? '⚡开启' : '关闭';
-                    tiles[1].querySelector('.metric-val2').innerText = `CPU 负载: ${sum.cpu_load || '0.00'} | 内存: ${memUsed}% | 硬件加速: ${hwBadge}`;
+                    const tempText = (sum.cpu_temp && sum.cpu_temp !== '未知') ? ` | 核心: ${sum.cpu_temp}°C` : '';
+                    tiles[1].querySelector('.metric-val2').innerText = `CPU 负载: ${sum.cpu_load || '0.00'}${tempText} | 内存: ${memUsed}% | 硬件加速: ${hwBadge}`;
                 }
 
                 if (tiles.length >= 3) {
