@@ -6478,16 +6478,16 @@ EOF
             local wan_detail="SSH、HTTP、HTTPS 均已对外网关闭，外网无法直接访问路由器管理面。"
             local wan_sug="如需远程管理，可通过上方管理开关按需放行对应端口。"
             if [ "$any_wan" -eq 1 ]; then
-                wan_status="warning"
-                wan_title="已开启 WAN 侧远程管理放行"
+                wan_status="danger"
+                wan_title="WAN 口暴露远程管理端口 (严重安全隐患)"
                 local open_list=""
                 [ "$cur_ssh" -eq 1 ] && open_list="${open_list}SSH(22) "
                 [ "$cur_http" -eq 1 ] && open_list="${open_list}HTTP(80) "
                 [ "$cur_https" -eq 1 ] && open_list="${open_list}HTTPS(443) "
-                wan_detail="当前放行端口：${open_list}。此项是为了管理方便特意放开，可通过开关一键控制。"
-                wan_sug="远程运维建议优先保留加密的 HTTPS 或配合 SSH 密钥，亦可随时一键关闭。"
-                score=$((score - 5))
-                warning_count=$((warning_count + 1))
+                wan_detail="严重风险：当前路由器直接向公网/上级网络放行了管理端口 [${open_list}]！外部扫描器可直接探测并尝试爆破管理后台。虽然为了管理方便特意开放，但仍属高危暴露面。"
+                wan_sug="【开关时机建议】：1. 什么时候开启：仅在出门在外、紧急需要远程排障且无 VPN 时临时开启（建议仅开 HTTPS 443，避免明文 HTTP 80；SSH 仅限密钥登录）；2. 什么时候关闭：远程维护完毕后应立即关闭；日常居家使用务必关闭，实现外网零暴露；3. 替代方案：推荐使用内网穿透 (xfrpc) 或 WireGuard VPN 拨入管理。"
+                score=$((score - 25))
+                danger_count=$((danger_count + 1))
             else
                 pass_count=$((pass_count + 1))
             fi

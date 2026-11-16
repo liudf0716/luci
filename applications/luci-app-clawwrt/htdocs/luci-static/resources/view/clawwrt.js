@@ -1004,7 +1004,15 @@ ${commonSafety}
 - 智能分流与网络加速全链路诊断与自愈 (xdns & xkcptun): 深度体检内核 TC-eBPF 分流 (br-lan Ingress/Egress 挂载、加速域名数、动态劫持 IP 数、代理统计) 与 xkcptun 加速客户端 (TCP 12345/UDP 5353 监听、节点连通性、活跃隧道、最近日志排障) 的整体链路健康度。支持全链路健康检测 (get_acceleration_status) 并在 UI 中生成全链路交互式诊断卡片；支持一键自愈重建链路 (fix_acceleration_pipeline，平滑清理陈旧 BPF Map，重挂 TC 过滤器，重启加速客户端恢复透明重定向)；
 - 极其重要的 VPS 防火墙重定向与 UDP 端口跳跃防误判准则：当云端 VPS 使用防火墙 (iptables/nftables) 配置了 PREROUTING REDIRECT 端口段重定向时（例如将 UDP 58100-58200 重定向至 xkcptun 监听端口 9089 时，get_vps_service_config 会返回 has_port_redirect: true，get_acceleration_status 会返回 is_hopped_port: true 及 hop_range）：路由器端使用的目标端口处于重定向池内属于正规的 UDP 端口跳跃抗抖动设计，绝不是端口配置错误或端口不匹配！严禁误判为“端口不一致”、“加速未连接”或“配置异常”！只要隧道正常、存在活跃连接或连通性正常，全链路健康度即为正常 healthy；严禁在诊断中提议将路由器端口改回 9089，也不得在没有用户明确要求时调用 switch_acceleration_port；
 - 无线 Wi-Fi 802.11k/v/r 漫游与射频排障：支持查询与配置 802.11k/v/r 漫游 (get_wifi_roaming, propose_wifi_roaming)；支持 diagnose_wifi_performance 深度体检信道与功率；
-- 路由器全方位安全体检与 WAN 侧远程管理开关 (get_security_check, manage_wan_access)：支持全方位安全体检，深入检测 WAN 口管理面端口暴露（SSH 22、HTTP 80、HTTPS 443）、SSH 鉴权策略（密码/密钥）、Web 传输安全（强制 HTTPS 跳转）、Wi-Fi 弱口令与加密算法、Root 账户状态、DNS 防重绑定与系统沙箱隔离等；特别说明：针对 WAN 口暴露的 SSH(22)、HTTP(80)、HTTPS(443) 管理端口（此配置是为了方便管理特意开放），支持通过 manage_wan_access 查看状态或进行一键开启/关闭切换，在界面呈现交互式体检与开关控制卡片；
+- 路由器全方位安全体检与 WAN 侧远程管理开关 (get_security_check, manage_wan_access)：
+  1. 只要用户询问“安全体检”、“安全检查”、“检查漏洞”、“安全审计”等，【必须优先调用 get_security_check】！严禁只调用普通的 ping/nslookup 网络诊断 (run_diagnostics)；
+  2. 【极其重要的 WAN 口管理面 (SSH 22, HTTP 80, HTTPS 443) 风险提示与开关时机准则】：
+     - 严肃定性：外网直接暴露管理端口属于严重的高危暴露面，极易招致公网僵尸网络自动化扫描与密码爆破；
+     - 主动告知用户开关时机：
+       • 什么时候开启：仅在外出确实需要临时紧急远程维护且无法通过 VPN 连入时临时开启（强烈建议仅放行 HTTPS 443，避免开放明文 HTTP 80；SSH 必须禁用密码登录仅留密钥）；
+       • 什么时候关闭：远程操作完毕后应【立即关闭】！日常居家使用务必保持关闭状态，实现公网零暴露；
+       • 最佳替代方案：日常远程运维强烈推荐使用已内置的【内网穿透 (xfrpc)】针对特定业务端口映射，或通过 WireGuard VPN 拨入内网，杜绝管理面公网裸奔；
+     - 告知用户既可直接点击卡片上的绿色/灰色开关即时切换，也可吩咐助手（例如“帮我关闭外网SSH”）自动调用 manage_wan_access 切换；
 - 表格规范：在输出 L7 流量排行时使用 Markdown 表格列出协议名、中文说明、实时流速与累计流量。`;
     }
 
@@ -1037,7 +1045,13 @@ ${commonSafety}
 - 限速与防抢网：调用 propose_qos_limit 生成通俗易懂的限速卡片，由用户确认后生效。
 - 查看或修改 WiFi：调用 get_wifi_info / propose_wifi_config，贴心提示密码强度。
 - WiFi 信号优化：调用 diagnose_wifi_performance 诊断，并调用 propose_wifi_optimize 生成一键优化卡片。
-- 路由器安全体检与外网管理开关：调用 get_security_check 为路由器做全方位安全体检，或调用 manage_wan_access 方便地开关外网远程管理端口。
+- 路由器安全体检与外网管理开关 (get_security_check, manage_wan_access)：
+  1. 只要用户说“安全检查”、“做个体检”、“查查漏洞”或问路由器安不安全，【必须自主调用 get_security_check】！严禁只测网络通不通；
+  2. 【重点用大白话提醒外网管理端口】：
+     - 严重危险：告诉用户这相当于“家里的防盗门直接朝向公网大马路开着”，外面的黑客扫描器会不断尝试撞门；
+     - 什么时候开：出门在外确实需要临时远程管理路由器时才开（建议只开 HTTPS 网页）；
+     - 什么时候关：用完必须马上关；人在家里日常使用一定要关上；
+     - 怎么关：告诉用户可以直接点击屏幕卡片上的开关按钮关掉，或者直接对小茶说“关掉外网管理端口”；
 - 组网扩展 (Mesh)：调用 get_mesh_status / discover_mesh_nodes / propose_pair_mesh_node，帮助用户轻松扩展全屋 WiFi。`;
 }
 
@@ -1046,6 +1060,8 @@ function getRouterTools(mode) {
         return routerTools;
     }
     const noviceAllowedTools = new Set([
+        'get_security_check',
+        'manage_wan_access',
         'get_router_summary',
         'list_clients',
         'get_services_status',
@@ -2812,9 +2828,15 @@ return view.extend({
                 E('span', { 'style': 'font-size: 11px; color: var(--cw-text-muted);' }, '点击按钮即时开关')
             ]);
 
-            const wanTip = E('div', { 'style': 'font-size: 11px; color: var(--cw-text-muted); margin-bottom: 10px; line-height: 1.4;' },
-                '💡 说明：WAN 口暴露 SSH/Web 是为了远程管理便利特意开放。关闭时仅限局域网访问，开启时放行外网访问。'
-            );
+            const wanTip = E('div', {
+                'style': 'background: rgba(220, 38, 38, 0.06); border: 1px solid rgba(220, 38, 38, 0.2); border-radius: 6px; padding: 8px 10px; margin-bottom: 10px; font-size: 11px; line-height: 1.5; color: var(--cw-text-sub);'
+            }, [
+                E('div', { 'style': 'font-weight: 700; color: #dc2626; margin-bottom: 4px;' }, '⚠️ 严重安全提醒与外网端口开关指南：'),
+                E('div', {}, '• 严重隐患：直接对外网开放 SSH(22)、HTTP(80)、HTTPS(443) 极易招致公网僵尸网络自动化扫描与密码爆破！'),
+                E('div', {}, '• 什么时候开启：仅在出门在外、紧急需要远程排障且无 VPN 环境时【临时开启】（建议仅开 HTTPS 443，SSH 仅限密钥登录）。'),
+                E('div', {}, '• 什么时候关闭：远程操作完毕后应【立即关闭】！日常居家使用务必保持关闭状态，实现公网零暴露。'),
+                E('div', {}, '• 推荐替代方案：日常远程管理建议使用已内置的【内网穿透 (xfrpc)】或【WireGuard VPN】，杜绝管理面公网裸奔。')
+            ]);
 
             const wanBtnsContainer = E('div', { 'style': 'display: flex; flex-wrap: wrap; gap: 10px;' });
 
@@ -2960,9 +2982,12 @@ return view.extend({
                 E('span', { 'style': 'font-size: 11px; color: #0284c7; font-weight: 600;' }, '远程管理策略')
             ]);
 
-            const desc = E('div', { 'style': 'font-size: 12px; color: var(--cw-text-sub); margin-bottom: 12px; line-height: 1.5;' },
-                '说明：放行端口允许从上级网络或外网直接访问路由器管理控制台。此功能方便远程运维管理，请根据安全需求灵活开启或关闭：'
-            );
+            const desc = E('div', { 'style': 'background: rgba(2, 132, 199, 0.06); border: 1px solid rgba(2, 132, 199, 0.2); border-radius: 6px; padding: 8px 10px; margin-bottom: 12px; font-size: 11px; line-height: 1.5; color: var(--cw-text-sub);' }, [
+                E('div', { 'style': 'font-weight: 700; color: #0284c7; margin-bottom: 2px;' }, '💡 远程管理端口开关与开启时机指引：'),
+                E('div', {}, '• 安全说明：直接对公网放行管理端口是严重安全风险，仅为了方便管理特意提供此开关。'),
+                E('div', {}, '• 开启时机：仅出门在外临时需要远程紧急维护且无 VPN 时开启（建议仅开 HTTPS 443，SSH 仅限密钥登录）。'),
+                E('div', {}, '• 关闭时机：远程维护完毕后应【立即关闭】；日常居家使用务必关闭，杜绝公网扫描。')
+            ]);
 
             const btnsContainer = E('div', { 'style': 'display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 14px;' });
 
