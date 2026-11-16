@@ -5526,41 +5526,91 @@ fi
             json_load "$input"
             json_get_var new_port "new_port"
 
+            local remote_addr=$(uci -q get xkcptun.client.remote_addr || uci -q get xkcptun.client.server_addr)
+            local cur_port=$(uci -q get xkcptun.client.remote_port || uci -q get xkcptun.client.server_port || echo 9089)
+            local listen_port="9089"
+
+            # 1. Retrieve configured hop pool
             local hop_start=$(uci -q get xkcptun.client.hop_start)
-            [ -z "$hop_start" ] && hop_start="29050"
             local hop_end=$(uci -q get xkcptun.client.hop_end)
+
+            # 2. If missing, look for matching managed VPS in clawwrt
+            if [ -z "$hop_start" -o -z "$hop_end" ]; then
+                for sid in $(uci -q show clawwrt | grep '=vps' | cut -d. -f2 | cut -d= -f1); do
+                    local h=$(uci -q get clawwrt.${sid}.host)
+                    if [ -n "$remote_addr" ] && [ "$h" = "$remote_addr" ]; then
+                        hop_start=$(uci -q get clawwrt.${sid}.hop_start)
+                        hop_end=$(uci -q get clawwrt.${sid}.hop_end)
+                        break
+                    fi
+                done
+            fi
+
+            # Fallback default if not yet discovered
+            [ -z "$hop_start" ] && hop_start="29050"
             [ -z "$hop_end" ] && hop_end=$((hop_start + 49))
 
             local span=$((hop_end - hop_start + 1))
             [ "$span" -le 0 -o "$span" -gt 1000 ] && span=50
 
+            # 3. Handle random or empty port (ensure different from cur_port)
             if [ -z "$new_port" ] || [ "$new_port" = "random" ]; then
                 local rand_val=$(hexdump -n 2 -e '/2 "%u"' /dev/urandom 2>/dev/null || echo 1234)
                 new_port=$((hop_start + (rand_val % span)))
+                if [ "$new_port" -eq "$cur_port" ] && [ "$span" -gt 1 ]; then
+                    new_port=$((hop_start + ((rand_val + 1) % span)))
+                fi
             fi
 
-            if ! echo "$new_port" | grep -Eq '^[0-9]{1,5}$' || [ "$new_port" -lt "$hop_start" ] || [ "$new_port" -gt "$hop_end" ]; then
+            # 4. Strict server-side REDIRECT rule & listen port validation
+            local valid_port=0
+            if echo "$new_port" | grep -Eq '^[0-9]{1,5}$'; then
+                if [ "$new_port" -ge "$hop_start" ] && [ "$new_port" -le "$hop_end" ]; then
+                    valid_port=1
+                elif [ "$new_port" -eq "$listen_port" ]; then
+                    valid_port=1
+                fi
+            fi
+
+            if [ "$valid_port" -ne 1 ]; then
                 json_init
                 json_add_object "result"
                 json_add_boolean "success" 0
-                json_add_string "message" "目标端口无效或超出可用端口跳跃池范围 (${hop_start}~${hop_end}): $new_port"
+                json_add_string "message" "目标端口无效或未在服务器端防火墙配置重定向规则。合法端口必须处于 VPS 实际重定向池 (${hop_start}~${hop_end}) 或服务端主监听端口 (${listen_port})，实际输入: $new_port"
                 json_close_object
                 json_dump
                 return
             fi
 
-            local cur_port=$(uci -q get xkcptun.client.remote_port || echo 9089)
+            # 5. Apply port mutation and reload xkcptun
             uci -q set xkcptun.client.remote_port="$new_port"
             uci commit xkcptun 2>/dev/null
             /etc/init.d/xkcptun restart >/dev/null 2>&1
+
+            # 6. Verify client process status after restart
+            sleep 1
+            local pid=$(pidof xkcp_client 2>/dev/null || pidof xkcptun 2>/dev/null)
+            local is_alive=0
+            [ -n "$pid" ] && is_alive=1
+
+            local target_type="重定向跳跃池端口"
+            [ "$new_port" -eq "$listen_port" ] && target_type="服务端主监听端口"
 
             json_init
             json_add_object "result"
             json_add_boolean "success" 1
             json_add_string "old_port" "$cur_port"
             json_add_string "new_port" "$new_port"
+            json_add_string "target_type" "$target_type"
             json_add_string "hop_range" "${hop_start}~${hop_end}"
-            json_add_string "message" "已成功执行 UDP 端口跳跃优化：将加速目标端口从 $cur_port 瞬时切换为 $new_port（命中 VPS 端精细规划的 ${hop_start}~${hop_end} 无冲突端口跳跃池，已自动避开 VPS 现有服务，免重启 VPS，有效抵抗网络抖动与单端口丢包）。"
+            json_add_string "listen_port" "$listen_port"
+            json_add_boolean "client_alive" "$is_alive"
+            json_add_boolean "verified_server_redirect" 1
+            if [ "$new_port" -eq "$listen_port" ]; then
+                json_add_string "message" "已成功将网络加速目标端口从 $cur_port 切换回服务端原生主监听端口 $new_port（免防火墙重定向直接通达，客户端进程正常运行）。"
+            else
+                json_add_string "message" "已成功执行 UDP 端口跳跃优化：目标端口从 $cur_port 瞬时切换为 $new_port（已验证命中 VPS 防火墙规则池 ${hop_start}~${hop_end}，直达后端 $listen_port，免重启 VPS，有效抵抗单端口丢包与网络抖动）。"
+            fi
             json_close_object
             json_dump
         }

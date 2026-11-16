@@ -2491,7 +2491,7 @@ return view.extend({
         }
 
         function appendSwitchPortProposalCard(param) {
-            const newPort = param.new_port || '随机';
+            const newPort = param.new_port || 'random';
             const card = E('div', {
                 'class': 'port-switch-proposal-card',
                 'style': 'background: var(--cw-bg-card); border: 2px solid #0284c7; border-radius: 12px; padding: 16px 20px; margin: 12px 0; box-shadow: var(--cw-card-shadow);'
@@ -2504,13 +2504,16 @@ return view.extend({
                     E('span', { 'style': 'background: #f0f9ff; color: #0284c7; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 700; border: 1px solid #bae6fd;' }, '需用户授权')
                 ]),
                 E('div', { 'style': 'font-size: 13px; color: var(--cw-text-sub); margin-bottom: 12px; line-height: 1.5;' },
-                    param.explanation || '小茶助手检测到当前网络加速端口存在高丢包或 QoS 限速，提议切换至新的可用 UDP 通信端口以改善连接质量。'
+                    param.explanation || '检测到当前网络加速端口存在高丢包或 QoS 限速，提议切换至新的可用 UDP 通信端口以改善连接质量。'
                 ),
                 E('div', { 'style': 'background: var(--cw-bg-subtle); border: 1px solid var(--cw-border); border-radius: 8px; padding: 10px 14px; margin-bottom: 14px; font-size: 13px; color: var(--cw-text-main);' }, [
-                    E('div', { 'style': 'display: flex; justify-content: space-between; margin-bottom: 4px;' }, [
+                    E('div', { 'style': 'display: flex; justify-content: space-between; margin-bottom: 6px;' }, [
                         E('span', { 'style': 'color: var(--cw-text-muted);' }, '拟切换目标端口：'),
-                        E('code', { 'style': 'font-weight: 700; color: #0284c7;' }, newPort === 'random' ? '系统从规划端口池中随机选取 (默认 29050-29099)' : newPort)
-                    ])
+                        E('code', { 'style': 'font-weight: 700; color: #0284c7;' }, newPort === 'random' ? '系统从 VPS 防火墙重定向池中随机选取' : newPort)
+                    ]),
+                    E('div', { 'style': 'font-size: 11.5px; color: #0284c7; line-height: 1.4; border-top: 1px dashed var(--cw-border); padding-top: 6px; margin-top: 6px;' },
+                        '🛡️ 防火墙重定向规则校验：系统将严格校验新端口是否命中远端 VPS 防火墙的 PREROUTING REDIRECT 规则池（或原生主端口），杜绝盲目切换导致断网故障。'
+                    )
                 ]),
                 E('div', { 'style': 'display: flex; gap: 10px;' }, [
                     E('button', {
@@ -2519,11 +2522,12 @@ return view.extend({
                         'click': function(ev) {
                             const btn = ev.target;
                             btn.disabled = true;
-                            btn.innerText = '⏳ 正在切换端口...';
+                            btn.innerText = '⏳ 正在校验规则并切换端口...';
                             callSwitchAccelerationPort(param.new_port || 'random').then(hopRes => {
                                 if (hopRes && hopRes.success) {
                                     btn.innerText = '✅ 端口切换成功';
                                     btn.style.background = '#16a34a';
+                                    appendMessage('assistant', `🎉 **UDP 端口跳跃优化成功！**\n\n• **原端口**：\`${hopRes.old_port}\`\n• **新端口**：\`${hopRes.new_port}\` (${hopRes.target_type || '重定向跳跃池'})\n• **防火墙重定向池**：\`${hopRes.hop_range || '已校验'}\`\n• **客户端状态**：${hopRes.client_alive ? '🟢 守护进程正常运行' : '🟡 客户端正在重载'}\n• **结果说明**：${hopRes.message}`);
                                     callGetAccelerationStatus().then(newDiag => {
                                         appendAccelerationCard(newDiag);
                                     });

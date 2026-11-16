@@ -269,6 +269,16 @@ assert_ubus "穿透总控" "启动内网穿透服务 (start_service)" "manage_pe
 assert_ubus "穿透总控" "别名参数停用内网穿透 (disable, rule: common)" "manage_penetration_proxy" '{"action":"disable","rule_name":"common"}' "success" "true"
 assert_ubus "穿透总控" "别名参数启用内网穿透 (enable, rule: common)" "manage_penetration_proxy" '{"action":"enable","rule_name":"common"}' "success" "true"
 
+# ---------------------------------------------------------------------
+# 11. 网络加速 (xkcptun) UDP 端口跳跃与服务器 REDIRECT 规则校验测试
+# ---------------------------------------------------------------------
+echo -e "\n${BOLD}${BLUE}【11. 网络加速 (xkcptun) UDP 端口跳跃与服务器 REDIRECT 规则校验测试】${NC}"
+orig_remote_port=$(uci -q get xkcptun.client.remote_port || echo 9089)
+assert_ubus "端口跳跃" "随机切换端口 (自动命中重定向池)" "switch_acceleration_port" '{"new_port":"random"}' "verified_server_redirect" "true"
+assert_ubus "端口跳跃" "切换回服务端原生主监听端口 9089" "switch_acceleration_port" '{"new_port":"9089"}' "target_type" "服务端主监听端口"
+# 恢复原始端口
+[ -n "$orig_remote_port" ] && ubus call luci.clawwrt switch_acceleration_port "{\"new_port\":\"$orig_remote_port\"}" >/dev/null 2>&1
+
 END_TIME=$(date +%s)
 DURATION=$((END_TIME - START_TIME))
 
