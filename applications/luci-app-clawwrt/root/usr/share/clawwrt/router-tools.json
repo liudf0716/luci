@@ -374,7 +374,7 @@
     "type": "function",
     "function": {
       "name": "manage_xdns_domain",
-      "description": "管理内核 eBPF 智能分流（xdns）：查看所有加速域名及内核激活状态（action: \"list\"）；新增分流加速域名（action: \"add\"）；删除分流加速域名（action: \"remove\"）；添加静态重定向 IPv4（action: \"add_ip\"，支持指定 IP 与可选 TTL）；移除静态重定向 IPv4（action: \"remove_ip\"）；清空内核动态分流 IP 缓存（action: \"clear_ips\"）；从持久化文件全量重载规则至内核并重置缓存（action: \"reload\"）；查看当前内核动态劫持加速 IP 表及过期时间（action: \"list_ips\"）；查看当前活跃透明代理 TCP 会话（action: \"list_sessions\"）；获取实时拦截与分流统计数据（action: \"stats\"）。注意：查询类操作（list/list_ips/list_sessions/stats）直接执行返回，配置变更类操作（add/remove/add_ip/remove_ip/clear_ips/reload）将渲染可视化卡片供用户授权确认。",
+      "description": "管理内核 eBPF 智能分流（xdns）：查看所有加速域名及内核激活状态（action: \"list\"）；新增分流加速域名（action: \"add\"）；删除分流加速域名（action: \"remove\"）；添加静态重定向 IPv4（action: \"add_ip\"，支持指定 IP 与可选 TTL）；移除静态重定向 IPv4（action: \"remove_ip\"）；清空内核动态分流 IP 缓存（action: \"clear_ips\"）；从持久化文件全量重载规则至内核并重置缓存（action: \"reload\"）；查看当前内核动态劫持加速 IP 表、活跃连接数与流量统计（action: \"list_ips\"）；查看当前活跃透明代理 TCP 会话（action: \"list_sessions\"）；获取实时拦截与分流统计数据（action: \"stats\"）。注意：查询类操作（list/list_ips/list_sessions/stats）直接执行返回，配置变更类操作（add/remove/add_ip/remove_ip/clear_ips/reload）将渲染可视化卡片供用户授权确认。",
       "parameters": {
         "type": "object",
         "properties": {
@@ -392,7 +392,7 @@
               "list_sessions",
               "stats"
             ],
-            "description": "操作类型：list(查看所有加速域名及内核状态), add(添加域名), remove(删除域名), add_ip(添加静态重定向IP), remove_ip(移除静态重定向IP), clear_ips(清空动态分流IP缓存), reload(重载分流规则并清缓存), list_ips(查看动态劫持IP列表), list_sessions(查看活跃透明代理TCP会话), stats(拦截统计)"
+            "description": "操作类型：list(查看所有加速域名及内核状态), add(添加域名), remove(删除域名), add_ip(添加静态重定向IP), remove_ip(移除静态重定向IP), clear_ips(清空动态分流IP缓存), reload(重载分流规则并清缓存), list_ips(查看动态劫持IP列表及连接数、数据包和字节流量), list_sessions(查看活跃透明代理TCP会话), stats(拦截统计)"
           },
           "domain": {
             "type": "string",
@@ -872,6 +872,33 @@
   {
     "type": "function",
     "function": {
+      "name": "propose_unpair_mesh_node",
+      "description": "向用户提议从全屋 802.11kvrs Mesh 集群拓扑中解绑并移除指定的子路由节点。前端将渲染防呆确认卡片供用户点击确认，用户确认后生效，不可私自直接修改",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "待解绑子路由的配置节点标识符（如 node_192_168_8_2，可通过 get_mesh_status 获取）或节点 IP 地址"
+          },
+          "node_name": {
+            "type": "string",
+            "description": "子路由节点的显示名称（如 \"卧室分身路由\"），便于在确认卡片中清晰展示"
+          },
+          "explanation": {
+            "type": "string",
+            "description": "向用户说明解绑原因及影响"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
       "name": "get_qos_status",
       "description": "查询路由器当前基于内核 eBPF 的实时设备流量与智能流控状态：包括各连接设备的实时下行/上行速率（以 Mbps 及 MB/s 呈现）、MAC 地址、主机名、累计上下行流量、当前限速规则（Mbps）及定时限速时段，以及 eBPF 引擎运行状态、FastPath 硬件加速与 xDPI L7 识别状态",
       "parameters": {
@@ -1036,6 +1063,33 @@
       "parameters": {
         "type": "object",
         "properties": {}
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "test_vps_ssh",
+      "description": "测试路由器到指定 Linux VPS 服务器的免密 SSH 连通性、公钥握手状态及管理员 sudo 权限。该操作直接探测网络与鉴权状态，直接返回结果，不会修改任何配置",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "vps_ip": {
+            "type": "string",
+            "description": "VPS 的公网 IP 地址（如 172.96.252.145 或域名）"
+          },
+          "vps_port": {
+            "type": "integer",
+            "description": "VPS 的 SSH 端口号，默认 22（若通过 get_vps_servers 查询到了非标准端口如 27334，必须传入对应端口）"
+          },
+          "vps_user": {
+            "type": "string",
+            "description": "登录 VPS 的用户名，默认 root"
+          }
+        },
+        "required": [
+          "vps_ip"
+        ]
       }
     }
   },

@@ -564,14 +564,14 @@ const routerTools = [
         type: 'function',
         function: {
             name: 'manage_xdns_domain',
-            description: '管理内核 eBPF 智能分流（xdns）：查看所有加速域名及内核激活状态（action: "list"）；新增分流加速域名（action: "add"）；删除分流加速域名（action: "remove"）；添加静态重定向 IPv4（action: "add_ip"，支持指定 IP 与可选 TTL）；移除静态重定向 IPv4（action: "remove_ip"）；清空内核动态分流 IP 缓存（action: "clear_ips"）；从持久化文件全量重载规则至内核并重置缓存（action: "reload"）；查看当前内核动态劫持加速 IP 表及过期时间（action: "list_ips"）；查看当前活跃透明代理 TCP 会话（action: "list_sessions"）；获取实时拦截与分流统计数据（action: "stats"）。注意：查询类操作（list/list_ips/list_sessions/stats）直接执行返回，配置变更类操作（add/remove/add_ip/remove_ip/clear_ips/reload）将渲染可视化卡片供用户授权确认。',
+            description: '管理内核 eBPF 智能分流（xdns）：查看所有加速域名及内核激活状态（action: "list"）；新增分流加速域名（action: "add"）；删除分流加速域名（action: "remove"）；添加静态重定向 IPv4（action: "add_ip"，支持指定 IP 与可选 TTL）；移除静态重定向 IPv4（action: "remove_ip"）；清空内核动态分流 IP 缓存（action: "clear_ips"）；从持久化文件全量重载规则至内核并重置缓存（action: "reload"）；查看当前内核动态劫持加速 IP 表、过期时间、连接数、报文数与流量统计（action: "list_ips"）；查看当前活跃透明代理 TCP 会话（action: "list_sessions"）；获取实时拦截与分流统计数据（action: "stats"）。注意：查询类操作（list/list_ips/list_sessions/stats）直接执行返回，配置变更类操作（add/remove/add_ip/remove_ip/clear_ips/reload）将渲染可视化卡片供用户授权确认。',
             parameters: {
                 type: 'object',
                 properties: {
                     action: { 
                         type: 'string', 
                         enum: ['list', 'add', 'remove', 'add_ip', 'remove_ip', 'clear_ips', 'reload', 'list_ips', 'list_sessions', 'stats'], 
-                        description: '操作类型：list(查看所有加速域名及内核状态), add(添加域名), remove(删除域名), add_ip(添加静态重定向IP), remove_ip(移除静态重定向IP), clear_ips(清空动态分流IP缓存), reload(重载分流规则并清缓存), list_ips(查看动态劫持IP列表), list_sessions(查看活跃透明代理TCP会话), stats(拦截统计)' 
+                        description: '操作类型：list(查看所有加速域名及内核状态), add(添加域名), remove(删除域名), add_ip(添加静态重定向IP), remove_ip(移除静态重定向IP), clear_ips(清空动态分流IP缓存), reload(重载分流规则并清缓存), list_ips(查看动态劫持IP列表及连接数/报文数/流量统计), list_sessions(查看活跃透明代理TCP会话), stats(拦截统计)' 
                     },
                     domain: { type: 'string', description: '要添加或删除的域名，如 claude.ai 或 gemini.google.com（add 或 remove 时必填）' },
                     ip: { type: 'string', description: '要添加或移除的静态重定向 IPv4 地址，例如 8.8.8.8 或 104.21.5.12（action 为 add_ip 或 remove_ip 时必填）' },
@@ -794,6 +794,22 @@ const routerTools = [
     {
         type: 'function',
         function: {
+            name: 'propose_unpair_mesh_node',
+            description: '向用户提议解绑/移除指定的 Mesh 子节点（解除互信管理与拓扑记录）。前端渲染防呆卡片供用户点击确认',
+            parameters: {
+                type: 'object',
+                properties: {
+                    id: { type: 'string', description: '要解绑的 Mesh 子节点 ID（如 node_192_168_8_2）或其局域网 IP（如 192.168.8.2）' },
+                    node_name: { type: 'string', description: '子节点的中文名称或备注（如 \'卧室分身路由\'）' },
+                    explanation: { type: 'string', description: '向用户说明解绑的原因与影响（解绑后将从主路由 Mesh 拓扑中移除）' }
+                },
+                required: ['id']
+            }
+        }
+    },
+    {
+        type: 'function',
+        function: {
             name: 'get_qos_status',
             description: '查询路由器当前基于内核 eBPF 的实时设备流量与智能流控状态：包括各连接设备的实时下行/上行速率（以 Mbps 及 MB/s 呈现）、MAC 地址、主机名、累计上下行流量、当前限速规则（Mbps）及定时限速时段，以及 eBPF 引擎运行状态、FastPath 硬件加速与 xDPI L7 识别状态',
             parameters: { type: 'object', properties: {} }
@@ -888,6 +904,22 @@ const routerTools = [
             name: 'get_vps_servers',
             description: '查询路由器受信任服务器池中所有已配置的远程 Linux 服务器 (VPS) 列表。返回每台服务器的别名 (name)、真实 IP 地址 (host)、已配置的 SSH 端口 (port，如 27334 等非默认 22 端口)、登录用户名 (user) 以及当前各项服务状态。重要：当用户提到在某台服务器（如 "bwg"）上操作、或者需要获取服务器配置时，必须先调用此接口查阅真实配置！',
             parameters: { type: 'object', properties: {} }
+        }
+    },
+    {
+        type: 'function',
+        function: {
+            name: 'test_vps_ssh',
+            description: '测试路由器到指定远程 VPS 的 SSH 免密互信连通性与管理员权限。若用户指定了服务器别名（如 bwg），应先通过 get_vps_servers 获取其真实 IP (host) 和配置端口 (port)。直接执行返回连通状态与详细诊断信息',
+            parameters: {
+                type: 'object',
+                properties: {
+                    vps_ip: { type: 'string', description: '云服务器 (VPS) 的公网 IP 地址' },
+                    vps_port: { type: 'integer', description: 'VPS 的 SSH 端口，默认为 22（若为已配置服务器，使用 get_vps_servers 中的真实端口如 27334）' },
+                    vps_user: { type: 'string', description: 'VPS 登录用户名，默认为 root' }
+                },
+                required: ['vps_ip']
+            }
         }
     },
     {
@@ -1069,7 +1101,7 @@ ${commonSafety}
 - 限速与防抢网：调用 propose_qos_limit 生成通俗易懂的限速卡片，由用户确认后生效。
 - 查看或修改 WiFi：调用 get_wifi_info / propose_wifi_config，贴心提示密码强度。
 - WiFi 信号优化：调用 diagnose_wifi_performance 诊断，并调用 propose_wifi_optimize 生成一键优化卡片。
-- 【网络加速与智能分流配置新手全流程指引 (propose_vps_xkcptun, get_router_ssh_key, get_vps_servers, manage_xdns_domain, get_acceleration_status)】:
+- 【网络加速与智能分流配置新手全流程指引 (propose_vps_xkcptun, get_router_ssh_key, get_vps_servers, test_vps_ssh, manage_xdns_domain, get_acceleration_status)】:
   1. 【生活化大白话比喻】：
      • 把网络加速与智能分流比作“专为重要海外网站或办公工具开设的高铁直达专线”；
      • 国内常规网站（微信、抖音、淘宝等）依然走原本的普通大马路直连，速度不受任何影响；
@@ -1078,7 +1110,7 @@ ${commonSafety}
      • 只要用户问“怎么配置网络加速”、“教我一步步配置上网加速/智能分流”、“怎么弄海外加速”、“如何免密授权 VPS”、“怎么给服务器授权”：
        【必须自主调用 propose_vps_xkcptun 或 get_router_ssh_key 生成可视化卡片】，并用通俗大白话逐步引导：
        - 第 1 步：准备一台海外 Linux 服务器 (Ubuntu/Debian)，点击卡片上的【📋 复制授权命令】，在服务器终端粘贴回车一次（这相当于给小茶助手发放一把安全的数字门禁钥匙，小茶才能帮您全自动装好加速软件，中途无需输密码）；
-       - 第 2 步：在屏幕卡片上点击【🔍 测试免密连接】按钮，绿色打钩代表钥匙匹配成功；
+       - 第 2 步：在屏幕卡片上点击【🔍 测试免密连接】按钮（或助手自主调用 test_vps_ssh 测试连通性），绿色打钩代表钥匙匹配成功；
        - 第 3 步：点击【🚀 一键安装部署 (deb)】，小茶助手几秒内自动在服务器装好加速并连通路由器！
   3. 【怎么添加想加速的网站】：
      • 告诉用户如果想加速某个网站（如“帮我加速 github.com”），直接告诉小茶，小茶会自动调用 manage_xdns_domain 添加，秒级生效；
@@ -1096,7 +1128,7 @@ ${commonSafety}
   - 查看状态：调用 get_penetration_status 查看当前内网穿透是否连接上了远程服务器；
   - 停掉/关闭穿透：当用户想停用、关闭内网穿透时，【必须调用 manage_penetration_proxy(action: "stop_service")】生成确认卡片，由用户确认后停掉穿透服务并切断外网连接；
   - 开启/启动穿透：当用户想开启、恢复内网穿透时，【必须调用 manage_penetration_proxy(action: "start_service")】生成确认卡片；
-- 组网扩展 (Mesh)：调用 get_mesh_status / discover_mesh_nodes / propose_pair_mesh_node，帮助用户轻松扩展全屋 WiFi。`;
+- 组网扩展 (Mesh)：调用 get_mesh_status / discover_mesh_nodes / propose_pair_mesh_node / propose_unpair_mesh_node，帮助用户轻松扩展与管理全屋 WiFi。`;
 }
 
 function getRouterTools(mode) {
@@ -1125,11 +1157,13 @@ function getRouterTools(mode) {
         'get_mesh_status',
         'discover_mesh_nodes',
         'propose_pair_mesh_node',
+        'propose_unpair_mesh_node',
         'get_acceleration_status',
         'fix_acceleration_pipeline',
         'switch_acceleration_port',
         'get_router_ssh_key',
         'get_vps_servers',
+        'test_vps_ssh',
         'propose_vps_xkcptun',
         'manage_xdns_domain'
     ]);
@@ -4165,6 +4199,88 @@ return view.extend({
             chatWindow.scrollTop = chatWindow.scrollHeight;
         }
 
+        function appendMeshUnpairNodeCard(param) {
+            const rawId = String(param.id || '').trim();
+            const isValidId = (/^([0-9]{1,3}\.){3}[0-9]{1,3}$/.test(rawId) || /^node_[A-Za-z0-9_]+$/.test(rawId));
+            const nodeId = isValidId ? rawId : '';
+            const nodeName = param.node_name || 'Mesh 子节点';
+            const explanation = !isValidId
+                ? `❌ 提议解绑的节点标识或 IP 格式无效（"${rawId}"），必须为合法的 IPv4 地址或形如 node_<name> 的标识符。`
+                : (param.explanation || `即将解绑并移除 Mesh 子节点【${nodeName}】(${nodeId})。解绑后，该节点将从当前主路由的 Mesh 拓扑与受信任列表中移除。`);
+
+            const card = E('div', {
+                'class': 'mesh-unpair-card',
+                'style': 'background: var(--cw-bg-card); border: 2px solid #ef4444; border-radius: 12px; padding: 16px 20px; margin: 12px 0; box-shadow: var(--cw-card-shadow);'
+            }, [
+                E('div', { 'style': 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid var(--cw-border); padding-bottom: 8px;' }, [
+                    E('div', { 'style': 'font-weight: 700; font-size: 15px; color: #ef4444; display: flex; align-items: center; gap: 8px;' }, [
+                        E('span', { 'style': 'font-size: 18px;' }, '✂️'),
+                        E('span', {}, 'Mesh 子节点解绑确认')
+                    ]),
+                    E('span', { 'style': 'background: rgba(239,68,68,0.15); color: #ef4444; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 600;' }, '节点解绑')
+                ]),
+                E('div', { 'style': 'font-size: 13px; color: var(--cw-text-sub); margin-bottom: 12px; line-height: 1.5;' }, explanation),
+                
+                E('div', { 'style': 'background: var(--cw-bg-secondary); border-radius: 8px; padding: 10px 14px; margin-bottom: 14px; font-size: 13px; color: var(--cw-text-main);' }, [
+                    E('div', { 'style': 'display: flex; justify-content: space-between; margin-bottom: 6px;' }, [
+                        E('span', { 'style': 'color: var(--cw-text-sub);' }, '目标节点名称:'),
+                        E('span', { 'style': 'font-weight: 600;' }, nodeName)
+                    ]),
+                    E('div', { 'style': 'display: flex; justify-content: space-between;' }, [
+                        E('span', { 'style': 'color: var(--cw-text-sub);' }, '节点标识 / IP:'),
+                        E('code', { 'style': 'background: var(--cw-input-bg); padding: 2px 6px; border-radius: 4px; font-size: 12px;' }, nodeId || rawId || '未指定')
+                    ])
+                ]),
+                
+                E('div', { 'style': 'display: flex; gap: 10px; justify-content: flex-end;' }, [
+                    E('button', {
+                        'class': 'btn cbi-button cbi-button-apply',
+                        'style': isValidId
+                            ? 'background: #dc2626; color: #fff; border: none; padding: 8px 20px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;'
+                            : 'background: #9ca3af; color: #fff; border: none; padding: 8px 20px; border-radius: 6px; cursor: not-allowed; font-size: 13px; font-weight: 600;',
+                        'disabled': !isValidId,
+                        'click': function(ev) {
+                            if (!nodeId || !isValidId) {
+                                alert('节点标识或 IP 格式无效，无法执行解绑！');
+                                return;
+                            }
+                            const btn = ev.target;
+                            btn.disabled = true;
+                            btn.innerText = '⏳ 正在解绑节点...';
+                            
+                            callUnpairMeshNode(nodeId).then(res => {
+                                if (res && res.success) {
+                                    btn.innerText = '✅ 解绑成功';
+                                    btn.style.background = '#16a34a';
+                                    card.style.borderColor = '#16a34a';
+                                    appendMessage('assistant', `🎉 **Mesh 子节点【${nodeName}】(${nodeId}) 已成功解绑！**\n\n已从主路由受信任节点与拓扑配置中移除。如需重新配对，请将子路由接入有线网络后重新扫描配对。`);
+                                } else {
+                                    btn.disabled = false;
+                                    btn.innerText = '❌ 解绑失败: ' + (res && res.message ? res.message : '未知错误');
+                                    btn.style.background = '#dc2626';
+                                }
+                            }).catch(err => {
+                                btn.disabled = false;
+                                btn.innerText = '❌ 解绑失败';
+                                appendMessage('assistant', `❌ 解绑 Mesh 子节点失败: ${err.message}`);
+                            });
+                        }
+                    }, '🗑️ 确认解绑该节点'),
+                    E('button', {
+                        'class': 'btn cbi-button cbi-button-reset',
+                        'style': 'background: var(--cw-bg-secondary); color: var(--cw-text-main); border: 1px solid var(--cw-border); padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 13px;',
+                        'click': function() {
+                            card.remove();
+                            appendMessage('assistant', `已取消解绑 Mesh 子节点【${nodeName}】。`);
+                        }
+                    }, '❌ 取消')
+                ])
+            ]);
+            
+            chatWindow.appendChild(card);
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+
         function appendQosCard(param) {
             const targetIp = param.target || '';
             const isAll = (targetIp === 'all');
@@ -6278,6 +6394,9 @@ return view.extend({
                             } else if (fnName === 'propose_pair_mesh_node') {
                                 appendMeshPairNodeCard(fnArgs);
                                 toolResult = { status: 'proposed_to_user', message: 'Mesh node pairing authorization card rendered in UI. Waiting for user authorization.' };
+                            } else if (fnName === 'propose_unpair_mesh_node') {
+                                appendMeshUnpairNodeCard(fnArgs);
+                                toolResult = { status: 'proposed_to_user', message: 'Mesh node unpairing authorization card rendered in UI. Waiting for user authorization.' };
                             } else if (fnName === 'run_diagnostics') {
                                 toolResult = await callRunDiagnostics(fnArgs.action, fnArgs.target);
                             } else if (fnName === 'uci_read') {
@@ -6300,6 +6419,19 @@ return view.extend({
                                 appendSshAuthKeyCard(toolResult);
                             } else if (fnName === 'get_vps_servers') {
                                 toolResult = await callGetVpsServers();
+                            } else if (fnName === 'test_vps_ssh') {
+                                const vIp = String(fnArgs.vps_ip || '').trim();
+                                const vPort = parseInt(fnArgs.vps_port || 22, 10);
+                                const vUser = String(fnArgs.vps_user || 'root').trim();
+                                if (!/^[A-Za-z0-9][A-Za-z0-9.:_-]{0,253}$/.test(vIp)) {
+                                    toolResult = { connected: false, sudo_ok: false, message: 'VPS IP 地址格式无效' };
+                                } else if (isNaN(vPort) || vPort < 1 || vPort > 65535) {
+                                    toolResult = { connected: false, sudo_ok: false, message: 'VPS 端口无效 (必须为 1-65535)' };
+                                } else if (!/^[A-Za-z_][A-Za-z0-9_.-]{0,31}$/.test(vUser)) {
+                                    toolResult = { connected: false, sudo_ok: false, message: 'VPS 用户名格式无效' };
+                                } else {
+                                    toolResult = await callTestVpsSsh(vIp, vPort, vUser);
+                                }
                             } else if (fnName === 'propose_vps_penetration') {
                                 appendVpsPenetrationCard(fnArgs);
                                 toolResult = { status: 'proposed_to_user', message: 'VPS penetration deployment card rendered in UI. Awaiting user authorization and execution.' };

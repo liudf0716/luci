@@ -231,6 +231,7 @@ case "$1" in
         json_close_object
         json_add_object "unpair_mesh_node"
             json_add_string "id"
+            json_add_string "node_ip"
         json_close_object
         json_add_object "get_network_tune"
         json_close_object
@@ -1787,16 +1788,67 @@ case "$1" in
             read -r input
             json_load "$input"
             json_get_var id "id"
+            json_get_var node_ip "node_ip"
 
-            if [ -n "$id" ]; then
-                uci -q delete clawwrt."$id"
-                uci commit clawwrt
+            local target_id=""
+            if [ -n "$node_ip" ]; then
+                if ! is_ipv4 "$node_ip"; then
+                    json_init
+                    json_add_object "result"
+                    json_add_boolean "success" 0
+                    json_add_string "message" "节点 IP 地址格式无效"
+                    json_close_object
+                    json_dump
+                    return
+                fi
+                target_id="node_$(echo "$node_ip" | tr '.' '_')"
             fi
+
+            if [ -z "$target_id" ] && [ -n "$id" ]; then
+                if is_ipv4 "$id"; then
+                    target_id="node_$(echo "$id" | tr '.' '_')"
+                elif echo "$id" | grep -Eq '^node_[A-Za-z0-9_]+$'; then
+                    target_id="$id"
+                else
+                    json_init
+                    json_add_object "result"
+                    json_add_boolean "success" 0
+                    json_add_string "message" "节点标识或 IP 格式无效"
+                    json_close_object
+                    json_dump
+                    return
+                fi
+            fi
+
+            if [ -z "$target_id" ]; then
+                json_init
+                json_add_object "result"
+                json_add_boolean "success" 0
+                json_add_string "message" "缺少子路由节点标识 (id 或 node_ip)"
+                json_close_object
+                json_dump
+                return
+            fi
+
+            local sec_type
+            sec_type=$(uci -q get clawwrt."$target_id")
+            if [ "$sec_type" != "mesh_node" ]; then
+                json_init
+                json_add_object "result"
+                json_add_boolean "success" 0
+                json_add_string "message" "未找到指定的 Mesh 子路由节点 ($target_id)，可能已被移除"
+                json_close_object
+                json_dump
+                return
+            fi
+
+            uci -q delete clawwrt."$target_id"
+            uci commit clawwrt
 
             json_init
             json_add_object "result"
-            json_add_boolean "success" "1"
-            json_add_string "message" "子路由节点已成功从 Mesh 集群中移除"
+            json_add_boolean "success" 1
+            json_add_string "message" "子路由节点 ($target_id) 已成功从 Mesh 集群配置中解除绑定"
             json_close_object
             json_dump
         }
@@ -2721,14 +2773,35 @@ EOF
 
                     json_add_array "sample_ips"
                     if command -v /usr/bin/xdns-ctl >/dev/null 2>&1; then
-                        local ctl_ips=$(/usr/bin/xdns-ctl list-ips 2>/dev/null | grep -E '^[0-9]' | head -n 10)
-                        while read -r ipline; do
-                            [ -z "$ipline" ] && continue
-                            local ip_addr=$(echo "$ipline" | awk '{print $1}')
-                            local exp_time=$(echo "$ipline" | awk '{print $2}')
+                        local ctl_ips=$(/usr/bin/xdns-ctl list-ips 2>/dev/null | grep -E '([0-9]{1,3}\.){3}[0-9]{1,3}' | grep -v 'IP Address' | grep -v 'Total active' | head -n 10 || true)
+                        while read -r w d e c p b; do
+                            [ -z "$w" ] && continue
+                            local ip_addr="" exp_time="" site_name="" conns="0" pkts="0" bytes="0"
+                            if echo "$d" | grep -Eq '^([0-9]{1,3}\.){3}[0-9]{1,3}$'; then
+                                site_name="$w"
+                                ip_addr="$d"
+                                exp_time="$e"
+                                conns="$c"
+                                pkts="$p"
+                                bytes="$b"
+                            elif echo "$w" | grep -Eq '^([0-9]{1,3}\.){3}[0-9]{1,3}$'; then
+                                ip_addr="$w"
+                                exp_time="$d"
+                                conns="$e"
+                                pkts="$c"
+                                bytes="$p"
+                            fi
+                            [ -z "$ip_addr" ] && continue
+                            conns=$(echo "$conns" | tr -cd '0-9')
+                            pkts=$(echo "$pkts" | tr -cd '0-9')
+                            bytes=$(echo "$bytes" | tr -cd '0-9')
                             json_add_object ""
                             json_add_string "ip" "$ip_addr"
+                            json_add_string "website" "$site_name"
                             json_add_string "expires_in" "$exp_time"
+                            json_add_int "connections" "${conns:-0}"
+                            json_add_int "packets" "${pkts:-0}"
+                            json_add_int "bytes" "${bytes:-0}"
                             json_close_object
                         done <<EOF
 $ctl_ips
@@ -3861,6 +3934,8 @@ print(json.stringify(output))
                 json_init
                 json_add_object "result"
                 json_add_boolean "connected" 0
+                json_add_boolean "sudo_ok" 0
+                json_add_string "vps_user" "root"
                 json_add_string "message" "缺少 VPS IP 地址"
                 json_close_object
                 json_dump
@@ -3869,6 +3944,43 @@ print(json.stringify(output))
 
             vps_port="${vps_port:-22}"
             vps_user="${vps_user:-root}"
+
+            if ! is_host "$vps_ip"; then
+                json_init
+                json_add_object "result"
+                json_add_boolean "connected" 0
+                json_add_boolean "sudo_ok" 0
+                json_add_string "vps_user" "$vps_user"
+                json_add_string "message" "VPS 地址无效"
+                json_close_object
+                json_dump
+                return
+            fi
+
+            if ! is_port "$vps_port"; then
+                json_init
+                json_add_object "result"
+                json_add_boolean "connected" 0
+                json_add_boolean "sudo_ok" 0
+                json_add_string "vps_user" "$vps_user"
+                json_add_string "message" "SSH 端口无效"
+                json_close_object
+                json_dump
+                return
+            fi
+
+            if ! is_user "$vps_user"; then
+                json_init
+                json_add_object "result"
+                json_add_boolean "connected" 0
+                json_add_boolean "sudo_ok" 0
+                json_add_string "vps_user" "$vps_user"
+                json_add_string "message" "SSH 用户名无效"
+                json_close_object
+                json_dump
+                return
+            fi
+
             local key_file="/etc/clawwrt/id_dropbear"
 
             if [ ! -f "$key_file" ]; then
@@ -5912,22 +6024,32 @@ EOF
                         local ctl_ips=$(/usr/bin/xdns-ctl list-ips 2>/dev/null | grep -E '([0-9]{1,3}\.){3}[0-9]{1,3}' | grep -v 'IP Address' | grep -v 'Total active' || true)
                         while read -r w d e c p b; do
                             [ -z "$w" ] && continue
-                            local ip_addr=""
-                            local exp_time=""
-                            local site_name=""
+                            local ip_addr="" exp_time="" site_name="" conns="0" pkts="0" bytes="0"
                             if echo "$d" | grep -Eq '^([0-9]{1,3}\.){3}[0-9]{1,3}$'; then
                                 site_name="$w"
                                 ip_addr="$d"
                                 exp_time="$e"
+                                conns="$c"
+                                pkts="$p"
+                                bytes="$b"
                             elif echo "$w" | grep -Eq '^([0-9]{1,3}\.){3}[0-9]{1,3}$'; then
                                 ip_addr="$w"
                                 exp_time="$d"
+                                conns="$e"
+                                pkts="$c"
+                                bytes="$p"
                             fi
                             [ -z "$ip_addr" ] && continue
+                            conns=$(echo "$conns" | tr -cd '0-9')
+                            pkts=$(echo "$pkts" | tr -cd '0-9')
+                            bytes=$(echo "$bytes" | tr -cd '0-9')
                             json_add_object ""
                             json_add_string "ip" "$ip_addr"
                             json_add_string "website" "$site_name"
                             json_add_string "expires_in" "$exp_time"
+                            json_add_int "connections" "${conns:-0}"
+                            json_add_int "packets" "${pkts:-0}"
+                            json_add_int "bytes" "${bytes:-0}"
                             json_close_object
                         done <<EOF
 $ctl_ips
