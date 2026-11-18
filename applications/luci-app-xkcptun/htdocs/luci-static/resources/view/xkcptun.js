@@ -443,10 +443,19 @@ return view.extend({
 		s_status.load = function() { return Promise.resolve(); };
 		s_status.parse = function() { return Promise.resolve(); };
 		s_status.render = function() {
-			let statusDiv = E('div', { 'id': 'service_status', 'style': 'margin-top: 6px;' }, [
+			let statusDiv = E('div', { 'id': 'service_status', 'style': 'margin-top: 10px;' }, [
 				E('em', { 'class': 'spinning' }, _('Collecting status ...'))
 			]);
-			return Promise.resolve(E('div', { 'class': 'cbi-section' }, [ statusDiv ]));
+			return Promise.resolve(E('div', {
+				'class': 'cbi-section',
+				'data-tab': 'status',
+				'data-tab-title': _('Service Status')
+			}, [
+				E('div', { 'class': 'cbi-section-descr' },
+					_('Real-time connection telemetry, throughput metrics, and active accelerated sessions.')
+				),
+				statusDiv
+			]));
 		};
 
 		// ===== Tab 2: Client Global Default Settings =====
