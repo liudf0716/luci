@@ -250,30 +250,116 @@ return view.extend({
 			]);
 		}
 
-		// KPI Cards
-		var kpiRow = E('div', {
-			'style': 'display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 15px 0 25px 0;'
-		}, [
-			E('div', { 'class': 'cbi-value', 'style': 'background: var(--cbi-section-bg, #f8f9fa); border: 1px solid #ddd; border-radius: 8px; padding: 15px; text-align: center;' }, [
-				E('div', { 'style': 'font-size: 13px; color: #666; margin-bottom: 5px;' }, _('走加速通道的网站查询')),
-				E('div', { 'style': 'font-size: 26px; font-weight: bold; color: #28a745;' }, String(stats.dnsProxied))
-			]),
-			E('div', { 'class': 'cbi-value', 'style': 'background: var(--cbi-section-bg, #f8f9fa); border: 1px solid #ddd; border-radius: 8px; padding: 15px; text-align: center;' }, [
-				E('div', { 'style': 'font-size: 13px; color: #666; margin-bottom: 5px;' }, _('直接上网的网站查询')),
-				E('div', { 'style': 'font-size: 26px; font-weight: bold; color: #007bff;' }, String(stats.dnsPassed))
-			]),
-			E('div', { 'class': 'cbi-value', 'style': 'background: var(--cbi-section-bg, #f8f9fa); border: 1px solid #ddd; border-radius: 8px; padding: 15px; text-align: center;' }, [
-				E('div', { 'style': 'font-size: 13px; color: #666; margin-bottom: 5px;' }, _('正在加速的网站')),
-				E('div', { 'style': 'font-size: 26px; font-weight: bold; color: #fd7e14;' }, String(sites.length))
-			]),
-			E('div', { 'class': 'cbi-value', 'style': 'background: var(--cbi-section-bg, #f8f9fa); border: 1px solid #ddd; border-radius: 8px; padding: 15px; text-align: center;' }, [
-				E('div', { 'style': 'font-size: 13px; color: #666; margin-bottom: 5px;' }, _('加速通道流量')),
-				E('div', { 'style': 'font-size: 26px; font-weight: bold; color: #17a2b8;' }, formatBytes(stats.tcpBytes))
-			]),
-			E('div', { 'class': 'cbi-value', 'style': 'background: var(--cbi-section-bg, #f8f9fa); border: 1px solid #ddd; border-radius: 8px; padding: 15px; text-align: center;' }, [
-				E('div', { 'style': 'font-size: 13px; color: #666; margin-bottom: 5px;' }, _('分流名单中的网站')),
-				E('div', { 'style': 'font-size: 26px; font-weight: bold; color: #6f42c1;' }, String(domainsCount))
-			])
+		// Modern KPI Cards with Responsive Breakpoints
+		function createKpiCard(title, icon, value, color, subText, isHero) {
+			return E('div', {
+				'class': 'xdns-kpi-card' + (isHero ? ' hero' : '')
+			}, [
+				E('div', { 'class': 'xdns-kpi-header' }, [
+					E('span', { 'class': 'xdns-kpi-title' }, title),
+					E('span', { 'class': 'xdns-kpi-icon' }, icon)
+				]),
+				E('div', { 'class': 'xdns-kpi-val', 'style': 'color: ' + color + ';' }, value),
+				subText ? E('div', { 'class': 'xdns-kpi-sub' }, subText) : ''
+			]);
+		}
+
+		var kpiStyle = E('style', {}, [
+			'.xdns-kpi-grid {',
+			'    display: grid;',
+			'    grid-template-columns: repeat(5, minmax(0, 1fr));',
+			'    gap: 12px;',
+			'    margin: 15px 0 25px 0;',
+			'}',
+			'.xdns-kpi-card {',
+			'    background: var(--cbi-section-bg, #fff);',
+			'    border: 1px solid var(--cbi-section-border, rgba(0, 0, 0, 0.08));',
+			'    border-radius: 10px;',
+			'    padding: 14px 16px;',
+			'    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);',
+			'    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;',
+			'    display: flex;',
+			'    flex-direction: column;',
+			'    justify-content: space-between;',
+			'    min-height: 86px;',
+			'    box-sizing: border-box;',
+			'}',
+			'.xdns-kpi-card:hover {',
+			'    transform: translateY(-2px);',
+			'    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);',
+			'}',
+			'.xdns-kpi-header {',
+			'    display: flex;',
+			'    align-items: center;',
+			'    justify-content: space-between;',
+			'    font-size: 13px;',
+			'    color: var(--cbi-descr-color, #666);',
+			'    margin-bottom: 6px;',
+			'    white-space: nowrap;',
+			'}',
+			'.xdns-kpi-title {',
+			'    font-weight: 500;',
+			'}',
+			'.xdns-kpi-icon {',
+			'    font-size: 16px;',
+			'    line-height: 1;',
+			'    opacity: 0.85;',
+			'}',
+			'.xdns-kpi-val {',
+			'    font-size: 24px;',
+			'    font-weight: 700;',
+			'    line-height: 1.2;',
+			'    letter-spacing: -0.3px;',
+			'}',
+			'.xdns-kpi-sub {',
+			'    font-size: 11px;',
+			'    color: #999;',
+			'    margin-top: 3px;',
+			'    white-space: nowrap;',
+			'    overflow: hidden;',
+			'    text-overflow: ellipsis;',
+			'}',
+			'@media screen and (max-width: 1080px) {',
+			'    .xdns-kpi-grid {',
+			'        grid-template-columns: repeat(4, 1fr);',
+			'    }',
+			'    .xdns-kpi-card.hero {',
+			'        grid-column: span 4;',
+			'        background: linear-gradient(135deg, rgba(6, 182, 212, 0.08) 0%, rgba(99, 102, 241, 0.08) 100%);',
+			'        border-color: rgba(6, 182, 212, 0.25);',
+			'        padding: 16px 20px;',
+			'    }',
+			'    .xdns-kpi-card.hero .xdns-kpi-val {',
+			'        font-size: 28px;',
+			'    }',
+			'}',
+			'@media screen and (max-width: 720px) {',
+			'    .xdns-kpi-grid {',
+			'        grid-template-columns: repeat(2, 1fr);',
+			'        gap: 10px;',
+			'    }',
+			'    .xdns-kpi-card.hero {',
+			'        grid-column: span 2;',
+			'    }',
+			'    .xdns-kpi-card {',
+			'        padding: 12px;',
+			'        min-height: 76px;',
+			'    }',
+			'    .xdns-kpi-val {',
+			'        font-size: 20px;',
+			'    }',
+			'    .xdns-kpi-header {',
+			'        font-size: 12px;',
+			'    }',
+			'}'
+		].join('\n'));
+
+		var kpiRow = E('div', { 'class': 'xdns-kpi-grid' }, [
+			createKpiCard(_('加速通道总流量'), '🚀', formatBytes(stats.tcpBytes), '#0891b2', _('eBPF 双向累计吞吐'), true),
+			createKpiCard(_('走加速通道查询'), '⚡', String(stats.dnsProxied), '#10b981', _('命中规则定向分流')),
+			createKpiCard(_('直接上网查询'), '🌐', String(stats.dnsPassed), '#3b82f6', _('常规本地 DNS 解析')),
+			createKpiCard(_('正在加速的网站'), '🎯', String(sites.length), '#f59e0b', _('内核动态劫持中')),
+			createKpiCard(_('分流名单中的网站'), '📋', String(domainsCount), '#8b5cf6', _('规则库匹配域名'))
 		]);
 
 		function td(content, title) {
@@ -427,6 +513,7 @@ return view.extend({
 					'click': function() { location.reload(); }
 				}, [ '🔄 ', _('刷新数据') ])
 			]),
+			kpiStyle,
 			kpiRow,
 			sessionSection,
 			ipSection
