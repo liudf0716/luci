@@ -564,14 +564,14 @@ const routerTools = [
         type: 'function',
         function: {
             name: 'manage_xdns_domain',
-            description: '管理内核 eBPF 智能分流（xdns）：查看所有加速域名及内核激活状态（action: "list"）；新增分流加速域名（action: "add"）；删除分流加速域名（action: "remove"）；添加静态重定向 IPv4（action: "add_ip"，支持指定 IP 与可选 TTL）；移除静态重定向 IPv4（action: "remove_ip"）；清空内核动态分流 IP 缓存（action: "clear_ips"）；从持久化文件全量重载规则至内核并重置缓存（action: "reload"）；查看当前内核动态劫持加速 IP 表、过期时间、连接数、报文数与流量统计（action: "list_ips"）；查看当前活跃透明代理 TCP 会话（action: "list_sessions"）；获取实时拦截与分流统计数据（action: "stats"）。注意：查询类操作（list/list_ips/list_sessions/stats）直接执行返回，配置变更类操作（add/remove/add_ip/remove_ip/clear_ips/reload）将渲染可视化卡片供用户授权确认。',
+            description: '管理内核 eBPF 智能分流（xdns）：查看所有加速域名及内核激活状态（action: "list"）；新增分流加速域名（action: "add"）；删除分流加速域名（action: "remove"）；添加静态重定向 IPv4（action: "add_ip"，支持指定 IP 与可选 TTL）；移除静态重定向 IPv4（action: "remove_ip"）；清空内核动态分流 IP 缓存（action: "clear_ips"）；从持久化文件全量重载规则至内核并重置缓存（action: "reload"）；查看当前内核动态劫持加速 IP 表、过期时间、连接数、报文数与流量统计（action: "list_ips"）；查看当前活跃透明代理 TCP 会话及每条连接的流量和流速（action: "list_sessions"）；获取实时拦截与分流统计数据（action: "stats"）。注意：查询类操作（list/list_ips/list_sessions/stats）直接执行返回，配置变更类操作（add/remove/add_ip/remove_ip/clear_ips/reload）将渲染可视化卡片供用户授权确认。',
             parameters: {
                 type: 'object',
                 properties: {
                     action: { 
                         type: 'string', 
                         enum: ['list', 'add', 'remove', 'add_ip', 'remove_ip', 'clear_ips', 'reload', 'list_ips', 'list_sessions', 'stats'], 
-                        description: '操作类型：list(查看所有加速域名及内核状态), add(添加域名), remove(删除域名), add_ip(添加静态重定向IP), remove_ip(移除静态重定向IP), clear_ips(清空动态分流IP缓存), reload(重载分流规则并清缓存), list_ips(查看动态劫持IP列表及连接数/报文数/流量统计), list_sessions(查看活跃透明代理TCP会话), stats(拦截统计)' 
+                        description: '操作类型：list(查看所有加速域名及内核状态), add(添加域名), remove(删除域名), add_ip(添加静态重定向IP), remove_ip(移除静态重定向IP), clear_ips(清空动态分流IP缓存), reload(重载分流规则并清缓存), list_ips(查看动态劫持IP列表及连接数/报文数/流量统计), list_sessions(查看活跃透明代理TCP会话、流量与流速), stats(拦截统计)' 
                     },
                     domain: { type: 'string', description: '要添加或删除的域名，如 claude.ai 或 gemini.google.com（add 或 remove 时必填）' },
                     ip: { type: 'string', description: '要添加或移除的静态重定向 IPv4 地址，例如 8.8.8.8 或 104.21.5.12（action 为 add_ip 或 remove_ip 时必填）' },

@@ -46,6 +46,13 @@ function formatBytes(n) {
 	return (n / 1073741824).toFixed(2) + ' GB';
 }
 
+function formatRate(bps) {
+	var n = parseInt(bps, 10) || 0;
+	if (n >= 1000000) return (n / 1000000).toFixed(1) + ' Mbps';
+	if (n >= 1000) return (n / 1000).toFixed(1) + ' Kbps';
+	return n + ' bps';
+}
+
 function isIpv4(s) {
 	if (!/^(\d{1,3}\.){3}\d{1,3}$/.test(s || ''))
 		return false;
@@ -128,14 +135,18 @@ function parseSessions(sessionsText) {
 				site: parts[0] === '-' ? '' : parts[0],
 				client: parts[1],
 				target: parts[2],
-				lastSeen: parts.slice(3).join(' ')
+				lastSeen: parts[3] || '',
+				bytes: parts[4] || '0',
+				rate: parts[5] || '0'
 			});
 		} else if (parts.length >= 2 && isIpv4((parts[0] || '').split(':')[0])) {
 			list.push({
 				site: '',
 				client: parts[0],
 				target: parts[1],
-				lastSeen: parts.slice(2).join(' ')
+				lastSeen: parts[2] || '',
+				bytes: parts[3] || '0',
+				rate: parts[4] || '0'
 			});
 		}
 	}
@@ -343,10 +354,12 @@ return view.extend({
 			var key = who + '\n' + (site || tip || '-');
 			var age = ageSeconds(s.lastSeen);
 			if (!sessionGroups[key]) {
-				sessionGroups[key] = { who: who, site: site, tip: tip, conns: 0, age: age, lastSeen: s.lastSeen || '' };
+				sessionGroups[key] = { who: who, site: site, tip: tip, conns: 0, age: age, lastSeen: s.lastSeen || '', bytes: 0, rate: 0 };
 			}
 			var g = sessionGroups[key];
 			g.conns++;
+			g.bytes += parseInt(s.bytes, 10) || 0;
+			g.rate += parseInt(s.rate, 10) || 0;
 			if (age < g.age) {
 				g.age = age;
 				g.lastSeen = s.lastSeen || '';
@@ -363,13 +376,15 @@ return view.extend({
 				E('th', { 'class': 'th left', 'style': 'text-align:left' }, _('谁在访问')),
 				E('th', { 'class': 'th left', 'style': 'text-align:left' }, _('正在加速的网站')),
 				E('th', { 'class': 'th left', 'style': 'text-align:left' }, _('连接数')),
+				E('th', { 'class': 'th left', 'style': 'text-align:left' }, _('流量')),
+				E('th', { 'class': 'th left', 'style': 'text-align:left' }, _('流速')),
 				E('th', { 'class': 'th left', 'style': 'text-align:left' }, _('最近活动'))
 			])
 		];
 
 		if (sessionRows.length === 0) {
 			sessionTableRows.push(E('tr', { 'class': 'tr placeholder' }, [
-				E('td', { 'class': 'td left', 'style': 'text-align:left !important', 'colspan': '4' }, E('em', {}, _('当前没有正在加速的连接。网页打开后这里会短暂出现，传输结束就会消失。')))
+				E('td', { 'class': 'td left', 'style': 'text-align:left !important', 'colspan': '6' }, E('em', {}, _('当前没有正在加速的连接。网页打开后这里会短暂出现，传输结束就会消失。')))
 			]));
 		} else {
 			sessionShown.forEach(function(g) {
@@ -382,12 +397,14 @@ return view.extend({
 						siteSub
 					]), _('正在加速的网站')),
 					td(String(g.conns), _('连接数')),
-					td((g.lastSeen || '').replace('ago', _('前')), _('最近活动'))
+					td(formatBytes(g.bytes), _('流量')),
+					td(formatRate(g.rate), _('流速')),
+					td((g.lastSeen ? (g.lastSeen.indexOf(_('前')) >= 0 ? g.lastSeen : g.lastSeen.replace('ago', '').trim() + ' ' + _('前')) : ''), _('最近活动'))
 				]));
 			});
 			if (sessionHidden > 0) {
 				sessionTableRows.push(E('tr', { 'class': 'tr' }, [
-					E('td', { 'class': 'td left', 'style': 'text-align:left !important', 'colspan': '4' },
+					E('td', { 'class': 'td left', 'style': 'text-align:left !important', 'colspan': '6' },
 						_('还有 %s 组连接没有展开，都是更早之前的活动。').format(String(sessionHidden)))
 				]));
 			}

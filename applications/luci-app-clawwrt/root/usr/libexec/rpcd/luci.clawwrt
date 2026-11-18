@@ -6073,23 +6073,40 @@ EOF
                     json_add_string "action" "list_sessions"
                     json_add_array "sessions"
                     if command -v /usr/bin/xdns-ctl >/dev/null 2>&1; then
-                        local ctl_sessions=$(/usr/bin/xdns-ctl list-sessions 2>/dev/null | grep -E '^[0-9]')
-                        while read -r sline; do
-                            [ -z "$sline" ] && continue
-                            local client_ep=$(echo "$sline" | awk '{print $1}')
-                            local target_ep=$(echo "$sline" | awk '{print $2}')
-                            local last_seen=$(echo "$sline" | awk '{$1=""; $2=""; print $0}' | sed 's/^[[:space:]]*//')
+                        local ctl_sessions=$(/usr/bin/xdns-ctl list-sessions 2>/dev/null | grep -E '([0-9]{1,3}\.){3}[0-9]{1,3}:' | grep -v 'Client Endpoint' || true)
+                        while read -r w c t age bytes rate extra; do
+                            [ -z "$w" ] && continue
+                            local website="" client_ep="" target_ep="" last_seen="" nbytes="0" nbps="0"
+                            if echo "$c" | grep -Eq '^([0-9]{1,3}\.){3}[0-9]{1,3}:'; then
+                                website="$w"
+                                client_ep="$c"
+                                target_ep="$t"
+                                last_seen="$age"
+                                nbytes="$bytes"
+                                nbps="$rate"
+                            elif echo "$w" | grep -Eq '^([0-9]{1,3}\.){3}[0-9]{1,3}:'; then
+                                client_ep="$w"
+                                target_ep="$c"
+                                last_seen="$t"
+                                nbytes="$age"
+                                nbps="$bytes"
+                            else
+                                continue
+                            fi
                             json_add_object ""
+                            [ -n "$website" ] && [ "$website" != "-" ] && json_add_string "website" "$website"
                             json_add_string "client" "$client_ep"
                             json_add_string "target" "$target_ep"
-                            json_add_string "last_seen" "$last_seen"
+                            json_add_string "last_seen" "${last_seen%s}s"
+                            json_add_string "bytes" "${nbytes:-0}"
+                            json_add_string "rate_bps" "${nbps:-0}"
                             json_close_object
                         done <<EOF
 $ctl_sessions
 EOF
                     fi
                     json_close_array
-                    local total_sessions=$(/usr/bin/xdns-ctl list-sessions 2>/dev/null | grep -E '^[0-9]' | wc -l)
+                    local total_sessions=$(/usr/bin/xdns-ctl list-sessions 2>/dev/null | grep -E '([0-9]{1,3}\.){3}[0-9]{1,3}:' | grep -v 'Client Endpoint' | wc -l)
                     json_add_int "total_sessions" "${total_sessions:-0}"
                     json_close_object
                     json_dump
