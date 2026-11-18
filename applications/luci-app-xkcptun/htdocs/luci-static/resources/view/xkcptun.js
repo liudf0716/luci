@@ -154,19 +154,18 @@ function renderStatus(status) {
 
 	let sessionTable;
 	if (sessionRows.length > 0) {
+		let headerRow = E('tr', { 'class': 'tr table-titles' }, [
+			E('th', { 'class': 'th', 'style': 'text-align: left;' }, _('客户端地址')),
+			E('th', { 'class': 'th', 'style': 'text-align: left;' }, _('目标服务器')),
+			E('th', { 'class': 'th', 'style': 'text-align: left;' }, _('所属隧道')),
+			E('th', { 'class': 'th', 'style': 'text-align: left;' }, _('下行加速流量')),
+			E('th', { 'class': 'th', 'style': 'text-align: left;' }, _('上行传输流量')),
+			E('th', { 'class': 'th', 'style': 'text-align: left;' }, _('往返时延 (RTT)')),
+			E('th', { 'class': 'th', 'style': 'text-align: left;' }, _('持续时间'))
+		]);
+
 		sessionTable = E('div', { 'style': 'overflow-x: auto; margin-top: 10px;' }, [
-			E('table', { 'class': 'table', 'style': 'width: 100%; border-collapse: collapse;' }, [
-				E('tr', { 'class': 'tr table-titles' }, [
-					E('th', { 'class': 'th', 'style': 'text-align: left;' }, _('客户端地址')),
-					E('th', { 'class': 'th', 'style': 'text-align: left;' }, _('目标服务器')),
-					E('th', { 'class': 'th', 'style': 'text-align: left;' }, _('所属隧道')),
-					E('th', { 'class': 'th', 'style': 'text-align: left;' }, _('下行加速流量')),
-					E('th', { 'class': 'th', 'style': 'text-align: left;' }, _('上行传输流量')),
-					E('th', { 'class': 'th', 'style': 'text-align: left;' }, _('往返时延 (RTT)')),
-					E('th', { 'class': 'th', 'style': 'text-align: left;' }, _('持续时间'))
-				]),
-				sessionRows
-			])
+			E('table', { 'class': 'table', 'style': 'width: 100%; border-collapse: collapse;' }, [ headerRow ].concat(sessionRows))
 		]);
 	} else {
 		sessionTable = E('div', {
