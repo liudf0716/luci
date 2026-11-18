@@ -654,14 +654,20 @@ case "$1" in
             fi
 
             # 4. xdns (Smart Traffic Diversion & eBPF DNS interception)
-            if tc filter show dev br-lan ingress 2>/dev/null | grep -q "xdns_bpf"; then
+            if /usr/bin/xdns-ctl status 2>/dev/null | grep -qi 'Running\s*:\s*yes'; then
+                xdns_bpf=1
+                xdns_run=1
+            elif tc filter show dev br-lan ingress 2>/dev/null | grep -qE "xdns_bpf|tc_xdns_ingress"; then
                 xdns_bpf=1
                 xdns_run=1
             elif /etc/init.d/xdns status 2>/dev/null | grep -E -q "running|active"; then
                 xdns_run=1
             fi
+            local xdns_tcp_bytes=0
             if command -v /usr/bin/xdns-ctl >/dev/null 2>&1; then
-                xdns_tcp_proxied=$(/usr/bin/xdns-ctl stats 2>/dev/null | grep "TCP Connections Proxied" | awk '{print $NF}')
+                local raw_stats=$(/usr/bin/xdns-ctl stats 2>/dev/null)
+                xdns_tcp_proxied=$(echo "$raw_stats" | grep -iE "TCP Connections Steered|TCP Connections Proxied" | awk -F: '{print $2}' | tr -d ' ' || echo 0)
+                xdns_tcp_bytes=$(echo "$raw_stats" | grep -i "TCP Bytes Steered" | awk -F: '{print $2}' | tr -d ' ' || echo 0)
             fi
 
             # 5. firewall (Linux nftables fw4)
@@ -681,6 +687,7 @@ case "$1" in
             json_add_boolean "xdns" "$xdns_run"
             json_add_boolean "xdns_bpf_attached" "$xdns_bpf"
             json_add_int "xdns_proxied_connections" "${xdns_tcp_proxied:-0}"
+            json_add_int "xdns_steered_bytes" "${xdns_tcp_bytes:-0}"
             json_add_boolean "firewall" "$firewall_run"
             json_close_object
             json_dump
@@ -2688,7 +2695,10 @@ EOF
                 xdns)
                     local run=0
                     local bpf_attached=0
-                    if tc filter show dev br-lan ingress 2>/dev/null | grep -q 'xdns_bpf'; then
+                    if /usr/bin/xdns-ctl status 2>/dev/null | grep -qi 'Running\s*:\s*yes'; then
+                        bpf_attached=1
+                        run=1
+                    elif tc filter show dev br-lan ingress 2>/dev/null | grep -qE 'xdns_bpf|tc_xdns_ingress'; then
                         bpf_attached=1
                         run=1
                     elif /etc/init.d/xdns status 2>/dev/null | grep -E -q 'running|active'; then
@@ -2696,15 +2706,21 @@ EOF
                     fi
 
                     local ctl_stats=$(/usr/bin/xdns-ctl stats 2>/dev/null)
-                    local dns_intercepted=0
                     local dns_proxied=0
+                    local dns_passed=0
+                    local dns_failed=0
                     local dns_learned=0
-                    local tcp_proxied=0
+                    local tcp_steered=0
+                    local tcp_packets=0
+                    local tcp_bytes=0
                     if [ -n "$ctl_stats" ]; then
-                        dns_intercepted=$(echo "$ctl_stats" | grep "DNS Queries Intercepted" | awk '{print $NF}')
-                        dns_proxied=$(echo "$ctl_stats" | grep "DNS Queries Proxied" | awk '{print $NF}')
-                        dns_learned=$(echo "$ctl_stats" | grep "DNS Responses Learned" | awk '{print $NF}')
-                        tcp_proxied=$(echo "$ctl_stats" | grep "TCP Connections Proxied" | awk '{print $NF}')
+                        dns_proxied=$(echo "$ctl_stats" | grep -iE "DNS Queries Proxied|DNS Queries Intercepted" | awk -F: '{print $2}' | tr -d ' ' || echo 0)
+                        dns_passed=$(echo "$ctl_stats" | grep -i "DNS Queries Passed" | awk -F: '{print $2}' | tr -d ' ' || echo 0)
+                        dns_failed=$(echo "$ctl_stats" | grep -i "DNS Forward Failed" | awk -F: '{print $2}' | tr -d ' ' || echo 0)
+                        dns_learned=$(echo "$ctl_stats" | grep -iE "DNS A Records Learned|DNS Responses Learned" | awk -F: '{print $2}' | tr -d ' ' || echo 0)
+                        tcp_steered=$(echo "$ctl_stats" | grep -iE "TCP Connections Steered|TCP Connections Proxied" | awk -F: '{print $2}' | tr -d ' ' || echo 0)
+                        tcp_packets=$(echo "$ctl_stats" | grep -i "TCP Packets Steered" | awk -F: '{print $2}' | tr -d ' ' || echo 0)
+                        tcp_bytes=$(echo "$ctl_stats" | grep -i "TCP Bytes Steered" | awk -F: '{print $2}' | tr -d ' ' || echo 0)
                     fi
 
                     local domains_file=$(uci -q get xdns.global.proxy_domains_file || echo "/etc/xdns/proxy_domains.txt")
@@ -2715,7 +2731,7 @@ EOF
 
                     local total_sessions=0
                     if command -v /usr/bin/xdns-ctl >/dev/null 2>&1; then
-                        total_sessions=$(/usr/bin/xdns-ctl list-sessions 2>/dev/null | grep -E '^[0-9]' | wc -l)
+                        total_sessions=$(/usr/bin/xdns-ctl list-sessions 2>/dev/null | grep -E '([0-9]{1,3}\.){3}[0-9]{1,3}:' | grep -v 'Client Endpoint' | wc -l)
                     fi
 
                     local ips_file=$(uci -q get xdns.global.static_ips_file || echo "/etc/xdns/static_ips.txt")
@@ -2735,14 +2751,28 @@ EOF
                     json_add_string "ifname" "$(uci -q get xdns.global.ifname || echo br-lan)"
                     json_add_string "xkcp_dns" "$(uci -q get xdns.global.xkcp_dns)"
                     json_add_string "xkcp_tcp" "$(uci -q get xdns.global.xkcp_tcp)"
-                    json_add_int "dns_queries_intercepted" "${dns_intercepted:-0}"
+                    json_add_int "dns_queries_intercepted" "${dns_proxied:-0}"
                     json_add_int "dns_queries_proxied" "${dns_proxied:-0}"
+                    json_add_int "dns_queries_passed" "${dns_passed:-0}"
+                    json_add_int "dns_forward_failed" "${dns_failed:-0}"
                     json_add_int "dns_responses_learned" "${dns_learned:-0}"
-                    json_add_int "tcp_connections_proxied" "${tcp_proxied:-0}"
+                    json_add_int "dns_a_records_learned" "${dns_learned:-0}"
+                    json_add_int "tcp_connections_proxied" "${tcp_steered:-0}"
+                    json_add_int "tcp_connections_steered" "${tcp_steered:-0}"
+                    json_add_int "tcp_packets_steered" "${tcp_packets:-0}"
+                    json_add_int "tcp_bytes_steered" "${tcp_bytes:-0}"
                     json_add_int "total_proxy_domains" "${total_domains:-0}"
                     json_add_int "total_static_ips" "${total_static:-0}"
                     json_add_int "total_hijacked_ips" "${total_ips:-0}"
                     json_add_int "active_sessions" "${total_sessions:-0}"
+
+                    json_add_array "static_ips"
+                    if [ -f "$ips_file" ]; then
+                        for sip in $(grep -v '^[[:space:]]*#' "$ips_file" | grep -v '^[[:space:]]*$'); do
+                            json_add_string "" "$sip"
+                        done
+                    fi
+                    json_close_array
 
                     json_add_array "domains"
                     if command -v /usr/bin/xdns-ctl >/dev/null 2>&1; then
@@ -2799,6 +2829,7 @@ EOF
                             json_add_string "ip" "$ip_addr"
                             json_add_string "website" "$site_name"
                             json_add_string "expires_in" "$exp_time"
+                            json_add_boolean "is_static" "$([ "$exp_time" = "permanent" ] && echo 1 || echo 0)"
                             json_add_int "connections" "${conns:-0}"
                             json_add_int "packets" "${pkts:-0}"
                             json_add_int "bytes" "${bytes:-0}"
@@ -2811,16 +2842,33 @@ EOF
 
                     json_add_array "sample_sessions"
                     if command -v /usr/bin/xdns-ctl >/dev/null 2>&1; then
-                        local ctl_sessions=$(/usr/bin/xdns-ctl list-sessions 2>/dev/null | grep -E '^[0-9]' | head -n 8)
-                        while read -r sline; do
-                            [ -z "$sline" ] && continue
-                            local client_ep=$(echo "$sline" | awk '{print $1}')
-                            local target_ep=$(echo "$sline" | awk '{print $2}')
-                            local last_seen=$(echo "$sline" | awk '{$1=""; $2=""; print $0}' | sed 's/^[[:space:]]*//')
+                        local ctl_sessions=$(/usr/bin/xdns-ctl list-sessions 2>/dev/null | grep -E '([0-9]{1,3}\.){3}[0-9]{1,3}:' | grep -v 'Client Endpoint' | head -n 10 || true)
+                        while read -r w c t age bytes rate extra; do
+                            [ -z "$w" ] && continue
+                            local website="" client_ep="" target_ep="" last_seen="" nbytes="0" nbps="0"
+                            if echo "$c" | grep -Eq '^([0-9]{1,3}\.){3}[0-9]{1,3}:'; then
+                                website="$w"
+                                client_ep="$c"
+                                target_ep="$t"
+                                last_seen="$age"
+                                nbytes="$bytes"
+                                nbps="$rate"
+                            elif echo "$w" | grep -Eq '^([0-9]{1,3}\.){3}[0-9]{1,3}:'; then
+                                client_ep="$w"
+                                target_ep="$c"
+                                last_seen="$t"
+                                nbytes="$age"
+                                nbps="$bytes"
+                            else
+                                continue
+                            fi
                             json_add_object ""
+                            [ -n "$website" ] && [ "$website" != "-" ] && json_add_string "website" "$website"
                             json_add_string "client" "$client_ep"
                             json_add_string "target" "$target_ep"
-                            json_add_string "last_seen" "$last_seen"
+                            json_add_string "last_seen" "${last_seen%s}s"
+                            json_add_int "bytes" "${nbytes:-0}"
+                            json_add_int "rate_bps" "${nbps:-0}"
                             json_close_object
                         done <<EOF
 $ctl_sessions
@@ -2831,7 +2879,19 @@ EOF
                     local diag="xdns 智能分流已关闭"
                     if [ "$run" -eq 1 ]; then
                         if [ "$bpf_attached" -eq 1 ]; then
-                            diag="xdns-bpf 智能分流在内核 TC ingress/egress 挂载正常！已管理 $total_domains 个加速域名，当前内核维护 $total_ips 个动态劫持加速 IP，累计拦截 DNS 解析 $dns_intercepted 次，动态分流 TCP 加速连接 $tcp_proxied 次，当前活跃加速会话 $total_sessions 个。"
+                            local static_tip=""
+                            [ "${total_static:-0}" -gt 0 ] && static_tip="（含 $total_static 个永久静态重定向 IP）"
+                            local fmt_bytes="0 B"
+                            if [ "${tcp_bytes:-0}" -ge 1073741824 ]; then
+                                fmt_bytes="$((${tcp_bytes} / 1073741824)) GB"
+                            elif [ "${tcp_bytes:-0}" -ge 1048576 ]; then
+                                fmt_bytes="$((${tcp_bytes} / 1048576)) MB"
+                            elif [ "${tcp_bytes:-0}" -ge 1024 ]; then
+                                fmt_bytes="$((${tcp_bytes} / 1024)) KB"
+                            elif [ "${tcp_bytes:-0}" -gt 0 ]; then
+                                fmt_bytes="${tcp_bytes} B"
+                            fi
+                            diag="xdns-bpf 智能分流在内核 TC ingress/egress 挂载正常！已管理 $total_domains 个加速域名，当前内核维护 $total_ips 个动态劫持加速 IP${static_tip}；累计拦截/代理 DNS 解析 $dns_proxied 次（已学习 $dns_learned 个 A 记录，放行 $dns_passed 次）；动态分流 TCP 加速连接 $tcp_steered 次（转发报文 $tcp_packets 个，累计分流总流量 $fmt_bytes），当前活跃加速会话 $total_sessions 个。"
                         else
                             diag="xdns 服务正在运行，但内核 TC eBPF 探针未挂载，请检查 br-lan 网络接口。"
                         fi
@@ -5479,6 +5539,7 @@ fi
             local dns_failed=0
             local dns_learned=0
             local tcp_conns=0
+            local tcp_packets=0
             local tcp_bytes=0
             if command -v /usr/bin/xdns-ctl >/dev/null 2>&1; then
                 local raw_stats=$(/usr/bin/xdns-ctl stats 2>/dev/null)
@@ -5493,17 +5554,25 @@ fi
                 [ -z "$dns_learned" ] && dns_learned=0
                 tcp_conns=$(echo "$raw_stats" | grep -iE "TCP Connections Steered|TCP Connections Proxied" | awk -F: '{print $2}' | tr -d ' ' || echo 0)
                 [ -z "$tcp_conns" ] && tcp_conns=0
+                tcp_packets=$(echo "$raw_stats" | grep -i "TCP Packets Steered" | awk -F: '{print $2}' | tr -d ' ' || echo 0)
+                [ -z "$tcp_packets" ] && tcp_packets=0
                 tcp_bytes=$(echo "$raw_stats" | grep -i "TCP Bytes Steered" | awk -F: '{print $2}' | tr -d ' ' || echo 0)
                 [ -z "$tcp_bytes" ] && tcp_bytes=0
             fi
 
-            # Top Learned IPs / Domains
+            # Top Learned IPs / Domains / Static IPs / Sessions
             local active_ips_count=0
+            local active_sessions=0
             if command -v /usr/bin/xdns-ctl >/dev/null 2>&1; then
                 local raw_ips=$(/usr/bin/xdns-ctl list-ips 2>/dev/null)
                 active_ips_count=$(echo "$raw_ips" | grep -i "Total active" | sed -n 's/.*: \([0-9]*\).*/\1/p')
                 [ -z "$active_ips_count" ] && active_ips_count=0
+                active_sessions=$(/usr/bin/xdns-ctl list-sessions 2>/dev/null | grep -E '([0-9]{1,3}\.){3}[0-9]{1,3}:' | grep -v 'Client Endpoint' | wc -l)
             fi
+
+            local ips_file=$(uci -q get xdns.global.static_ips_file || echo "/etc/xdns/static_ips.txt")
+            local static_ips_count=0
+            [ -f "$ips_file" ] && static_ips_count=$(grep -v '^[[:space:]]*#' "$ips_file" | grep -v '^[[:space:]]*$' | wc -l)
 
             # 2. xkcptun Status
             local xkcp_pid=$(pidof xkcp_client 2>/dev/null)
@@ -5582,15 +5651,17 @@ fi
             elif [ "$handshake_timeout" -eq 1 ]; then
                 health="warning"
                 diagnosis="检测到偶发握手超时，可能是由于国际链路抖动或 VPS 端 UDP 拥堵。"
-            elif [ "$domains_count" -eq 0 ]; then
+            elif [ "$domains_count" -eq 0 ] && [ "$static_ips_count" -eq 0 ]; then
                 health="warning"
-                diagnosis="当前分流域名列表为空，尚未配置任何加速域名。"
+                diagnosis="当前分流规则库为空，尚未配置任何加速域名或静态重定向 IP。"
             else
                 health="healthy"
+                local static_desc=""
+                [ "$static_ips_count" -gt 0 ] && static_desc="，含 $static_ips_count 个静态重定向 IP"
                 if [ "$is_hopped" -eq 1 ]; then
-                    diagnosis="智能分流与网络加速全链路工作正常。eBPF 双向过滤已就绪，当前加速端口 $server_port 处于 VPS 规划的 ${hop_s}~${hop_e} 防火墙端口重定向池内，TCP/DNS 加速隧道已建立。"
+                    diagnosis="智能分流与网络加速全链路工作正常。eBPF 双向过滤已就绪${static_desc}，当前加速端口 $server_port 处于 VPS 规划的 ${hop_s}~${hop_e} 防火墙端口重定向池内，TCP/DNS 加速隧道已建立。"
                 else
-                    diagnosis="智能分流与网络加速全链路工作正常。eBPF 双向过滤已就绪，TCP/DNS 加速隧道已建立。"
+                    diagnosis="智能分流与网络加速全链路工作正常。eBPF 双向过滤已就绪${static_desc}，TCP/DNS 加速隧道已建立。"
                 fi
             fi
 
@@ -5607,12 +5678,15 @@ fi
             json_add_boolean "ingress_attached" "$ingress_ok"
             json_add_boolean "egress_attached" "$egress_ok"
             json_add_int "domains_count" "$domains_count"
+            json_add_int "static_ips_count" "$static_ips_count"
             json_add_int "active_ips_count" "$active_ips_count"
+            json_add_int "active_sessions" "$active_sessions"
             json_add_int "dns_proxied" "$dns_proxied"
             json_add_int "dns_passed" "$dns_passed"
             json_add_int "dns_failed" "$dns_failed"
             json_add_int "dns_learned" "$dns_learned"
             json_add_int "tcp_conns" "$tcp_conns"
+            json_add_int "tcp_packets" "$tcp_packets"
             json_add_int "tcp_bytes" "$tcp_bytes"
             json_add_string "xkcp_dns" "$xkcp_dns"
             json_add_string "xkcp_tcp" "$xkcp_tcp"
@@ -5634,6 +5708,13 @@ fi
             json_close_object
 
             json_add_array "findings"
+            if [ "$static_ips_count" -gt 0 ]; then
+                json_add_object
+                json_add_string "type" "ok"
+                json_add_string "title" "静态重定向 IP 已就绪"
+                json_add_string "desc" "已配置 $static_ips_count 个永久静态重定向 IP (免 DNS 劫持直通分流)"
+                json_close_object
+            fi
             if [ "$is_hopped" -eq 1 ]; then
                 json_add_object
                 json_add_string "type" "ok"
@@ -6047,6 +6128,7 @@ EOF
                             json_add_string "ip" "$ip_addr"
                             json_add_string "website" "$site_name"
                             json_add_string "expires_in" "$exp_time"
+                            json_add_boolean "is_static" "$([ "$exp_time" = "permanent" ] && echo 1 || echo 0)"
                             json_add_int "connections" "${conns:-0}"
                             json_add_int "packets" "${pkts:-0}"
                             json_add_int "bytes" "${bytes:-0}"
@@ -6060,7 +6142,10 @@ EOF
                     if command -v /usr/bin/xdns-ctl >/dev/null 2>&1; then
                         total_ips=$(/usr/bin/xdns-ctl list-ips 2>/dev/null | grep -E '([0-9]{1,3}\.){3}[0-9]{1,3}' | grep -v 'IP Address' | grep -v 'Total active' | wc -l)
                     fi
+                    local total_static=0
+                    [ -f "$ips_file" ] && total_static=$(grep -v '^[[:space:]]*#' "$ips_file" 2>/dev/null | grep -v '^[[:space:]]*$' | wc -l)
                     json_add_int "total_ips" "${total_ips:-0}"
+                    json_add_int "total_static_ips" "${total_static:-0}"
                     json_close_object
                     json_dump
                     return
@@ -6098,8 +6183,8 @@ EOF
                             json_add_string "client" "$client_ep"
                             json_add_string "target" "$target_ep"
                             json_add_string "last_seen" "${last_seen%s}s"
-                            json_add_string "bytes" "${nbytes:-0}"
-                            json_add_string "rate_bps" "${nbps:-0}"
+                            json_add_int "bytes" "${nbytes:-0}"
+                            json_add_int "rate_bps" "${nbps:-0}"
                             json_close_object
                         done <<EOF
 $ctl_sessions
@@ -6114,15 +6199,28 @@ EOF
                     ;;
                 stats)
                     local ctl_stats=$(/usr/bin/xdns-ctl stats 2>/dev/null)
+                    local dns_proxied=$(echo "$ctl_stats" | grep -iE "DNS Queries Proxied|DNS Queries Intercepted" | awk -F: '{print $2}' | tr -d ' ' || echo 0)
+                    local dns_passed=$(echo "$ctl_stats" | grep -i "DNS Queries Passed" | awk -F: '{print $2}' | tr -d ' ' || echo 0)
+                    local dns_failed=$(echo "$ctl_stats" | grep -i "DNS Forward Failed" | awk -F: '{print $2}' | tr -d ' ' || echo 0)
+                    local dns_learned=$(echo "$ctl_stats" | grep -iE "DNS A Records Learned|DNS Responses Learned" | awk -F: '{print $2}' | tr -d ' ' || echo 0)
+                    local tcp_steered=$(echo "$ctl_stats" | grep -iE "TCP Connections Steered|TCP Connections Proxied" | awk -F: '{print $2}' | tr -d ' ' || echo 0)
+                    local tcp_packets=$(echo "$ctl_stats" | grep -i "TCP Packets Steered" | awk -F: '{print $2}' | tr -d ' ' || echo 0)
+                    local tcp_bytes=$(echo "$ctl_stats" | grep -i "TCP Bytes Steered" | awk -F: '{print $2}' | tr -d ' ' || echo 0)
                     json_init
                     json_add_object "result"
                     json_add_string "status" "success"
                     json_add_boolean "success" "1"
                     json_add_string "action" "stats"
-                    json_add_int "dns_queries_intercepted" "$(echo "$ctl_stats" | grep "DNS Queries Intercepted" | awk '{print $NF}' || echo 0)"
-                    json_add_int "dns_queries_proxied" "$(echo "$ctl_stats" | grep "DNS Queries Proxied" | awk '{print $NF}' || echo 0)"
-                    json_add_int "dns_responses_learned" "$(echo "$ctl_stats" | grep "DNS Responses Learned" | awk '{print $NF}' || echo 0)"
-                    json_add_int "tcp_connections_proxied" "$(echo "$ctl_stats" | grep "TCP Connections Proxied" | awk '{print $NF}' || echo 0)"
+                    json_add_int "dns_queries_intercepted" "${dns_proxied:-0}"
+                    json_add_int "dns_queries_proxied" "${dns_proxied:-0}"
+                    json_add_int "dns_queries_passed" "${dns_passed:-0}"
+                    json_add_int "dns_forward_failed" "${dns_failed:-0}"
+                    json_add_int "dns_responses_learned" "${dns_learned:-0}"
+                    json_add_int "dns_a_records_learned" "${dns_learned:-0}"
+                    json_add_int "tcp_connections_proxied" "${tcp_steered:-0}"
+                    json_add_int "tcp_connections_steered" "${tcp_steered:-0}"
+                    json_add_int "tcp_packets_steered" "${tcp_packets:-0}"
+                    json_add_int "tcp_bytes_steered" "${tcp_bytes:-0}"
                     json_close_object
                     json_dump
                     return

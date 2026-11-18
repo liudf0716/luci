@@ -417,7 +417,7 @@ const routerTools = [
         type: 'function',
         function: {
             name: 'get_acceleration_status',
-            description: '深度检测智能分流 (xDNS - eBPF) 与网络加速 (xkcptun) 的全链路运行状况、健康度与问题排查：检查 br-lan TC Ingress (pref 5) 与 Egress (pref 10) eBPF 过滤器双向挂载、已生效分流域名规则数、内核动态劫持 IP 数、已加速流量与会话数、xkcptun 客户端进程、本地 TCP 12345/DNS 5353 监听、VPS 隧道连通性与活跃连接、当前加速端口是否处于 VPS 防火墙重定向跳跃池内 (is_hopped_port, hop_range)、实时日志异常等，并在界面中生成全链路诊断卡片',
+            description: '深度检测智能分流 (xDNS - eBPF) 与网络加速 (xkcptun) 的全链路运行状况、健康度与问题排查：检查 br-lan TC Ingress (pref 5) 与 Egress (pref 10) eBPF 过滤器双向挂载、已生效分流域名规则数、静态重定向 IP 数、内核动态劫持 IP 数、已加速流量 (Bytes) 与数据包数、活跃会话数、xkcptun 客户端进程、本地 TCP 12345/DNS 5353 监听、VPS 隧道连通性与活跃连接、当前加速端口是否处于 VPS 防火墙重定向跳跃池内 (is_hopped_port, hop_range)、实时日志异常等，并在界面中生成全链路诊断卡片',
             parameters: { type: 'object', properties: {} }
         }
     },
@@ -518,7 +518,7 @@ const routerTools = [
         type: 'function',
         function: {
             name: 'get_service_detail',
-            description: '获取路由器具体核心服务的详细配置与深层运行遥测指标：服务包括 wifidogx (门户认证与在线用户), xfrpc (内网穿透与连通性), xkcptun (网络加速：包含加速节点往返延迟 ping_ms、FEC 抗丢包模式、窗口大小、所有加速隧道列表及其端口/转发目标与活跃连接数), xdns (智能分流：包含内核 TC-eBPF 挂载状态、DNS 拦截/代理统计、已学习的动态劫持 IP 表及其 TTL 过期时间、当前活跃透明代理 TCP 会话、加速域名表及内核激活状态), ipsec (StrongSwan VPN)',
+            description: '获取路由器具体核心服务的详细配置与深层运行遥测指标：服务包括 wifidogx (门户认证与在线用户), xfrpc (内网穿透与连通性), xkcptun (网络加速：包含加速节点往返延迟 ping_ms、FEC 抗丢包模式、窗口大小、所有加速隧道列表及其端口/转发目标与活跃连接数), xdns (智能分流：包含内核 TC-eBPF 双向挂载状态、静态重定向 IP 集合与数量、DNS 拦截/代理/放行/学习/失败统计、已学习劫持 IP 表及其归属网站/连接数/报文数/流量字节、当前活跃透明代理 TCP 会话列表及其归属网站/双向已传输字节/4秒滑动窗口实时流速 Ratebps、加速域名表及内核激活状态), ipsec (StrongSwan VPN)',
             parameters: {
                 type: 'object',
                 properties: {
@@ -564,7 +564,7 @@ const routerTools = [
         type: 'function',
         function: {
             name: 'manage_xdns_domain',
-            description: '管理内核 eBPF 智能分流（xdns）：查看所有加速域名及内核激活状态（action: "list"）；新增分流加速域名（action: "add"）；删除分流加速域名（action: "remove"）；添加静态重定向 IPv4（action: "add_ip"，支持指定 IP 与可选 TTL）；移除静态重定向 IPv4（action: "remove_ip"）；清空内核动态分流 IP 缓存（action: "clear_ips"）；从持久化文件全量重载规则至内核并重置缓存（action: "reload"）；查看当前内核动态劫持加速 IP 表、过期时间、连接数、报文数与流量统计（action: "list_ips"）；查看当前活跃透明代理 TCP 会话及每条连接的流量和流速（action: "list_sessions"）；获取实时拦截与分流统计数据（action: "stats"）。注意：查询类操作（list/list_ips/list_sessions/stats）直接执行返回，配置变更类操作（add/remove/add_ip/remove_ip/clear_ips/reload）将渲染可视化卡片供用户授权确认。',
+            description: '管理内核 eBPF 智能分流（xdns）：查看所有加速域名及内核激活状态（action: "list"）；新增分流加速域名（action: "add"）；删除分流加速域名（action: "remove"）；添加静态重定向 IPv4（action: "add_ip"，支持指定 IP 与可选 TTL，写入静态文件永久直通分流）；移除静态重定向 IPv4（action: "remove_ip"）；清空内核动态分流 IP 缓存（action: "clear_ips"）；从持久化文件全量重载规则至内核并重置缓存（action: "reload"）；查看当前内核动态劫持加速 IP 表及静态 IP、所属网站名 (website)、过期时间/永久静态标识、连接数、报文数与流量统计（action: "list_ips"）；查看当前活跃透明代理 TCP 会话、访问网站名 (website)、双向已传输字节数 (bytes) 与 4 秒滑动窗口实时流速 (rate_bps)（action: "list_sessions"）；获取实时 DNS 代理/拦截/放行/学习及 TCP 分流总连接/报文/流量统计数据（action: "stats"）。注意：查询类操作（list/list_ips/list_sessions/stats）直接执行返回，配置变更类操作（add/remove/add_ip/remove_ip/clear_ips/reload）将渲染可视化卡片供用户授权确认。',
             parameters: {
                 type: 'object',
                 properties: {
@@ -1046,7 +1046,7 @@ ${commonSafety}
 - chaWrt eBPF 智能流控与 DPI (aw-bpf)：基于 Linux 内核 TC-eBPF 硬件级调度与 L7 深度报文检测。支持实时查看局域网各设备上下行速率（以 Mbps 及 MB/s 双单位展示）、MAC 地址、主机名、累计总流量、限速状态与定时生效时段 (get_qos_status)；查询 L7 应用协议与服务的实时流速 Top 10 排行榜及高频域名 (get_l7_top)；对指定终端设备（支持按 IP、MAC 或 "all" 全网设备）设置或解除流控限速（输入 0 代表解除限速），支持灵活配置定时生效时段 (propose_qos_limit)；
 - 门户认证 (wifidogx & apfree-wifidog)：企业级/热点强制网页认证门户，深度集成 apfree-wifidog C 引擎内核；支持开启/关闭、免认证直通 (disable_portal_auth)、有线网口直接放行 (wired_passed)、防私接检测 (enable_anti_nat)；支持查询云端 WebSocket/MQTT 连接状态、认证服务器地址与当前实时在线认证用户列表（包含终端 MAC、IP、主机名及剩余有效时间）(get_service_detail('wifidogx') 或 manage_portal_access('list'))；支持全能门禁管理 (manage_portal_access)：一键强制踢终端下线断网 (kick_client)、终端黑名单拉黑并即时阻断 (add_blacklist / del_blacklist)、终端 MAC 免认证白名单放行 (add_whitelist / del_whitelist)、免认证域名及通配符域名放行 (add_domain / del_domain)；
 - 网络加速 (xkcptun)：纯 C 抗丢包加速引擎，支持开启/关闭、配置加速节点 (remote_addr)、端口 (remote_port)、模式 (mode)、密钥 (key)、前向纠错 (fec)、发送/接收窗口 (sndwnd/rcvwnd)；支持深度检测与实时测量节点 RTT 往返延迟 (ping_ms)、查看所有活跃加速隧道与实时加速连接目标 (get_service_detail('xkcptun'))；支持通过 manage_xkcptun_tunnel 管理具体加速隧道（查询列表 action: "list"、新增/修改 action: "add"、启用 action: "enable"、停用 action: "disable"、删除 action: "remove"，支持 transparent redir 与 forward 端口转发等各种端口与目标）；
-- 智能分流 (xdns)：基于 Linux 内核 TC-eBPF 动态智能分流，在 br-lan 网卡挂载 TC ingress pref 5 与 egress pref 10 双向探针，自动拦截分流域名并重定向至 xkcptun 隧道；支持查询当前 DNS 拦截数、代理数、学习应答数与 TCP 代理连接数、内核动态劫持 IP 表及活跃会话 (get_service_detail('xdns'))；支持全能分流管理 (manage_xdns_domain)：查询加速域名及内核状态 (action: "list")、添加域名 (action: "add")、删除域名 (action: "remove")、添加静态重定向 IPv4 (action: "add_ip", ip: "...", ttl?: 0)、移除静态重定向 IPv4 (action: "remove_ip", ip: "...")、清空内核动态 IP 缓存 (action: "clear_ips")、重载规则文件 (action: "reload")、查看内核劫持 IP 列表 (action: "list_ips")、查看活跃代理会话 (action: "list_sessions")、统计数据 (action: "stats")；当用户需要针对纯 IP、特定服务器或测试场景绕过域名解析直接加速时，推荐使用 add_ip；
+- 智能分流 (xdns)：基于 Linux 内核 TC-eBPF 动态智能分流，在 br-lan 网卡挂载 TC ingress pref 5 与 egress pref 10 双向探针，自动拦截分流域名并重定向至 xkcptun 隧道；支持查询当前分流运行状态 (get_service_detail('xdns'))：完整返回内核 TC-eBPF 挂载状态、加速域名表及内核激活状态、永久静态重定向 IP 集合 (static_ips / total_static_ips)、DNS 拦截/代理数 (dns_proxied)、放行数 (dns_passed)、失败数 (dns_forward_failed)、A 记录动态学习数 (dns_learned)、TCP 累计分流连接数 (tcp_connections_steered)、TCP 累计分流报文数 (tcp_packets_steered)、TCP 累计分流总流量 (tcp_bytes_steered)、内核动态劫持 IP 表（含所属网站 website、连接数、报文数、字节数、过期时间/permanent）以及当前活跃透明代理 TCP 会话列表（含访问网站 website、客户端与目标端点、双向传输字节数 bytes、4 秒滑动窗口瞬时速率 rate_bps）；支持全能分流管理 (manage_xdns_domain)：查询加速域名及内核状态 (action: "list")、添加域名 (action: "add")、删除域名 (action: "remove")、添加静态重定向 IPv4 (action: "add_ip", ip: "...", ttl?: 0，永久写入 static_ips.txt 静态表免 DNS 劫持直通分流)、移除静态重定向 IPv4 (action: "remove_ip", ip: "...")、清空内核动态 IP 缓存 (action: "clear_ips")、重载规则文件 (action: "reload")、查看内核劫持 IP 列表 (action: "list_ips")、查看活跃代理会话 (action: "list_sessions")、统计数据 (action: "stats")；当用户询问“查看智能分流状态”、“分流跑了多少流量”、“分流实时流速”时，务必调用 get_service_detail('xdns') 或 manage_xdns_domain，将最新内核指标（静态重定向 IP、累计分流总流量、各会话所属网站与 4s 实时流速 Ratebps）完整清晰地呈现在回答中；
 - 智能分流与网络加速全链路诊断与自愈 (xdns & xkcptun): 深度体检内核 TC-eBPF 分流 (br-lan Ingress/Egress 挂载、加速域名数、动态劫持 IP 数、代理统计) 与 xkcptun 加速客户端 (TCP 12345/UDP 5353 监听、节点连通性、活跃隧道、最近日志排障) 的整体链路健康度。支持全链路健康检测 (get_acceleration_status) 并在 UI 中生成全链路交互式诊断卡片；支持一键自愈重建链路 (fix_acceleration_pipeline，平滑清理陈旧 BPF Map，重挂 TC 过滤器，重启加速客户端恢复透明重定向)；
 - 【极其重要的网络加速与智能分流双端配置与免密授权引导准则 (xkcptun & xdns & VPS 自动化)】:
   1. 架构原理清晰梳理：
@@ -1326,10 +1326,114 @@ return view.extend({
             ])
         ]);
 
-        // Metrics Bar: Focused on real-time Internet Connectivity & Status
+        let isMetricsExpanded = localStorage.getItem('clawwrt_metrics_expanded') === 'true';
+
+        // Compact Telemetry Pill Bar (ChatGPT-style single-row status bar)
+        const metricsCompactBar = E('div', {
+            'id': 'metrics-compact-bar',
+            'class': 'cw-telemetry-bar'
+        }, [
+            E('div', { 'class': 'cw-telemetry-left', 'style': 'display: flex; align-items: center; gap: 10px; flex-wrap: wrap;' }, [
+                E('div', {
+                    'id': 'pill-internet',
+                    'class': 'cw-telemetry-pill',
+                    'style': 'cursor: pointer; user-select: none;',
+                    'title': '外网上网状态（点击重新测速）',
+                    'click': function() { refreshMetrics(true); }
+                }, [
+                    E('span', {
+                        'id': 'pill-internet-dot',
+                        'style': 'display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #94a3b8; transition: all 0.3s;'
+                    }),
+                    E('span', { 'id': 'pill-internet-text', 'style': 'font-weight: 600; color: var(--cw-text-main);' }, '检测外网中...')
+                ]),
+                E('span', { 'style': 'color: var(--cw-border-strong); opacity: 0.6;' }, '|'),
+                E('div', {
+                    'id': 'pill-devices',
+                    'class': 'cw-telemetry-pill',
+                    'style': 'color: var(--cw-text-muted); cursor: pointer; user-select: none;',
+                    'title': '在线终端设备（点击询问详情）',
+                    'click': function() {
+                        const input = document.getElementById('chat-input');
+                        if (input) {
+                            input.value = (userMode === 'expert') ? '查看当前所有在线局域网终端设备的 IP、MAC、协商速率与活跃连接' : '当前局域网连接了哪些手机、电脑或电视？用通俗列表告诉我';
+                            sendMessage();
+                        }
+                    }
+                }, [
+                    E('span', {}, '📱'),
+                    E('span', { 'id': 'pill-devices-text' }, '- 台在线')
+                ]),
+                E('span', { 'style': 'color: var(--cw-border-strong); opacity: 0.6;' }, '|'),
+                E('div', {
+                    'id': 'pill-hardware',
+                    'class': 'cw-telemetry-pill',
+                    'style': 'color: var(--cw-text-muted); cursor: pointer; user-select: none;',
+                    'title': '路由器温度与硬件状态（点击体检）',
+                    'click': function() {
+                        const input = document.getElementById('chat-input');
+                        if (input) {
+                            input.value = '帮我查看一下当前路由器 CPU 和 5G/2.4G 无线芯片的实时温度与发热状况';
+                            sendMessage();
+                        }
+                    }
+                }, [
+                    E('span', {}, '🖥️'),
+                    E('span', { 'id': 'pill-hardware-text' }, 'CPU -°C')
+                ]),
+                E('span', { 'style': 'color: var(--cw-border-strong); opacity: 0.6;' }, '|'),
+                E('div', {
+                    'id': 'pill-security',
+                    'class': 'cw-telemetry-pill',
+                    'style': 'color: var(--cw-text-muted); cursor: pointer; user-select: none;',
+                    'title': '安全基线与外网端口防护（点击排查）',
+                    'click': function() {
+                        const input = document.getElementById('chat-input');
+                        if (input) {
+                            input.value = '帮我给这台路由器做一个全面的安全体检，排查外网端口暴露和密码安全隐患';
+                            sendMessage();
+                        }
+                    }
+                }, [
+                    E('span', {}, '🛡️'),
+                    E('span', { 'id': 'pill-security-text' }, '安全良好')
+                ])
+            ]),
+            E('div', { 'class': 'cw-telemetry-right', 'style': 'display: flex; align-items: center; gap: 8px;' }, [
+                E('button', {
+                    'id': 'btn-toggle-metrics',
+                    'type': 'button',
+                    'class': 'cw-telemetry-toggle-btn',
+                    'click': function() {
+                        isMetricsExpanded = !isMetricsExpanded;
+                        localStorage.setItem('clawwrt_metrics_expanded', isMetricsExpanded ? 'true' : 'false');
+                        updateMetricsVisibility();
+                    }
+                }, isMetricsExpanded ? '收起指标 ▴' : '📊 详细指标 ▾'),
+                E('button', {
+                    'id': 'btn-refresh-net-compact',
+                    'type': 'button',
+                    'class': 'cw-telemetry-refresh-btn',
+                    'title': '重新测速与刷新遥测',
+                    'click': function() { refreshMetrics(true); }
+                }, '🔄')
+            ])
+        ]);
+
+        function updateMetricsVisibility() {
+            const btn = document.getElementById('btn-toggle-metrics');
+            if (metricsBar) {
+                metricsBar.style.display = isMetricsExpanded ? 'grid' : 'none';
+            }
+            if (btn) {
+                btn.textContent = isMetricsExpanded ? '收起指标 ▴' : '📊 详细指标 ▾';
+            }
+        }
+
+        // Metrics Bar: Collapsible detailed telemetry cards
         const metricsBar = E('div', {
             'id': 'metrics-bar',
-            'style': 'display: grid; grid-template-columns: minmax(280px, 1.8fr) repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 16px;'
+            'style': (isMetricsExpanded ? 'display: grid; ' : 'display: none; ') + 'grid-template-columns: minmax(280px, 1.8fr) repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 10px;'
         }, [
             // Card 1: Main Internet Status Card (Highlighted, Big Status)
             E('div', {
@@ -1561,7 +1665,7 @@ return view.extend({
         }
 
         let currentCategory = localStorage.getItem('clawwrt_quick_category') || 'popular';
-        let isChipsCollapsed = localStorage.getItem('clawwrt_quick_collapsed') === 'true';
+        let isChipsCollapsed = localStorage.getItem('clawwrt_quick_collapsed') !== 'expanded';
 
         const categoryTabsContainer = E('div', {
             'class': 'quick-cat-tabs-bar',
@@ -1580,20 +1684,25 @@ return view.extend({
             'click': function(e) {
                 e.stopPropagation();
                 isChipsCollapsed = !isChipsCollapsed;
-                localStorage.setItem('clawwrt_quick_collapsed', isChipsCollapsed ? 'true' : 'false');
+                localStorage.setItem('clawwrt_quick_collapsed', isChipsCollapsed ? 'collapsed' : 'expanded');
                 updateChipsVisibility();
             }
         });
 
         function updateChipsVisibility() {
+            const togglePills = document.querySelectorAll('.cw-chips-toggle-pill');
             if (isChipsCollapsed) {
+                quickChips.style.display = 'none';
                 chipsDeck.style.display = 'none';
                 toggleBtn.textContent = '展开卡片 ▾';
                 toggleBtn.title = '展开快捷指令卡片';
+                togglePills.forEach(p => { p.innerHTML = '✨ 快捷指令 ▾'; p.classList.remove('active'); });
             } else {
+                quickChips.style.display = 'flex';
                 chipsDeck.style.display = 'flex';
                 toggleBtn.textContent = '收起卡片 ▴';
                 toggleBtn.title = '折叠快捷指令卡片';
+                togglePills.forEach(p => { p.innerHTML = '✨ 收起指令 ▴'; p.classList.add('active'); });
             }
         }
 
@@ -1624,7 +1733,7 @@ return view.extend({
 
             if (forceExpand && isChipsCollapsed) {
                 isChipsCollapsed = false;
-                localStorage.setItem('clawwrt_quick_collapsed', 'false');
+                localStorage.setItem('clawwrt_quick_collapsed', 'expanded');
                 updateChipsVisibility();
             }
         }
@@ -1719,10 +1828,10 @@ return view.extend({
         rebuildCategoryTabs();
         updateChipsVisibility();
 
-        // Quick action chips container
+        // Quick action chips container (Collapsible drawer above input)
         const quickChips = E('div', {
             'id': 'quick-chips',
-            'style': 'display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px;'
+            'style': (isChipsCollapsed ? 'display: none; ' : 'display: flex; ') + 'flex-direction: column; gap: 8px; margin-bottom: 8px; background: var(--cw-bg-subtle); border: 1px solid var(--cw-border); border-radius: 12px; padding: 10px 12px;'
         }, [
             E('div', { 'style': 'display: flex; justify-content: space-between; align-items: center; gap: 8px; border-bottom: 1px dashed var(--cw-border); padding-bottom: 6px;' }, [
                 categoryTabsContainer,
@@ -1731,33 +1840,57 @@ return view.extend({
             chipsDeck
         ]);
 
-        // Input Area
+        // Input Area (ChatGPT Style Capsule)
         const inputArea = E('div', {
             'class': 'cw-composer'
         }, [
             quickChips,
-            E('div', { 'class': 'cw-composer-row' }, [
-                E('textarea', {
-                    'id': 'chat-input',
-                    'placeholder': '用自然语言描述你想做的事',
-                    'class': 'cw-input',
-                    'keydown': function(e) {
-                        if (e.key === 'Enter' && !e.shiftKey) {
-                            e.preventDefault();
-                            if (!chatBusy) sendMessage();
+            E('div', { 'class': 'cw-composer-box' }, [
+                E('div', { 'class': 'cw-composer-row' }, [
+                    E('textarea', {
+                        'id': 'chat-input',
+                        'placeholder': '用自然语言描述你想做的事... (Enter 发送)',
+                        'class': 'cw-input',
+                        'rows': 1,
+                        'input': function(e) {
+                            this.style.height = 'auto';
+                            this.style.height = Math.min(this.scrollHeight, 140) + 'px';
+                        },
+                        'keydown': function(e) {
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                                e.preventDefault();
+                                if (!chatBusy) sendMessage();
+                            }
                         }
-                    }
-                }),
-                E('button', {
-                    'id': 'send-btn',
-                    'class': 'btn cbi-button cbi-button-apply cw-send',
-                    'click': function() {
-                        if (chatBusy) stopGeneration();
-                        else sendMessage();
-                    }
-                }, '发送')
-            ]),
-            E('div', { 'class': 'cw-input-hint' }, '回车发送，Shift+回车换行')
+                    }),
+                    E('button', {
+                        'id': 'send-btn',
+                        'class': 'btn cbi-button cbi-button-apply cw-send',
+                        'title': '发送指令 (Enter)',
+                        'click': function() {
+                            if (chatBusy) stopGeneration();
+                            else sendMessage();
+                        }
+                    }, '发送')
+                ]),
+                E('div', { 'class': 'cw-composer-footer' }, [
+                    E('div', { 'style': 'display: flex; align-items: center; gap: 8px;' }, [
+                        E('button', {
+                            'id': 'btn-toggle-chips',
+                            'type': 'button',
+                            'class': 'cw-chips-toggle-pill',
+                            'title': '展开/收起常用快捷指令分类卡片',
+                            'click': function(e) {
+                                e.preventDefault();
+                                isChipsCollapsed = !isChipsCollapsed;
+                                localStorage.setItem('clawwrt_quick_collapsed', isChipsCollapsed ? 'collapsed' : 'expanded');
+                                updateChipsVisibility();
+                            }
+                        }, isChipsCollapsed ? '✨ 快捷指令 ▾' : '✨ 收起指令 ▴')
+                    ]),
+                    E('div', { 'class': 'cw-input-hint' }, '回车发送 · Shift+回车换行')
+                ])
+            ])
         ]);
 
         
@@ -1954,108 +2087,241 @@ return view.extend({
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
-                gap: 12px;
+                gap: 10px;
                 background: var(--cw-bg-card);
                 color: var(--cw-text-main);
                 border: 1px solid var(--cw-border);
-                padding: 14px 16px;
-                border-radius: 14px;
-                margin-bottom: 12px;
+                padding: 10px 14px;
+                border-radius: 12px;
+                margin-bottom: 8px;
                 box-shadow: var(--cw-card-shadow);
             }
-            .cw-header-brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+            .cw-header-brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
             .cw-logo {
-                width: 42px; height: 42px; border-radius: 12px; flex: 0 0 auto;
+                width: 34px; height: 34px; border-radius: 10px; flex: 0 0 auto;
                 display: block; object-fit: cover; background: transparent;
             }
-            .cw-title { font-size: 18px; font-weight: 700; letter-spacing: 0; line-height: 1.2; }
-            .cw-subtitle { display: flex; align-items: center; gap: 8px; margin-top: 3px; font-size: 12px; color: var(--cw-text-muted); }
-            .cw-status-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #10b981; flex: 0 0 auto; }
-            .cw-header-actions { display: flex; gap: 8px; flex: 0 0 auto; }
+            .cw-title { font-size: 16px; font-weight: 700; letter-spacing: 0; line-height: 1.2; }
+            .cw-subtitle { display: flex; align-items: center; gap: 6px; margin-top: 2px; font-size: 11.5px; color: var(--cw-text-muted); }
+            .cw-status-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #10b981; flex: 0 0 auto; }
+            .cw-header-actions { display: flex; gap: 6px; flex: 0 0 auto; }
             .cw-header-btn {
                 background: var(--cw-bg-secondary) !important;
                 color: var(--cw-text-main) !important;
                 border: 1px solid var(--cw-border) !important;
-                padding: 7px 12px !important;
-                border-radius: 9px !important;
-                font-size: 13px !important;
+                padding: 5px 10px !important;
+                border-radius: 8px !important;
+                font-size: 12px !important;
                 cursor: pointer;
             }
+
+            .cw-telemetry-bar {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                background: var(--cw-bg-card);
+                border: 1px solid var(--cw-border);
+                border-radius: 10px;
+                padding: 5px 12px;
+                margin-bottom: 8px;
+                font-size: 12px;
+                gap: 8px;
+                box-shadow: var(--cw-card-shadow);
+                flex-wrap: wrap;
+            }
+            .cw-telemetry-pill {
+                display: inline-flex;
+                align-items: center;
+                gap: 5px;
+                transition: opacity 0.2s;
+            }
+            .cw-telemetry-pill:hover {
+                opacity: 0.8;
+            }
+            .cw-telemetry-toggle-btn {
+                background: var(--cw-bg-secondary) !important;
+                color: var(--cw-text-muted) !important;
+                border: 1px solid var(--cw-border) !important;
+                padding: 3px 8px !important;
+                border-radius: 6px !important;
+                font-size: 11px !important;
+                cursor: pointer;
+                display: inline-flex;
+                align-items: center;
+                gap: 4px;
+                user-select: none;
+            }
+            .cw-telemetry-toggle-btn:hover {
+                color: var(--cw-text-main) !important;
+                border-color: #3b82f6 !important;
+            }
+            .cw-telemetry-refresh-btn {
+                background: var(--cw-bg-secondary) !important;
+                color: var(--cw-text-muted) !important;
+                border: 1px solid var(--cw-border) !important;
+                padding: 3px 6px !important;
+                border-radius: 6px !important;
+                font-size: 11px !important;
+                cursor: pointer;
+                user-select: none;
+            }
+            .cw-telemetry-refresh-btn:hover {
+                color: var(--cw-text-main) !important;
+            }
+
+            .cw-starter-card {
+                background: var(--cw-bg-card);
+                border: 1px solid var(--cw-border);
+                border-radius: 12px;
+                padding: 12px 14px;
+                cursor: pointer;
+                transition: all 0.2s ease;
+                display: flex;
+                flex-direction: column;
+                gap: 4px;
+                box-shadow: var(--cw-card-shadow);
+            }
+            .cw-starter-card:hover {
+                transform: translateY(-2px);
+                border-color: #3b82f6 !important;
+                background: var(--cw-chip-hover-bg) !important;
+            }
+
             .cw-chat {
                 background: var(--cw-bg-chat);
                 border: 1px solid var(--cw-border);
-                border-radius: 14px;
-                height: min(560px, calc(100vh - 390px));
-                min-height: 320px;
+                border-radius: 16px;
+                height: calc(100vh - 215px);
+                min-height: 520px;
                 overflow-y: auto;
-                padding: 16px 18px;
+                padding: 18px 22px;
                 display: flex;
                 flex-direction: column;
-                gap: 14px;
-                margin-bottom: 12px;
-            }
-            .cw-composer {
-                background: var(--cw-bg-card);
-                border: 1px solid var(--cw-border);
-                border-radius: 14px;
-                padding: 12px;
-                display: flex;
-                flex-direction: column;
-                gap: 10px;
+                gap: 16px;
+                margin-bottom: 8px;
                 box-shadow: var(--cw-card-shadow);
             }
-            .cw-composer-row { display: flex; gap: 10px; align-items: flex-end; }
+            @media (max-height: 800px) {
+                .cw-chat {
+                    height: calc(100vh - 190px);
+                    min-height: 420px;
+                }
+            }
+
+            .cw-composer {
+                background: transparent;
+                display: flex;
+                flex-direction: column;
+                gap: 6px;
+            }
+            .cw-composer-box {
+                background: var(--cw-bg-card);
+                border: 1px solid var(--cw-border);
+                border-radius: 16px;
+                padding: 8px 14px 6px 14px;
+                box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+                display: flex;
+                flex-direction: column;
+                gap: 4px;
+                transition: border-color 0.2s, box-shadow 0.2s;
+            }
+            .cw-composer-box:focus-within {
+                border-color: #3b82f6;
+                box-shadow: 0 4px 18px rgba(59,130,246,0.15);
+            }
+            .cw-composer-row {
+                display: flex;
+                gap: 8px;
+                align-items: flex-end;
+            }
             .cw-input {
                 flex: 1;
-                border: 1px solid var(--cw-border) !important;
-                border-radius: 12px !important;
-                resize: none;
-                outline: none;
-                font-size: 14px;
-                min-height: 52px;
-                max-height: 120px;
-                line-height: 1.5;
-                font-family: inherit;
-                background: var(--cw-bg-secondary) !important;
+                border: none !important;
+                background: transparent !important;
                 color: var(--cw-input-text);
-                padding: 10px 12px;
+                resize: none;
+                outline: none !important;
+                box-shadow: none !important;
+                font-size: 14px;
+                line-height: 1.5;
+                padding: 6px 4px;
+                min-height: 38px;
+                max-height: 140px;
+                font-family: inherit;
                 box-sizing: border-box;
             }
-            .cw-input:focus { border-color: #2563eb !important; }
             .cw-input::placeholder,
             .cw-input::-webkit-input-placeholder {
                 color: var(--cw-text-muted) !important;
-                opacity: 1 !important;
-                font-style: italic;
+                opacity: 0.8 !important;
+                font-style: normal;
                 font-weight: 400;
             }
-            .cw-input-hint {
-                font-size: 12px;
-                line-height: 1.4;
-                color: var(--cw-text-muted);
-            }
             .cw-send {
-                padding: 10px 18px !important;
-                min-height: 44px;
-                font-size: 14px !important;
+                padding: 8px 18px !important;
+                min-height: 38px;
+                font-size: 13.5px !important;
                 font-weight: 600 !important;
-                border-radius: 12px !important;
+                border-radius: 10px !important;
                 background: #2563eb !important;
                 color: #fff !important;
                 border: none !important;
                 cursor: pointer;
+                flex-shrink: 0;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                transition: background 0.2s;
             }
-            .quick-cat-tab { border-radius: 999px; padding: 5px 12px; font-size: 12.5px; }
-            #metrics-bar .metric-tile { min-height: 92px; }
+            .cw-send:hover {
+                background: #1d4ed8 !important;
+            }
+            .cw-composer-footer {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding-top: 4px;
+                border-top: 1px solid var(--cw-border);
+                font-size: 11.5px;
+                color: var(--cw-text-muted);
+            }
+            .cw-chips-toggle-pill {
+                background: var(--cw-bg-secondary);
+                color: var(--cw-text-muted);
+                border: 1px solid var(--cw-border);
+                border-radius: 6px;
+                padding: 2px 8px;
+                font-size: 11px;
+                cursor: pointer;
+                display: inline-flex;
+                align-items: center;
+                gap: 4px;
+                user-select: none;
+                transition: all 0.2s;
+            }
+            .cw-chips-toggle-pill:hover, .cw-chips-toggle-pill.active {
+                color: #2563eb;
+                border-color: #93c5fd;
+                background: var(--cw-chip-bg);
+            }
+            .cw-input-hint {
+                font-size: 11.5px;
+                color: var(--cw-text-muted);
+                opacity: 0.85;
+            }
+            .quick-cat-tab { border-radius: 999px; padding: 4px 10px; font-size: 12px; }
+            #metrics-bar .metric-tile { min-height: 88px; }
             @media (max-width: 720px) {
-                .cw-header { align-items: flex-start; flex-direction: column; }
-                .cw-chat { height: 420px; }
+                .cw-header { align-items: flex-start; flex-direction: column; padding: 10px 12px; }
+                .cw-chat { height: calc(100vh - 210px); min-height: 440px; padding: 12px 14px; }
+                .cw-telemetry-bar { font-size: 11px; padding: 5px 10px; }
                 #metrics-bar { grid-template-columns: 1fr !important; }
             }
         `);
         container.appendChild(mdStyle);
 
         container.appendChild(header);
+        container.appendChild(metricsCompactBar);
         container.appendChild(metricsBar);
         container.appendChild(chatWindow);
         container.appendChild(inputArea);
@@ -2093,6 +2359,10 @@ return view.extend({
                     const input = document.getElementById('chat-input');
                     if (input) {
                         input.value = query;
+                        // Auto-collapse quick chips to maximize chat space
+                        isChipsCollapsed = true;
+                        localStorage.setItem('clawwrt_quick_collapsed', 'collapsed');
+                        updateChipsVisibility();
                         sendMessage();
                     }
                 }
@@ -2120,13 +2390,61 @@ return view.extend({
             } catch (e) {}
         }
 
+        // Starter Suggestion Prompt Cards (ChatGPT style)
+        function appendStarterPromptGrid() {
+            const existing = document.getElementById('cw-starter-grid');
+            if (existing) existing.remove();
+
+            const isExpert = (userMode === 'expert');
+            const starters = isExpert ? [
+                { icon: '🌡️', title: '芯片与硬件温度', desc: '查看 CPU 与 MT7976 射频温度', query: '查看当前路由器 CPU 核心及 2.4G/5G 射频前端 (MT7976) 硬件温度与散热状态' },
+                { icon: '🛡️', title: '安全基线全项体检', desc: '排查 WAN 口暴露与 SSH 策略', query: '对路由器进行全方位安全体检，检查 WAN 口管理面暴露、SSH 凭据策略、HTTPS 加密与系统隔离' },
+                { icon: '⚡', title: 'PPE 硬件加速流表', desc: '查看 PPE 硬件转发与流表', query: '查看当前路由器的硬件加速（MediaTek PPE 硬件流量分流）运行状态与硬件流表' },
+                { icon: '🩺', title: 'xDNS+xkcptun 体检', desc: '检测智能分流与加速隧道链路', query: '深度检测智能分流 (xDNS) 与网络加速 (xkcptun) 的全链路运行健康度，排查分流与加速是否存在异常，并在界面生成全链路诊断卡片' }
+            ] : [
+                { icon: '🌡️', title: '芯片发热与温度体检', desc: '查看 CPU 和无线芯片发热', query: '帮我查看一下当前路由器 CPU 和 5G/2.4G 无线芯片的实时温度与发热状况' },
+                { icon: '🛡️', title: '路由器安全体检', desc: '排查外网暴露与弱密码', query: '帮我给这台路由器做一个全面的安全体检，排查外网端口暴露和密码安全隐患' },
+                { icon: '🌐', title: '测一下能不能上网', desc: '测试外网通断与视频流畅度', query: '帮我全面测试路由器当前能否正常上网，延迟高不高、看视频卡不卡' },
+                { icon: '📶', title: 'WiFi 信号与穿墙体检', desc: '体检 2.4G/5G 信号与避堵', query: '帮我全面体检家里 2.4G 和 5G Wi-Fi 信号，看看穿墙好不好，有没有受到邻居干扰' }
+            ];
+
+            const grid = E('div', {
+                'id': 'cw-starter-grid',
+                'style': 'display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin: 12px 0 6px 0; width: 100%; max-width: 820px;'
+            });
+
+            starters.forEach(item => {
+                const card = E('div', {
+                    'class': 'cw-starter-card',
+                    'click': function() {
+                        const input = document.getElementById('chat-input');
+                        if (input) {
+                            input.value = item.query;
+                            sendMessage();
+                        }
+                    }
+                }, [
+                    E('div', { 'style': 'font-size: 13.5px; font-weight: 700; color: var(--cw-text-main); display: flex; align-items: center; gap: 6px;' }, [
+                        E('span', { 'style': 'font-size: 16px;' }, item.icon),
+                        E('span', {}, item.title)
+                    ]),
+                    E('div', { 'style': 'font-size: 12px; color: var(--cw-text-muted); line-height: 1.4;' }, item.desc)
+                ]);
+                grid.appendChild(card);
+            });
+
+            chatWindow.appendChild(grid);
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+
         // Append initial greeting (Mode-Aware)
         function appendGreeting(saveToStorage) {
             const isExpert = (userMode === 'expert');
             const greetingText = isExpert
-                ? `👋 **您好！我是您的路由器「小茶助手」🍵（⚡ 专家模式）。**\n\n小茶助手来自 **chaWrt**（最早源于 ChatGPT，谐音「茶 Wrt」）。当前已为您开启硬核技术遥测与 Linux 6.12 内核协议栈级深度排查模式，支持实时提取 MediaTek PPE 硬件流表、aw-bpf L7 协议分析、xDNS+xkcptun 隧道拓扑与全链路微秒级指标！\n\n您可以点击下方专家快捷指令或直接提问开始体验（顶栏可随时切换为 🌿小白模式）：`
+                ? `👋 **您好！我是您的路由器「小茶助手」🍵（⚡ 专家模式）。**\n\n小茶助手来自 **chaWrt**（最早源于 ChatGPT，谐音「茶 Wrt」）。当前已为您开启硬核技术遥测与 Linux 6.12 内核协议栈级深度排查模式，支持实时提取 MediaTek PPE 硬件流表、aw-bpf L7 协议分析、xDNS+xkcptun 隧道拓扑与全链路微秒级指标！\n\n您可以点击下方快捷指令或直接提问开始体验（顶栏可随时切换为 🌿小白模式）：`
                 : `👋 **您好！我是您的路由器「小茶助手」🍵（🌿 小白模式）。**\n\n小茶助手来自 **chaWrt**。chaWrt 最早来自 **ChatGPT**，中文读起来像「茶 Wrt」，所以叫小茶助手。\n\n当前已为您开启贴心生活化模式，我已实时监控当前路由器的**外网上网状态**、**在线设备连接**与**系统健康状况**。当您遇到上不了网、网络卡顿，或者想查看连接设备与配置时，都可以直接在下方用日常口语吩咐我，无需去翻找复杂的 LuCI 菜单！\n\n您可以点击下方的快捷指令或直接提问开始体验（顶栏可随时切换为 ⚡专家模式）：`;
             appendMessage('assistant', greetingText, saveToStorage);
+            appendStarterPromptGrid();
         }
 
         // Append Message to Chat Window
@@ -2169,6 +2487,9 @@ return view.extend({
                         messages.push({ role: item.role, content: item.content });
                     }
                 });
+                if (chatHistory.length === 1 && chatHistory[0].role === 'assistant') {
+                    appendStarterPromptGrid();
+                }
             } else {
                 appendGreeting(true);
             }
@@ -2777,16 +3098,16 @@ return view.extend({
                                 E('span', {}, `${xdns.ifname || 'br-lan'} (In: ${xdns.ingress_attached ? '✅' : '❌'}, Eg: ${xdns.egress_attached ? '✅' : '❌'})`)
                             ]),
                             E('div', { 'style': 'display: flex; justify-content: space-between;' }, [
-                                E('span', { 'style': 'color: var(--cw-text-muted);' }, '分流规则与劫持IP：'),
-                                E('span', { 'style': 'font-weight: 600; color: #0284c7;' }, `${xdns.domains_count || 0} 个域名 · ${xdns.active_ips_count || 0} 个IP`)
+                                E('span', { 'style': 'color: var(--cw-text-muted);' }, '分流规则与目标IP：'),
+                                E('span', { 'style': 'font-weight: 600; color: #0284c7;' }, `${xdns.domains_count || 0} 域名 · ${xdns.active_ips_count || 0} 动态IP${xdns.static_ips_count ? ' (含 ' + xdns.static_ips_count + ' 静态)' : ''}`)
                             ]),
                             E('div', { 'style': 'display: flex; justify-content: space-between;' }, [
                                 E('span', { 'style': 'color: var(--cw-text-muted);' }, 'DNS 拦截与学习：'),
-                                E('span', {}, `${xdns.dns_proxied || 0} 代理 · ${xdns.dns_learned || 0} 学习 · ${xdns.dns_passed || 0} 放行`)
+                                E('span', {}, `${xdns.dns_proxied || 0} 代理 · ${xdns.dns_learned || 0} 学习 · ${xdns.dns_passed || 0} 放行${xdns.dns_failed ? ' · <span style="color:#dc2626;">' + xdns.dns_failed + ' 失败</span>' : ''}`)
                             ]),
                             E('div', { 'style': 'display: flex; justify-content: space-between;' }, [
                                 E('span', { 'style': 'color: var(--cw-text-muted);' }, '已加速 TCP 流量：'),
-                                E('span', { 'style': 'font-weight: 600; color: #16a34a;' }, `${xdns.tcp_conns || 0} 会话 · ${fmtBytes(xdns.tcp_bytes)}`)
+                                E('span', { 'style': 'font-weight: 600; color: #16a34a;' }, `${xdns.tcp_conns || 0} 累计连接${xdns.active_sessions ? ' (' + xdns.active_sessions + ' 活跃)' : ''} · ${fmtBytes(xdns.tcp_bytes)}${xdns.tcp_packets ? ' (' + xdns.tcp_packets + ' 包)' : ''}`)
                             ])
                         ])
                     ]),
@@ -5856,6 +6177,10 @@ return view.extend({
 
             const userText = input.value.trim();
             input.value = '';
+            input.style.height = 'auto';
+
+            const starterGrid = document.getElementById('cw-starter-grid');
+            if (starterGrid) starterGrid.remove();
 
             // Natural language mode switching intercept
             if (/^(切换到?|开启|切为)?(专家模式|极客模式)$/i.test(userText)) {
@@ -6502,10 +6827,13 @@ return view.extend({
         // Refresh Metrics
         function refreshMetrics(isManual) {
             const btn = document.getElementById('btn-refresh-net');
+            const btnCompact = document.getElementById('btn-refresh-net-compact');
             if (btn && isManual) btn.innerText = '⏳ 探测中...';
+            if (btnCompact && isManual) btnCompact.innerText = '⏳';
 
             callGetRouterSummary().then(sum => {
                 if (btn) btn.innerText = '🔄 重新测速';
+                if (btnCompact) btnCompact.innerText = '🔄';
                 if (!sum) return;
 
                 const netCard = document.getElementById('metric-internet');
@@ -6513,43 +6841,60 @@ return view.extend({
                 const netTitle = document.getElementById('net-status-text');
                 const netDesc = document.getElementById('net-status-desc');
 
-                if (netCard && netDot && netTitle && netDesc) {
-                    if (sum.online && sum.dns_ok) {
-                        netCard.style.borderColor = '#86efac';
-                        netCard.style.background = '#f0fdf4';
-                        netDot.style.background = '#16a34a';
-                        netDot.style.boxShadow = '0 0 10px rgba(22, 163, 74, 0.7)';
-                        netTitle.innerHTML = '<span style="color: #15803d;">🟢 正常上网 · 互联网畅通</span>';
-                        netDesc.innerText = `外网延迟: ${sum.latency || '< 10ms'} · DNS 解析: 正常 · WAN: ${sum.wan_ip || '已连接'}`;
-                    } else if (sum.online && !sum.dns_ok) {
-                        netCard.style.borderColor = '#fde047';
-                        netCard.style.background = '#fefce8';
-                        netDot.style.background = '#ca8a04';
-                        netDot.style.boxShadow = '0 0 10px rgba(202, 138, 4, 0.7)';
-                        netTitle.innerHTML = '<span style="color: #a16207;">🟡 IP 可通，但 DNS 异常</span>';
-                        netDesc.innerText = `外网 IP 正常 (${sum.wan_ip})，但域名解析失败，请检查 DNS 配置`;
-                    } else {
-                        netCard.style.borderColor = '#fca5a5';
-                        netCard.style.background = '#fef2f2';
-                        netDot.style.background = '#dc2626';
-                        netDot.style.boxShadow = '0 0 10px rgba(220, 38, 38, 0.7)';
-                        netTitle.innerHTML = '<span style="color: #b91c1c;">🔴 无法上网 · 互联网已断开</span>';
-                        netDesc.innerText = '外网链路不可达，请检查网线插口或宽带拨号状态';
-                    }
+                const pillDot = document.getElementById('pill-internet-dot');
+                const pillText = document.getElementById('pill-internet-text');
+
+                if (sum.online && sum.dns_ok) {
+                    if (netCard) { netCard.style.borderColor = '#86efac'; netCard.style.background = '#f0fdf4'; }
+                    if (netDot) { netDot.style.background = '#16a34a'; netDot.style.boxShadow = '0 0 10px rgba(22, 163, 74, 0.7)'; }
+                    if (netTitle) netTitle.innerHTML = '<span style="color: #15803d;">🟢 正常上网 · 互联网畅通</span>';
+                    if (netDesc) netDesc.innerText = `外网延迟: ${sum.latency || '< 10ms'} · DNS 解析: 正常 · WAN: ${sum.wan_ip || '已连接'}`;
+
+                    if (pillDot) { pillDot.style.background = '#16a34a'; pillDot.style.boxShadow = '0 0 6px rgba(22, 163, 74, 0.7)'; }
+                    if (pillText) pillText.innerHTML = `<span style="color: #16a34a; font-weight: 700;">🟢 外网畅通</span> <span style="font-size: 11px; opacity: 0.85;">(${sum.latency || '< 10ms'})</span>`;
+                } else if (sum.online && !sum.dns_ok) {
+                    if (netCard) { netCard.style.borderColor = '#fde047'; netCard.style.background = '#fefce8'; }
+                    if (netDot) { netDot.style.background = '#ca8a04'; netDot.style.boxShadow = '0 0 10px rgba(202, 138, 4, 0.7)'; }
+                    if (netTitle) netTitle.innerHTML = '<span style="color: #a16207;">🟡 IP 可通，但 DNS 异常</span>';
+                    if (netDesc) netDesc.innerText = `外网 IP 正常 (${sum.wan_ip})，但域名解析失败，请检查 DNS 配置`;
+
+                    if (pillDot) { pillDot.style.background = '#ca8a04'; pillDot.style.boxShadow = '0 0 6px rgba(202, 138, 4, 0.7)'; }
+                    if (pillText) pillText.innerHTML = '<span style="color: #ca8a04; font-weight: 700;">🟡 DNS 异常</span>';
+                } else {
+                    if (netCard) { netCard.style.borderColor = '#fca5a5'; netCard.style.background = '#fef2f2'; }
+                    if (netDot) { netDot.style.background = '#dc2626'; netDot.style.boxShadow = '0 0 10px rgba(220, 38, 38, 0.7)'; }
+                    if (netTitle) netTitle.innerHTML = '<span style="color: #b91c1c;">🔴 无法上网 · 互联网已断开</span>';
+                    if (netDesc) netDesc.innerText = '外网链路不可达，请检查网线插口或宽带拨号状态';
+
+                    if (pillDot) { pillDot.style.background = '#dc2626'; pillDot.style.boxShadow = '0 0 6px rgba(220, 38, 38, 0.7)'; }
+                    if (pillText) pillText.innerHTML = '<span style="color: #dc2626; font-weight: 700;">🔴 外网断开</span>';
                 }
 
                 const tiles = metricsBar.querySelectorAll('.metric-tile-sub');
                 if (tiles.length >= 2) {
                     // Devices
-                    tiles[0].querySelector('.metric-val1').innerText = `${sum.client_count || 0} 台设备在线`;
-                    tiles[0].querySelector('.metric-val2').innerText = `网关: ${sum.lan_ip || '192.168.8.1'}`;
+                    const dVal1 = tiles[0].querySelector('.metric-val1');
+                    const dVal2 = tiles[0].querySelector('.metric-val2');
+                    if (dVal1) dVal1.innerText = `${sum.client_count || 0} 台设备在线`;
+                    if (dVal2) dVal2.innerText = `网关: ${sum.lan_ip || '192.168.8.1'}`;
+
+                    const pillDev = document.getElementById('pill-devices-text');
+                    if (pillDev) pillDev.innerText = `${sum.client_count || 0} 台在线`;
 
                     // Hardware
                     const memUsed = sum.mem_total_kb ? Math.round((sum.mem_total_kb - sum.mem_free_kb) / sum.mem_total_kb * 100) : 0;
-                    tiles[1].querySelector('.metric-val1').innerText = `${sum.board_model || 'chaWrt'}`;
+                    const hVal1 = tiles[1].querySelector('.metric-val1');
+                    const hVal2 = tiles[1].querySelector('.metric-val2');
+                    if (hVal1) hVal1.innerText = `${sum.board_model || 'chaWrt'}`;
                     const hwBadge = sum.hw_accel ? '⚡开启' : '关闭';
                     const tempText = (sum.cpu_temp && sum.cpu_temp !== '未知') ? ` | 核心: ${sum.cpu_temp}°C` : '';
-                    tiles[1].querySelector('.metric-val2').innerText = `CPU 负载: ${sum.cpu_load || '0.00'}${tempText} | 内存: ${memUsed}% | 硬件加速: ${hwBadge}`;
+                    if (hVal2) hVal2.innerText = `CPU 负载: ${sum.cpu_load || '0.00'}${tempText} | 内存: ${memUsed}% | 硬件加速: ${hwBadge}`;
+
+                    const pillHw = document.getElementById('pill-hardware-text');
+                    if (pillHw) {
+                        const tempStr = (sum.cpu_temp && sum.cpu_temp !== '未知') ? `${sum.cpu_temp}°C` : '';
+                        pillHw.innerText = tempStr ? `CPU ${tempStr} · 负载 ${sum.cpu_load || '0.00'}` : `负载 ${sum.cpu_load || '0.00'}`;
+                    }
                 }
 
                 if (tiles.length >= 3) {
@@ -6557,21 +6902,26 @@ return view.extend({
                         if (!sec) return;
                         const v1 = tiles[2].querySelector('.metric-val1');
                         const v2 = tiles[2].querySelector('.metric-val2');
-                        if (!v1 || !v2) return;
+                        const pillSec = document.getElementById('pill-security-text');
+
                         if (sec.level === 'danger') {
-                            v1.innerHTML = `<span style="color: #dc2626;">⚠️ ${sec.score} 分 · 存在隐患</span>`;
-                            v2.innerText = `WAN口暴露/风险 ${sec.danger_count} 项 · 点击排查`;
+                            if (v1) v1.innerHTML = `<span style="color: #dc2626;">⚠️ ${sec.score} 分 · 存在隐患</span>`;
+                            if (v2) v2.innerText = `WAN口暴露/风险 ${sec.danger_count} 项 · 点击排查`;
+                            if (pillSec) pillSec.innerHTML = `<span style="color: #dc2626; font-weight: 600;">⚠️ ${sec.score}分 · 风险</span>`;
                         } else if (sec.level === 'warning') {
-                            v1.innerHTML = `<span style="color: #d97706;">⚠️ ${sec.score} 分 · 建议加固</span>`;
-                            v2.innerText = `发现 ${sec.warning_count} 项建议 · 点击排查`;
+                            if (v1) v1.innerHTML = `<span style="color: #d97706;">⚠️ ${sec.score} 分 · 建议加固</span>`;
+                            if (v2) v2.innerText = `发现 ${sec.warning_count} 项建议 · 点击排查`;
+                            if (pillSec) pillSec.innerHTML = `<span style="color: #d97706; font-weight: 600;">⚠️ ${sec.score}分 · 建议加固</span>`;
                         } else {
-                            v1.innerHTML = `<span style="color: #16a34a;">🟢 ${sec.score} 分 · 安全良好</span>`;
-                            v2.innerText = '8 项基线完备 · 点击体检';
+                            if (v1) v1.innerHTML = `<span style="color: #16a34a;">🟢 ${sec.score} 分 · 安全良好</span>`;
+                            if (v2) v2.innerText = '8 项基线完备 · 点击体检';
+                            if (pillSec) pillSec.innerHTML = `<span style="color: #16a34a; font-weight: 600;">🟢 ${sec.score}分 · 良好</span>`;
                         }
                     }).catch(function() {});
                 }
             }).catch(e => {
                 if (btn) btn.innerText = '🔄 重新测速';
+                if (btnCompact) btnCompact.innerText = '🔄';
             });
         }
 
