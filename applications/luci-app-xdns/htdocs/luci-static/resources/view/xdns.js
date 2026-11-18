@@ -428,8 +428,8 @@ return view.extend({
 				}, [ '🔄 ', _('刷新数据') ])
 			]),
 			kpiRow,
-			ipSection,
-			sessionSection
+			sessionSection,
+			ipSection
 		]);
 	},
 
