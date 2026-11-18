@@ -3144,8 +3144,12 @@ return view.extend({
                             ]),
                             E('div', { 'style': 'display: flex; justify-content: space-between;' }, [
                                 E('span', { 'style': 'color: var(--cw-text-muted);' }, '隧道与活跃连接：'),
-                                E('span', { 'style': 'font-weight: 600; color: #ea580c;' }, `${xkcptun.total_tunnels || 0} 条隧道 · ${xkcptun.active_conns || 0} 个活跃并发`)
+                                E('span', { 'style': 'font-weight: 600; color: #ea580c;' }, `${xkcptun.total_tunnels || 0} 条隧道 · ${xkcptun.active_conns || 0} 个活跃并发${xkcptun.total_conns ? ' (' + xkcptun.total_conns + ' 累计)' : ''}`)
                             ]),
+                            (xkcptun.bytes_in || xkcptun.bytes_out) ? E('div', { 'style': 'display: flex; justify-content: space-between;' }, [
+                                E('span', { 'style': 'color: var(--cw-text-muted);' }, '加速吞吐与流速：'),
+                                E('span', { 'style': 'font-weight: 600; color: #2563eb;' }, `📥 ${fmtBytes(xkcptun.bytes_out || 0)}${xkcptun.rx_rate_bps ? ' (' + fmtBytes(xkcptun.rx_rate_bps) + '/s)' : ''} · 📤 ${fmtBytes(xkcptun.bytes_in || 0)}${xkcptun.tx_rate_bps ? ' (' + fmtBytes(xkcptun.tx_rate_bps) + '/s)' : ''}`)
+                            ]) : '',
                             E('div', { 'style': 'display: flex; justify-content: space-between;' }, [
                                 E('span', { 'style': 'color: var(--cw-text-muted);' }, 'HTTP 监控端点：'),
                                 E('span', {}, `:9086 ${xkcptun.listen_9086 ? '✅ 就绪' : '❌ 未响应'}`)

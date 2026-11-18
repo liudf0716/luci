@@ -636,11 +636,23 @@ case "$1" in
             fi
 
             # 2. xkcptun (Network Acceleration)
+            local xkcptun_total_conns=0
+            local xkcptun_bytes_in=0
+            local xkcptun_bytes_out=0
             /etc/init.d/xkcptun status 2>/dev/null | grep -E -q "running|active" && xkcptun_run=1
             if [ "$xkcptun_run" -eq 1 ]; then
-                local mon_raw=$(wget -qO- -T 1 http://127.0.0.1:9086 2>/dev/null)
+                local mon_raw=""
+                if [ -x "/usr/bin/xkcp_spy" ]; then
+                    mon_raw=$(/usr/bin/xkcp_spy -c json 2>/dev/null)
+                fi
+                if [ -z "$mon_raw" ]; then
+                    mon_raw=$(wget -qO- -T 1 http://127.0.0.1:9086/json 2>/dev/null)
+                fi
                 if [ -n "$mon_raw" ]; then
-                    xkcptun_conns=$(echo "$mon_raw" | grep "redir_tunnel" | sed -n 's/.*conns: \([0-9]*\).*/\1/p')
+                    xkcptun_conns=$(echo "$mon_raw" | jsonfilter -e '@.active_conns' 2>/dev/null)
+                    xkcptun_total_conns=$(echo "$mon_raw" | jsonfilter -e '@.total_conns' 2>/dev/null)
+                    xkcptun_bytes_in=$(echo "$mon_raw" | jsonfilter -e '@.bytes_in' 2>/dev/null)
+                    xkcptun_bytes_out=$(echo "$mon_raw" | jsonfilter -e '@.bytes_out' 2>/dev/null)
                 fi
                 local redir_port=$(uci -q get xkcptun.redir_tunnel.local_port || echo 12345)
                 local est_conns=$(netstat -nt 2>/dev/null | grep ":${redir_port} " | grep -c "ESTABLISHED" || echo 0)
@@ -682,6 +694,9 @@ case "$1" in
             json_add_boolean "wifidogx_cloud_connected" "$wifidogx_cloud"
             json_add_boolean "xkcptun" "$xkcptun_run"
             json_add_int "xkcptun_active_connections" "${xkcptun_conns:-0}"
+            json_add_int "xkcptun_total_connections" "${xkcptun_total_conns:-0}"
+            json_add_int "xkcptun_bytes_in" "${xkcptun_bytes_in:-0}"
+            json_add_int "xkcptun_bytes_out" "${xkcptun_bytes_out:-0}"
             json_add_boolean "xfrpc" "$xfrpc_run"
             json_add_boolean "xfrpc_connected" "$xfrpc_connected"
             json_add_boolean "xdns" "$xdns_run"
@@ -2598,9 +2613,29 @@ EOF
                         ping_ms=$(ping -c 1 -W 1 "$remote_addr" 2>/dev/null | sed -n 's/.*time=\([0-9.]*\) ms/\1/p')
                     fi
 
-                    local mon_raw=$(wget -qO- -T 1 http://127.0.0.1:9086 2>/dev/null)
+                    local spy_json=""
+                    if [ -x "/usr/bin/xkcp_spy" ]; then
+                        spy_json=$(/usr/bin/xkcp_spy -c json 2>/dev/null)
+                    fi
+                    if [ -z "$spy_json" ]; then
+                        spy_json=$(wget -qO- -T 1 http://127.0.0.1:9086/json 2>/dev/null)
+                    fi
                     local active=0
-                    [ -n "$mon_raw" ] && active=1
+                    local spy_total_conns=0
+                    local spy_active_conns=0
+                    local spy_bytes_in=0
+                    local spy_bytes_out=0
+                    local spy_rx_rate=0
+                    local spy_tx_rate=0
+                    if [ -n "$spy_json" ]; then
+                        active=1
+                        spy_total_conns=$(echo "$spy_json" | jsonfilter -e '@.total_conns' 2>/dev/null)
+                        spy_active_conns=$(echo "$spy_json" | jsonfilter -e '@.active_conns' 2>/dev/null)
+                        spy_bytes_in=$(echo "$spy_json" | jsonfilter -e '@.bytes_in' 2>/dev/null)
+                        spy_bytes_out=$(echo "$spy_json" | jsonfilter -e '@.bytes_out' 2>/dev/null)
+                        spy_rx_rate=$(echo "$spy_json" | jsonfilter -e '@.rx_rate_bps' 2>/dev/null)
+                        spy_tx_rate=$(echo "$spy_json" | jsonfilter -e '@.tx_rate_bps' 2>/dev/null)
+                    fi
 
                     json_add_boolean "running" "$run"
                     json_add_boolean "active" "$active"
@@ -2618,6 +2653,13 @@ EOF
                     json_add_string "nodelay" "$nodelay"
                     json_add_string "nc" "$nc"
 
+                    json_add_int "total_connections" "${spy_total_conns:-0}"
+                    json_add_int "active_connections" "${spy_active_conns:-0}"
+                    json_add_int "bytes_in" "${spy_bytes_in:-0}"
+                    json_add_int "bytes_out" "${spy_bytes_out:-0}"
+                    json_add_int "rx_rate_bps" "${spy_rx_rate:-0}"
+                    json_add_int "tx_rate_bps" "${spy_tx_rate:-0}"
+
                     json_add_array "tunnels"
                     local total_conns=0
                     for sec in $(uci -q show xkcptun | grep '=client$' | cut -d. -f2 | cut -d= -f1); do
@@ -2631,15 +2673,24 @@ EOF
                         local t_target_addr=$(uci -q get xkcptun.${sec}.target_addr)
                         local t_target_port=$(uci -q get xkcptun.${sec}.target_port)
                         local t_conns=0
-                        if [ -n "$mon_raw" ]; then
-                            t_conns=$(echo "$mon_raw" | grep "\[${t_name}\]" | sed -n 's/.*conns: \([0-9]*\).*/\1/p' | head -n1)
-                            [ -z "$t_conns" ] && t_conns=0
+                        local t_total_conns=0
+                        local t_bin=0
+                        local t_bout=0
+                        local t_rx_bps=0
+                        local t_tx_bps=0
+                        if [ -n "$spy_json" ]; then
+                            t_conns=$(echo "$spy_json" | jsonfilter -e "@.tunnels[@.name='${t_name}'].active_conns" 2>/dev/null)
+                            t_total_conns=$(echo "$spy_json" | jsonfilter -e "@.tunnels[@.name='${t_name}'].total_conns" 2>/dev/null)
+                            t_bin=$(echo "$spy_json" | jsonfilter -e "@.tunnels[@.name='${t_name}'].bytes_in" 2>/dev/null)
+                            t_bout=$(echo "$spy_json" | jsonfilter -e "@.tunnels[@.name='${t_name}'].bytes_out" 2>/dev/null)
+                            t_rx_bps=$(echo "$spy_json" | jsonfilter -e "@.tunnels[@.name='${t_name}'].rx_rate_bps" 2>/dev/null)
+                            t_tx_bps=$(echo "$spy_json" | jsonfilter -e "@.tunnels[@.name='${t_name}'].tx_rate_bps" 2>/dev/null)
                         fi
                         if [ "$t_type" = "redir" ] && [ -n "$t_lport" ]; then
                             local est=$(netstat -nt 2>/dev/null | grep ":${t_lport} " | grep -c "ESTABLISHED" || echo 0)
                             [ "${est:-0}" -gt "${t_conns:-0}" ] && t_conns="$est"
                         fi
-                        total_conns=$((total_conns + t_conns))
+                        total_conns=$((total_conns + ${t_conns:-0}))
                         json_add_object ""
                         json_add_string "name" "$t_name"
                         json_add_boolean "enabled" "$([ "$t_en" = "1" ] && echo 1 || echo 0)"
@@ -2650,14 +2701,49 @@ EOF
                         json_add_string "target_addr" "$t_target_addr"
                         json_add_string "target_port" "$t_target_port"
                         json_add_int "active_connections" "${t_conns:-0}"
+                        json_add_int "total_connections" "${t_total_conns:-0}"
+                        json_add_int "bytes_in" "${t_bin:-0}"
+                        json_add_int "bytes_out" "${t_bout:-0}"
+                        json_add_int "rx_rate_bps" "${t_rx_bps:-0}"
+                        json_add_int "tx_rate_bps" "${t_tx_bps:-0}"
                         json_close_object
                     done
                     json_close_array
 
-                    json_add_int "active_connections" "${total_conns:-0}"
+                    [ "${spy_active_conns:-0}" -eq 0 ] && json_add_int "active_connections" "${total_conns:-0}"
 
                     json_add_array "sample_connections"
-                    if [ "$active" -eq 1 ]; then
+                    if [ -n "$spy_json" ]; then
+                        local s_json=$(echo "$spy_json" | jsonfilter -e '@.tunnels[*].sessions[*]' 2>/dev/null | head -n 12)
+                        while read -r sline; do
+                            [ -z "$sline" ] && continue
+                            local s_conv=$(echo "$sline" | jsonfilter -e '@.conv' 2>/dev/null)
+                            [ -z "$s_conv" ] && s_conv=$(echo "$sline" | jsonfilter -e '@.id' 2>/dev/null)
+                            local s_proto=$(echo "$sline" | jsonfilter -e '@.proto' 2>/dev/null || echo "tcp")
+                            local s_cli_host=$(echo "$sline" | jsonfilter -e '@.client_host' 2>/dev/null)
+                            local s_cli_port=$(echo "$sline" | jsonfilter -e '@.client_port' 2>/dev/null)
+                            local s_tgt_host=$(echo "$sline" | jsonfilter -e '@.target_host' 2>/dev/null)
+                            local s_tgt_port=$(echo "$sline" | jsonfilter -e '@.target_port' 2>/dev/null)
+                            local s_bin=$(echo "$sline" | jsonfilter -e '@.bytes_in' 2>/dev/null || echo 0)
+                            local s_bout=$(echo "$sline" | jsonfilter -e '@.bytes_out' 2>/dev/null || echo 0)
+                            local s_rtt=$(echo "$sline" | jsonfilter -e '@.rtt_ms' 2>/dev/null || echo 0)
+                            local s_up=$(echo "$sline" | jsonfilter -e '@.uptime' 2>/dev/null || echo 0)
+                            [ -n "$s_tgt_host" ] && {
+                                json_add_object ""
+                                json_add_string "conv" "$s_conv"
+                                json_add_string "proto" "$s_proto"
+                                json_add_string "client" "${s_cli_host}:${s_cli_port}"
+                                json_add_string "target" "${s_tgt_host}:${s_tgt_port}"
+                                json_add_int "bytes_in" "${s_bin:-0}"
+                                json_add_int "bytes_out" "${s_bout:-0}"
+                                json_add_int "rtt_ms" "${s_rtt:-0}"
+                                json_add_int "uptime" "${s_up:-0}"
+                                json_close_object
+                            }
+                        done <<EOF
+$s_json
+EOF
+                    elif [ "$active" -eq 1 ]; then
                         local status_raw=$(echo "status" | nc 127.0.0.1 9086 2>/dev/null)
                         if [ -n "$status_raw" ]; then
                             local s_lines=$(echo "$status_raw" | grep "conv \[" | head -n 8)
@@ -5602,9 +5688,33 @@ fi
             local mon_text=""
             local total_tunnels=0
             local active_conns=0
+            local xkcp_total_conns=0
+            local xkcp_bytes_in=0
+            local xkcp_bytes_out=0
+            local xkcp_rx_rate=0
+            local xkcp_tx_rate=0
             if [ "$listen_9086" -eq 1 ]; then
-                mon_text=$(wget -qO- -T 1 http://127.0.0.1:9086 2>/dev/null)
-                if [ -n "$mon_text" ]; then
+                local mon_json=""
+                if [ -x "/usr/bin/xkcp_spy" ]; then
+                    mon_json=$(/usr/bin/xkcp_spy -c json 2>/dev/null)
+                fi
+                [ -z "$mon_json" ] && mon_json=$(wget -qO- -T 1 http://127.0.0.1:9086/json 2>/dev/null)
+                if [ -n "$mon_json" ]; then
+                    total_tunnels=$(echo "$mon_json" | jsonfilter -e '@.num_tunnels' 2>/dev/null)
+                    [ -z "$total_tunnels" ] && total_tunnels=$(echo "$mon_json" | jsonfilter -e '@.total_tunnels' 2>/dev/null)
+                    active_conns=$(echo "$mon_json" | jsonfilter -e '@.active_conns' 2>/dev/null)
+                    xkcp_total_conns=$(echo "$mon_json" | jsonfilter -e '@.total_conns' 2>/dev/null)
+                    xkcp_bytes_in=$(echo "$mon_json" | jsonfilter -e '@.bytes_in' 2>/dev/null)
+                    xkcp_bytes_out=$(echo "$mon_json" | jsonfilter -e '@.bytes_out' 2>/dev/null)
+                    xkcp_rx_rate=$(echo "$mon_json" | jsonfilter -e '@.rx_rate_bps' 2>/dev/null)
+                    xkcp_tx_rate=$(echo "$mon_json" | jsonfilter -e '@.tx_rate_bps' 2>/dev/null)
+                fi
+
+                if [ -x "/usr/bin/xkcp_spy" ]; then
+                    mon_text=$(/usr/bin/xkcp_spy -c list 2>/dev/null)
+                fi
+                [ -z "$mon_text" ] && mon_text=$(wget -qO- -T 1 http://127.0.0.1:9086 2>/dev/null)
+                if [ -z "$total_tunnels" -o "$total_tunnels" -eq 0 ] 2>/dev/null && [ -n "$mon_text" ]; then
                     total_tunnels=$(echo "$mon_text" | grep -c "^\s*- \[" || echo 0)
                     for c in $(echo "$mon_text" | sed -n 's/.*conns: \([0-9]*\).*/\1/p'); do
                         active_conns=$((active_conns + c))
@@ -5702,8 +5812,13 @@ fi
             json_add_boolean "listen_5353" "$listen_5353"
             json_add_boolean "listen_12345" "$listen_12345"
             json_add_boolean "listen_9086" "$listen_9086"
-            json_add_int "total_tunnels" "$total_tunnels"
-            json_add_int "active_conns" "$active_conns"
+            json_add_int "total_tunnels" "${total_tunnels:-0}"
+            json_add_int "active_conns" "${active_conns:-0}"
+            json_add_int "total_conns" "${xkcp_total_conns:-0}"
+            json_add_int "bytes_in" "${xkcp_bytes_in:-0}"
+            json_add_int "bytes_out" "${xkcp_bytes_out:-0}"
+            json_add_int "rx_rate_bps" "${xkcp_rx_rate:-0}"
+            json_add_int "tx_rate_bps" "${xkcp_tx_rate:-0}"
             json_add_string "monitor_summary" "$mon_text"
             json_close_object
 
