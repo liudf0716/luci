@@ -173,7 +173,7 @@ function renderStatus(status) {
 		}, _('暂无活跃加速连接（当局域网客户端发起分流流量或端口转发访问时将实时显示）'));
 	}
 
-	return E('div', { 'class': 'cbi-map' }, [
+	return E('div', { 'class': 'xkcp-status-panel' }, [
 		kpiGrid,
 		E('div', { 'style': 'margin-top: 8px;' }, [
 			E('h4', { 'style': 'margin: 0 0 6px 0; font-size: 14px; font-weight: 600; color: var(--cbi-section-title-color, #374151);' }, [
@@ -435,7 +435,21 @@ return view.extend({
 		m = new form.Map('xkcptun');
 		m.tabbed = true;
 
-		// ===== Tab 1: Client Global Default Settings =====
+		// ===== Tab 1: Service Status Overview =====
+		let s_status = m.section(form.NamedSection, '_status', 'status', _('Service Status'),
+			_('Real-time connection telemetry, throughput metrics, and active accelerated sessions.'));
+		s_status.anonymous = true;
+		s_status.addremove = false;
+		s_status.load = function() { return Promise.resolve(); };
+		s_status.parse = function() { return Promise.resolve(); };
+		s_status.render = function() {
+			let statusDiv = E('div', { 'id': 'service_status', 'style': 'margin-top: 6px;' }, [
+				E('em', { 'class': 'spinning' }, _('Collecting status ...'))
+			]);
+			return Promise.resolve(E('div', { 'class': 'cbi-section' }, [ statusDiv ]));
+		};
+
+		// ===== Tab 2: Client Global Default Settings =====
 		s = m.section(form.NamedSection, 'client', 'global', _('Client Global Settings'),
 			_('Common connection parameters and KCP profile inherited by all client tunnels.'));
 		s.anonymous = false;
@@ -658,10 +672,12 @@ return view.extend({
 				window.dispatchEvent(new Event('resize'));
 			});
 
-			let statusEl = E('fieldset', { 'class': 'cbi-section', 'style': 'margin-bottom: 15px;' }, [
-				E('legend', {}, _('Service Status')),
-				E('div', { 'id': 'service_status' }, _('Collecting status ...'))
-			]);
+			getServiceStatus().then(function(status) {
+				let view = document.getElementById('service_status');
+				if (view) {
+					dom.content(view, renderStatus(status));
+				}
+			});
 
 			L.Poll.add(function () {
 				return L.resolveDefault(getServiceStatus(), {}).then(function(status) {
@@ -678,7 +694,6 @@ return view.extend({
 				E('div', { 'class': 'cbi-map-descr' },
 					_('xkcptun is a high-performance C implementation of kcptun with dynamic destination multi-tunnel unified daemon architecture.')
 				),
-				statusEl,
 				mapNode
 			]);
 		});
