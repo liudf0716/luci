@@ -1422,8 +1422,9 @@ return view.extend({
 
         function updateMetricsVisibility() {
             const btn = document.getElementById('btn-toggle-metrics');
-            if (metricsBar) {
-                metricsBar.style.display = isMetricsExpanded ? 'grid' : 'none';
+            const mb = (typeof metricsBar !== 'undefined') ? metricsBar : document.getElementById('metrics-bar');
+            if (mb) {
+                mb.style.display = isMetricsExpanded ? 'grid' : 'none';
             }
             if (btn) {
                 btn.textContent = isMetricsExpanded ? '收起指标 ▴' : '📊 详细指标 ▾';
@@ -1689,19 +1690,37 @@ return view.extend({
             }
         });
 
+        // Quick action chips container (Collapsible drawer above input)
+        const quickChips = E('div', {
+            'id': 'quick-chips',
+            'style': (isChipsCollapsed ? 'display: none; ' : 'display: flex; ') + 'flex-direction: column; gap: 8px; margin-bottom: 8px; background: var(--cw-bg-subtle); border: 1px solid var(--cw-border); border-radius: 12px; padding: 10px 12px;'
+        }, [
+            E('div', { 'style': 'display: flex; justify-content: space-between; align-items: center; gap: 8px; border-bottom: 1px dashed var(--cw-border); padding-bottom: 6px;' }, [
+                categoryTabsContainer,
+                toggleBtn
+            ]),
+            chipsDeck
+        ]);
+
         function updateChipsVisibility() {
             const togglePills = document.querySelectorAll('.cw-chips-toggle-pill');
+            const qc = (typeof quickChips !== 'undefined') ? quickChips : document.getElementById('quick-chips');
+            const cd = (typeof chipsDeck !== 'undefined') ? chipsDeck : document.getElementById('quick-chips-deck');
             if (isChipsCollapsed) {
-                quickChips.style.display = 'none';
-                chipsDeck.style.display = 'none';
-                toggleBtn.textContent = '展开卡片 ▾';
-                toggleBtn.title = '展开快捷指令卡片';
+                if (qc) qc.style.display = 'none';
+                if (cd) cd.style.display = 'none';
+                if (toggleBtn) {
+                    toggleBtn.textContent = '展开卡片 ▾';
+                    toggleBtn.title = '展开快捷指令卡片';
+                }
                 togglePills.forEach(p => { p.innerHTML = '✨ 快捷指令 ▾'; p.classList.remove('active'); });
             } else {
-                quickChips.style.display = 'flex';
-                chipsDeck.style.display = 'flex';
-                toggleBtn.textContent = '收起卡片 ▴';
-                toggleBtn.title = '折叠快捷指令卡片';
+                if (qc) qc.style.display = 'flex';
+                if (cd) cd.style.display = 'flex';
+                if (toggleBtn) {
+                    toggleBtn.textContent = '收起卡片 ▴';
+                    toggleBtn.title = '折叠快捷指令卡片';
+                }
                 togglePills.forEach(p => { p.innerHTML = '✨ 收起指令 ▴'; p.classList.add('active'); });
             }
         }
@@ -1827,18 +1846,6 @@ return view.extend({
 
         rebuildCategoryTabs();
         updateChipsVisibility();
-
-        // Quick action chips container (Collapsible drawer above input)
-        const quickChips = E('div', {
-            'id': 'quick-chips',
-            'style': (isChipsCollapsed ? 'display: none; ' : 'display: flex; ') + 'flex-direction: column; gap: 8px; margin-bottom: 8px; background: var(--cw-bg-subtle); border: 1px solid var(--cw-border); border-radius: 12px; padding: 10px 12px;'
-        }, [
-            E('div', { 'style': 'display: flex; justify-content: space-between; align-items: center; gap: 8px; border-bottom: 1px dashed var(--cw-border); padding-bottom: 6px;' }, [
-                categoryTabsContainer,
-                toggleBtn
-            ]),
-            chipsDeck
-        ]);
 
         // Input Area (ChatGPT Style Capsule)
         const inputArea = E('div', {
