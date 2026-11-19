@@ -1,6 +1,6 @@
 {
     "admin/clawwrt": {
-        "title": "小茶助手",
+        "title": "小茶",
         "order": 1,
         "action": {
             "type": "firstchild"
