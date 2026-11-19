@@ -110,6 +110,25 @@ assert_secret_redacted() {
     return 0
 }
 
+assert_cmd() {
+    local category="$1"
+    local desc="$2"
+    local cmd="$3"
+
+    TOTAL_TESTS=$((TOTAL_TESTS + 1))
+    printf "  [测试 %02d] %-12s : %-38s ... " "$TOTAL_TESTS" "$category" "$desc"
+
+    if eval "$cmd" >/dev/null 2>&1; then
+        echo -e "${GREEN}[PASS]${NC}"
+        PASSED_TESTS=$((PASSED_TESTS + 1))
+        return 0
+    else
+        echo -e "${RED}[FAILED] (命令执行失败: $cmd)${NC}"
+        FAILED_TESTS=$((FAILED_TESTS + 1))
+        return 1
+    fi
+}
+
 # ---------------------------------------------------------------------
 # 1. 系统概况与客户端管理
 # ---------------------------------------------------------------------
@@ -280,6 +299,48 @@ assert_ubus "端口跳跃" "随机切换端口 (自动命中重定向池)" "swit
 assert_ubus "端口跳跃" "切换回服务端原生主监听端口 9089" "switch_acceleration_port" '{"new_port":"9089"}' "target_type" "服务端主监听端口"
 # 恢复原始端口
 [ -n "$orig_remote_port" ] && ubus call luci.clawwrt switch_acceleration_port "{\"new_port\":\"$orig_remote_port\"}" >/dev/null 2>&1
+
+# ---------------------------------------------------------------------
+# 12. 远程服务器集群 (VPS) 纳管与免密运维测试
+# ---------------------------------------------------------------------
+echo -e "\n${BOLD}${BLUE}【12. 远程服务器集群 (VPS) 纳管与免密运维测试】${NC}"
+assert_ubus "服务器池" "获取已纳管的远程服务器列表" "get_vps_servers" "" "total"
+add_vps_res=$(ubus call luci.clawwrt manage_vps_server '{"action":"add","name":"Test-Cluster","host":"192.168.8.253","port":"22","user":"root"}' 2>/dev/null)
+test_vps_id=$(echo "$add_vps_res" | jsonfilter -e "@.result.id" 2>/dev/null)
+if [ -n "$test_vps_id" ]; then
+    TOTAL_TESTS=$((TOTAL_TESTS + 1))
+    printf "  [测试 %02d] %-12s : %-38s ... ${GREEN}[PASS]${NC}\n" "$TOTAL_TESTS" "添加服务器" "向集群添加测试节点并生成唯一ID"
+    PASSED_TESTS=$((PASSED_TESTS + 1))
+    assert_ubus "移除服务器" "从集群中注销测试节点 (回滚)" "manage_vps_server" "{\"action\":\"delete\",\"id\":\"$test_vps_id\"}" "success" "true"
+else
+    TOTAL_TESTS=$((TOTAL_TESTS + 1))
+    printf "  [测试 %02d] %-12s : %-38s ... ${RED}[FAILED]${NC}\n" "$TOTAL_TESTS" "添加服务器" "向集群添加测试节点并生成唯一ID"
+    FAILED_TESTS=$((FAILED_TESTS + 1))
+fi
+assert_ubus "SSH连通性" "探测不可达IP返回受控错误结构体" "test_vps_ssh" '{"vps_ip":"192.168.8.253","vps_port":"22","vps_user":"root"}' "connected" "false"
+assert_ubus "Mesh解绑" "解绑不存在节点受控返回防崩溃" "unpair_mesh_node" '{"id":"non_existent_node","node_ip":"192.168.8.253"}' "success" "false"
+
+# ---------------------------------------------------------------------
+# 13. chaWrt 菜单元数据、主题图标与交互组件测试
+# ---------------------------------------------------------------------
+echo -e "\n${BOLD}${BLUE}【13. chaWrt 菜单元数据、主题图标与交互组件测试】${NC}"
+assert_cmd "菜单精简" "顶级菜单为「小茶」(2字极简规范)" "grep -Fq '\"title\": \"小茶\"' /usr/share/luci/menu.d/luci-app-clawwrt.json"
+assert_cmd "菜单精简" "子菜单为「AI 对话」(4字精简规范)" "grep -Fq '\"title\": \"AI 对话\"' /usr/share/luci/menu.d/luci-app-clawwrt.json"
+assert_cmd "菜单精简" "子菜单为「远程服务器」(5字规范)" "grep -Fq '\"title\": \"远程服务器\"' /usr/share/luci/menu.d/luci-app-clawwrt.json"
+assert_cmd "流控菜单" "流控菜单声明及 ACL 依赖正常" "grep -Fq '\"title\": \"QoS\"' /usr/share/luci/menu.d/luci-app-aw-bpf.json"
+assert_cmd "小茶图标" "brand.css 包含小茶专属茶杯矢量蒙版" "grep -Fq 'data-title=\"小茶\"' /www/luci-static/argon/css/brand.css"
+assert_cmd "流控图标" "brand.css 包含流控专属调谐滑块图标" "grep -Fq 'data-title=\"流控\"' /www/luci-static/argon/css/brand.css"
+assert_cmd "按钮图标" "clawwrt.js 顶栏具备设置与清空图标" "grep -Fq '⚙️ 设置' /www/luci-static/resources/view/clawwrt.js && grep -Fq '🗑️ 清空对话' /www/luci-static/resources/view/clawwrt.js"
+
+# ---------------------------------------------------------------------
+# 14. 固件版本号与系统核心运行态健全性测试
+# ---------------------------------------------------------------------
+echo -e "\n${BOLD}${BLUE}【14. 固件版本号与系统核心运行态健全性测试】${NC}"
+assert_cmd "固件版本" "系统发行版为 25.12-SNAPSHOT" "grep -Fq \"DISTRIB_RELEASE='25.12-SNAPSHOT'\" /etc/openwrt_release"
+assert_cmd "固件修订" "系统修订版为最新 r33411-77167f176a" "grep -Fq \"DISTRIB_REVISION='r33411-77167f176a'\" /etc/openwrt_release"
+assert_cmd "内核版本" "Linux 内核版本为 6.12.116 LTS" "uname -r | grep -Fq '6.12.116'"
+assert_cmd "目标平台" "架构为 aarch64_cortex-a53 (MT7981)" "grep -Fq \"DISTRIB_TARGET='mediatek/filogic'\" /etc/openwrt_release"
+assert_cmd "Web引擎" "uHTTPd Web 守护进程正常监听" "pgrep -f uhttpd"
 
 END_TIME=$(date +%s)
 DURATION=$((END_TIME - START_TIME))

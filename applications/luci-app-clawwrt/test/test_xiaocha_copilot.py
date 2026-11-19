@@ -254,6 +254,49 @@ class XiaochaTester:
             assert "未选择" in res.get("message", "")
         self.test("无线调优应用接口防御校验", s8_apply_wifi_tune_contract)
 
+        # 场景 9: 全方位安全基线体检与 WAN 远程暴露风险管控
+        print("\n【场景 9：全方位安全基线体检与 WAN 远程暴露风险管控】")
+        def s9_security_audit():
+            res = self.call_ubus("get_security_check")
+            assert "score" in res, "安全体检结果应包含安全评分"
+            assert "items" in res, "安全体检结果应包含明细体检项 (items)"
+        self.test("路由器全方位安全基线体检", s9_security_audit)
+
+        def s9_wan_access():
+            res = self.call_ubus("manage_wan_access", {"action": "status"})
+            assert "ssh" in res, "应包含 SSH WAN 放行状态"
+            assert "http" in res, "应包含 HTTP WAN 放行状态"
+        self.test("WAN 远程管理端口暴露状态探测", s9_wan_access)
+
+        # 场景 10: 硬件级微秒遥测与芯片温度监控
+        print("\n【场景 10：硬件级微秒遥测与芯片温度监控】")
+        def s10_temperature():
+            res = self.call_ubus("get_temperature")
+            assert "cpu_temp" in res, "遥测应包含 CPU 核心温度"
+            assert "thermal_status" in res, "遥测应包含温度健康等级"
+        self.test("Filogic 820 CPU 与无线射频温度遥测", s10_temperature)
+
+        # 场景 11: UDP 动态端口跳跃与抗限速保活
+        print("\n【场景 11：UDP 动态端口跳跃与抗限速保活】")
+        def s11_port_hopping():
+            res = self.call_ubus("switch_acceleration_port", {"new_port": "9089"})
+            assert res.get("target_type") == "服务端主监听端口" or res.get("verified_server_redirect") is True
+        self.test("UDP 端口跳跃与 REDIRECT 规则校验", s11_port_hopping)
+
+        # 场景 12: chaWrt 菜单元数据与专属主题图标规范
+        print("\n【场景 12：chaWrt 菜单元数据与专属主题图标规范】")
+        def s12_menu_and_icons():
+            cmd = ["ssh", "-o", "StrictHostKeyChecking=no", f"{self.user}@{self.host}",
+                   "grep -Fq '\"title\": \"小茶\"' /usr/share/luci/menu.d/luci-app-clawwrt.json && "
+                   "grep -Fq '\"title\": \"AI 对话\"' /usr/share/luci/menu.d/luci-app-clawwrt.json && "
+                   "grep -Fq '\"title\": \"远程服务器\"' /usr/share/luci/menu.d/luci-app-clawwrt.json && "
+                   "grep -Fq 'data-title=\"小茶\"' /www/luci-static/argon/css/brand.css && "
+                   "grep -Fq 'data-title=\"流控\"' /www/luci-static/argon/css/brand.css && "
+                   "grep -Fq '⚙️ 设置' /www/luci-static/resources/view/clawwrt.js"]
+            proc = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=10)
+            assert proc.returncode == 0, f"菜单元数据或图标规则校验失败: {proc.stderr}"
+        self.test("菜单2字规范/子菜单精简/专属图标校验", s12_menu_and_icons)
+
         print("\n" + "=" * 65)
         print(f"自动化测试完成: 共 {self.passed + self.failed} 项, 通过 {self.passed} 项, 失败 {self.failed} 项")
         print("=" * 65)
