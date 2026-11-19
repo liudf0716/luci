@@ -23,3 +23,44 @@ header .bg-primary .brand .logo {
 	width: 28px;
 	height: 28px;
 }
+
+/* Sidebar Menu Icon: QoS / 流控 */
+.menu[data-title="QoS"]::before,
+.menu[data-title="qos"]::before,
+.menu[data-title="流控"]::before {
+	content: "\e912" !important;
+	color: #f59e0b !important;
+}
+
+.menu[data-title="QoS"]:hover::before,
+.menu[data-title="QoS"].active::before,
+.menu[data-title="qos"]:hover::before,
+.menu[data-title="qos"].active::before,
+.menu[data-title="流控"]:hover::before,
+.menu[data-title="流控"].active::before {
+	color: #fff !important;
+}
+
+/* Sidebar Menu Icon: 小茶 (ChaWrt Copilot) */
+.menu[data-title="小茶"]::before,
+.menu[data-title="小茶助手"]::before {
+	content: "" !important;
+	position: absolute;
+	left: 0.8rem;
+	top: 50%;
+	transform: translateY(-50%);
+	width: 1.15rem;
+	height: 1.15rem;
+	padding-top: 0;
+	background-color: #10b981 !important;
+	-webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='10 10 40 40'%3E%3Cpath fill='%23000' d='M17 27.5h24c.2 1.2.2 2.4 0 3.6-1.2 8.4-5.4 14.4-12 14.4s-10.8-6-12-14.4c-.2-1.2-.2-2.4 0-3.6z'/%3E%3Cpath fill='none' stroke='%23000' stroke-width='3.4' stroke-linecap='round' d='M41 31.2c3.2.4 5.4 2.6 5.4 5.6s-2.2 5.4-5.4 5.8'/%3E%3Cpath fill='%23000' d='M34 12c4.2 1.6 6.6 5.2 6.4 9.2-4.4-.6-8-3.2-10-6.6C31.6 13 32.6 12.2 34 12z'/%3E%3C/svg%3E") no-repeat center / contain !important;
+	mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='10 10 40 40'%3E%3Cpath fill='%23000' d='M17 27.5h24c.2 1.2.2 2.4 0 3.6-1.2 8.4-5.4 14.4-12 14.4s-10.8-6-12-14.4c-.2-1.2-.2-2.4 0-3.6z'/%3E%3Cpath fill='none' stroke='%23000' stroke-width='3.4' stroke-linecap='round' d='M41 31.2c3.2.4 5.4 2.6 5.4 5.6s-2.2 5.4-5.4 5.8'/%3E%3Cpath fill='%23000' d='M34 12c4.2 1.6 6.6 5.2 6.4 9.2-4.4-.6-8-3.2-10-6.6C31.6 13 32.6 12.2 34 12z'/%3E%3C/svg%3E") no-repeat center / contain !important;
+	transition: background-color 0.3s;
+}
+
+.menu[data-title="小茶"]:hover::before,
+.menu[data-title="小茶"].active::before,
+.menu[data-title="小茶助手"]:hover::before,
+.menu[data-title="小茶助手"].active::before {
+	background-color: #fff !important;
+}
