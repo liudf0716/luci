@@ -12,7 +12,7 @@
         }
     },
     "admin/clawwrt/chat": {
-        "title": "AI 对话助手",
+        "title": "AI 对话",
         "order": 1,
         "action": {
             "type": "view",
@@ -20,7 +20,7 @@
         }
     },
     "admin/clawwrt/servers": {
-        "title": "远程免密服务器",
+        "title": "远程服务器",
         "order": 2,
         "action": {
             "type": "view",
