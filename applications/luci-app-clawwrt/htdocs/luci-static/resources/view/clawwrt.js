@@ -1318,11 +1318,11 @@ return view.extend({
                 E('button', {
                     'class': 'btn cbi-button cw-header-btn',
                     'click': function() { openSettingsModal(); }
-                }, '设置'),
+                }, '⚙️ 设置'),
                 E('button', {
                     'class': 'btn cbi-button cw-header-btn',
                     'click': function() { resetChat(); }
-                }, '清空对话')
+                }, '🗑️ 清空对话')
             ])
         ]);
 
